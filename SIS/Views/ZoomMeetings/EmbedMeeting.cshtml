@@ -1,0 +1,58 @@
+﻿@model SIS.Models.Zoom.ZoomMeeting
+
+<div class="min-h-screen bg-slate-50 flex flex-col">
+    <!-- Header Section -->
+    <div class="bg-white border-b border-slate-200 px-6 py-4">
+        <div class="flex flex-col md:flex-row justify-between items-center">
+            <div class="flex items-center text-slate-800 mb-4 md:mb-0">
+                <i class="material-icons text-2xl mr-2 text-green-600">videocam</i>
+                <div>
+                    <h1 class="text-xl font-bold">@Model.Topic</h1>
+                    <p class="text-sm text-slate-600">@Model.Course.CourseCode - @Model.Course.CourseName</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                    <i class="material-icons text-xs mr-1">fiber_manual_record</i>
+                    Live Meeting
+                </span>
+                <form asp-action="EndMeeting" asp-route-id="@Model.Id" method="post" onsubmit="return confirm('Are you sure you want to end this meeting for all participants?');">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                        <i class="material-icons text-sm mr-1">stop</i>
+                        End Meeting
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Meeting Info Bar -->
+    <div class="bg-slate-100 px-6 py-2 border-b border-slate-200">
+        <div class="flex flex-wrap items-center text-sm text-slate-600">
+            <div class="flex items-center mr-6 py-1">
+                <i class="material-icons text-slate-400 text-base mr-1">schedule</i>
+                <span>Started at @Model.StartTime.ToString("hh:mm tt")</span>
+            </div>
+            <div class="flex items-center mr-6 py-1">
+                <i class="material-icons text-slate-400 text-base mr-1">timelapse</i>
+                <span>Duration: @Model.Duration minutes</span>
+            </div>
+            <div class="flex items-center py-1">
+                <i class="material-icons text-slate-400 text-base mr-1">link</i>
+                <span>Meeting ID: @Model.ZoomMeetingId</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Zoom Meeting Iframe -->
+    <div class="flex-grow p-0">
+        <div class="w-full h-full">
+            <iframe src="@Model.StartUrl"
+                    allow="microphone; camera; fullscreen; display-capture; autoplay"
+                    style="height: calc(100vh - 140px); width: 100%; border: none;"
+                    class="bg-white">
+            </iframe>
+        </div>
+    </div>
+</div>

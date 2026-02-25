@@ -1,0 +1,455 @@
+﻿@model SIS.Models.TimeTabling.LecturerTimetableViewModel
+@{
+    ViewData["Title"] = "My Timetable";
+}
+
+<div class="container mx-auto px-4 py-6">
+    <div class="mb-6">
+        <div class="flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-800">
+                My Timetable: @Model.AcademicYearValue (@Model.ModeOfStudyName)
+            </h1>
+            <div class="space-x-2">
+                <button id="exportPdfBtn" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Export PDF
+                </button>
+            </div>
+        </div>
+        <p class="text-gray-600 mt-1">
+            Showing your consolidated weekly teaching schedule
+        </p>
+    </div>
+
+    <div class="my-4">
+        <div class="w-full overflow-x-auto">
+            <div class="my-6" id="timetableContent">
+                <div class="p-4 rounded-lg bg-white">
+                    <h2 class="text-xl font-semibold mb-4">Weekly Schedule</h2>
+
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full bg-white border border-gray-200">
+                            <thead>
+                                <tr class="bg-gray-100">
+                                    <th class="py-3 px-4 border-b border-r text-left">Day</th>
+                                    @foreach (var period in Model.Periods.Where(p => p.Type.Equals("Regular", StringComparison.OrdinalIgnoreCase)))
+                                    {
+                                        <th class="py-3 px-4 border-b border-r">
+                                            <div class="text-xs font-medium text-gray-500">Period @period.PeriodNumber</div>
+                                            <div class="text-sm">@period.StartTime - @period.EndTime</div>
+                                        </th>
+                                    }
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var day in Model.WorkingDays)
+                                {
+                                    <tr>
+                                        <td class="py-3 px-4 border-b border-r font-medium">@day</td>
+                                        @foreach (var period in Model.Periods.Where(p => p.Type.Equals("Regular", StringComparison.OrdinalIgnoreCase)))
+                                        {
+                                            <td class="py-2 px-2 border-b border-r align-top">
+                                                @if (Model.WeeklyTimetable.ContainsKey(day) &&
+                                               Model.WeeklyTimetable[day].ContainsKey(period.PeriodNumber) &&
+                                               Model.WeeklyTimetable[day][period.PeriodNumber].Any())
+                                                {
+                                                    foreach (var session in Model.WeeklyTimetable[day][period.PeriodNumber])
+                                                    {
+                                                        <div class="p-2 mb-1 rounded text-xs @(session.Status == "Published" ? "bg-green-100" : "bg-yellow-100")">
+                                                            <div class="font-semibold">@session.CourseCode</div>
+                                                            <div>@session.CourseName</div>
+                                                            <div class="mt-1 text-xs text-gray-600">
+                                                                Venue: @(Model.TimetableEntries.FirstOrDefault(t => t.Id == session.TimetableId)?.LearningRoom?.Name ?? "Not specified")
+                                                            </div>
+                                                            <div class="mt-1 text-xs text-gray-600">@session.ProgrammeName</div>
+                                                            @if (session.Status == "Draft")
+                                                            {
+                                                                <button type="button"
+                                                                        class="mt-2 bg-blue-500 hover:bg-blue-600 text-white text-xs py-1 px-2 rounded"
+                                                                        onclick="openEditSessionModal(@session.TimetableId, '@session.CourseCode', @session.PeriodNumber, '@day')">
+                                                                    Reschedule
+                                                                </button>
+                                                            }
+                                                        </div>
+                                                    }
+                                                }
+                                            </td>
+                                        }
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="mt-6 p-4 bg-white rounded-lg shadow">
+        <h3 class="text-lg font-medium mb-2">Legend</h3>
+        <div class="flex flex-wrap items-center gap-4">
+            <div class="flex items-center">
+                <div class="w-4 h-4 rounded bg-yellow-100 mr-2"></div>
+                <span class="text-sm">Draft (can be rescheduled)</span>
+            </div>
+            <div class="flex items-center">
+                <div class="w-4 h-4 rounded bg-green-100 mr-2"></div>
+                <span class="text-sm">Published</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reschedule Modal -->
+<div id="rescheduleModal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-lg w-full max-w-lg mx-auto p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-medium text-gray-900">Reschedule Recurring Session</h3>
+            <button id="closeModalBtn" type="button" class="text-gray-500 hover:text-gray-700">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <div class="mb-4">
+            <p class="text-sm text-gray-600">You are rescheduling:</p>
+            <div class="font-medium" id="courseCodeDisplay"></div>
+            <div class="text-sm text-gray-600">
+                Currently scheduled on: <span id="currentDayDisplay"></span>, Period <span id="currentPeriodDisplay"></span>
+            </div>
+            <div class="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
+                <p class="text-xs text-yellow-700">
+                    <strong>Note:</strong> This will reschedule all future occurrences of this session in the academic year.
+                </p>
+            </div>
+        </div>
+
+        <form asp-action="RescheduleSession" asp-controller="Timetable" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="timetableId" name="timetableId" />
+            <input type="hidden" id="selectedRoomId" name="roomId" />
+            <input type="hidden" id="selectedPeriodNumber" name="periodNumber" />
+            <input type="hidden" id="selectedDay" name="day" />
+            <input type="hidden" id="selectedDate" name="date" />
+
+            <div class="mb-4">
+                <h4 class="font-medium mb-2">Available Slots</h4>
+                <div id="availableSlotsContainer" class="border rounded p-2 max-h-[350px] overflow-y-auto">
+                    <div class="text-center py-4">Loading...</div>
+                </div>
+            </div>
+
+            <div id="selectedSlotDisplay" class="mt-3"></div>
+
+            <div class="mt-4 flex justify-end space-x-3">
+                <button id="cancelRescheduleBtn" type="button" class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition duration-150">
+                    Cancel
+                </button>
+                <button id="confirmRescheduleBtn" type="submit" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    Confirm Reschedule
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Function to select a slot for rescheduling
+        function selectSlot(roomId, roomName, periodNumber, day) {
+            document.getElementById('selectedRoomId').value = roomId;
+            document.getElementById('selectedPeriodNumber').value = periodNumber;
+            document.getElementById('selectedDay').value = day;
+
+            // Set a default date (not actually used for recurring schedules, but needed for the form)
+            // This will be disregarded in the backend logic since we're dealing with recurring patterns
+            document.getElementById('selectedDate').value = new Date().toISOString().split('T')[0];
+
+            // Update selected slot display
+            document.getElementById('selectedSlotDisplay').innerHTML = `
+                <div class="bg-blue-50 p-3 rounded mt-2">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="font-medium">Selected Slot:</div>
+                            <div class="text-sm mt-1"><span class="font-medium">Room:</span> ${roomName}</div>
+                            <div class="text-sm"><span class="font-medium">Day:</span> ${day}</div>
+                            <div class="text-sm"><span class="font-medium">Period:</span> ${periodNumber}</div>
+                        </div>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                    </div>
+                </div>`;
+
+            // Highlight the selected slot
+            document.querySelectorAll('[onclick*="selectSlot("]').forEach(el => {
+                el.classList.remove('bg-green-50', 'border-green-300');
+                el.classList.add('bg-white');
+            });
+
+            // Add highlighting to the selected slot
+            event.currentTarget.classList.remove('bg-white');
+            event.currentTarget.classList.add('bg-green-50', 'border-green-300');
+
+            // Enable the reschedule button
+            document.getElementById('confirmRescheduleBtn').disabled = false;
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Export to PDF functionality
+            const exportPdfBtn = document.getElementById('exportPdfBtn');
+            if (exportPdfBtn) {
+                exportPdfBtn.addEventListener('click', function() {
+                    // Load jsPDF from CDN
+                    const script = document.createElement('script');
+                    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+                    script.onload = function() {
+                        const scriptHtml2Canvas = document.createElement('script');
+                        scriptHtml2Canvas.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+                        scriptHtml2Canvas.onload = function() {
+                            exportToPdf();
+                        };
+                        document.head.appendChild(scriptHtml2Canvas);
+                    };
+                    document.head.appendChild(script);
+                });
+            }
+
+            function exportToPdf() {
+                const { jsPDF } = window.jspdf;
+                const timetableContent = document.getElementById('timetableContent');
+
+                // Create a new jsPDF instance
+                const pdf = new jsPDF('landscape', 'pt', 'a4');
+
+                // Set title
+                const title = document.querySelector('h1').textContent.trim();
+                pdf.setFontSize(16);
+                pdf.text(title, 40, 40);
+
+                // Use html2canvas to render the timetable
+                html2canvas(timetableContent, { scale: 1 }).then(canvas => {
+                    const imgData = canvas.toDataURL('image/png');
+                    const imgWidth = pdf.internal.pageSize.getWidth() - 80;
+                    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+                    pdf.addImage(imgData, 'PNG', 40, 60, imgWidth, imgHeight);
+                    pdf.save('lecturer_timetable.pdf');
+                });
+            }
+
+            // Initialize modal functionality
+            const modal = document.getElementById('rescheduleModal');
+            const closeModalBtn = document.getElementById('closeModalBtn');
+            const cancelBtn = document.getElementById('cancelRescheduleBtn');
+
+            if (closeModalBtn) {
+                closeModalBtn.addEventListener('click', closeModal);
+            }
+
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', closeModal);
+            }
+
+            function closeModal() {
+                modal.classList.add('hidden');
+
+                // Reset the modal state
+                document.getElementById('availableSlotsContainer').innerHTML = '';
+                document.getElementById('selectedSlotDisplay').innerHTML = '';
+                document.getElementById('confirmRescheduleBtn').disabled = true;
+            }
+
+            // Close modal when clicking outside of it
+            window.addEventListener('click', function(event) {
+                if (event.target === modal) {
+                    closeModal();
+                }
+            });
+        });
+
+        // Function to open edit session modal
+        function openEditSessionModal(timetableId, courseCode, currentPeriod, currentDay) {
+            const modal = document.getElementById('rescheduleModal');
+            document.getElementById('timetableId').value = timetableId;
+            document.getElementById('courseCodeDisplay').textContent = courseCode;
+            document.getElementById('currentPeriodDisplay').textContent = currentPeriod;
+            document.getElementById('currentDayDisplay').textContent = currentDay;
+
+            // Reset the state
+            document.getElementById('selectedSlotDisplay').innerHTML = '';
+            document.getElementById('confirmRescheduleBtn').disabled = true;
+
+            // Fetch available slots
+            fetchAvailableSlots(timetableId);
+
+            // Show modal
+            modal.classList.remove('hidden');
+        }
+
+        // Function to fetch available slots from the server
+        function fetchAvailableSlots(timetableId) {
+            // Show loading indicator
+            const availableSlotsContainer = document.getElementById('availableSlotsContainer');
+            availableSlotsContainer.innerHTML = '<div class="text-center py-8"><div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div><p class="mt-2">Loading available slots...</p></div>';
+
+            // Set anti-forgery token header
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+            const headers = {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': token
+            };
+
+            // Fetch available slots from server
+            fetch(`/Timetable/GetAvailableSlots?timetableId=${timetableId}`, {
+                headers: headers,
+                method: 'GET'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success && data.slots && data.slots.length > 0) {
+                    displayAvailableSlots(data.slots);
+                } else {
+                    // Display a message when no slots are available
+                    const message = data.message || 'No available slots found that can accommodate this session.';
+                    availableSlotsContainer.innerHTML = `
+                        <div class="p-8 text-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <p class="mt-2 text-red-500 font-medium">${message}</p>
+                            <p class="mt-1 text-sm text-gray-500">Try checking back later or contact the timetable administrator.</p>
+                        </div>`;
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching available slots:', error);
+                availableSlotsContainer.innerHTML = `
+                    <div class="p-8 text-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <p class="mt-2 text-red-600 font-medium">Error loading available slots</p>
+                        <p class="mt-1 text-sm text-gray-500">Please try again or refresh the page.</p>
+                    </div>`;
+            });
+        }
+
+        // Function to display available slots grouped by day
+        function displayAvailableSlots(slots) {
+            const availableSlotsContainer = document.getElementById('availableSlotsContainer');
+
+            // Group slots by day
+            const slotsByDay = {};
+            slots.forEach(slot => {
+                if (!slotsByDay[slot.day]) {
+                    slotsByDay[slot.day] = [];
+                }
+                slotsByDay[slot.day].push(slot);
+            });
+
+            // Create tabs for the days
+            let tabsHtml = '<div class="flex border-b border-gray-200 mb-4 overflow-x-auto">';
+
+            // Get sorted day keys - order them by day of week
+            const dayOrder = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+            const dayKeys = Object.keys(slotsByDay).sort((a, b) => {
+                return dayOrder.indexOf(a) - dayOrder.indexOf(b);
+            });
+
+            // Generate tab buttons
+            dayKeys.forEach((day, index) => {
+                const isActive = index === 0;
+                tabsHtml += `
+                    <button type="button"
+                        class="day-tab px-4 py-2 text-sm font-medium ${isActive ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'}"
+                        data-day="${day}">
+                        ${day}
+                    </button>`;
+            });
+
+            tabsHtml += '</div>';
+
+            // Create content for each day tab
+            let contentHtml = '<div class="tab-content">';
+
+            dayKeys.forEach((day, index) => {
+                const isVisible = index === 0;
+                contentHtml += `<div class="day-content ${isVisible ? '' : 'hidden'}" id="day-${day}">`;
+
+                // Group slots by period
+                const periodGroups = {};
+                slotsByDay[day].forEach(slot => {
+                    if (!periodGroups[slot.periodNumber]) {
+                        periodGroups[slot.periodNumber] = [];
+                    }
+                    periodGroups[slot.periodNumber].push(slot);
+                });
+
+                // Generate period sections
+                const sortedPeriods = Object.keys(periodGroups).sort((a, b) => parseInt(a) - parseInt(b));
+
+                sortedPeriods.forEach(periodNumber => {
+                    const firstSlot = periodGroups[periodNumber][0];
+                    contentHtml += `
+                        <div class="mb-3 p-2 bg-gray-50 rounded">
+                            <div class="font-medium text-sm text-gray-700">Period ${periodNumber} (${firstSlot.startTime} - ${firstSlot.endTime})</div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">`;
+
+                    periodGroups[periodNumber].forEach(slot => {
+                        contentHtml += `
+                            <div class="border bg-white rounded p-2 hover:bg-blue-50 cursor-pointer transition-colors"
+                                 onclick="selectSlot(${slot.roomId}, '${slot.roomName.replace(/'/g, "\\'")}', ${slot.periodNumber}, '${slot.day}')">
+                                <div class="font-medium text-sm">${slot.roomName}</div>
+                                <div class="text-xs text-gray-600">Capacity: ${slot.capacity}</div>
+                            </div>`;
+                    });
+
+                    contentHtml += `
+                            </div>
+                        </div>`;
+                });
+
+                contentHtml += '</div>';
+            });
+
+            contentHtml += '</div>';
+
+            // Combine tabs and content
+            availableSlotsContainer.innerHTML = tabsHtml + contentHtml;
+
+            // Add event listeners to tabs
+            document.querySelectorAll('.day-tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs
+                    document.querySelectorAll('.day-tab').forEach(t => {
+                        t.classList.remove('border-b-2', 'border-blue-500', 'text-blue-600');
+                        t.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+                    });
+
+                    // Add active class to clicked tab
+                    this.classList.add('border-b-2', 'border-blue-500', 'text-blue-600');
+                    this.classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+
+                    // Hide all content
+                    document.querySelectorAll('.day-content').forEach(content => {
+                        content.classList.add('hidden');
+                    });
+
+                    // Show content for selected day
+                    const day = this.getAttribute('data-day');
+                    document.getElementById('day-' + day).classList.remove('hidden');
+                });
+            });
+        }
+    </script>
+}

@@ -1,0 +1,221 @@
+﻿@model SIS.Models.Assessments.AssessmentPreviewViewModel
+
+<div class="min-h-screen bg-slate-50 p-6">
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+        <div class="flex items-center text-slate-800">
+            <i class="material-icons text-3xl mr-2">visibility</i>
+            <div>
+                <h1 class="text-2xl font-bold">Assessment Preview</h1>
+                <p class="text-sm text-slate-600">@Model.AssessmentConfig.Course.CourseCode - @Model.AssessmentConfig.Course.CourseName</p>
+            </div>
+        </div>
+        <div class="mt-4 md:mt-0">
+            <a asp-controller="Lecturer" asp-action="CourseContent" asp-route-id="@Model.AssessmentConfig.CourseId"
+               class="inline-flex items-center px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-100 transition-colors">
+                <i class="material-icons text-sm mr-1">arrow_back</i>
+                <span>Back to Course Content</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Assessment Information Card -->
+    <div class="bg-white rounded-xl shadow-sm mb-6">
+        <div class="p-6">
+            <h2 class="text-xl font-semibold text-slate-800 mb-4">Assessment Information</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <p class="text-sm text-slate-600 mb-1">Assessment</p>
+                    <p class="font-medium">@Model.AssessmentConfig.Assessment.Name</p>
+                </div>
+                <div>
+                    <p class="text-sm text-slate-600 mb-1">Academic Year</p>
+                    <p class="font-medium">@Model.AssessmentConfig.AcademicYear.YearValue</p>
+                </div>
+                <div>
+                    <p class="text-sm text-slate-600 mb-1">Mode of Study</p>
+                    <p class="font-medium">@Model.AssessmentConfig.ModeOfStudy.ModeName (@Model.AssessmentConfig.ModeOfStudy.Code)</p>
+                </div>
+                <div>
+                    <p class="text-sm text-slate-600 mb-1">Duration</p>
+                    <p class="font-medium">@Model.AssessmentConfig.DurationMinutes minutes</p>
+                </div>
+                <div>
+                    <p class="text-sm text-slate-600 mb-1">Available From</p>
+                    <p class="font-medium">@Model.AssessmentConfig.StartDateTime.ToString("MMM dd, yyyy HH:mm")</p>
+                </div>
+                <div>
+                    <p class="text-sm text-slate-600 mb-1">Available Until</p>
+                    <p class="font-medium">@Model.AssessmentConfig.EndDateTime.ToString("MMM dd, yyyy HH:mm")</p>
+                </div>
+            </div>
+
+            <!-- Assessment Settings -->
+            <div class="mt-6 pt-4 border-t border-slate-200">
+                <h3 class="text-md font-medium text-slate-800 mb-3">Assessment Settings</h3>
+                <div class="flex flex-wrap gap-4">
+                    <div class="inline-flex items-center bg-slate-100 rounded-full px-3 py-1">
+                        <i class="material-icons text-slate-600 text-sm mr-1">@(Model.IsRandomized ? "check_circle" : "cancel")</i>
+                        <span class="text-sm">Randomized Questions</span>
+                    </div>
+                    <div class="inline-flex items-center bg-slate-100 rounded-full px-3 py-1">
+                        <i class="material-icons text-slate-600 text-sm mr-1">@(Model.PreventTabSwitching ? "check_circle" : "cancel")</i>
+                        <span class="text-sm">Prevent Tab Switching</span>
+                    </div>
+                    <div class="inline-flex items-center bg-slate-100 rounded-full px-3 py-1">
+                        <i class="material-icons text-slate-600 text-sm mr-1">@(Model.ShowResults ? "check_circle" : "cancel")</i>
+                        <span class="text-sm">Show Results After Submission</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Instructions -->
+    <div class="bg-white rounded-xl shadow-sm mb-6">
+        <div class="p-6">
+            <h2 class="text-xl font-semibold text-slate-800 mb-2">Instructions for Students</h2>
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-4">
+                <ul class="list-disc list-inside text-blue-700 space-y-2">
+                    <li>This assessment contains @Model.Questions.Count questions.</li>
+                    <li>You have @Model.AssessmentConfig.DurationMinutes minutes to complete this assessment.</li>
+                    <li>Once you start the assessment, the timer cannot be paused.</li>
+                    @if (Model.IsRandomized)
+                    {
+                        <li>Questions will be presented in random order.</li>
+                    }
+                    @if (Model.PreventTabSwitching)
+                    {
+                        <li>Switching to another browser tab or window will be recorded and may result in automatic submission.</li>
+                    }
+                    @if (Model.ShowResults)
+                    {
+                        <li>Your results will be displayed immediately after submission.</li>
+                    }
+                    else
+                    {
+                        <li>Results will be available after the assessment is graded.</li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Questions Preview -->
+    <div class="bg-white rounded-xl shadow-sm mb-6 overflow-hidden">
+        <div class="p-6 border-b border-slate-200">
+            <h2 class="text-xl font-semibold text-slate-800">Questions Preview</h2>
+            <p class="text-sm text-slate-600">This is how students will see the questions.</p>
+        </div>
+
+        <!-- Questions List -->
+        <div class="divide-y divide-slate-200">
+            @for (int i = 0; i < Model.Questions.Count; i++)
+            {
+                var question = Model.Questions[i];
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <span class="inline-block bg-slate-200 text-slate-800 text-xs font-medium px-2 py-1 rounded-full mb-2">
+                                Question @(i + 1) of @Model.Questions.Count
+                            </span>
+                            <div class="text-xs text-slate-500">Group: @question.QuestionGroupName</div>
+                        </div>
+                        <div class="text-xs px-2 py-1 rounded-full
+                            @(question.QuestionType == "MultipleChoice" ? "bg-green-100 text-green-800" :
+                               question.QuestionType == "TrueFalse" ? "bg-yellow-100 text-yellow-800" :
+                               question.QuestionType == "ShortAnswer" ? "bg-blue-100 text-blue-800" :
+                               "bg-purple-100 text-purple-800")">
+                            @(question.QuestionType switch
+                            {
+                                "MultipleChoice" => "Multiple Choice",
+                                "TrueFalse" => "True/False",
+                                "ShortAnswer" => "Short Answer",
+                                "Essay" => "Essay",
+                                _ => question.QuestionType
+                            })
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                        <!-- Image displayed above question if that's the selected position -->
+                        @if (!string.IsNullOrEmpty(question.ImagePath) && (string.IsNullOrEmpty(question.ImageDisplayPosition) || question.ImageDisplayPosition == "Above"))
+                        {
+                            <div class="mb-4 text-center">
+                                <img src="@question.ImagePath" alt="@(question.ImageDescription ?? "Question image")" class="max-h-40 rounded mx-auto" />
+                            </div>
+                        }
+
+                        <div class="text-sm font-medium text-gray-800 mb-3">@Html.Raw(question.QuestionText)</div>
+
+                        @if (!string.IsNullOrEmpty(question.Instructions))
+                        {
+                            <div class="text-xs italic text-slate-600 mb-4">@Html.Raw(question.Instructions)</div>
+                        }
+
+                        <!-- Image displayed below question if that's the selected position -->
+                        @if (!string.IsNullOrEmpty(question.ImagePath) && question.ImageDisplayPosition == "Below")
+                        {
+                            <div class="mb-4 text-center">
+                                <img src="@question.ImagePath" alt="@(question.ImageDescription ?? "Question image")" class="max-h-40 rounded mx-auto" />
+                            </div>
+                        }
+
+                        <!-- Question Type specific rendering -->
+                        @if (question.QuestionType == "MultipleChoice")
+                        {
+                            <div class="space-y-2">
+                                @foreach (var option in question.Options)
+                                {
+                                    <div class="flex items-center">
+                                        <input type="radio" disabled class="h-4 w-4 mr-2" />
+                                        <span class="text-sm text-slate-800">@Html.Raw(option.OptionText)</span>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else if (question.QuestionType == "TrueFalse")
+                        {
+                            <div class="space-y-2">
+                                <div class="flex items-center">
+                                    <input type="radio" disabled class="h-4 w-4 mr-2" />
+                                    <span class="text-sm text-slate-800">True</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="radio" disabled class="h-4 w-4 mr-2" />
+                                    <span class="text-sm text-slate-800">False</span>
+                                </div>
+                            </div>
+                        }
+                        else if (question.QuestionType == "ShortAnswer")
+                        {
+                            <div class="w-full px-4 py-2 border border-slate-300 rounded-lg bg-white text-sm text-slate-400">
+                                Enter your answer here...
+                            </div>
+                        }
+                        else if (question.QuestionType == "Essay")
+                        {
+                            <div class="w-full h-24 px-4 py-2 border border-slate-300 rounded-lg bg-white text-sm text-slate-400">
+                                Enter your essay response here...
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex justify-between">
+        <a asp-controller="Lecturer" asp-action="EditAssessmentConfig" asp-route-id="@Model.AssessmentConfig.CourseId" asp-route-assessmentConfigId="@Model.AssessmentConfig.Id"
+           class="inline-flex items-center px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-100 transition-colors">
+            <i class="material-icons text-sm mr-1">edit</i>
+            <span>Edit Assessment</span>
+        </a>
+        <a asp-controller="Lecturer" asp-action="CourseContent" asp-route-id="@Model.AssessmentConfig.CourseId"
+           class="inline-flex items-center px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors">
+            <i class="material-icons text-sm mr-1">done</i>
+            <span>Finish Preview</span>
+        </a>
+    </div>
+</div>

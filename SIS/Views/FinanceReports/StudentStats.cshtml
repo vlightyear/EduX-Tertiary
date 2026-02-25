@@ -1,0 +1,1187 @@
+@{
+    ViewData["Title"] = "Financial Reports";
+}
+
+<div class="p-6 space-y-6 bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-8">
+        <div class="flex items-center gap-4">
+            <div class="bg-gradient-to-r from-blue-600 to-purple-600 p-4 rounded-2xl shadow-lg">
+                <i class="material-icons text-white text-3xl">assessment</i>
+            </div>
+            <div>
+                <h1 class="text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
+                    Financial Reports Dashboard
+                </h1>
+                <p class="text-slate-600 text-lg">Comprehensive Transaction & Payment Reports</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Date Filter & Search -->
+    <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-white/20 mb-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            <!-- Date & Search Filters Row 1 -->
+            <div class="lg:col-span-2 xl:col-span-3">
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <!-- Date Filter -->
+                    <div>
+                        <div class="flex items-center gap-2 mb-4">
+                            <i class="material-icons text-slate-600">date_range</i>
+                            <span class="text-sm font-medium text-slate-700">Filter by Date:</span>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <div class="flex-1">
+                                <label class="block text-xs text-slate-500 mb-1">From Date</label>
+                                <input type="date" id="fromDate" 
+                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                            </div>
+                            <div class="flex-1">
+                                <label class="block text-xs text-slate-500 mb-1">To Date</label>
+                                <input type="date" id="toDate" 
+                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Search Filters -->
+                    <div>
+                        <div class="flex items-center gap-2 mb-4">
+                            <i class="material-icons text-slate-600">search</i>
+                            <span class="text-sm font-medium text-slate-700">Search Records:</span>
+                        </div>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs text-slate-500 mb-1">Student Number</label>
+                                <input type="text" id="studentNumber" placeholder="Enter student number..." 
+                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-500 mb-1">Transaction Reference</label>
+                                <input type="text" id="transactionRef" placeholder="Enter transaction reference..." 
+                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dropdown Filters -->
+                    <div>
+                        <div class="flex items-center gap-2 mb-4">
+                            <i class="material-icons text-slate-600">filter_list</i>
+                            <span class="text-sm font-medium text-slate-700">Category Filters:</span>
+                        </div>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs text-slate-500 mb-1">Payment Method</label>
+                                <select id="paymentMethod" 
+                                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                                    <option value="">All Payment Methods</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-500 mb-1">Programme</label>
+                                <select id="programme" 
+                                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                                    <option value="">All Programmes</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-500 mb-1">School</label>
+                                <select id="school" 
+                                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                                    <option value="">All Schools</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="flex items-center justify-center gap-4 mt-6 pt-4 border-t border-slate-200">
+            <button onclick="applyFilters()" 
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors flex items-center gap-2 text-sm">
+                <i class="material-icons text-sm">search</i>
+                Apply Filters
+            </button>
+            <button onclick="clearAllFilters()" 
+                    class="bg-slate-500 hover:bg-slate-600 text-white px-6 py-2 rounded-lg transition-colors text-sm">
+                Clear All
+            </button>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+        <!-- Total Revenue Card -->
+        <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-white/20 hover:shadow-2xl transition-all duration-300">
+            <div class="flex items-center gap-4">
+                <div class="bg-gradient-to-r from-green-500 to-emerald-600 p-3 rounded-xl">
+                    <i class="material-icons text-white text-2xl">account_balance_wallet</i>
+                </div>
+                <div>
+                    <h3 class="text-slate-600 font-medium">Total Revenue</h3>
+                    <p class="text-2xl font-bold text-green-600" id="totalRevenue">K0</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Outstanding Fees Card -->
+        <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-white/20 hover:shadow-2xl transition-all duration-300">
+            <div class="flex items-center gap-4">
+                <div class="bg-gradient-to-r from-amber-500 to-orange-600 p-3 rounded-xl">
+                    <i class="material-icons text-white text-2xl">pending_actions</i>
+                </div>
+                <div>
+                    <h3 class="text-slate-600 font-medium">Outstanding Fees</h3>
+                    <p class="text-2xl font-bold text-amber-600" id="totalOutstanding">K0</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Collection Rate Card -->
+        <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-white/20 hover:shadow-2xl transition-all duration-300">
+            <div class="flex items-center gap-4">
+                <div class="bg-gradient-to-r from-blue-500 to-blue-600 p-3 rounded-xl">
+                    <i class="material-icons text-white text-2xl">trending_up</i>
+                </div>
+                <div>
+                    <h3 class="text-slate-600 font-medium">Collection Rate</h3>
+                    <p class="text-2xl font-bold text-blue-600" id="collectionRate">0%</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Students Affected Card -->
+        <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-white/20 hover:shadow-2xl transition-all duration-300">
+            <div class="flex items-center gap-4">
+                <div class="bg-gradient-to-r from-red-500 to-red-600 p-3 rounded-xl">
+                    <i class="material-icons text-white text-2xl">people</i>
+                </div>
+                <div>
+                    <h3 class="text-slate-600 font-medium">Students w/ Outstanding</h3>
+                    <p class="text-2xl font-bold text-red-600" id="studentsWithOutstanding">0</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Average Outstanding Card -->
+        <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-white/20 hover:shadow-2xl transition-all duration-300">
+            <div class="flex items-center gap-4">
+                <div class="bg-gradient-to-r from-purple-500 to-purple-600 p-3 rounded-xl">
+                    <i class="material-icons text-white text-2xl">calculate</i>
+                </div>
+                <div>
+                    <h3 class="text-slate-600 font-medium">Avg Outstanding</h3>
+                    <p class="text-2xl font-bold text-purple-600" id="averageOutstanding">K0</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Navigation Tabs -->
+    <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-2 mb-6 border border-white/20">
+        <div class="flex flex-wrap gap-2">
+            <button onclick="showSection('transactions')" id="transactionsTab" 
+                    class="px-4 py-2 rounded-lg font-medium transition-all duration-200 bg-blue-600 text-white">
+                Student Payments
+            </button>
+            <button onclick="showSection('outstanding')" id="outstandingTab" 
+                    class="px-4 py-2 rounded-lg font-medium transition-all duration-200 text-slate-600 hover:bg-slate-100">
+                Outstanding Payments
+            </button>
+        </div>
+    </div>
+
+    <!-- High-Value Transactions Section -->
+    <div id="transactionsSection" class="report-section">
+        <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 mb-6">
+            <div class="p-6 border-b border-slate-200">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-emerald-100 p-3 rounded-xl">
+                            <i class="material-icons text-emerald-600 text-2xl">receipt_long</i>
+                        </div>
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-800">Student Payments</h2>
+                            <p class="text-slate-600">Payment records and transaction history</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="text-right bg-slate-50 rounded-xl p-4">
+                            <p class="text-sm text-slate-500">Total Records</p>
+                            <p class="font-semibold text-slate-800" id="transactionsTotalCount">0</p>
+                        </div>
+                        <button onclick="exportTransactionsToExcel()" 
+                                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2 text-sm">
+                            <i class="material-icons text-sm">download</i>
+                            Export to Excel
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                    <thead class="bg-slate-50">
+                        <tr>
+                            <th class="py-4 px-6 text-left text-sm font-semibold text-slate-700">Student Details</th>
+                            <th class="py-4 px-6 text-left text-sm font-semibold text-slate-700">Programme</th>
+                            <th class="py-4 px-6 text-left text-sm font-semibold text-slate-700">Amount</th>
+                            <th class="py-4 px-6 text-left text-sm font-semibold text-slate-700">Payment Method</th>
+                            <th class="py-4 px-6 text-left text-sm font-semibold text-slate-700">Transaction Reference</th>
+                            <th class="py-4 px-6 text-left text-sm font-semibold text-slate-700">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionsTable" class="divide-y divide-slate-200">
+                        <!-- Populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Transaction Pagination -->
+            <div id="transactionsPagination" class="hidden"></div>
+        </div>
+    </div>
+
+    <!-- Outstanding Payments Section -->
+    <div id="outstandingSection" class="report-section hidden">
+        <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 mb-6">
+            <div class="p-6 border-b border-slate-200">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-amber-100 p-3 rounded-xl">
+                            <i class="material-icons text-amber-600 text-2xl">warning</i>
+                        </div>
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-800">Outstanding Payment Records</h2>
+                            <p class="text-slate-600">Students with unpaid fees and balances</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="text-right bg-slate-50 rounded-xl p-4">
+                            <p class="text-sm text-slate-500">Total Outstanding</p>
+                            <p class="font-semibold text-red-600" id="outstandingTotalAmount">K0</p>
+                        </div>
+                        <button onclick="exportOutstandingToExcel()" 
+                                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2 text-sm">
+                            <i class="material-icons text-sm">download</i>
+                            Export to Excel
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                    <thead class="bg-slate-50">
+                        <tr>
+                            <th class="py-4 px-6 text-left">
+                                <input type="checkbox" id="selectAllOutstanding" onchange="toggleSelectAllOutstanding()" class="rounded border-slate-300">
+                            </th>
+                            <th class="py-4 px-6 text-left text-sm font-semibold text-slate-700">Student Details</th>
+                            <th class="py-4 px-6 text-left text-sm font-semibold text-slate-700">Programme</th>
+                            <th class="py-4 px-6 text-left text-sm font-semibold text-slate-700">School</th>
+                            <th class="py-4 px-6 text-left text-sm font-semibold text-slate-700">Outstanding Amount</th>
+                            <th class="py-4 px-6 text-left text-sm font-semibold text-slate-700">Last Payment</th>
+                            <th class="py-4 px-6 text-left text-sm font-semibold text-slate-700">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="outstandingTable" class="divide-y divide-slate-200">
+                        <!-- Populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Outstanding Pagination -->
+            <div id="outstandingPagination" class="hidden"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-40 hidden">
+    <div class="flex items-center justify-center h-full">
+        <div class="bg-white rounded-2xl p-8 flex items-center gap-4">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <span class="text-slate-700">Processing...</span>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden data for JavaScript -->
+<script type="application/json" id="transactionsData">@Html.Raw(ViewBag.Transactions ?? "[]")</script>
+<script type="application/json" id="outstandingData">@Html.Raw(ViewBag.OutstandingStudents ?? "[]")</script>
+
+<!-- SheetJS library for Excel export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<script>
+let currentPage = {
+    transactions: 1,
+    outstanding: 1
+};
+let pageSize = 50;
+let filteredData = {
+    transactions: [],
+    outstanding: []
+};
+let originalData = {
+    transactions: [],
+    outstanding: []
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Set filter values from URL
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('fromDate')) document.getElementById('fromDate').value = params.get('fromDate');
+    if (params.get('toDate')) document.getElementById('toDate').value = params.get('toDate');
+    if (params.get('studentNumber')) document.getElementById('studentNumber').value = params.get('studentNumber');
+    if (params.get('transactionRef')) document.getElementById('transactionRef').value = params.get('transactionRef');
+    if (params.get('paymentMethod')) document.getElementById('paymentMethod').value = params.get('paymentMethod');
+    if (params.get('programme')) document.getElementById('programme').value = params.get('programme');
+    if (params.get('school')) document.getElementById('school').value = params.get('school');
+    
+    loadTransactionsData();
+    loadOutstandingData();
+});
+
+// Tab functionality
+function showSection(sectionName) {
+    // Hide all sections
+    document.querySelectorAll('.report-section').forEach(section => {
+        section.classList.add('hidden');
+    });
+    
+    // Remove active class from all tabs
+    document.querySelectorAll('[id$="Tab"]').forEach(tab => {
+        tab.classList.remove('bg-blue-600', 'text-white');
+        tab.classList.add('text-slate-600', 'hover:bg-slate-100');
+    });
+    
+    // Show selected section
+    document.getElementById(sectionName + 'Section').classList.remove('hidden');
+    
+    // Make selected tab active
+    const activeTab = document.getElementById(sectionName + 'Tab');
+    activeTab.classList.add('bg-blue-600', 'text-white');
+    activeTab.classList.remove('text-slate-600', 'hover:bg-slate-100');
+}
+
+function populateDropdownFilters() {
+    const paymentMethodSelect = document.getElementById('paymentMethod');
+    const programmeSelect = document.getElementById('programme');
+    const schoolSelect = document.getElementById('school');
+    
+    const paymentMethods = new Set();
+    const programmes = new Set();
+    const schools = new Set();
+    
+    console.log('Debug: Original data structure:', {
+        transactions: originalData.transactions.length > 0 ? originalData.transactions[0] : 'No transactions',
+        outstanding: originalData.outstanding.length > 0 ? originalData.outstanding[0] : 'No outstanding'
+    });
+    
+    // Collect unique values from transaction data
+    originalData.transactions.forEach((transaction, index) => {
+        // Check all possible field names for payment method
+        const paymentMethodValue = transaction.PaymentMethod || transaction.paymentMethod || transaction.payment_method;
+        if (paymentMethodValue && String(paymentMethodValue).trim()) {
+            paymentMethods.add(String(paymentMethodValue).trim());
+        }
+        
+        // Check all possible field names for programme
+        const programmeValue = transaction.Programme || transaction.Program || transaction.programme || transaction.program;
+        if (programmeValue && String(programmeValue).trim()) {
+            programmes.add(String(programmeValue).trim());
+        }
+        
+        // Debug first few records
+        if (index < 3) {
+            console.log(`Transaction ${index}:`, {
+                PaymentMethod: transaction.PaymentMethod,
+                Programme: transaction.Programme,
+                allFields: Object.keys(transaction)
+            });
+        }
+    });
+    
+    // Collect unique values from outstanding data
+    originalData.outstanding.forEach((student, index) => {
+        // Check all possible field names for programme
+        const programmeValue = student.Programme || student.Program || student.programme || student.program;
+        if (programmeValue && String(programmeValue).trim()) {
+            programmes.add(String(programmeValue).trim());
+        }
+        
+        // Check all possible field names for school
+        const schoolValue = student.School || student.school || student.Faculty || student.faculty;
+        if (schoolValue && String(schoolValue).trim()) {
+            schools.add(String(schoolValue).trim());
+        }
+        
+        // Debug first few records
+        if (index < 3) {
+            console.log(`Outstanding ${index}:`, {
+                Programme: student.Programme,
+                School: student.School,
+                allFields: Object.keys(student)
+            });
+        }
+    });
+    
+    // Clear existing options except the first one
+    function clearSelectOptions(select) {
+        while (select.children.length > 1) {
+            select.removeChild(select.lastChild);
+        }
+    }
+    
+    clearSelectOptions(paymentMethodSelect);
+    clearSelectOptions(programmeSelect);
+    clearSelectOptions(schoolSelect);
+    
+    // Add payment method options
+    Array.from(paymentMethods).sort().forEach(method => {
+        const option = document.createElement('option');
+        option.value = method;
+        option.textContent = method;
+        paymentMethodSelect.appendChild(option);
+    });
+    
+    // Add programme options
+    Array.from(programmes).sort().forEach(programme => {
+        const option = document.createElement('option');
+        option.value = programme;
+        option.textContent = programme;
+        programmeSelect.appendChild(option);
+    });
+    
+    // Add school options
+    Array.from(schools).sort().forEach(school => {
+        const option = document.createElement('option');
+        option.value = school;
+        option.textContent = school;
+        schoolSelect.appendChild(option);
+    });
+    
+    console.log('Populated filters:', {
+        paymentMethods: Array.from(paymentMethods),
+        programmes: Array.from(programmes),
+        schools: Array.from(schools),
+        counts: {
+            paymentMethods: paymentMethods.size,
+            programmes: programmes.size,
+            schools: schools.size
+        }
+    });
+    
+    // Show warning if only one option found
+    if (programmes.size <= 1) {
+        console.warn('Only found', programmes.size, 'programme(s). Check data field names.');
+    }
+    if (schools.size <= 1) {
+        console.warn('Only found', schools.size, 'school(s). Check data field names.');
+    }
+}
+
+function updateSummaryCards() {
+    // Calculate summary statistics from filtered data
+    const totalRevenue = filteredData.transactions.reduce((sum, transaction) => sum + (transaction.Amount || 0), 0);
+    const totalOutstanding = filteredData.outstanding.reduce((sum, student) => sum + (student.OutstandingAmount || 0), 0);
+    const studentsWithOutstanding = filteredData.outstanding.length;
+    const averageOutstanding = studentsWithOutstanding > 0 ? totalOutstanding / studentsWithOutstanding : 0;
+    
+    // Calculate collection rate (Revenue / (Revenue + Outstanding) * 100)
+    const totalExpected = totalRevenue + totalOutstanding;
+    const collectionRate = totalExpected > 0 ? (totalRevenue / totalExpected * 100) : 0;
+    
+    // Update the DOM
+    document.getElementById('totalRevenue').textContent = `K${totalRevenue.toLocaleString()}`;
+    document.getElementById('totalOutstanding').textContent = `K${totalOutstanding.toLocaleString()}`;
+    document.getElementById('studentsWithOutstanding').textContent = studentsWithOutstanding.toLocaleString();
+    document.getElementById('averageOutstanding').textContent = `K${averageOutstanding.toLocaleString()}`;
+    document.getElementById('collectionRate').textContent = `${collectionRate.toFixed(1)}%`;
+    
+    // Update outstanding section header
+    document.getElementById('outstandingTotalAmount').textContent = `K${totalOutstanding.toLocaleString()}`;
+    
+    console.log('Updated summary cards:', {
+        totalRevenue,
+        totalOutstanding,
+        studentsWithOutstanding,
+        averageOutstanding,
+        collectionRate
+    });
+}
+
+function loadTransactionsData() {
+    try {
+        const rawData = document.getElementById('transactionsData').textContent || '[]';
+        console.log('Raw transactions data:', rawData);
+        originalData.transactions = JSON.parse(rawData);
+        console.log('Parsed transactions:', originalData.transactions);
+        
+        // Populate dropdown filter options
+        populateDropdownFilters();
+        
+        // Apply initial filters (should show all if no filters set)
+        applyTransactionFilters();
+        displayTransactionsPage(currentPage.transactions);
+    } catch (error) {
+        console.error('Error loading transactions:', error);
+        document.getElementById('transactionsTable').innerHTML = 
+            '<tr><td colspan="6" class="py-8 text-center text-red-500">Error loading transaction data</td></tr>';
+    }
+}
+
+function loadOutstandingData() {
+    try {
+        const rawData = document.getElementById('outstandingData').textContent || '[]';
+        console.log('Raw outstanding data:', rawData);
+        originalData.outstanding = JSON.parse(rawData);
+        console.log('Parsed outstanding:', originalData.outstanding);
+        
+        // Apply initial filters (should show all if no filters set)
+        applyOutstandingFilters();
+        displayOutstandingPage(currentPage.outstanding);
+    } catch (error) {
+        console.error('Error loading outstanding data:', error);
+        document.getElementById('outstandingTable').innerHTML = 
+            '<tr><td colspan="7" class="py-8 text-center text-red-500">Error loading outstanding payments data</td></tr>';
+    }
+}
+
+function applyTransactionFilters() {
+    const fromDate = document.getElementById('fromDate').value.trim();
+    const toDate = document.getElementById('toDate').value.trim();
+    const studentNumber = document.getElementById('studentNumber').value.trim().toLowerCase();
+    const transactionRef = document.getElementById('transactionRef').value.trim().toLowerCase();
+    const paymentMethod = document.getElementById('paymentMethod').value.trim();
+    const programme = document.getElementById('programme').value.trim();
+    
+    console.log('Applying transaction filters:', { fromDate, toDate, studentNumber, transactionRef, paymentMethod, programme });
+    
+    filteredData.transactions = originalData.transactions.filter(transaction => {
+        let matches = true;
+        
+        // Date filter
+        if (fromDate || toDate) {
+            const transactionDate = new Date(transaction.PaymentDate);
+            if (fromDate && transactionDate < new Date(fromDate + 'T00:00:00')) {
+                matches = false;
+            }
+            if (toDate && transactionDate > new Date(toDate + 'T23:59:59')) {
+                matches = false;
+            }
+        }
+        
+        // Student number filter
+        if (studentNumber && studentNumber.length > 0) {
+            const studentIdStr = String(transaction.StudentId || '').toLowerCase();
+            if (!studentIdStr.includes(studentNumber)) {
+                matches = false;
+            }
+        }
+        
+        // Transaction reference filter
+        if (transactionRef && transactionRef.length > 0) {
+            const transactionRefStr = String(transaction.TransactionRef || '').toLowerCase();
+            if (!transactionRefStr.includes(transactionRef)) {
+                matches = false;
+            }
+        }
+        
+        // Payment method filter
+        if (paymentMethod && paymentMethod.length > 0) {
+            const transactionPaymentMethod = String(transaction.PaymentMethod || '').trim();
+            if (transactionPaymentMethod !== paymentMethod) {
+                matches = false;
+            }
+        }
+        
+        // Programme filter
+        if (programme && programme.length > 0) {
+            const transactionProgramme = String(transaction.Programme || '').trim();
+            if (transactionProgramme !== programme) {
+                matches = false;
+            }
+        }
+        
+        return matches;
+    });
+    
+    console.log('Filtered transactions:', filteredData.transactions.length);
+    
+    // Reset to first page after filtering
+    currentPage.transactions = 1;
+}
+
+function applyOutstandingFilters() {
+    const studentNumber = document.getElementById('studentNumber').value.trim().toLowerCase();
+    const programme = document.getElementById('programme').value.trim();
+    const school = document.getElementById('school').value.trim();
+    
+    console.log('Applying outstanding filters:', { studentNumber, programme, school });
+    
+    filteredData.outstanding = originalData.outstanding.filter(student => {
+        let matches = true;
+        
+        // Student number filter
+        if (studentNumber && studentNumber.length > 0) {
+            const studentIdStr = String(student.StudentId || '').toLowerCase();
+            if (!studentIdStr.includes(studentNumber)) {
+                matches = false;
+            }
+        }
+        
+        // Programme filter
+        if (programme && programme.length > 0) {
+            const studentProgramme = String(student.Programme || '').trim();
+            if (studentProgramme !== programme) {
+                matches = false;
+            }
+        }
+        
+        // School filter
+        if (school && school.length > 0) {
+            const studentSchool = String(student.School || '').trim();
+            if (studentSchool !== school) {
+                matches = false;
+            }
+        }
+        
+        return matches;
+    });
+    
+    console.log('Filtered outstanding:', filteredData.outstanding.length);
+    
+    // Reset to first page after filtering
+    currentPage.outstanding = 1;
+}
+
+function displayTransactionsPage(page) {
+    const tbody = document.getElementById('transactionsTable');
+    const startIndex = (page - 1) * pageSize;
+    const endIndex = Math.min(startIndex + pageSize, filteredData.transactions.length);
+    const pageData = filteredData.transactions.slice(startIndex, endIndex);
+    
+    console.log('Displaying transactions page:', page, 'Data:', pageData.length);
+    
+    tbody.innerHTML = '';
+    
+    if (pageData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-slate-500">No transactions found</td></tr>';
+        updateTransactionsPagination();
+        return;
+    }
+    
+    pageData.forEach((transaction, index) => {
+        const row = document.createElement('tr');
+        row.className = index % 2 === 0 ? 'bg-white' : 'bg-slate-50/50';
+        
+        row.innerHTML = `
+            <td class="py-4 px-6">
+                <div>
+                    <div class="font-semibold text-slate-900">${transaction.StudentName || 'Unknown'}</div>
+                    <div class="text-sm text-slate-500">${transaction.StudentId || 'N/A'}</div>
+                </div>
+            </td>
+            <td class="py-4 px-6">
+                <div class="text-sm text-slate-700">${transaction.Programme || 'Unknown'}</div>
+            </td>
+            <td class="py-4 px-6">
+                <span class="text-lg font-bold text-green-600">K${(transaction.Amount || 0).toLocaleString()}</span>
+            </td>
+            <td class="py-4 px-6">
+                <span class="inline-flex px-3 py-1 text-sm font-medium bg-blue-100 text-blue-800 rounded-full">
+                    ${transaction.PaymentMethod || 'Unknown'}
+                </span>
+            </td>
+            <td class="py-4 px-6">
+                <span class="text-sm text-slate-600 font-mono">${transaction.TransactionRef || 'N/A'}</span>
+            </td>
+            <td class="py-4 px-6">
+                <div class="text-sm text-slate-700">
+                    ${transaction.PaymentDate ? new Date(transaction.PaymentDate).toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'short', 
+                        day: 'numeric' 
+                    }) : 'N/A'}
+                </div>
+                <div class="text-xs text-slate-500">
+                    ${transaction.PaymentDate ? new Date(transaction.PaymentDate).toLocaleTimeString('en-US', { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                    }) : ''}
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+    
+    updateTransactionsPagination();
+}
+
+function displayOutstandingPage(page) {
+    const tbody = document.getElementById('outstandingTable');
+    const startIndex = (page - 1) * pageSize;
+    const endIndex = Math.min(startIndex + pageSize, filteredData.outstanding.length);
+    const pageData = filteredData.outstanding.slice(startIndex, endIndex);
+    
+    console.log('Displaying outstanding page:', page, 'Data:', pageData.length);
+    
+    tbody.innerHTML = '';
+    
+    if (pageData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="py-8 text-center text-slate-500">No outstanding payments found</td></tr>';
+        updateOutstandingPagination();
+        return;
+    }
+    
+    pageData.forEach((student, index) => {
+        const row = document.createElement('tr');
+        row.className = index % 2 === 0 ? 'bg-white' : 'bg-slate-50/50';
+        
+        row.innerHTML = `
+            <td class="py-4 px-6">
+                <input type="checkbox" class="student-checkbox rounded border-slate-300" value="${student.StudentId || ''}">
+            </td>
+            <td class="py-4 px-6">
+                <div>
+                    <div class="font-semibold text-slate-900">${student.StudentName || 'Unknown'}</div>
+                    <div class="text-sm text-slate-500">${student.StudentId || 'N/A'}</div>
+                </div>
+            </td>
+            <td class="py-4 px-6">
+                <div class="text-sm text-slate-700">${student.Programme || 'Unknown'}</div>
+            </td>
+            <td class="py-4 px-6">
+                <div class="text-sm text-slate-600">${student.School || 'Unknown'}</div>
+            </td>
+            <td class="py-4 px-6">
+                <span class="text-lg font-bold text-red-600">K${(student.OutstandingAmount || 0).toLocaleString()}</span>
+            </td>
+            <td class="py-4 px-6">
+                <div class="text-sm text-slate-600">
+                    ${student.LastPaymentDate ? 
+                        new Date(student.LastPaymentDate).toLocaleDateString('en-US', { 
+                            year: 'numeric', 
+                            month: 'short', 
+                            day: 'numeric' 
+                        }) : 
+                        'No payments'
+                    }
+                </div>
+            </td>
+            <td class="py-4 px-6">
+                <div class="flex items-center gap-2">
+                    <button onclick="sendReminder('${student.StudentId || ''}')" 
+                            class="text-blue-600 hover:text-blue-800 p-1 rounded transition-colors" 
+                            title="Send Reminder">
+                        <i class="material-icons text-sm">email</i>
+                    </button>
+                    <button onclick="viewDetails('${student.StudentId || ''}')" 
+                            class="text-slate-600 hover:text-slate-800 p-1 rounded transition-colors" 
+                            title="View Details">
+                        <i class="material-icons text-sm">visibility</i>
+                    </button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+    
+    updateOutstandingPagination();
+}
+
+function updateTransactionsPagination() {
+    const totalPages = Math.ceil(filteredData.transactions.length / pageSize);
+    const totalRecords = filteredData.transactions.length;
+    
+    console.log('Updating transactions pagination:', totalRecords, 'records', totalPages, 'pages');
+    
+    // Update total records display in header
+    const headerElement = document.getElementById('transactionsTotalCount');
+    if (headerElement) {
+        headerElement.textContent = totalRecords.toLocaleString();
+    }
+    
+    // Show/hide pagination based on number of pages
+    const paginationDiv = document.getElementById('transactionsPagination');
+    if (paginationDiv) {
+        if (totalPages > 1) {
+            paginationDiv.classList.remove('hidden');
+            updatePaginationControls('transactions', totalPages, totalRecords);
+        } else {
+            paginationDiv.classList.add('hidden');
+        }
+    }
+}
+
+function updateOutstandingPagination() {
+    const totalPages = Math.ceil(filteredData.outstanding.length / pageSize);
+    const totalRecords = filteredData.outstanding.length;
+    
+    console.log('Updating outstanding pagination:', totalRecords, 'records', totalPages, 'pages');
+    
+    // Show/hide pagination based on number of pages
+    const paginationDiv = document.getElementById('outstandingPagination');
+    if (paginationDiv) {
+        if (totalPages > 1) {
+            paginationDiv.classList.remove('hidden');
+            updatePaginationControls('outstanding', totalPages, totalRecords);
+        } else {
+            paginationDiv.classList.add('hidden');
+        }
+    }
+}
+
+function updatePaginationControls(section, totalPages, totalRecords) {
+    const current = currentPage[section];
+    const start = totalRecords === 0 ? 0 : (current - 1) * pageSize + 1;
+    const end = Math.min(current * pageSize, totalRecords);
+    
+    // Create pagination HTML dynamically
+    const totalPagesForSection = Math.ceil(filteredData[section].length / pageSize);
+    const paginationHtml = `
+        <div class="flex items-center justify-between bg-slate-50 p-4 rounded-b-2xl">
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2 text-sm text-slate-600">
+                    <span>Showing</span>
+                    <span class="font-semibold">${start}</span>
+                    <span>to</span>
+                    <span class="font-semibold">${end}</span>
+                    <span>of</span>
+                    <span class="font-semibold">${totalRecords.toLocaleString()}</span>
+                    <span>${section === 'transactions' ? 'payments' : 'students'}</span>
+                </div>
+                
+                <div class="flex items-center gap-2">
+                    <button onclick="jumpToPage('${section}')" 
+                            class="px-3 py-2 text-sm text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
+                            title="Jump to specific page">
+                        <i class="material-icons text-sm">skip_next</i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                ${current > 1 ? `
+                    <button onclick="changePage('${section}', 1)" 
+                            class="px-3 py-2 text-sm text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
+                            title="First page">
+                        <i class="material-icons text-sm">first_page</i>
+                    </button>
+                    <button onclick="changePage('${section}', ${current - 1})" 
+                            class="px-3 py-2 text-sm text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
+                            title="Previous page">
+                        <i class="material-icons text-sm">chevron_left</i>
+                    </button>
+                ` : ''}
+                
+                ${generatePageNumbers(section, current, totalPages)}
+                
+                ${current < totalPages ? `
+                    <button onclick="changePage('${section}', ${current + 1})" 
+                            class="px-3 py-2 text-sm text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
+                            title="Next page">
+                        <i class="material-icons text-sm">chevron_right</i>
+                    </button>
+                    <button onclick="changePage('${section}', ${totalPages})" 
+                            class="px-3 py-2 text-sm text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
+                            title="Last page">
+                        <i class="material-icons text-sm">last_page</i>
+                    </button>
+                ` : ''}
+                
+                <div class="ml-4 flex items-center gap-2 text-sm text-slate-600">
+                    <span>Page ${current} of ${totalPages}</span>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    const paginationDiv = document.getElementById(`${section}Pagination`);
+    if (paginationDiv) {
+        paginationDiv.innerHTML = paginationHtml;
+    }
+}
+
+function generatePageNumbers(section, current, totalPages) {
+    let pageNumbers = '';
+    const startPage = Math.max(1, current - 2);
+    const endPage = Math.min(totalPages, current + 2);
+    
+    for (let i = startPage; i <= endPage; i++) {
+        const colorClass = section === 'transactions' ? 'bg-blue-600' : 'bg-amber-600';
+        if (i === current) {
+            pageNumbers += `<span class="px-3 py-2 text-sm ${colorClass} text-white rounded-lg">${i}</span>`;
+        } else {
+            pageNumbers += `<button onclick="changePage('${section}', ${i})" 
+                                   class="px-3 py-2 text-sm text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors">
+                               ${i}
+                           </button>`;
+        }
+    }
+    
+    return pageNumbers;
+}
+
+function changePage(section, page) {
+    console.log('Changing page for', section, 'to', page);
+    currentPage[section] = page;
+    if (section === 'transactions') {
+        displayTransactionsPage(page);
+    } else {
+        displayOutstandingPage(page);
+    }
+}
+
+function changePageSize() {
+    const newPageSize = parseInt(document.getElementById('pageSize').value);
+    console.log('Changing page size to:', newPageSize);
+    
+    pageSize = newPageSize;
+    
+    // Reset to first page
+    currentPage.transactions = 1;
+    currentPage.outstanding = 1;
+    
+    // Refresh both displays
+    displayTransactionsPage(1);
+    displayOutstandingPage(1);
+}
+
+function jumpToPage(section) {
+    const input = prompt(`Enter page number (1 to ${Math.ceil(filteredData[section].length / pageSize)}):`);
+    if (input) {
+        const page = parseInt(input);
+        const maxPages = Math.ceil(filteredData[section].length / pageSize);
+        
+        if (page >= 1 && page <= maxPages) {
+            changePage(section, page);
+        } else {
+            showNotification('Invalid page number. Please enter a valid page number.', 'error');
+        }
+    }
+}
+
+function applyFilters() {
+    console.log('Apply filters clicked');
+    
+    // Apply filters and reset to first page
+    currentPage.transactions = 1;
+    currentPage.outstanding = 1;
+    
+    applyTransactionFilters();
+    applyOutstandingFilters();
+    
+    displayTransactionsPage(1);
+    displayOutstandingPage(1);
+    
+    // Update summary cards with filtered data
+    updateSummaryCards();
+    
+    console.log('Filters applied successfully');
+}
+
+function clearAllFilters() {
+    console.log('Clear all filters clicked');
+    
+    document.getElementById('fromDate').value = '';
+    document.getElementById('toDate').value = '';
+    document.getElementById('studentNumber').value = '';
+    document.getElementById('transactionRef').value = '';
+    document.getElementById('paymentMethod').value = '';
+    document.getElementById('programme').value = '';
+    document.getElementById('school').value = '';
+    
+    currentPage.transactions = 1;
+    currentPage.outstanding = 1;
+    
+    applyFilters();
+    
+    console.log('All filters cleared');
+}
+
+function toggleSelectAllOutstanding() {
+    const selectAll = document.getElementById('selectAllOutstanding');
+    const checkboxes = document.querySelectorAll('.student-checkbox');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAll.checked;
+    });
+}
+
+// Legacy functions for compatibility
+function loadTransactions(page) {
+    changePage('transactions', page);
+}
+
+function loadOutstanding(page) {
+    changePage('outstanding', page);
+}
+
+// Placeholder functions for missing functionality
+function sendReminder(studentId) {
+    alert('Send reminder functionality not implemented yet.');
+}
+
+function viewDetails(studentId) {
+    alert('View details functionality not implemented yet.');
+}
+
+// Excel Export Functions
+function exportTransactionsToExcel() {
+    try {
+        showLoading(true);
+        
+        // Prepare data for Excel
+        const dataToExport = filteredData.transactions.map(transaction => ({
+            'Student Name': transaction.StudentName || 'Unknown',
+            'Student ID': transaction.StudentId || 'N/A',
+            'Programme': transaction.Programme || 'Unknown',
+            'Amount (K)': transaction.Amount || 0,
+            'Payment Method': transaction.PaymentMethod || 'Unknown',
+            'Transaction Reference': transaction.TransactionRef || 'N/A',
+            'Payment Date': transaction.PaymentDate ? new Date(transaction.PaymentDate).toLocaleDateString('en-US') : 'N/A',
+            'Payment Time': transaction.PaymentDate ? new Date(transaction.PaymentDate).toLocaleTimeString('en-US') : 'N/A'
+        }));
+        
+        // Create workbook
+        const workbook = XLSX.utils.book_new();
+        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+        
+        // Set column widths
+        const columnWidths = [
+            { wch: 25 }, // Student Name
+            { wch: 15 }, // Student ID
+            { wch: 30 }, // Programme
+            { wch: 12 }, // Amount
+            { wch: 15 }, // Payment Method
+            { wch: 20 }, // Transaction Reference
+            { wch: 12 }, // Payment Date
+            { wch: 12 }  // Payment Time
+        ];
+        worksheet['!cols'] = columnWidths;
+        
+        // Add worksheet to workbook
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Student Payments');
+        
+        // Generate filename with timestamp
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
+        const filename = `Student_Payments_${timestamp}.xlsx`;
+        
+        // Save file
+        XLSX.writeFile(workbook, filename);
+        
+        showNotification('Excel file exported successfully!', 'success');
+        
+    } catch (error) {
+        console.error('Error exporting transactions to Excel:', error);
+        showNotification('Error exporting to Excel. Please try again.', 'error');
+    } finally {
+        showLoading(false);
+    }
+}
+
+function exportOutstandingToExcel() {
+    try {
+        showLoading(true);
+        
+        // Prepare data for Excel
+        const dataToExport = filteredData.outstanding.map(student => ({
+            'Student Name': student.StudentName || 'Unknown',
+            'Student ID': student.StudentId || 'N/A',
+            'Programme': student.Programme || 'Unknown',
+            'School': student.School || 'Unknown',
+            'Outstanding Amount (K)': student.OutstandingAmount || 0,
+            'Last Payment Date': student.LastPaymentDate ? new Date(student.LastPaymentDate).toLocaleDateString('en-US') : 'No payments'
+        }));
+        
+        // Create workbook
+        const workbook = XLSX.utils.book_new();
+        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+        
+        // Set column widths
+        const columnWidths = [
+            { wch: 25 }, // Student Name
+            { wch: 15 }, // Student ID
+            { wch: 30 }, // Programme
+            { wch: 20 }, // School
+            { wch: 18 }, // Outstanding Amount
+            { wch: 15 }  // Last Payment Date
+        ];
+        worksheet['!cols'] = columnWidths;
+        
+        // Add worksheet to workbook
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Outstanding Payments');
+        
+        // Generate filename with timestamp
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
+        const filename = `Outstanding_Payments_${timestamp}.xlsx`;
+        
+        // Save file
+        XLSX.writeFile(workbook, filename);
+        
+        showNotification('Excel file exported successfully!', 'success');
+        
+    } catch (error) {
+        console.error('Error exporting outstanding to Excel:', error);
+        showNotification('Error exporting to Excel. Please try again.', 'error');
+    } finally {
+        showLoading(false);
+    }
+}
+
+// Utility Functions
+function showLoading(show) {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) {
+        if (show) {
+            overlay.classList.remove('hidden');
+        } else {
+            overlay.classList.add('hidden');
+        }
+    }
+}
+
+function showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full`;
+    
+    // Set colors based on type
+    if (type === 'success') {
+        notification.className += ' bg-green-600 text-white';
+    } else if (type === 'error') {
+        notification.className += ' bg-red-600 text-white';
+    } else {
+        notification.className += ' bg-blue-600 text-white';
+    }
+    
+    notification.innerHTML = `
+        <div class="flex items-center gap-3">
+            <i class="material-icons">${type === 'success' ? 'check_circle' : type === 'error' ? 'error' : 'info'}</i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Animate in
+    setTimeout(() => {
+        notification.classList.remove('translate-x-full');
+    }, 100);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.classList.add('translate-x-full');
+        setTimeout(() => {
+            document.body.removeChild(notification);
+        }, 300);
+    }, 3000);
+}
+</script>

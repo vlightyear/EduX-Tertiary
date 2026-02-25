@@ -1,0 +1,1074 @@
+﻿@model SIS.Models.ViewModels.StudentListsViewModel
+@{
+    ViewData["Title"] = "Student Lists";
+}
+
+<div class="min-h-screen bg-slate-50 p-6">
+    @Html.AntiForgeryToken()
+
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+        <div class="flex items-center text-slate-800">
+            <i class="material-icons text-3xl mr-3 text-primary-600">list_alt</i>
+            <div>
+                <h1 class="text-2xl font-bold">Student Lists</h1>
+                <p class="text-sm text-slate-600">@Model.JurisdictionInfo</p>
+            </div>
+        </div>
+        <div class="mt-4 md:mt-0 flex items-center space-x-4">
+            <div class="flex items-center bg-white rounded-lg px-4 py-2 shadow-sm border border-slate-200">
+                <i class="material-icons text-primary-600 mr-2">admin_panel_settings</i>
+                <span class="text-sm font-medium text-slate-700">Role: @Model.UserRole</span>
+            </div>
+            <a href="@Url.Action("Index", "StudentLookup")"
+               class="inline-flex items-center px-4 py-2 bg-slate-600 text-white text-sm font-medium rounded-lg hover:bg-slate-700 transition-colors">
+                <i class="material-icons mr-2 text-sm">search</i>
+                Student Lookup
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="bg-white rounded-xl shadow-sm mb-6 border border-slate-200">
+        <div class="p-4 border-b border-slate-200">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <i class="material-icons text-primary-600 mr-2">filter_list</i>
+                    <h2 class="text-lg font-semibold text-slate-800">Filters</h2>
+                </div>
+                <button type="button" id="toggleFilters" class="text-sm text-primary-600 hover:text-primary-700">
+                    <i class="material-icons text-sm">expand_more</i>
+                    <span>Show Filters</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="filtersContent" class="hidden p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                <!-- School Filter -->
+                <div>
+                    <label for="schoolFilter" class="block text-sm font-medium text-slate-700 mb-2">School</label>
+                    <select id="schoolFilter" class="block w-full py-2 px-3 text-sm border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                        <option value="">All Schools</option>
+                        @foreach (var school in Model.Schools)
+                        {
+                            <option value="@school.Id">@school.Name</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Programme Filter -->
+                <div>
+                    <label for="programmeFilter" class="block text-sm font-medium text-slate-700 mb-2">Programme</label>
+                    <select id="programmeFilter" class="block w-full py-2 px-3 text-sm border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                        <option value="">All Programmes</option>
+                        @foreach (var programme in Model.Programmes)
+                        {
+                            <option value="@programme.Id">@programme.Name</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Mode of Study Filter -->
+                <div>
+                    <label for="modeOfStudyFilter" class="block text-sm font-medium text-slate-700 mb-2">Mode of Study</label>
+                    <select id="modeOfStudyFilter" class="block w-full py-2 px-3 text-sm border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                        <option value="">All Modes</option>
+                        @foreach (var mode in Model.ModesOfStudy)
+                        {
+                            <option value="@mode.Id">@mode.Name</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Programme Level Filter -->
+                <div>
+                    <label for="programmeLevelFilter" class="block text-sm font-medium text-slate-700 mb-2">Programme Level</label>
+                    <select id="programmeLevelFilter" class="block w-full py-2 px-3 text-sm border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                        <option value="">All Levels</option>
+                        @foreach (var level in Model.ProgrammeLevels)
+                        {
+                            <option value="@level.Id">@level.Name</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Academic Year Filter -->
+                <div>
+                    <label for="academicYearFilter" class="block text-sm font-medium text-slate-700 mb-2">Academic Year</label>
+                    <select id="academicYearFilter" class="block w-full py-2 px-3 text-sm border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                        <option value="">All Years</option>
+                        @foreach (var year in Model.AcademicYears)
+                        {
+                            <option value="@year.Id">@year.Name</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Current Year Filter -->
+                <div>
+                    <label for="currentYearFilter" class="block text-sm font-medium text-slate-700 mb-2">Year of Study</label>
+                    <select id="currentYearFilter" class="block w-full py-2 px-3 text-sm border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                        <option value="">All Years</option>
+                        @foreach (var year in Model.YearOptions)
+                        {
+                            <option value="@year">Year @year</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Current Semester Filter -->
+                <div>
+                    <label for="currentSemesterFilter" class="block text-sm font-medium text-slate-700 mb-2">Semester</label>
+                    <select id="currentSemesterFilter" class="block w-full py-2 px-3 text-sm border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                        <option value="">All Semesters</option>
+                        @foreach (var semester in Model.SemesterOptions)
+                        {
+                            <option value="@semester">Semester @semester</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Registration Status Filter -->
+                <div>
+                    <label for="registrationStatusFilter" class="block text-sm font-medium text-slate-700 mb-2">Registration Status</label>
+                    <select id="registrationStatusFilter" class="block w-full py-2 px-3 text-sm border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                        <option value="">All Statuses</option>
+                        @foreach (var status in Model.RegistrationStatuses)
+                        {
+                            <option value="@status.Id">@status.Name</option>
+                        }
+                    </select>
+                </div>
+            </div>
+
+            <!-- Additional Filters Row -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <!-- Registration Filter -->
+                <div>
+                    <label for="isRegisteredFilter" class="block text-sm font-medium text-slate-700 mb-2">Registration</label>
+                    <select id="isRegisteredFilter" class="block w-full py-2 px-3 text-sm border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                        <option value="">All Students</option>
+                        <option value="true">Registered Only</option>
+                        <option value="false">Unregistered Only</option>
+                    </select>
+                </div>
+
+                <!-- Outstanding Fees Filter -->
+                <div>
+                    <label for="outstandingFeesFilter" class="block text-sm font-medium text-slate-700 mb-2">Fee Status</label>
+                    <select id="outstandingFeesFilter" class="block w-full py-2 px-3 text-sm border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                        <option value="">All Students</option>
+                        <option value="false">Fees Cleared</option>
+                        <option value="true">Outstanding Fees</option>
+                    </select>
+                </div>
+
+                <!-- Page Size -->
+                <div>
+                    <label for="pageSizeFilter" class="block text-sm font-medium text-slate-700 mb-2">Results Per Page</label>
+                    <select id="pageSizeFilter" class="block w-full py-2 px-3 text-sm border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                        <option value="25">25</option>
+                        <option value="50" selected>50</option>
+                        <option value="100">100</option>
+                        <option value="200">200</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Filter Actions -->
+            <div class="flex items-center space-x-4">
+                <button type="button" id="applyFilters" class="inline-flex items-center px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors">
+                    <i class="material-icons mr-2 text-sm">filter_alt</i>
+                    Apply Filters
+                </button>
+                <button type="button" id="clearFilters" class="inline-flex items-center px-4 py-2 bg-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-300 transition-colors">
+                    <i class="material-icons mr-2 text-sm">clear</i>
+                    Clear Filters
+                </button>
+                <span id="filterSummary" class="text-sm text-slate-600"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Section -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200">
+        <!-- Results Header -->
+        <div class="p-4 border-b border-slate-200">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <i class="material-icons text-primary-600 mr-2">people</i>
+                    <h3 class="text-lg font-semibold text-slate-800">Student Results</h3>
+                    <span id="resultsCount" class="ml-3 text-sm text-slate-600 bg-slate-100 px-3 py-1 rounded-full">0 students</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <!-- Export Buttons -->
+                    <div class="flex items-center space-x-1" id="exportButtons" style="display: none;">
+                        <button id="exportPdfBtn" class="inline-flex items-center px-3 py-1 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 focus:ring-4 focus:ring-red-300 transition-colors hidden">
+                            <i class="material-icons text-sm mr-1">picture_as_pdf</i>
+                            PDF
+                        </button>
+                        <button id="exportExcelBtn" class="inline-flex items-center px-3 py-1 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 focus:ring-4 focus:ring-green-300 transition-colors">
+                            <i class="material-icons text-sm mr-1">table_chart</i>
+                            Excel Export
+                        </button>
+                    </div>
+
+                    <!-- Existing Sort Options -->
+                    <select id="sortBy" class="text-sm border border-slate-300 rounded-lg px-3 py-1 focus:ring-primary-500 focus:border-primary-500">
+                        <option value="FullName">Sort by Name</option>
+                        <option value="StudentNumber">Sort by Student Number</option>
+                        <option value="Programme">Sort by Programme</option>
+                        <option value="School">Sort by School</option>
+                        <option value="RegistrationStatus">Sort by Status</option>
+                        <option value="OutstandingFees">Sort by Fees</option>
+                        <option value="RegistrationDate">Sort by Registration Date</option>
+                    </select>
+                    <button id="sortDirection" class="p-1 text-slate-600 hover:text-slate-800 transition-colors" title="Toggle sort direction">
+                        <i class="material-icons text-sm">arrow_upward</i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="hidden p-8 text-center">
+            <div class="inline-flex items-center">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+                <span class="ml-3 text-slate-600">Loading students...</span>
+            </div>
+        </div>
+
+        <!-- No Results State -->
+        <div id="noResultsState" class="hidden p-12 text-center">
+            <i class="material-icons text-6xl text-slate-300 mb-4">search_off</i>
+            <p class="text-slate-500 text-lg font-medium mb-2">No Students Found</p>
+            <p class="text-slate-400 text-sm">Try adjusting your filters to see more results</p>
+        </div>
+
+        <!-- Results Table -->
+        <div id="resultsTable" class="hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-slate-50 border-b border-slate-200">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Student</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Programme</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">School</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Year/Sem</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Fees</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Nationality</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Permit</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentsTableBody" class="bg-white divide-y divide-slate-200">
+                        <!-- Student rows will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        <div id="paginationContainer" class="hidden p-4 border-t border-slate-200">
+            <div class="flex items-center justify-between">
+                <div class="text-sm text-slate-600">
+                    Showing <span id="showingFrom">0</span> to <span id="showingTo">0</span> of <span id="totalResults">0</span> results
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button id="prevPage" class="px-3 py-1 text-sm border border-slate-300 rounded-lg text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                        Previous
+                    </button>
+                    <div id="pageNumbers" class="flex items-center space-x-1">
+                        <!-- Page numbers will be inserted here -->
+                    </div>
+                    <button id="nextPage" class="px-3 py-1 text-sm border border-slate-300 rounded-lg text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                        Next
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success/Error Toast Notification -->
+<div id="toastNotification" class="hidden fixed bottom-4 right-4 p-4 rounded-lg shadow-lg max-w-sm z-50">
+    <div class="flex items-center">
+        <i id="toastIcon" class="material-icons mr-2"></i>
+        <p id="toastMessage"></p>
+    </div>
+</div>
+
+<!-- Export Modal -->
+<div id="exportModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden">
+        <!-- Modal Header -->
+        <div class="px-6 py-4 border-b border-slate-200">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-slate-800">Export Student List</h3>
+                <button id="closeExportModal" class="text-slate-400 hover:text-slate-600 transition-colors">
+                    <i class="material-icons">close</i>
+                </button>
+            </div>
+            <!-- Format Selection -->
+            <div class="mt-3 flex items-center space-x-4">
+                <span class="text-sm font-medium text-slate-600">Export Format:</span>
+                <div class="flex items-center space-x-3">
+                    <label class="flex items-center">
+                        <input type="radio" name="exportFormat" value="pdf" class="mr-2 text-red-600 focus:ring-red-500" checked>
+                        <i class="material-icons text-sm text-red-600 mr-1">picture_as_pdf</i>
+                        <span class="text-sm">PDF</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" name="exportFormat" value="excel" class="mr-2 text-green-600 focus:ring-green-500">
+                        <i class="material-icons text-sm text-green-600 mr-1">table_chart</i>
+                        <span class="text-sm">Excel</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="px-6 py-4 max-h-[60vh] overflow-y-auto">
+            <!-- Export Title -->
+            <div class="mb-6">
+                <label for="exportTitle" class="block text-sm font-medium text-slate-700 mb-2">Report Title</label>
+                <input type="text" id="exportTitle"
+                       class="block w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500"
+                       value="Student List Report" placeholder="Enter report title">
+            </div>
+
+            <!-- Column Selection -->
+            <div class="mb-6">
+                <div class="flex items-center justify-between mb-3">
+                    <h4 class="text-sm font-medium text-slate-700">Select Columns to Include</h4>
+                    <div class="flex space-x-2">
+                        <button id="selectAllColumns" class="text-xs text-primary-600 hover:text-primary-700">Select All</button>
+                        <span class="text-slate-300">|</span>
+                        <button id="clearAllColumns" class="text-xs text-slate-600 hover:text-slate-700">Clear All</button>
+                    </div>
+                </div>
+
+                <div id="columnOptions" class="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto p-3 border border-slate-200 rounded-lg bg-slate-50">
+                    <!-- Column checkboxes will be populated here -->
+                </div>
+            </div>
+
+            <!-- Export Summary -->
+            <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div class="flex items-center mb-2">
+                    <i class="material-icons text-blue-600 mr-2 text-sm">info</i>
+                    <span class="text-sm font-medium text-blue-800">Export Summary</span>
+                </div>
+                <div class="text-sm text-blue-700">
+                    <div>Total Records: <span id="exportRecordCount">0</span></div>
+                    <div>Selected Columns: <span id="exportColumnCount">0</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="px-6 py-4 border-t border-slate-200 flex items-center justify-end space-x-3">
+            <button id="cancelExport" class="px-4 py-2 text-slate-700 bg-slate-200 rounded-lg hover:bg-slate-300 focus:ring-4 focus:ring-slate-300 transition-colors">
+                Cancel
+            </button>
+            <button id="confirmExport" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:ring-4 focus:ring-green-300 transition-colors">
+                <i class="material-icons text-sm mr-1">download</i>
+                Export PDF
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const toggleFiltersBtn = document.getElementById('toggleFilters');
+            const filtersContent = document.getElementById('filtersContent');
+            const applyFiltersBtn = document.getElementById('applyFilters');
+            const clearFiltersBtn = document.getElementById('clearFilters');
+            const loadingState = document.getElementById('loadingState');
+            const noResultsState = document.getElementById('noResultsState');
+            const resultsTable = document.getElementById('resultsTable');
+            const paginationContainer = document.getElementById('paginationContainer');
+            const studentsTableBody = document.getElementById('studentsTableBody');
+            const resultsCount = document.getElementById('resultsCount');
+            const filterSummary = document.getElementById('filterSummary');
+            const sortBy = document.getElementById('sortBy');
+            const sortDirection = document.getElementById('sortDirection');
+
+            let currentPage = 1;
+            let currentSortBy = 'FullName';
+            let currentSortDirection = 'asc';
+            let currentFilters = {};
+            let columnOptions = [];
+            let currentStudentCount = 0;
+            let currentExportFormat = 'pdf';
+
+            // Initialize
+            loadStudents();
+
+            // Export event listeners
+            document.getElementById('exportPdfBtn').addEventListener('click', () => showExportModal('pdf'));
+            document.getElementById('exportExcelBtn').addEventListener('click', () => showExportModal('excel'));
+            document.getElementById('closeExportModal').addEventListener('click', hideExportModal);
+            document.getElementById('cancelExport').addEventListener('click', hideExportModal);
+            document.getElementById('confirmExport').addEventListener('click', handleExportConfirm);
+            document.getElementById('selectAllColumns').addEventListener('click', selectAllColumns);
+            document.getElementById('clearAllColumns').addEventListener('click', clearAllColumns);
+
+            // Close modal when clicking outside
+            document.getElementById('exportModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    hideExportModal();
+                }
+            });
+
+            // Format change listener
+            document.addEventListener('change', function(e) {
+                if (e.target.name === 'exportFormat') {
+                    updateConfirmButton();
+                }
+            });
+
+            // Toggle filters visibility
+            toggleFiltersBtn.addEventListener('click', function() {
+                const isHidden = filtersContent.classList.contains('hidden');
+                if (isHidden) {
+                    filtersContent.classList.remove('hidden');
+                    toggleFiltersBtn.innerHTML = '<i class="material-icons text-sm">expand_less</i><span>Hide Filters</span>';
+                } else {
+                    filtersContent.classList.add('hidden');
+                    toggleFiltersBtn.innerHTML = '<i class="material-icons text-sm">expand_more</i><span>Show Filters</span>';
+                }
+            });
+
+            // Apply filters
+            applyFiltersBtn.addEventListener('click', function() {
+                currentPage = 1;
+                collectFilters();
+                loadStudents();
+            });
+
+            // Clear filters
+            clearFiltersBtn.addEventListener('click', function() {
+                clearAllFilters();
+                currentPage = 1;
+                currentFilters = {};
+                loadStudents();
+            });
+
+            // Sort handlers
+            sortBy.addEventListener('change', function() {
+                currentSortBy = this.value;
+                currentPage = 1;
+                loadStudents();
+            });
+
+            sortDirection.addEventListener('click', function() {
+                currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+                const icon = this.querySelector('i');
+                icon.textContent = currentSortDirection === 'asc' ? 'arrow_upward' : 'arrow_downward';
+                currentPage = 1;
+                loadStudents();
+            });
+
+            // Cascading filters
+            document.getElementById('schoolFilter').addEventListener('change', function() {
+                const schoolId = this.value;
+                updateCascadingFilters(schoolId, null);
+            });
+
+            document.getElementById('programmeFilter').addEventListener('change', function() {
+                const programmeId = this.value;
+                const schoolId = document.getElementById('schoolFilter').value;
+                updateCascadingFilters(schoolId, programmeId);
+            });
+
+            function collectFilters() {
+                currentFilters = {
+                    schoolId: getSelectValue('schoolFilter'),
+                    programmeId: getSelectValue('programmeFilter'),
+                    modeOfStudyId: getSelectValue('modeOfStudyFilter'),
+                    programmeLevelId: getSelectValue('programmeLevelFilter'),
+                    academicYearId: getSelectValue('academicYearFilter'),
+                    currentYear: getSelectValue('currentYearFilter'),
+                    currentSemester: getSelectValue('currentSemesterFilter'),
+                    registrationStatus: getSelectValue('registrationStatusFilter'),
+                    isRegistered: getBooleanSelectValue('isRegisteredFilter'),
+                    hasOutstandingFees: getBooleanSelectValue('outstandingFeesFilter'),
+                    page: currentPage,
+                    pageSize: parseInt(document.getElementById('pageSizeFilter').value) || 50,
+                    sortBy: currentSortBy,
+                    sortDirection: currentSortDirection
+                };
+                console.log("Current Filters: ", currentFilters);
+
+                updateFilterSummary();
+            }
+
+            function getSelectValue(id) {
+                const value = document.getElementById(id).value;
+                return value ? parseInt(value) : null;
+            }
+
+            function getBooleanSelectValue(id) {
+                const value = document.getElementById(id).value;
+                return value === '' ? null : value === 'true';
+            }
+
+            function updateFilterSummary() {
+                const activeFilters = [];
+                const filterLabels = {
+                    schoolId: 'School',
+                    programmeId: 'Programme',
+                    modeOfStudyId: 'Mode of Study',
+                    programmeLevelId: 'Programme Level',
+                    academicYearId: 'Academic Year',
+                    currentYear: 'Year of Study',
+                    currentSemester: 'Semester',
+                    registrationStatus: 'Registration Status',
+                    isRegistered: 'Registration',
+                    hasOutstandingFees: 'Fee Status'
+                };
+
+                Object.keys(currentFilters).forEach(key => {
+                    if (currentFilters[key] !== null && currentFilters[key] !== undefined &&
+                        key !== 'page' && key !== 'pageSize' && key !== 'sortBy' && key !== 'sortDirection') {
+                        activeFilters.push(filterLabels[key] || key);
+                    }
+                });
+
+                if (activeFilters.length > 0) {
+                    filterSummary.textContent = `Active filters: ${activeFilters.join(', ')}`;
+                } else {
+                    filterSummary.textContent = 'No filters applied';
+                }
+            }
+
+            function clearAllFilters() {
+                const selects = filtersContent.querySelectorAll('select');
+                selects.forEach(select => {
+                    select.value = '';
+                });
+                document.getElementById('pageSizeFilter').value = '50';
+                filterSummary.textContent = 'No filters applied';
+            }
+
+            function updateCascadingFilters(schoolId, programmeId) {
+                if (!schoolId && !programmeId) return;
+
+                fetch(`/StudentLookup/GetCascadingFilterOptions?schoolId=${schoolId || ''}&programmeId=${programmeId || ''}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            if (schoolId && data.data.programmes) {
+                                updateSelectOptions('programmeFilter', data.data.programmes, 'All Programmes');
+                            }
+                            if (programmeId && data.data.modesOfStudy) {
+                                updateSelectOptions('modeOfStudyFilter', data.data.modesOfStudy, 'All Modes');
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error updating cascading filters:', error);
+                    });
+            }
+
+            function updateSelectOptions(selectId, options, defaultText) {
+                const select = document.getElementById(selectId);
+                const currentValue = select.value;
+
+                select.innerHTML = `<option value="">${defaultText}</option>`;
+                options.forEach(option => {
+                    const optionElement = new Option(option.name, option.id);
+                    if (option.id.toString() === currentValue) {
+                        optionElement.selected = true;
+                    }
+                    select.add(optionElement);
+                });
+            }
+
+            function loadStudents() {
+                collectFilters();
+
+                // Show loading state
+                showLoadingState();
+
+                fetch('/StudentLookup/GetFilteredStudents', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    },
+                    body: JSON.stringify(currentFilters)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    hideLoadingState();
+
+                    if (data.success) {
+                        displayResults(data.data);
+                    } else {
+                        showToast(data.message || 'Error loading students', 'error');
+                        showNoResults();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading students:', error);
+                    hideLoadingState();
+                    showToast('An error occurred while loading students', 'error');
+                    showNoResults();
+                });
+            }
+
+            function displayResults(data) {
+                if (data.students.length === 0) {
+                    showNoResults();
+                    document.getElementById('exportButtons').style.display = 'none';
+                    return;
+                }
+
+                // Update results count
+                resultsCount.textContent = `${data.totalCount} student${data.totalCount !== 1 ? 's' : ''}`;
+
+                // Clear and populate table
+                studentsTableBody.innerHTML = '';
+                data.students.forEach(student => {
+                    const row = createStudentRow(student);
+                    studentsTableBody.appendChild(row);
+                });
+
+                // Update pagination
+                updatePagination(data);
+
+                // Show results and export buttons
+                resultsTable.classList.remove('hidden');
+                paginationContainer.classList.remove('hidden');
+                noResultsState.classList.add('hidden');
+                document.getElementById('exportButtons').style.display = 'flex';
+            }
+
+            function createStudentRow(student) {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-slate-50 transition-colors';
+
+                const statusColor = getStatusColor(student.registrationStatus);
+                const feeStatus = student.outstandingFees > 0 ? 'Outstanding' : 'Cleared';
+                const feeStatusColor = student.outstandingFees > 0 ? 'text-red-600 bg-red-50' : 'text-green-600 bg-green-50';
+                            const today = new Date();
+                today.setHours(0, 0, 0, 0); // normalize to start of day
+
+                let permitStatus = '';
+                let permitStatusColor = '';
+
+                const nationality = student.nationality?.toLowerCase()?.trim() || '';
+
+                if (nationality === 'zambian' || nationality === 'zambia') {
+                    // Non-foreigner or Zambian student
+                    permitStatus = 'N/A';
+                    permitStatusColor = 'text-green-600 bg-green-50';
+                } else if (!student.studyPermit) {
+                    // Foreigner without a permit
+                    permitStatus = 'Absent';
+                    permitStatusColor = 'text-red-600 bg-red-50';
+                } else {
+                    // Foreigner with a permit
+                    const expiryDate = new Date(student.studyPermit.expiryDate);
+                    if (expiryDate >= today) {
+                        permitStatus = 'Valid';
+                        permitStatusColor = 'text-green-600 bg-green-50';
+                    } else {
+                        permitStatus = 'Expired';
+                        permitStatusColor = 'text-red-600 bg-red-50';
+                    }
+                }
+
+                row.innerHTML = `
+                    <td class="px-4 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 h-10 w-10">
+                                <div class="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
+                                    <i class="material-icons text-primary-600 text-sm">person</i>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-medium text-slate-900">${student.fullName}</div>
+                                <div class="text-sm text-slate-500">${student.studentNumber}</div>
+                                <div class="text-xs text-slate-400">${student.email}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-4 py-4 whitespace-nowrap">
+                        <div class="text-sm text-slate-900">${student.programmeName}</div>
+                        <div class="text-xs text-slate-500">${student.programmeLevelName} • ${student.modeOfStudyName}</div>
+                    </td>
+                    <td class="px-4 py-4 whitespace-nowrap">
+                        <div class="text-sm text-slate-900">${student.schoolName}</div>
+                        <div class="text-xs text-slate-500">${student.departmentName}</div>
+                    </td>
+                    <td class="px-4 py-4 whitespace-nowrap">
+                        <div class="text-sm text-slate-900">Year ${student.currentYear}</div>
+                        <div class="text-xs text-slate-500">Semester ${student.currentSemester}</div>
+                        <div class="text-xs text-slate-400">${student.academicYear}</div>
+                    </td>
+                    <td class="px-4 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor}">
+                            ${student.registrationStatus}
+                        </span>
+                        <div class="text-xs text-slate-500 mt-1">
+                            ${student.registrationDate ? new Date(student.registrationDate).toLocaleDateString() : 'Not registered'}
+                        </div>
+                    </td>
+                    <td class="px-4 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${feeStatusColor}">
+                            ${feeStatus}
+                        </span>
+                        <div class="text-xs text-slate-500 mt-1">
+                            K${student.outstandingFees.toLocaleString()}
+                        </div>
+                    </td>
+                    <td class="px-4 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${permitStatusColor}">
+                            ${student.nationality}
+                        </span>
+                    </td>
+                    <td class="px-4 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${permitStatusColor}">
+                            ${permitStatus}
+                        </span>
+                        ${
+                            student.studyPermit
+                                ? `<div class="text-xs text-slate-500 mt-1">
+                                       ${new Date(student.studyPermit.expiryDate).toLocaleDateString()}
+                                   </div>`
+                                : ''
+                        }
+                    </td>
+                    <td class="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <a href="/StudentLookup/Index?studentNumber=${student.studentNumber}"
+                           class="text-primary-600 hover:text-primary-900 transition-colors"
+                           title="View Details">
+                            <i class="material-icons text-sm">visibility</i>
+                        </a>
+                    </td>
+                `;
+
+                return row;
+            }
+
+            function updatePagination(data) {
+                // Update showing text
+                const showingFrom = (data.page - 1) * data.pageSize + 1;
+                const showingTo = Math.min(data.page * data.pageSize, data.totalCount);
+
+                document.getElementById('showingFrom').textContent = showingFrom;
+                document.getElementById('showingTo').textContent = showingTo;
+                document.getElementById('totalResults').textContent = data.totalCount;
+
+                // Update pagination buttons
+                const prevBtn = document.getElementById('prevPage');
+                const nextBtn = document.getElementById('nextPage');
+
+                prevBtn.disabled = !data.hasPrevious;
+                nextBtn.disabled = !data.hasNext;
+
+                // Generate page numbers
+                const pageNumbers = document.getElementById('pageNumbers');
+                pageNumbers.innerHTML = '';
+
+                const maxVisiblePages = 5;
+                let startPage = Math.max(1, data.page - Math.floor(maxVisiblePages / 2));
+                let endPage = Math.min(data.totalPages, startPage + maxVisiblePages - 1);
+
+                if (endPage - startPage + 1 < maxVisiblePages) {
+                    startPage = Math.max(1, endPage - maxVisiblePages + 1);
+                }
+
+                for (let i = startPage; i <= endPage; i++) {
+                    const pageBtn = document.createElement('button');
+                    pageBtn.textContent = i;
+                    pageBtn.className = `px-3 py-1 text-sm border rounded-lg ${i === data.page
+                        ? 'bg-primary-600 text-white border-primary-600'
+                        : 'border-slate-300 text-slate-600 hover:bg-slate-50'}`;
+
+                    pageBtn.addEventListener('click', () => {
+                        currentPage = i;
+                        loadStudents();
+                    });
+
+                    pageNumbers.appendChild(pageBtn);
+                }
+
+                // Pagination button handlers
+                prevBtn.onclick = () => {
+                    if (data.hasPrevious) {
+                        currentPage = data.page - 1;
+                        loadStudents();
+                    }
+                };
+
+                nextBtn.onclick = () => {
+                    if (data.hasNext) {
+                        currentPage = data.page + 1;
+                        loadStudents();
+                    }
+                };
+            }
+
+            function showLoadingState() {
+                loadingState.classList.remove('hidden');
+                resultsTable.classList.add('hidden');
+                noResultsState.classList.add('hidden');
+                paginationContainer.classList.add('hidden');
+            }
+
+            function hideLoadingState() {
+                loadingState.classList.add('hidden');
+            }
+
+            function showNoResults() {
+                noResultsState.classList.remove('hidden');
+                resultsTable.classList.add('hidden');
+                paginationContainer.classList.add('hidden');
+                resultsCount.textContent = '0 students';
+                document.getElementById('exportButtons').style.display = 'none';
+            }
+
+            function getStatusColor(status) {
+                const statusColors = {
+                    'Registered': 'text-green-600 bg-green-50',
+                    'Unregistered': 'text-amber-600 bg-amber-50',
+                    'Pending': 'text-blue-600 bg-blue-50',
+                    'Suspended': 'text-red-600 bg-red-50',
+                    'Excluded': 'text-red-600 bg-red-50',
+                    'Withdrawn': 'text-slate-600 bg-slate-50'
+                };
+                return statusColors[status] || 'text-slate-600 bg-slate-50';
+            }
+
+            function showToast(message, type = 'info') {
+                const toast = document.getElementById('toastNotification');
+                const toastMessage = document.getElementById('toastMessage');
+                const toastIcon = document.getElementById('toastIcon');
+
+                toastMessage.textContent = message;
+
+                const types = {
+                    'success': { class: 'bg-green-100 text-green-800', icon: 'check_circle' },
+                    'error': { class: 'bg-red-100 text-red-800', icon: 'error' },
+                    'warning': { class: 'bg-amber-100 text-amber-800', icon: 'warning' },
+                    'info': { class: 'bg-blue-100 text-blue-800', icon: 'info' }
+                };
+
+                const typeConfig = types[type] || types.info;
+                toast.className = `fixed bottom-4 right-4 p-4 rounded-lg shadow-lg max-w-sm z-50 ${typeConfig.class}`;
+                toastIcon.textContent = typeConfig.icon;
+
+                toast.classList.remove('hidden');
+                setTimeout(() => {
+                    toast.classList.add('hidden');
+                }, 5000);
+            }
+
+            // Export Modal Functions
+            function showExportModal(format = 'pdf') {
+                currentStudentCount = parseInt(document.getElementById('totalResults').textContent) || 0;
+
+                if (currentStudentCount === 0) {
+                    showToast('No students to export. Please apply filters first.', 'warning');
+                    return;
+                }
+
+                currentExportFormat = format;
+
+                // Set the radio button
+                document.querySelector(`input[name="exportFormat"][value="${format}"]`).checked = true;
+
+                // Update confirm button
+                updateConfirmButton();
+
+                loadColumnOptions();
+                document.getElementById('exportRecordCount').textContent = currentStudentCount;
+                document.getElementById('exportModal').classList.remove('hidden');
+            }
+
+            function hideExportModal() {
+                document.getElementById('exportModal').classList.add('hidden');
+            }
+
+            function updateConfirmButton() {
+                const confirmBtn = document.getElementById('confirmExport');
+                const formatRadio = document.querySelector('input[name="exportFormat"]:checked');
+
+                if (formatRadio) {
+                    currentExportFormat = formatRadio.value;
+
+                    if (currentExportFormat === 'pdf') {
+                        confirmBtn.innerHTML = '<i class="material-icons text-sm mr-1">picture_as_pdf</i>Export PDF';
+                        confirmBtn.className = 'px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:ring-4 focus:ring-red-300 transition-colors';
+                    } else {
+                        confirmBtn.innerHTML = '<i class="material-icons text-sm mr-1">table_chart</i>Export Excel';
+                        confirmBtn.className = 'px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:ring-4 focus:ring-green-300 transition-colors';
+                    }
+                }
+            }
+
+            function loadColumnOptions() {
+                fetch('/StudentLookup/GetExportColumnOptions')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            columnOptions = data.columns;
+                            renderColumnOptions();
+                            updateColumnCount();
+                        } else {
+                            showToast('Error loading column options', 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading column options:', error);
+                        showToast('Error loading column options', 'error');
+                    });
+            }
+
+            function renderColumnOptions() {
+                const container = document.getElementById('columnOptions');
+                container.innerHTML = '';
+
+                columnOptions.forEach(column => {
+                    const checkboxDiv = document.createElement('div');
+                    checkboxDiv.className = 'flex items-center';
+
+                    checkboxDiv.innerHTML = `
+                        <input type="checkbox" id="col_${column.key}" ${column.isSelected ? 'checked' : ''}
+                               class="column-checkbox mr-2 rounded text-primary-600 focus:ring-primary-500"
+                               data-column="${column.key}">
+                        <label for="col_${column.key}" class="text-sm text-slate-700 cursor-pointer">
+                            ${column.displayName}
+                        </label>
+                    `;
+
+                    container.appendChild(checkboxDiv);
+                });
+
+                // Add event listeners to checkboxes
+                document.querySelectorAll('.column-checkbox').forEach(checkbox => {
+                    checkbox.addEventListener('change', updateColumnCount);
+                });
+            }
+
+            function updateColumnCount() {
+                const checkedCount = document.querySelectorAll('.column-checkbox:checked').length;
+                document.getElementById('exportColumnCount').textContent = checkedCount;
+
+                const confirmBtn = document.getElementById('confirmExport');
+                if (checkedCount === 0) {
+                    confirmBtn.disabled = true;
+                    confirmBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                } else {
+                    confirmBtn.disabled = false;
+                    confirmBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            }
+
+            function selectAllColumns() {
+                document.querySelectorAll('.column-checkbox').forEach(checkbox => {
+                    checkbox.checked = true;
+                });
+                updateColumnCount();
+            }
+
+            function clearAllColumns() {
+                document.querySelectorAll('.column-checkbox').forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+                updateColumnCount();
+            }
+
+            function handleExportConfirm() {
+                const title = document.getElementById('exportTitle').value.trim();
+                const selectedColumns = [];
+
+                document.querySelectorAll('.column-checkbox:checked').forEach(checkbox => {
+                    selectedColumns.push(checkbox.dataset.column);
+                });
+
+                if (selectedColumns.length === 0) {
+                    showToast('Please select at least one column to export', 'warning');
+                    return;
+                }
+
+                // Show loading state
+                const confirmBtn = document.getElementById('confirmExport');
+                const originalContent = confirmBtn.innerHTML;
+
+                if (currentExportFormat === 'pdf') {
+                    confirmBtn.innerHTML = '<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>Generating PDF...';
+                } else {
+                    confirmBtn.innerHTML = '<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>Generating Excel...';
+                }
+
+                confirmBtn.disabled = true;
+
+                const exportRequest = {
+                    selectedColumns: selectedColumns,
+                    title: title || 'Student List Report',
+                    filters: currentFilters
+                };
+
+                // Choose endpoint based on format
+                const endpoint = currentExportFormat === 'pdf'
+                    ? '/StudentLookup/ExportStudentListToPdf'
+                    : '/StudentLookup/ExportStudentListToExcel';
+
+                const fileExtension = currentExportFormat === 'pdf' ? 'pdf' : 'xlsx';
+
+                fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    },
+                    body: JSON.stringify(exportRequest)
+                })
+                .then(response => {
+                    if (response.ok) {
+                        return response.blob();
+                    } else {
+                        return response.json().then(data => {
+                            throw new Error(data.message || 'Export failed');
+                        });
+                    }
+                })
+                .then(blob => {
+                    // Create download link
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `StudentList_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.${fileExtension}`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+
+                    showToast(`${currentExportFormat.toUpperCase()} exported successfully!`, 'success');
+                    hideExportModal();
+                })
+                .catch(error => {
+                    console.error('Export error:', error);
+                    showToast(error.message || 'Export failed', 'error');
+                })
+                .finally(() => {
+                    // Restore button state
+                    confirmBtn.innerHTML = originalContent;
+                    confirmBtn.disabled = false;
+                });
+            }
+
+            console.log('JS Loaded with Excel Export!!!');
+        });
+    </script>
+}

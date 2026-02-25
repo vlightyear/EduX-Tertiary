@@ -1,0 +1,580 @@
+﻿@model IEnumerable<SIS.Models.StudentApplication.Applicant>
+@using System.Text.Json;
+@using System.Text.Json.Serialization;
+
+@{
+    ViewData["Title"] = "Waitlisted Applications";
+    Layout = "_Layout";
+    var applicantsJson = System.Text.Json.JsonSerializer.Serialize(Model,
+        new System.Text.Json.JsonSerializerOptions
+                {
+                    ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve
+                });
+}
+
+<div class="min-h-screen bg-slate-50 p-4">
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+        <div class="flex items-center text-slate-800">
+            <i class="material-icons text-primary-600 text-3xl mr-2">pending</i>
+            <div>
+                <h1 class="text-2xl font-bold">Waitlisted Applications</h1>
+                <p class="text-sm text-slate-600">Manage waitlisted student applications</p>
+            </div>
+        </div>
+        <div class="mt-4 md:mt-0 flex items-center gap-2">
+            <button id="exportData" class="inline-flex items-center px-4 py-2 text-sm text-primary-600 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors">
+                <i class="material-icons text-sm mr-1">file_download</i>
+                Export Data
+            </button>
+            <button id="admitAllQualified" class="inline-flex items-center px-4 py-2 text-sm text-white bg-secondary-600 hover:bg-secondary-700 rounded-lg transition-colors">
+                <i class="material-icons text-sm mr-1">done_all</i>
+                Admit All Qualified
+            </button>
+        </div>
+    </div>
+
+    <!-- Statistics Dashboard -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <!-- Total Waitlisted Card -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="p-4">
+                <div class="flex items-start">
+                    <div class="bg-amber-100 rounded-full p-2 mr-3">
+                        <i class="material-icons text-amber-600">pending</i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-slate-500 font-medium">Total Waitlisted</p>
+                        <h3 class="text-2xl font-semibold text-slate-800">@ViewBag.TotalWaitlisted</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-amber-50 px-4 py-2">
+                <div class="flex justify-between items-center text-xs text-amber-700">
+                    <span>On waitlist</span>
+                    <span class="flex items-center">
+                        <i class="material-icons text-xs mr-1">info</i>
+                        View details
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Qualified Waitlisted Card -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="p-4">
+                <div class="flex items-start">
+                    <div class="bg-secondary-100 rounded-full p-2 mr-3">
+                        <i class="material-icons text-secondary-600">check_circle</i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-slate-500 font-medium">Qualified Waitlisted</p>
+                        <h3 class="text-2xl font-semibold text-slate-800">@Model.Count(a => a.IsQualified == true)</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-secondary-50 px-4 py-2">
+                <div class="flex justify-between items-center text-xs text-secondary-700">
+                    <span>Meet entry requirements</span>
+                    <span class="flex items-center">
+                        <i class="material-icons text-xs mr-1">info</i>
+                        View details
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Unqualified Waitlisted Card -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="p-4">
+                <div class="flex items-start">
+                    <div class="bg-red-100 rounded-full p-2 mr-3">
+                        <i class="material-icons text-red-600">warning</i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-slate-500 font-medium">Unqualified Waitlisted</p>
+                        <h3 class="text-2xl font-semibold text-slate-800">@Model.Count(a => a.IsQualified == false)</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-red-50 px-4 py-2">
+                <div class="flex justify-between items-center text-xs text-red-700">
+                    <span>Below entry requirements</span>
+                    <span class="flex items-center">
+                        <i class="material-icons text-xs mr-1">info</i>
+                        View details
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Foreign Waitlisted Card -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="p-4">
+                <div class="flex items-start">
+                    <div class="bg-purple-100 rounded-full p-2 mr-3">
+                        <i class="material-icons text-purple-600">public</i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-slate-500 font-medium">Foreign Waitlisted</p>
+                        <h3 class="text-2xl font-semibold text-slate-800">@ViewBag.ForeignWaitlisted</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-purple-50 px-4 py-2">
+                <div class="flex justify-between items-center text-xs text-purple-700">
+                    <span>International students</span>
+                    <span class="flex items-center">
+                        <i class="material-icons text-xs mr-1">info</i>
+                        View details
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- School Stats (Only shown if user is dean of multiple schools) -->
+    @if (ViewBag.SchoolStats != null && ViewBag.SchoolStats.Count > 1)
+    {
+        <div class="bg-white rounded-xl shadow-sm mb-6 overflow-hidden">
+            <div class="px-6 py-4 border-b">
+                <h2 class="text-lg font-semibold text-slate-800">Waitlisted Applications by School</h2>
+            </div>
+            <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                @foreach (var school in ViewBag.SchoolStats)
+                {
+                    <div class="bg-slate-50 rounded-lg p-4">
+                        <h3 class="font-medium text-slate-800 mb-2">@school.SchoolName</h3>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-slate-600">Total Waitlisted:</span>
+                            <span class="font-semibold">@school.Count</span>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Programme Stats -->
+    @if (ViewBag.ProgrammeStats != null && ((IEnumerable<dynamic>)ViewBag.ProgrammeStats).Any())
+    {
+        <div class="bg-white rounded-xl shadow-sm mb-6 overflow-hidden">
+            <div class="px-6 py-4 border-b">
+                <h2 class="text-lg font-semibold text-slate-800">Waitlisted Applications by Programme</h2>
+            </div>
+            <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                @foreach (var programme in ViewBag.ProgrammeStats)
+                {
+                    <div class="bg-slate-50 rounded-lg p-4">
+                        <h3 class="font-medium text-slate-800 mb-2">@programme.ProgrammeName</h3>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-slate-600">Total Waitlisted:</span>
+                            <span class="font-semibold">@programme.Count</span>
+                        </div>
+                        <div class="mt-2 h-2 bg-slate-200 rounded-full overflow-hidden">
+                            @{
+                                var waitlistPercentage = programme.Count > 0 ? (programme.Count * 100) / ViewBag.TotalWaitlisted : 0;
+                            }
+                            <div class="h-full bg-amber-500" style="width: @waitlistPercentage%"></div>
+                        </div>
+                        <div class="mt-1 text-xs text-slate-500 text-right">
+                            @waitlistPercentage% of total
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Application List -->
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
+        <div class="px-6 py-4 border-b">
+            <h2 class="text-lg font-semibold text-slate-800">Waitlisted Applicant List</h2>
+        </div>
+        <div class="p-6">
+            <!-- Filter Options -->
+            <div class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label for="filterSchool" class="block text-sm font-medium text-slate-700 mb-1">School</label>
+                    <select id="filterSchool" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+                        <option value="">All Schools</option>
+                        @foreach (var school in Model.Select(a => a.School).DistinctBy(s => s.Id))
+                        {
+                            <option value="@school.Id">@school.Name</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label for="filterProgramme" class="block text-sm font-medium text-slate-700 mb-1">Programme</label>
+                    <select id="filterProgramme" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+                        <option value="">All Programmes</option>
+                        @foreach (var programme in Model.Select(a => a.Programme).DistinctBy(p => p.Id))
+                        {
+                            <option value="@programme.Id">@programme.Name</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label for="filterQualification" class="block text-sm font-medium text-slate-700 mb-1">Qualification Status</label>
+                    <select id="filterQualification" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+                        <option value="">All</option>
+                        <option value="true">Qualified</option>
+                        <option value="false">Unqualified</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="relative max-w-md mb-6">
+                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <i class="material-icons text-slate-400 text-sm">search</i>
+                </div>
+                <input type="text" id="searchApplicants"
+                       class="block w-full pl-10 pr-4 py-2 text-sm border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500"
+                       placeholder="Search by name, reference number, or ID...">
+            </div>
+
+            <!-- Waitlisted Applicants Table -->
+            <div class="overflow-x-auto">
+                <table id="pendingWaitlist" class="w-full text-sm text-slate-700">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-600 border-b">
+                            <th class="px-6 py-3 text-left">Ref #</th>
+                            <th class="px-6 py-3 text-left">Full Name</th>
+                            <th class="px-6 py-3 text-left">School</th>
+                            <th class="px-6 py-3 text-left">Programme</th>
+                            <th class="px-6 py-3 text-left">Study Mode</th>
+                            <th class="px-6 py-3 text-left">Total Points</th>
+                            <th class="px-6 py-3 text-center">Qualifies</th>
+                            <th class="px-6 py-3 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var applicant in Model)
+                        {
+                            // Calculate numeric total points for domestic students
+                            var totalPointsNumeric = applicant.SubjectGrades?
+                            .OrderByDescending(g => g.Grade.GradePoint)
+                            .Take(5)
+                            .Sum(g => g.Grade.GradePoint) ?? 0;
+
+                            <tr class="border-b hover:bg-slate-50 transition-colors applicant-row"
+                                data-school="@applicant.School.Id"
+                                data-programme="@applicant.Programme.Id"
+                                data-qualified="@applicant.IsQualified.ToString().ToLower()">
+                                <td class="px-6 py-4 font-medium">@applicant.ReferenceNumber</td>
+                                <td class="px-6 py-4">@applicant.FullName</td>
+                                <td class="px-6 py-4">@applicant.School.Name</td>
+                                <td class="px-6 py-4">@applicant.Programme.Name</td>
+                                <td class="px-6 py-4">@applicant.ModeOfStudy.ModeName</td>
+                                <td class="px-6 py-4">
+                                    @if (applicant.IsForeigner)
+                                    {
+                                        <span class="text-purple-600 font-medium">Foreign Student</span>
+                                    }
+                                    else
+                                    {
+                                        <span>@totalPointsNumeric</span>
+                                    }
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    @if (applicant.IsQualified == true)
+                                    {
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-secondary-100 text-secondary-800">
+                                            <i class="material-icons text-xs mr-1">check</i> Yes
+                                        </span>
+                                    }
+                                    else if (applicant.IsQualified == false)
+                                    {
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                                            <i class="material-icons text-xs mr-1">close</i> No
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                            <i class="material-icons text-xs mr-1">pending</i> Review
+                                        </span>
+                                    }
+                                </td>
+                                <td class="px-6 py-4 text-right">
+                                    <div class="flex justify-end space-x-2">
+                                        <button class="inline-flex items-center px-3 py-1 text-xs text-primary-600 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors view-details"
+                                                data-applicant="@applicant.ApplicantId">
+                                            <i class="material-icons text-xs mr-1">visibility</i>
+                                            View
+                                        </button>
+                                        <button class="inline-flex items-center px-3 py-1 text-xs text-secondary-600 bg-secondary-50 hover:bg-secondary-100 rounded-lg transition-colors admit-direct"
+                                                data-id="@applicant.ApplicantId">
+                                            <i class="material-icons text-xs mr-1">check_circle</i>
+                                            Admit
+                                        </button>
+                                        <button class="inline-flex items-center px-3 py-1 text-xs text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors reject-direct"
+                                                data-id="@applicant.ApplicantId">
+                                            <i class="material-icons text-xs mr-1">block</i>
+                                            Reject
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="flex items-center justify-between mt-6" id="tablePagination">
+                <div class="text-sm text-slate-600">
+                    Showing <span id="pageStart">1</span> to <span id="pageEnd">10</span> of <span id="totalEntries">@Model.Count()</span> entries
+                </div>
+                <div class="flex space-x-1">
+                    <button id="prevPage" class="px-3 py-1 text-sm text-slate-600 hover:bg-slate-100 rounded-md disabled:opacity-50 disabled:cursor-not-allowed">
+                        Previous
+                    </button>
+                    <div id="paginationNumbers" class="flex space-x-1">
+                        <!-- Pagination numbers will be added by JS -->
+                    </div>
+                    <button id="nextPage" class="px-3 py-1 text-sm text-slate-600 hover:bg-slate-100 rounded-md disabled:opacity-50 disabled:cursor-not-allowed">
+                        Next
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Details Modal -->
+<div id="detailsModal" class="hidden fixed inset-0 z-50">
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-lg shadow-xl w-full max-w-6xl">
+                <!-- Modal Header -->
+                <div class="bg-primary-600 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
+                    <h3 class="text-lg font-semibold flex items-center">
+                        <i class="material-icons mr-2">person</i>
+                        Waitlisted Applicant Details
+                    </h3>
+                    <button type="button" class="text-white hover:text-gray-200 close-modal">
+                        <i class="material-icons">close</i>
+                    </button>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="p-6 max-h-[70vh] overflow-y-auto">
+                    <!-- Personal Details -->
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4 border-b pb-2 flex items-center">
+                            <i class="material-icons text-primary-600 mr-2">account_circle</i>
+                            Personal Details
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div><span class="font-medium">NRC/Passport:</span> <span id="nrcOrPassport"></span></div>
+                            <div><span class="font-medium">Full Name:</span> <span id="fullName"></span></div>
+                            <div><span class="font-medium">Date of Birth:</span> <span id="dob"></span></div>
+                            <div><span class="font-medium">Gender:</span> <span id="gender"></span></div>
+                            <div><span class="font-medium">Nationality:</span> <span id="nationality"></span></div>
+                            <div><span class="font-medium">Marital Status:</span> <span id="maritalStatus"></span></div>
+                            <div><span class="font-medium">Religion:</span> <span id="religion"></span></div>
+                            <div><span class="font-medium">Foreigner:</span> <span id="foreigner"></span></div>
+                        </div>
+                    </div>
+
+                    <!-- Contact Information -->
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4 border-b pb-2 flex items-center">
+                            <i class="material-icons text-primary-600 mr-2">contact_phone</i>
+                            Contact Information
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div><span class="font-medium">Email:</span> <span id="email"></span></div>
+                            <div><span class="font-medium">Phone:</span> <span id="phone"></span></div>
+                            <div class="col-span-2"><span class="font-medium">Address:</span> <span id="address"></span></div>
+                        </div>
+                    </div>
+
+                    <!-- Next of Kin Information -->
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4 border-b pb-2 flex items-center">
+                            <i class="material-icons text-primary-600 mr-2">family_restroom</i>
+                            Next of Kin Details
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div><span class="font-medium">Name:</span> <span id="kinName"></span></div>
+                            <div><span class="font-medium">Relation:</span> <span id="kinRelation"></span></div>
+                            <div><span class="font-medium">Phone:</span> <span id="kinPhone"></span></div>
+                            <div><span class="font-medium">Email:</span> <span id="kinEmail"></span></div>
+                            <div class="col-span-2"><span class="font-medium">Address:</span> <span id="kinAddress"></span></div>
+                        </div>
+                    </div>
+
+                    <!-- School Information -->
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4 border-b pb-2 flex items-center">
+                            <i class="material-icons text-primary-600 mr-2">school</i>
+                            Former School Details
+                        </h3>
+
+                        <!-- Primary School -->
+                        <div class="mb-6">
+                            <h4 class="text-md font-semibold text-slate-700 mb-3">Primary School Details</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div><span class="font-medium">Name:</span> <span id="primarySchoolName"></span></div>
+                                <div><span class="font-medium">Address:</span> <span id="primarySchoolAddress"></span></div>
+                                <div><span class="font-medium">Period:</span> <span id="priPeriod"></span></div>
+                            </div>
+                        </div>
+
+                        <!-- High School -->
+                        <div class="mb-6">
+                            <h4 class="text-md font-semibold text-slate-700 mb-3">High School Details</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div><span class="font-medium">Name:</span> <span id="highSchoolName"></span></div>
+                                <div><span class="font-medium">Address:</span> <span id="highSchoolAddress"></span></div>
+                                <div><span class="font-medium">Period:</span> <span id="secPeriod"></span></div>
+                                <div class="hidden" id="secSchoolLevel">
+                                    <span class="font-medium">Education Level:</span> <span id="schlLevel"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tertiary School -->
+                        <div class="hidden" id="tertiarySchoolSection">
+                            <h4 class="text-md font-semibold text-slate-700 mb-3">College/University Details</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div><span class="font-medium">Name:</span> <span id="tertiarySchoolName"></span></div>
+                                <div><span class="font-medium">Address:</span> <span id="tertiarySchoolAddress"></span></div>
+                                <div><span class="font-medium">Education Level:</span> <span id="educationLevel"></span></div>
+                                <div><span class="font-medium">Year of Completion:</span> <span id="yearOfCompletion"></span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Subject Grades -->
+                    <div class="mb-6" id="subjectGradesSection">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4 border-b pb-2 flex items-center">
+                            <i class="material-icons text-primary-600 mr-2">grade</i>
+                            Subject Grades
+                        </h3>
+                        <ul id="subjectGradesList" class="mb-4"></ul>
+                        <div class="flex justify-between items-center border-t pt-4">
+                            <span class="text-lg font-medium">
+                                <span>Required Points</span>/
+                                <span>Total Points</span>
+                            </span>
+                            <span class="text-xl font-bold" id="totalPoints"></span>
+                        </div>
+                    </div>
+
+                    <!-- Admission Information -->
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4 border-b pb-2 flex items-center">
+                            <i class="material-icons text-primary-600 mr-2">book</i>
+                            Admission Information
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="col-span-2"><span class="font-medium">School:</span> <span id="school"></span></div>
+                            <div class="col-span-2"><span class="font-medium">Programme:</span> <span id="programme"></span></div>
+                            <div><span class="font-medium">Programme Level:</span> <span id="level"></span></div>
+                            <div><span class="font-medium">Mode of Study:</span> <span id="modeOfStudy"></span></div>
+                            <div><span class="font-medium">Academic Term:</span> <span id="academicYear"></span></div>
+                        </div>
+                    </div>
+
+                    <!-- Attachments -->
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4 border-b pb-2 flex items-center">
+                            <i class="material-icons text-primary-600 mr-2">attach_file</i>
+                            Attachments
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <span class="font-medium">NRC/Passport Copy:</span>
+                                <a id="nrcCopy" href="#" target="_blank" class="text-primary-600 hover:text-primary-800 ml-2">View</a>
+                            </div>
+                            <div>
+                                <span class="font-medium">Results Attachment:</span>
+                                <a id="resultsAttachment" href="#" target="_blank" class="text-primary-600 hover:text-primary-800 ml-2">View</a>
+                            </div>
+                            <div>
+                                <span class="font-medium">Study Permit:</span>
+                                <a id="studyPermit" href="#" target="_blank" class="text-primary-600 hover:text-primary-800 ml-2">View</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="bg-slate-50 px-6 py-4 rounded-b-lg flex justify-between">
+                    <div>
+                        <button type="button" class="px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors flex items-center reject-applicant" data-id="">
+                            <i class="material-icons mr-1">cancel</i>Reject
+                        </button>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button type="button" class="px-4 py-2 text-slate-700 bg-slate-200 hover:bg-slate-300 rounded-lg transition-colors flex items-center close-modal">
+                            <i class="material-icons mr-1">close</i>Close
+                        </button>
+                        <button type="button" class="px-4 py-2 text-white bg-secondary-600 hover:bg-secondary-700 rounded-lg transition-colors flex items-center admit-applicant" data-id="">
+                            <i class="material-icons mr-1">check_circle</i>Admit
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- File Preview Modal -->
+<div id="fileModal" class="hidden fixed inset-0 z-50">
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-lg shadow-xl w-full max-w-4xl">
+                <!-- Modal Header -->
+                <div class="bg-primary-600 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
+                    <h3 class="text-lg font-semibold flex items-center">
+                        <i class="material-icons mr-2">description</i>
+                        File Preview
+                    </h3>
+                    <button type="button" class="text-white hover:text-gray-200 close-modal">
+                        <i class="material-icons">close</i>
+                    </button>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="p-6">
+                    <iframe id="filePreview" src="" class="w-full h-[500px]" frameborder="0"></iframe>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="bg-slate-50 px-6 py-4 rounded-b-lg flex justify-end">
+                    <button type="button" class="px-4 py-2 text-slate-700 bg-slate-200 hover:bg-slate-300 rounded-lg transition-colors flex items-center close-modal">
+                        <i class="material-icons mr-1">close</i>Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alert Template (Hidden) -->
+<div id="alertTemplate" class="hidden fixed inset-0 flex items-center justify-center z-[60]">
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+    <div class="relative bg-white rounded-lg shadow-xl p-6 max-w-sm mx-auto transform transition-all">
+        <div class="flex items-center alert-header">
+            <i class="material-icons mr-2 alert-icon"></i>
+            <h3 class="text-lg font-semibold alert-title"></h3>
+        </div>
+        <p class="mt-2 text-slate-600 alert-text"></p>
+        <div class="mt-4 alert-buttons"></div>
+    </div>
+</div>
+
+<script>
+    const applicants = @Html.Raw(ViewBag.ApplicantsJson);
+    const qualifiedApplicants = @Html.Raw(ViewBag.QualifiedApplicantsJson);
+</script>
+<script src="~/js/pendingwaitlist.js"></script>

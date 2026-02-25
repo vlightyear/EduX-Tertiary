@@ -1,0 +1,603 @@
+@{
+    ViewData["Title"] = "System Error";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    
+    var errorMessage = TempData["Error"] as string ?? "An unexpected error occurred. Please try again later.";
+    var errorTitle = ViewBag.ErrorTitle as string ?? "System Configuration Error";
+    var showContactSupport = ViewBag.ShowContactSupport as bool? ?? true;
+}
+
+<style>
+    :root {
+        --danger-color: #ef4444;
+        --danger-dark: #dc2626;
+        --warning-color: #f59e0b;
+        --primary-color: #16697a;
+        --info-color: #3b82f6;
+        --light-bg: #f8fafc;
+        --border-color: #e2e8f0;
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #f5f7fa 0%, #e4e9f2 100%);
+        color: #334155;
+    }
+
+    .container-fluid {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 20px;
+        min-height: calc(100vh - 100px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .error-container {
+        background: white;
+        border-radius: 16px;
+        padding: 60px 40px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        width: 100%;
+        max-width: 900px;
+        border-top: 6px solid var(--danger-color);
+    }
+
+    .icon-container {
+        margin-bottom: 30px;
+        position: relative;
+        display: inline-block;
+    }
+
+    .main-icon {
+        font-size: 120px;
+        color: #fca5a5;
+        animation: bounce 2s ease-in-out infinite;
+    }
+
+    .warning-icon {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        font-size: 60px;
+        color: var(--danger-color);
+        background: white;
+        border-radius: 50%;
+        padding: 10px;
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        animation: pulse 2s ease-in-out infinite;
+    }
+
+    @@keyframes bounce {
+        0%, 100% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-20px);
+        }
+    }
+
+    @@keyframes pulse {
+        0%, 100% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.1);
+        }
+    }
+
+    h1 {
+        font-size: 38px;
+        color: var(--danger-color);
+        margin-bottom: 15px;
+        font-weight: 800;
+    }
+
+    .error-subtitle {
+        font-size: 18px;
+        color: #94a3b8;
+        font-weight: 600;
+        margin-bottom: 30px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+
+    .main-message {
+        font-size: 20px;
+        color: #64748b;
+        margin-bottom: 30px;
+        line-height: 1.6;
+        padding: 0 20px;
+    }
+
+    .error-details {
+        background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+        border: 2px solid #fca5a5;
+        border-left: 6px solid var(--danger-color);
+        border-radius: 12px;
+        padding: 30px;
+        margin: 30px 0;
+        text-align: left;
+    }
+
+    .error-details h3 {
+        color: var(--danger-color);
+        font-size: 22px;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .error-details .error-message {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        color: #991b1b;
+        font-size: 16px;
+        line-height: 1.6;
+        font-weight: 600;
+        border-left: 4px solid var(--danger-color);
+        display: flex;
+        align-items: start;
+        gap: 15px;
+    }
+
+    .error-details .error-message i {
+        font-size: 28px;
+        color: var(--danger-color);
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+    .admin-notice {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        border: 2px solid #fbbf24;
+        border-radius: 12px;
+        padding: 25px;
+        margin: 30px 0;
+    }
+
+    .admin-notice h3 {
+        color: #92400e;
+        font-size: 20px;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        justify-content: center;
+    }
+
+    .admin-notice p {
+        color: #78350f;
+        font-size: 16px;
+        line-height: 1.6;
+        margin-bottom: 15px;
+    }
+
+    .admin-notice ul {
+        text-align: left;
+        list-style: none;
+        padding: 0;
+        margin: 20px 0;
+    }
+
+    .admin-notice li {
+        background: white;
+        padding: 15px;
+        margin-bottom: 10px;
+        border-radius: 8px;
+        color: #78350f;
+        font-size: 15px;
+        display: flex;
+        align-items: start;
+        gap: 12px;
+        border-left: 4px solid var(--warning-color);
+    }
+
+    .admin-notice li i {
+        color: var(--warning-color);
+        font-size: 24px;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+    .info-box {
+        background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+        border: 2px solid #93c5fd;
+        border-radius: 12px;
+        padding: 25px;
+        margin: 30px 0;
+        text-align: left;
+    }
+
+    .info-box h3 {
+        color: var(--info-color);
+        font-size: 20px;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .info-box p {
+        color: #1e40af;
+        font-size: 16px;
+        line-height: 1.6;
+        margin-bottom: 10px;
+    }
+
+    .info-box .status-item {
+        background: white;
+        padding: 15px;
+        margin: 10px 0;
+        border-radius: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .info-box .status-label {
+        color: #64748b;
+        font-weight: 600;
+    }
+
+    .info-box .status-value {
+        color: var(--info-color);
+        font-weight: 700;
+    }
+
+    .contact-section {
+        background: var(--light-bg);
+        border-radius: 12px;
+        padding: 30px;
+        margin: 30px 0;
+        border-left: 4px solid var(--primary-color);
+    }
+
+    .contact-section h3 {
+        color: var(--primary-color);
+        font-size: 22px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        justify-content: center;
+    }
+
+    .contact-section p {
+        color: #64748b;
+        margin-bottom: 20px;
+        font-size: 16px;
+    }
+
+    .contact-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 15px;
+        margin-top: 20px;
+    }
+
+    .contact-card {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        border: 2px solid var(--border-color);
+        transition: all 0.3s ease;
+    }
+
+    .contact-card:hover {
+        border-color: var(--primary-color);
+        box-shadow: 0 4px 12px rgba(22, 105, 122, 0.2);
+        transform: translateY(-2px);
+    }
+
+    .contact-card i {
+        font-size: 36px;
+        color: var(--primary-color);
+        margin-bottom: 10px;
+    }
+
+    .contact-card h4 {
+        color: var(--primary-color);
+        font-size: 16px;
+        margin-bottom: 8px;
+        font-weight: 600;
+    }
+
+    .contact-card p {
+        color: #64748b;
+        font-size: 15px;
+        margin: 0;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-top: 40px;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 28px;
+        border-radius: 10px;
+        font-size: 16px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-primary {
+        background: var(--primary-color);
+        color: white;
+        box-shadow: 0 4px 12px rgba(22, 105, 122, 0.3);
+    }
+
+    .btn-primary:hover {
+        background: #0d4b56;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(22, 105, 122, 0.4);
+    }
+
+    .btn-secondary {
+        background: white;
+        color: var(--primary-color);
+        border: 2px solid var(--primary-color);
+    }
+
+    .btn-secondary:hover {
+        background: var(--light-bg);
+        transform: translateY(-2px);
+    }
+
+    .btn-warning {
+        background: var(--warning-color);
+        color: white;
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+    }
+
+    .btn-warning:hover {
+        background: #d97706;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+    }
+
+    .btn i {
+        font-size: 20px;
+    }
+
+    .timestamp {
+        color: #cbd5e1;
+        font-size: 13px;
+        margin-top: 30px;
+        font-style: italic;
+    }
+
+    /* Responsive Design */
+    @@media (max-width: 768px) {
+        .container-fluid {
+            padding: 15px;
+        }
+
+        .error-container {
+            padding: 40px 25px;
+        }
+
+        .main-icon {
+            font-size: 80px;
+        }
+
+        .warning-icon {
+            font-size: 40px;
+        }
+
+        h1 {
+            font-size: 28px;
+        }
+
+        .main-message {
+            font-size: 16px;
+        }
+
+        .contact-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+        }
+
+        .btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
+    /* Print Styles */
+    @@media print {
+        .action-buttons,
+        .btn {
+            display: none;
+        }
+
+        .error-container {
+            box-shadow: none;
+            border: 2px solid #000;
+        }
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="error-container">
+        <!-- Icon -->
+        <div class="icon-container">
+            <i class="material-icons main-icon">settings</i>
+            <i class="material-icons warning-icon">error</i>
+        </div>
+
+        <!-- Main Heading -->
+        <h1>@errorTitle</h1>
+        <div class="error-subtitle">SYSTEM CONFIGURATION ERROR</div>
+
+        <!-- Main Message -->
+        <p class="main-message">
+            The accommodation system is currently experiencing a configuration issue and cannot process your request at this time.
+        </p>
+
+        <!-- Error Details -->
+        <div class="error-details">
+            <h3>
+                <i class="material-icons">error_outline</i>
+                Error Details
+            </h3>
+            <div class="error-message">
+                <i class="material-icons">warning</i>
+                <span>@errorMessage</span>
+            </div>
+        </div>
+
+        <!-- Admin Notice -->
+        <div class="admin-notice">
+            <h3>
+                <i class="material-icons">admin_panel_settings</i>
+                For System Administrators
+            </h3>
+            <p>
+                This error typically indicates that the accommodation system has not been properly configured. 
+                Please ensure the following setup steps have been completed:
+            </p>
+            <ul>
+                <li>
+                    <i class="material-icons">check_circle</i>
+                    <span><strong>Accommodation Configuration:</strong> Navigate to the admin panel and configure the accommodation settings including fees, reservation validity period, and payment account codes.</span>
+                </li>
+                <li>
+                    <i class="material-icons">settings_applications</i>
+                    <span><strong>Database Migration:</strong> Ensure all database migrations have been applied and the AccomodationConfigurations table exists.</span>
+                </li>
+                <li>
+                    <i class="material-icons">database</i>
+                    <span><strong>Initial Data:</strong> Create at least one accommodation configuration record with all required fields populated.</span>
+                </li>
+                <li>
+                    <i class="material-icons">restart_alt</i>
+                    <span><strong>Application Restart:</strong> After configuring, restart the application to ensure changes take effect.</span>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Information Box -->
+        <div class="info-box">
+            <h3>
+                <i class="material-icons">info</i>
+                What Happened?
+            </h3>
+            <p>
+                The system attempted to load accommodation configuration settings but found that they have not been set up yet. 
+                This is typically a one-time setup process that must be completed by system administrators before students can apply for accommodation.
+            </p>
+            <div class="status-item">
+                <span class="status-label">Configuration Status:</span>
+                <span class="status-value" style="color: var(--danger-color);">❌ Not Configured</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">System Status:</span>
+                <span class="status-value" style="color: var(--warning-color);">⚠️ Temporarily Unavailable</span>
+            </div>
+        </div>
+
+        @if (showContactSupport)
+        {
+            <!-- Contact Section -->
+            <div class="contact-section">
+                <h3>
+                    <i class="material-icons">contact_support</i>
+                    Need Assistance?
+                </h3>
+                <p>
+                    If this issue persists or if you need immediate assistance, please contact the appropriate support team:
+                </p>
+                <div class="contact-grid">
+                    <div class="contact-card">
+                        <i class="material-icons">school</i>
+                        <h4>For Students</h4>
+                        <p>Contact the Accommodation Office for assistance</p>
+                    </div>
+                    <div class="contact-card">
+                        <i class="material-icons">admin_panel_settings</i>
+                        <h4>For Administrators</h4>
+                        <p>Contact IT Support or System Administrator</p>
+                    </div>
+                    <div class="contact-card">
+                        <i class="material-icons">support_agent</i>
+                        <h4>Technical Support</h4>
+                        <p>Email: support@university.edu<br>Phone: +260-XXX-XXXXXX</p>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <a href="@Url.Action("Index", "Home")" class="btn btn-primary">
+                <i class="material-icons">home</i>
+                Return to Dashboard
+            </a>
+
+            <button type="button" class="btn btn-secondary" onclick="window.history.back()">
+                <i class="material-icons">arrow_back</i>
+                Go Back
+            </button>
+
+            <button type="button" class="btn btn-warning" onclick="location.reload()">
+                <i class="material-icons">refresh</i>
+                Retry
+            </button>
+
+            @if (User.IsInRole("Admin"))
+            {
+                <a href="@Url.Action("Index", "AccommodationConfiguration")" class="btn btn-warning">
+                    <i class="material-icons">settings</i>
+                    Configure System
+                </a>
+            }
+        </div>
+
+        <!-- Timestamp -->
+        <p class="timestamp">
+            Error occurred at: @DateTime.Now.ToString("MMMM dd, yyyy hh:mm:ss tt")
+        </p>
+
+        <!-- Error Reference -->
+        <p style="color: #cbd5e1; font-size: 12px; margin-top: 10px;">
+            Reference ID: SYS-CONFIG-@DateTime.Now.ToString("yyyyMMddHHmmss")
+        </p>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Log error for debugging
+        console.error('System Configuration Error: @errorMessage');
+
+        // Optional: Auto-retry after some time (commented out by default)
+        // setTimeout(function() {
+        //     console.log('Attempting to retry...');
+        //     location.reload();
+        // }, 30000); // Retry after 30 seconds
+    </script>
+}

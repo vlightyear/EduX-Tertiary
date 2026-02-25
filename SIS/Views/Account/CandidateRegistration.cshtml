@@ -1,0 +1,953 @@
+﻿@model SIS.Models.Account.RegisterViewModel
+@inject SIS.Services.IInstitutionConfigService InstitutionConfig
+
+@{
+    ViewData["Title"] = "Registration";
+    Layout = null;
+    var institution = InstitutionConfig.GetCurrentInstitution();
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Registration - AcademiX</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                fontFamily: {
+                    sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
+                },
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#ecfeff',
+                            100: '#cffafe',
+                            200: '#a5f3fc',
+                            300: '#67e8f9',
+                            400: '#22d3ee',
+                            500: '#06b6d4',
+                            600: '#0891b2',
+                            700: '#0e7490',
+                            800: '#155e75',
+                            900: '#164e63',
+                            950: '#083344'
+                        },
+                        secondary: {
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            200: '#a7f3d0',
+                            300: '#6ee7b7',
+                            400: '#34d399',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                            800: '#065f46',
+                            900: '#064e3b',
+                            950: '#022c22'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Float animation */
+        @@keyframes float {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-20px) rotate(5deg);
+            }
+        }
+
+        .floating {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        /* Loader animation */
+        .loader {
+            border: 3px solid rgba(14, 116, 144, 0.2);
+            border-top: 3px solid #0e7490;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            animation: spin 1s linear infinite;
+        }
+
+        /* Spin animation */
+        @@keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .bg-gradient {
+            background: linear-gradient(135deg, rgba(14, 116, 144, 0.75) 0%, rgba(8, 51, 68, 0.65) 100%);
+        }
+
+        .form-input {
+            transition: all 0.2s ease-in-out;
+        }
+
+        .form-input:focus {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(14, 116, 144, 0.1);
+        }
+
+        .btn-register {
+            transition: all 0.3s ease;
+        }
+
+        .btn-register:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(14, 116, 144, 0.2);
+        }
+
+        .btn-register:active {
+            transform: translateY(1px);
+        }
+
+        .text-shadow {
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .password-criteria li {
+            transition: all 0.3s ease;
+        }
+
+        .password-criteria .check-icon {
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.3s ease;
+        }
+
+        .password-criteria .valid .check-icon {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .registration-card {
+            transition: all 0.5s ease;
+        }
+
+        /* Custom scrollbar for the password criteria section */
+        .scrollable-criteria::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .scrollable-criteria::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 10px;
+        }
+
+        .scrollable-criteria::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        .scrollable-criteria::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Mobile-specific styles */
+        @@media (max-width: 767px) {
+            .mobile-requirements {
+                max-height: 0;
+                overflow: hidden;
+                transition: max-height 0.3s ease-out;
+            }
+
+            .mobile-requirements.show {
+                max-height: 500px;
+            }
+
+            .mobile-toggle-btn {
+                transition: transform 0.3s ease;
+            }
+
+            .mobile-toggle-btn.rotated {
+                transform: rotate(180deg);
+            }
+
+            html, body {
+                height: auto;
+                overflow: auto;
+            }
+
+            .bg-container {
+                min-height: 100vh;
+                height: auto;
+            }
+        }
+
+        /* Desktop styles */
+        @@media (min-width: 768px) {
+            html, body {
+                height: 100%;
+                overflow: hidden;
+            }
+
+            .bg-container {
+                height: 100vh;
+            }
+        }
+    </style>
+</head>
+<body class="font-sans bg-slate-50 min-h-screen">
+    <!-- Loader -->
+    <div id="loader" class="fixed inset-0 flex items-center justify-center bg-white z-50">
+        <div class="flex flex-col items-center">
+            <div class="loader mb-3"></div>
+            <p class="text-sm text-slate-500">Loading AcademiX...</p>
+        </div>
+    </div>
+
+    <!-- Registration Container -->
+    <div class="bg-container flex flex-col items-center justify-center bg-cover bg-center relative py-4 px-4" style="background-image: url('/images/campus.jpg');">
+        <div class="absolute inset-0 bg-gradient"></div>
+
+        <!-- Decorative Elements - Hidden on mobile -->
+        <div class="floating absolute w-16 h-16 bg-white/10 rounded-full top-1/4 left-1/4 backdrop-blur-sm hidden md:block"></div>
+        <div class="floating absolute w-20 h-20 bg-white/10 rounded-full top-1/3 right-1/4 backdrop-blur-sm hidden md:block" style="animation-delay: -2s;"></div>
+        <div class="floating absolute w-12 h-12 bg-white/10 rounded-full bottom-1/4 left-1/3 backdrop-blur-sm hidden md:block" style="animation-delay: -4s;"></div>
+        <div class="floating absolute w-24 h-24 bg-white/5 rounded-full bottom-1/3 right-1/3 backdrop-blur-sm hidden md:block" style="animation-delay: -3s;"></div>
+
+        <!-- System Branding Outside Card -->
+        <div class="relative z-10 mb-4 flex flex-col items-center">
+            <div class="w-12 h-12 rounded-lg bg-primary-800 text-white flex items-center justify-center mb-2 shadow-lg">
+                <i class="material-icons text-2xl">school</i>
+            </div>
+            <h2 class="text-xl font-bold text-white text-shadow">Academi<span class="text-secondary-300">X</span></h2>
+            <p class="text-white/90 text-xs mt-0.5">Your Smart Academic Companion</p>
+        </div>
+
+        <!-- Registration Card -->
+        <div class="registration-card relative z-10 w-full max-w-4xl bg-white rounded-xl shadow-xl overflow-hidden transition-all duration-300 hover:shadow-2xl mb-4">
+            <!-- Card Header with Institution Logo -->
+            <div class="border-b border-slate-100">
+                <div class="flex items-center justify-center bg-primary-800 py-3 px-6 rounded-t-xl">
+                    <img src="@($"{institution.ContactInfo?.Website?.TrimEnd('/')}{institution.LogoPath}")" alt="@institution.Name Logo" class="h-10 mr-3">
+                    <div>
+                        <h1 class="text-white text-base font-semibold">@institution.Name</h1>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Registration Form Section -->
+            <div class="p-4 md:p-6">
+                <h2 class="text-lg font-bold text-slate-800 mb-3 text-center">Create Your Application Account</h2>
+
+                <div class="flex flex-col md:flex-row gap-6">
+                    <!-- Left column - Form -->
+                    <div class="flex-1">
+                        <form id="registrationForm" asp-action="CandidateRegistration" method="post" class="space-y-3">
+                            <div asp-validation-summary="ModelOnly" class="text-red-500 text-sm mb-2"></div>
+
+                            <!-- Full Name Field -->
+                            <div>
+                                <label asp-for="FullName" class="block text-xs font-medium text-slate-700 mb-1">Full Name</label>
+                                <div class="relative rounded-md">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <i class="material-icons text-slate-400 text-sm">person</i>
+                                    </div>
+                                    <input asp-for="FullName"
+                                           id="fullName"
+                                           class="form-input block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 text-slate-700 text-sm transition-colors"
+                                           placeholder="Enter your full name"
+                                           required />
+                                </div>
+                                <span asp-validation-for="FullName" class="mt-1 text-xs text-red-500"></span>
+                                <span class="hidden mt-1 text-xs text-red-500" id="fullNameError">Please enter your full name</span>
+                            </div>
+
+                            <!-- Email Field -->
+                            <div>
+                                <label asp-for="Email" class="block text-xs font-medium text-slate-700 mb-1">Email Address</label>
+                                <div class="relative rounded-md">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <i class="material-icons text-slate-400 text-sm">email</i>
+                                    </div>
+                                    <input asp-for="Email"
+                                           id="email"
+                                           class="form-input block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 text-slate-700 text-sm transition-colors"
+                                           placeholder="Enter your email address"
+                                           required />
+                                </div>
+                                <span asp-validation-for="Email" class="mt-1 text-xs text-red-500"></span>
+                                <span class="hidden mt-1 text-xs text-red-500" id="emailError">Please enter a valid email address</span>
+                            </div>
+
+                            <!-- Password Field -->
+                            <div>
+                                <label asp-for="Password" class="block text-xs font-medium text-slate-700 mb-1">Password</label>
+                                <div class="relative rounded-md">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <i class="material-icons text-slate-400 text-sm">lock</i>
+                                    </div>
+                                    <input asp-for="Password"
+                                           id="password"
+                                           class="form-input block w-full pl-10 pr-10 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 text-slate-700 text-sm transition-colors"
+                                           placeholder="Create a password"
+                                           required />
+                                    <button type="button"
+                                            class="absolute inset-y-0 right-0 pr-3 flex items-center transition-colors hover:text-primary-700"
+                                            id="togglePassword">
+                                        <i class="material-icons text-slate-400 text-sm">visibility</i>
+                                    </button>
+                                </div>
+                                <span asp-validation-for="Password" class="mt-1 text-xs text-red-500"></span>
+                            </div>
+
+                            <!-- Mobile Password Requirements Toggle -->
+                            <div class="md:hidden">
+                                <button type="button"
+                                        id="mobileToggleRequirements"
+                                        class="w-full flex items-center justify-between p-3 bg-primary-50 border border-primary-200 rounded-lg hover:bg-primary-100 transition-colors">
+                                    <span class="text-sm font-medium text-primary-800 flex items-center">
+                                        <i class="material-icons text-primary-700 mr-2 text-base">shield</i>
+                                        View Password Requirements
+                                    </span>
+                                    <i class="material-icons text-primary-700 mobile-toggle-btn text-base">expand_more</i>
+                                </button>
+                            </div>
+
+                            <!-- Mobile Password Requirements Section -->
+                            <div id="mobileRequirements" class="mobile-requirements md:hidden">
+                                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                                    <p class="text-slate-600 text-sm mb-3">Your password must meet the following requirements:</p>
+                                    
+                                    <ul class="password-criteria space-y-2 text-sm">
+                                        <li id="lengthCriteriaMobile" class="flex items-center text-slate-600">
+                                            <div class="flex-shrink-0 h-5 w-5 relative mr-2">
+                                                <i class="material-icons text-slate-400 text-sm">radio_button_unchecked</i>
+                                                <i class="material-icons text-green-500 text-sm check-icon absolute top-0 left-0">check_circle</i>
+                                            </div>
+                                            At least 8 characters long
+                                        </li>
+                                        <li id="uppercaseCriteriaMobile" class="flex items-center text-slate-600">
+                                            <div class="flex-shrink-0 h-5 w-5 relative mr-2">
+                                                <i class="material-icons text-slate-400 text-sm">radio_button_unchecked</i>
+                                                <i class="material-icons text-green-500 text-sm check-icon absolute top-0 left-0">check_circle</i>
+                                            </div>
+                                            At least one uppercase letter (A-Z)
+                                        </li>
+                                        <li id="lowercaseCriteriaMobile" class="flex items-center text-slate-600">
+                                            <div class="flex-shrink-0 h-5 w-5 relative mr-2">
+                                                <i class="material-icons text-slate-400 text-sm">radio_button_unchecked</i>
+                                                <i class="material-icons text-green-500 text-sm check-icon absolute top-0 left-0">check_circle</i>
+                                            </div>
+                                            At least one lowercase letter (a-z)
+                                        </li>
+                                        <li id="numberCriteriaMobile" class="flex items-center text-slate-600">
+                                            <div class="flex-shrink-0 h-5 w-5 relative mr-2">
+                                                <i class="material-icons text-slate-400 text-sm">radio_button_unchecked</i>
+                                                <i class="material-icons text-green-500 text-sm check-icon absolute top-0 left-0">check_circle</i>
+                                            </div>
+                                            At least one number (0-9)
+                                        </li>
+                                        <li id="specialCriteriaMobile" class="flex items-center text-slate-600">
+                                            <div class="flex-shrink-0 h-5 w-5 relative mr-2">
+                                                <i class="material-icons text-slate-400 text-sm">radio_button_unchecked</i>
+                                                <i class="material-icons text-green-500 text-sm check-icon absolute top-0 left-0">check_circle</i>
+                                            </div>
+                                            At least one special character (e.g. !#$%^&*)
+                                        </li>
+                                        <li id="matchCriteriaMobile" class="flex items-center text-slate-600">
+                                            <div class="flex-shrink-0 h-5 w-5 relative mr-2">
+                                                <i class="material-icons text-slate-400 text-sm">radio_button_unchecked</i>
+                                                <i class="material-icons text-green-500 text-sm check-icon absolute top-0 left-0">check_circle</i>
+                                            </div>
+                                            Passwords match
+                                        </li>
+                                    </ul>
+
+                                    <div class="mt-4 p-3 bg-primary-50 rounded-lg border border-primary-100">
+                                        <h4 class="text-sm font-medium text-primary-800 flex items-center">
+                                            <i class="material-icons text-primary-600 mr-2 text-sm">info</i>
+                                            Why is this important?
+                                        </h4>
+                                        <p class="text-sm text-primary-700 mt-1">
+                                            A strong password helps protect your account from unauthorized access and safeguards your personal and academic information.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Confirm Password Field -->
+                            <div>
+                                <label asp-for="ConfirmPassword" class="block text-xs font-medium text-slate-700 mb-1">Confirm Password</label>
+                                <div class="relative rounded-md">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <i class="material-icons text-slate-400 text-sm">lock_outline</i>
+                                    </div>
+                                    <input asp-for="ConfirmPassword"
+                                           id="confirmPassword"
+                                           class="form-input block w-full pl-10 pr-10 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 text-slate-700 text-sm transition-colors"
+                                           placeholder="Confirm your password"
+                                           required />
+                                    <button type="button"
+                                            class="absolute inset-y-0 right-0 pr-3 flex items-center transition-colors hover:text-primary-700"
+                                            id="toggleConfirmPassword">
+                                        <i class="material-icons text-slate-400 text-sm">visibility</i>
+                                    </button>
+                                </div>
+                                <span asp-validation-for="ConfirmPassword" class="mt-1 text-xs text-red-500"></span>
+                                <span class="hidden mt-1 text-xs text-red-500" id="passwordMatchError">Passwords do not match</span>
+                            </div>
+
+                            <!-- Terms and Conditions Checkbox -->
+                            <div class="flex items-start">
+                                <div class="flex items-center h-5">
+                                    <input asp-for="AgreeToTerms" id="terms" class="h-4 w-4 text-primary-700 focus:ring-primary-500/30 border-slate-300 rounded transition-colors" required>
+                                </div>
+                                <div class="ml-3 text-xs">
+                                    <label asp-for="AgreeToTerms" class="text-slate-600">I agree to the <a href="#" class="text-primary-700 hover:text-primary-800 font-medium">Terms of Service</a> and <a href="#" class="text-primary-700 hover:text-primary-800 font-medium">Privacy Policy</a></label>
+                                </div>
+                            </div>
+                            <span asp-validation-for="AgreeToTerms" class="mt-1 text-xs text-red-500"></span>
+
+                            <!-- Submit Button -->
+                            <button type="submit"
+                                    id="registerButton"
+                                    class="btn-register w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-lg text-sm font-medium text-white bg-primary-700 hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500/30 transition-all duration-200 shadow-sm mt-3">
+                                <span>Create Account</span>
+                                <i class="material-icons ml-2 text-sm">arrow_forward</i>
+                            </button>
+                        </form>
+
+                        <!-- Login Link -->
+                        <p class="text-xs text-center text-slate-600 mt-3">
+                            Already have an account?
+                            <a asp-controller="Account"
+                               asp-action="Login"
+                               class="text-primary-700 hover:text-primary-800 transition-colors font-medium">
+                                Sign in
+                            </a>
+                        </p>
+                    </div>
+
+                    <!-- Right column - Password guidelines (Desktop Only) -->
+                    <div class="hidden md:flex md:flex-1 bg-slate-50 p-4 rounded-lg">
+                        <div class="w-full">
+                            <div class="mb-2">
+                                <h3 class="text-sm font-semibold text-slate-800 flex items-center">
+                                    <i class="material-icons text-primary-700 mr-2 text-sm">shield</i>
+                                    Password Requirements
+                                </h3>
+                                <p class="text-slate-600 text-xs mt-1">Your password must meet the following requirements:</p>
+                            </div>
+
+                            <ul class="password-criteria space-y-2 mt-2 scrollable-criteria max-h-40 overflow-y-auto pr-2">
+                                <li id="lengthCriteria" class="flex items-center text-xs text-slate-600">
+                                    <div class="flex-shrink-0 h-5 w-5 relative mr-2">
+                                        <i class="material-icons text-slate-400 text-xs">radio_button_unchecked</i>
+                                        <i class="material-icons text-green-500 text-xs check-icon absolute top-0 left-0">check_circle</i>
+                                    </div>
+                                    At least 8 characters long
+                                </li>
+                                <li id="uppercaseCriteria" class="flex items-center text-xs text-slate-600">
+                                    <div class="flex-shrink-0 h-5 w-5 relative mr-2">
+                                        <i class="material-icons text-slate-400 text-xs">radio_button_unchecked</i>
+                                        <i class="material-icons text-green-500 text-xs check-icon absolute top-0 left-0">check_circle</i>
+                                    </div>
+                                    At least one uppercase letter (A-Z)
+                                </li>
+                                <li id="lowercaseCriteria" class="flex items-center text-xs text-slate-600">
+                                    <div class="flex-shrink-0 h-5 w-5 relative mr-2">
+                                        <i class="material-icons text-slate-400 text-xs">radio_button_unchecked</i>
+                                        <i class="material-icons text-green-500 text-xs check-icon absolute top-0 left-0">check_circle</i>
+                                    </div>
+                                    At least one lowercase letter (a-z)
+                                </li>
+                                <li id="numberCriteria" class="flex items-center text-xs text-slate-600">
+                                    <div class="flex-shrink-0 h-5 w-5 relative mr-2">
+                                        <i class="material-icons text-slate-400 text-xs">radio_button_unchecked</i>
+                                        <i class="material-icons text-green-500 text-xs check-icon absolute top-0 left-0">check_circle</i>
+                                    </div>
+                                    At least one number (0-9)
+                                </li>
+                                <li id="specialCriteria" class="flex items-center text-xs text-slate-600">
+                                    <div class="flex-shrink-0 h-5 w-5 relative mr-2">
+                                        <i class="material-icons text-slate-400 text-xs">radio_button_unchecked</i>
+                                        <i class="material-icons text-green-500 text-xs check-icon absolute top-0 left-0">check_circle</i>
+                                    </div>
+                                    At least one special character (e.g. !#$%^&*)
+                                </li>
+                                <li id="matchCriteria" class="flex items-center text-xs text-slate-600">
+                                    <div class="flex-shrink-0 h-5 w-5 relative mr-2">
+                                        <i class="material-icons text-slate-400 text-xs">radio_button_unchecked</i>
+                                        <i class="material-icons text-green-500 text-xs check-icon absolute top-0 left-0">check_circle</i>
+                                    </div>
+                                    Passwords match
+                                </li>
+                            </ul>
+
+                            <div class="mt-3 p-3 bg-primary-50 rounded-lg border border-primary-100">
+                                <h4 class="text-xs font-medium text-primary-800 flex items-center">
+                                    <i class="material-icons text-primary-600 mr-1 text-xs">info</i>
+                                    Why is this important?
+                                </h4>
+                                <p class="text-xs text-primary-700 mt-1">
+                                    A strong password helps protect your account from unauthorized access and safeguards your personal and academic information.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        // Mobile requirements toggle
+        document.getElementById('mobileToggleRequirements').addEventListener('click', function() {
+            const requirements = document.getElementById('mobileRequirements');
+            const toggleIcon = this.querySelector('.mobile-toggle-btn');
+            
+            if (requirements.classList.contains('show')) {
+                requirements.classList.remove('show');
+                toggleIcon.classList.remove('rotated');
+            } else {
+                requirements.classList.add('show');
+                toggleIcon.classList.add('rotated');
+            }
+        });
+
+        // Password visibility toggle functions
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            toggleFieldVisibility('password', this);
+        });
+
+        document.getElementById('toggleConfirmPassword').addEventListener('click', function() {
+            toggleFieldVisibility('confirmPassword', this);
+        });
+
+        function toggleFieldVisibility(fieldId, button) {
+            const field = document.getElementById(fieldId);
+            const icon = button.querySelector('i');
+
+            if (field.type === 'password') {
+                field.type = 'text';
+                icon.textContent = 'visibility_off';
+            } else {
+                field.type = 'password';
+                icon.textContent = 'visibility';
+            }
+        }
+
+        // Password validation
+        const password = document.getElementById('password');
+        const confirmPassword = document.getElementById('confirmPassword');
+        
+        // Desktop criteria elements
+        const lengthCriteria = document.getElementById('lengthCriteria');
+        const uppercaseCriteria = document.getElementById('uppercaseCriteria');
+        const lowercaseCriteria = document.getElementById('lowercaseCriteria');
+        const numberCriteria = document.getElementById('numberCriteria');
+        const specialCriteria = document.getElementById('specialCriteria');
+        const matchCriteria = document.getElementById('matchCriteria');
+
+        // Mobile criteria elements
+        const lengthCriteriaMobile = document.getElementById('lengthCriteriaMobile');
+        const uppercaseCriteriaMobile = document.getElementById('uppercaseCriteriaMobile');
+        const lowercaseCriteriaMobile = document.getElementById('lowercaseCriteriaMobile');
+        const numberCriteriaMobile = document.getElementById('numberCriteriaMobile');
+        const specialCriteriaMobile = document.getElementById('specialCriteriaMobile');
+        const matchCriteriaMobile = document.getElementById('matchCriteriaMobile');
+
+        function validatePassword() {
+            const value = password.value;
+
+            // Desktop validation
+            if (lengthCriteria) {
+                if (value.length >= 8) {
+                    lengthCriteria.classList.add('valid');
+                    lengthCriteria.classList.add('text-green-600');
+                } else {
+                    lengthCriteria.classList.remove('valid');
+                    lengthCriteria.classList.remove('text-green-600');
+                }
+
+                // Check uppercase
+                if (/[A-Z]/.test(value)) {
+                    uppercaseCriteria.classList.add('valid');
+                    uppercaseCriteria.classList.add('text-green-600');
+                } else {
+                    uppercaseCriteria.classList.remove('valid');
+                    uppercaseCriteria.classList.remove('text-green-600');
+                }
+
+                // Check lowercase
+                if (/[a-z]/.test(value)) {
+                    lowercaseCriteria.classList.add('valid');
+                    lowercaseCriteria.classList.add('text-green-600');
+                } else {
+                    lowercaseCriteria.classList.remove('valid');
+                    lowercaseCriteria.classList.remove('text-green-600');
+                }
+
+                // Check number
+                if (/[0-9]/.test(value)) {
+                    numberCriteria.classList.add('valid');
+                    numberCriteria.classList.add('text-green-600');
+                } else {
+                    numberCriteria.classList.remove('valid');
+                    numberCriteria.classList.remove('text-green-600');
+                }
+
+                // Check special character
+                if (/[!#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(value)) {
+                    specialCriteria.classList.add('valid');
+                    specialCriteria.classList.add('text-green-600');
+                } else {
+                    specialCriteria.classList.remove('valid');
+                    specialCriteria.classList.remove('text-green-600');
+                }
+            }
+
+            // Mobile validation
+            if (lengthCriteriaMobile) {
+                if (value.length >= 8) {
+                    lengthCriteriaMobile.classList.add('valid');
+                    lengthCriteriaMobile.classList.add('text-green-600');
+                } else {
+                    lengthCriteriaMobile.classList.remove('valid');
+                    lengthCriteriaMobile.classList.remove('text-green-600');
+                }
+
+                // Check uppercase
+                if (/[A-Z]/.test(value)) {
+                    uppercaseCriteriaMobile.classList.add('valid');
+                    uppercaseCriteriaMobile.classList.add('text-green-600');
+                } else {
+                    uppercaseCriteriaMobile.classList.remove('valid');
+                    uppercaseCriteriaMobile.classList.remove('text-green-600');
+                }
+
+                // Check lowercase
+                if (/[a-z]/.test(value)) {
+                    lowercaseCriteriaMobile.classList.add('valid');
+                    lowercaseCriteriaMobile.classList.add('text-green-600');
+                } else {
+                    lowercaseCriteriaMobile.classList.remove('valid');
+                    lowercaseCriteriaMobile.classList.remove('text-green-600');
+                }
+
+                // Check number
+                if (/[0-9]/.test(value)) {
+                    numberCriteriaMobile.classList.add('valid');
+                    numberCriteriaMobile.classList.add('text-green-600');
+                } else {
+                    numberCriteriaMobile.classList.remove('valid');
+                    numberCriteriaMobile.classList.remove('text-green-600');
+                }
+
+                // Check special character
+                if (/[!#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(value)) {
+                    specialCriteriaMobile.classList.add('valid');
+                    specialCriteriaMobile.classList.add('text-green-600');
+                } else {
+                    specialCriteriaMobile.classList.remove('valid');
+                    specialCriteriaMobile.classList.remove('text-green-600');
+                }
+            }
+
+            checkPasswordMatch();
+        }
+
+        function checkPasswordMatch() {
+            const passwordsMatch = password.value === confirmPassword.value && password.value !== '';
+            
+            // Desktop validation
+            if (matchCriteria) {
+                if (passwordsMatch) {
+                    matchCriteria.classList.add('valid');
+                    matchCriteria.classList.add('text-green-600');
+                    const errorElement = document.getElementById('passwordMatchError');
+                    if (errorElement) {
+                        errorElement.classList.add('hidden');
+                    }
+                } else {
+                    matchCriteria.classList.remove('valid');
+                    matchCriteria.classList.remove('text-green-600');
+                    if (confirmPassword.value !== '' && password.value !== confirmPassword.value) {
+                        const errorElement = document.getElementById('passwordMatchError');
+                        if (errorElement) {
+                            errorElement.classList.remove('hidden');
+                        }
+                    }
+                }
+            }
+
+            // Mobile validation
+            if (matchCriteriaMobile) {
+                if (passwordsMatch) {
+                    matchCriteriaMobile.classList.add('valid');
+                    matchCriteriaMobile.classList.add('text-green-600');
+                } else {
+                    matchCriteriaMobile.classList.remove('valid');
+                    matchCriteriaMobile.classList.remove('text-green-600');
+                }
+            }
+        }
+
+        password.addEventListener('input', validatePassword);
+        confirmPassword.addEventListener('input', checkPasswordMatch);
+
+        // Form submission handler with auto-login functionality
+        document.getElementById('registrationForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            // Validate form
+            const fullName = document.getElementById('fullName').value;
+            const email = document.getElementById('email').value;
+            const passwordValue = document.getElementById('password').value;
+            const confirmPasswordValue = document.getElementById('confirmPassword').value;
+            const terms = document.getElementById('terms').checked;
+
+            let isValid = true;
+
+            // Basic validation
+            if (!fullName) {
+                const errorElement = document.getElementById('fullNameError');
+                if (errorElement) {
+                    errorElement.classList.remove('hidden');
+                }
+                isValid = false;
+            } else {
+                const errorElement = document.getElementById('fullNameError');
+                if (errorElement) {
+                    errorElement.classList.add('hidden');
+                }
+            }
+
+            if (!email || !email.includes("@@")) {
+                const errorElement = document.getElementById('emailError');
+                if (errorElement) {
+                    errorElement.classList.remove('hidden');
+                }
+                isValid = false;
+            } else {
+                const errorElement = document.getElementById('emailError');
+                if (errorElement) {
+                    errorElement.classList.add('hidden');
+                }
+            }
+
+            if (passwordValue !== confirmPasswordValue) {
+                const errorElement = document.getElementById('passwordMatchError');
+                if (errorElement) {
+                    errorElement.classList.remove('hidden');
+                }
+                isValid = false;
+            } else {
+                const errorElement = document.getElementById('passwordMatchError');
+                if (errorElement) {
+                    errorElement.classList.add('hidden');
+                }
+            }
+
+            // Check all password criteria
+            const criteriaElements = [
+                lengthCriteria || lengthCriteriaMobile,
+                uppercaseCriteria || uppercaseCriteriaMobile,
+                lowercaseCriteria || lowercaseCriteriaMobile,
+                numberCriteria || numberCriteriaMobile,
+                specialCriteria || specialCriteriaMobile
+            ];
+            
+            for (const element of criteriaElements) {
+                if (element && !element.classList.contains('valid')) {
+                    isValid = false;
+                    break;
+                }
+            }
+
+            if (!terms) {
+                isValid = false;
+            }
+
+            // If valid, submit the form via AJAX
+            if (isValid) {
+                const formData = new FormData(this);
+
+                // Show loading state
+                const button = document.getElementById('registerButton');
+                const originalButtonText = button.innerHTML;
+                button.innerHTML = '<div class="loader mr-2" style="width: 20px; height: 20px;"></div> Processing...';
+                button.disabled = true;
+
+                // Clear any previous error messages
+                hideAllErrors();
+
+                fetch(this.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(function(response) {
+                    return response.json().then(function(data) {
+                        return { status: response.status, data: data };
+                    });
+                })
+                .then(function(result) {
+                    if (result.status === 200 && result.data.success) {
+                        // Registration successful, now log the user in automatically
+                        const loginData = new FormData();
+                        loginData.append('EmailOrStudentId', email);
+                        loginData.append('Password', passwordValue);
+                        loginData.append('RememberMe', 'true');
+
+                        return fetch('/Account/Login', {
+                            method: 'POST',
+                            body: loginData,
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        });
+                    } else {
+                        // Registration failed
+                        button.innerHTML = originalButtonText;
+                        button.disabled = false;
+
+                        // Show specific error message
+                        if (result.data.message) {
+                            showErrorMessage(result.data.message);
+                        } else {
+                            showErrorMessage('Registration failed. Please try again.');
+                        }
+                        return null;
+                    }
+                })
+                .then(function(response) {
+                    if (response) {
+                        if (response.redirected) {
+                            // Successful login, redirect to the appropriate page
+                            window.location.href = response.url;
+                        } else {
+                            // Check if login was successful
+                            return response.json().then(function(loginData) {
+                                if (loginData.success) {
+                                    // Redirect to student application page
+                                    window.location.href = '/StudentApplication';
+                                } else {
+                                    // Reset button state if login failed
+                                    button.innerHTML = originalButtonText;
+                                    button.disabled = false;
+                                    showErrorMessage('Registration successful but login failed. Please try logging in manually.');
+                                }
+                            });
+                        }
+                    }
+                })
+                .catch(function(error) {
+                    // Log error to console
+                    if (console && console.error) {
+                        console.error('Error:', error);
+                    }
+                    button.innerHTML = originalButtonText;
+                    button.disabled = false;
+                    showErrorMessage('An error occurred during registration. Please try again.');
+                });
+            }
+        });
+
+        // Hide Loader When Page is Fully Loaded
+        window.addEventListener('load', function() {
+            const loader = document.getElementById('loader');
+            if (loader) {
+                loader.style.opacity = '0';
+                loader.style.transition = 'opacity 0.5s ease';
+                setTimeout(function() {
+                    loader.style.display = 'none';
+                }, 500);
+            }
+        });
+
+        // Add subtle animation to the card on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const card = document.querySelector('.registration-card');
+            if (card) {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+
+                setTimeout(function() {
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, 200);
+            }
+        });
+
+        // Function to show error messages
+        function showErrorMessage(message) {
+            // Remove any existing error alerts
+            const existingAlert = document.getElementById('errorAlert');
+            if (existingAlert) {
+                existingAlert.remove();
+            }
+
+            // Create new error alert
+            const errorAlert = document.createElement('div');
+            errorAlert.id = 'errorAlert';
+            errorAlert.className = 'mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center';
+            errorAlert.innerHTML = '<i class="material-icons text-red-500 mr-2 text-sm">error</i>' +
+                '<span class="text-red-700 text-sm">' + message + '</span>' +
+                '<button type="button" class="ml-auto text-red-500 hover:text-red-700" onclick="this.parentElement.remove()">' +
+                '<i class="material-icons text-sm">close</i>' +
+                '</button>';
+
+            // Insert the alert at the top of the form
+            const form = document.getElementById('registrationForm');
+            if (form) {
+                form.insertBefore(errorAlert, form.firstChild);
+            }
+
+            // Auto-hide after 5 seconds
+            setTimeout(function() {
+                if (errorAlert.parentElement) {
+                    errorAlert.remove();
+                }
+            }, 5000);
+        }
+
+        // Function to hide all error messages
+        function hideAllErrors() {
+            const errorAlert = document.getElementById('errorAlert');
+            if (errorAlert) {
+                errorAlert.remove();
+            }
+
+            // Hide field-specific errors
+            const fullNameError = document.getElementById('fullNameError');
+            const emailError = document.getElementById('emailError');
+            const passwordMatchError = document.getElementById('passwordMatchError');
+
+            if (fullNameError) {
+                fullNameError.classList.add('hidden');
+            }
+            if (emailError) {
+                emailError.classList.add('hidden');
+            }
+            if (passwordMatchError) {
+                passwordMatchError.classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+</html>

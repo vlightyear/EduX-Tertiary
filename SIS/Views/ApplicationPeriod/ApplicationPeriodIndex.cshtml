@@ -1,0 +1,1079 @@
+@model IEnumerable<SIS.Models.Applications.ApplicationPeriod>
+
+@{
+    ViewData["Title"] = "Application Period Management";
+}
+
+<div class="min-h-screen p-2 sm:p-4">
+    <!-- Header Section -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
+        <div class="flex items-center text-gray-800">
+            <i class="material-icons text-2xl sm:text-3xl mr-2">event</i>
+            <div>
+                <h1 class="text-xl sm:text-2xl font-bold">Application Period Management</h1>
+                <p class="text-xs sm:text-sm text-slate-600">Manage application periods and admission cycles</p>
+            </div>
+        </div>
+        <button type="button"
+                onclick="showCreatePeriodModal()"
+                class="w-full sm:w-auto px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors flex items-center justify-center">
+            <i class="material-icons mr-2 text-lg">add_circle</i>
+            <span class="text-sm sm:text-base">New Period</span>
+        </button>
+    </div>
+
+    <!-- Main Content Layout -->
+    <div class="flex flex-col lg:flex-row gap-4">
+        <!-- Main Table Section -->
+        <div class="w-full lg:w-3/4 order-2 lg:order-1">
+            <div class="bg-white rounded-lg shadow-md">
+                <div class="p-2 sm:p-4">
+                    <!-- Filters Section -->
+                    <div class="flex flex-col gap-3 mb-4">
+                        <!-- Search Input -->
+                        <div class="relative w-full">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <i class="material-icons text-slate-400 text-sm">search</i>
+                            </div>
+                            <input type="text" id="searchInput"
+                                   class="block w-full pl-10 pr-4 py-2 text-sm border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500"
+                                   placeholder="Search periods..." />
+                        </div>
+
+                        <!-- Filter Controls -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <div class="flex flex-col">
+                                <label for="filterYear" class="text-xs text-slate-600 mb-1">Year:</label>
+                                <select id="filterYear"
+                                        class="px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500">
+                                    <option value="all">All Years</option>
+                                    @if (ViewBag.Years != null)
+                                    {
+                                        foreach (var year in ViewBag.Years)
+                                        {
+                                            <option value="@year.Value">@year.Text</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="flex flex-col">
+                                <label for="filterStatus" class="text-xs text-slate-600 mb-1">Status:</label>
+                                <select id="filterStatus"
+                                        class="px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500">
+                                    <option value="all">All Statuses</option>
+                                    <option value="upcoming">Upcoming</option>
+                                    <option value="active">Active</option>
+                                    <option value="expired">Expired</option>
+                                </select>
+                            </div>
+
+                            <div class="flex flex-col">
+                                <label for="filterMode" class="text-xs text-slate-600 mb-1">Mode of Study:</label>
+                                <select id="filterMode"
+                                        class="px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500">
+                                    <option value="all">All Modes</option>
+                                    @if (ViewBag.ModeOfStudies != null)
+                                    {
+                                        foreach (var mode in ViewBag.ModeOfStudies)
+                                        {
+                                            <option value="@mode.Value">@mode.Text</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Clear Filters Button -->
+                        <div class="flex justify-end">
+                            <button type="button"
+                                    onclick="clearFilters()"
+                                    class="px-3 py-1.5 text-xs sm:text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-1">
+                                <i class="material-icons text-sm">clear</i>
+                                Clear Filters
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Table Container -->
+                    <div class="overflow-x-auto overflow-y-auto max-h-[calc(100vh-300px)] sm:max-h-[calc(100vh-250px)]">
+                        @if (TempData["Success"] != null)
+                        {
+                            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-3 mb-4 text-sm" role="alert">
+                                <p>@TempData["Success"]</p>
+                            </div>
+                        }
+
+                        @if (TempData["Error"] != null)
+                        {
+                            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-3 mb-4 text-sm" role="alert">
+                                <p>@TempData["Error"]</p>
+                            </div>
+                        }
+
+                        <table id="periodsTable" class="w-full text-xs sm:text-sm text-gray-600">
+                            <thead class="sticky top-0 bg-slate-50 z-10">
+                                <tr>
+                                    <th class="px-2 sm:px-4 py-2 text-left whitespace-nowrap">#</th>
+                                    <th class="px-2 sm:px-4 py-2 text-left whitespace-nowrap">Period Name</th>
+                                    <th class="px-2 sm:px-4 py-2 text-left hidden md:table-cell">Duration</th>
+                                    <th class="px-2 sm:px-4 py-2 text-left hidden lg:table-cell">Year</th>
+                                    <th class="px-2 sm:px-4 py-2 text-left">Status</th>
+                                    <th class="px-2 sm:px-4 py-2 text-left hidden sm:table-cell">Applicants</th>
+                                    <th class="px-2 sm:px-4 py-2 text-left hidden xl:table-cell">Programmes</th>
+                                    <th class="px-2 sm:px-4 py-2 text-left">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="periodsTableBody">
+                                @if (Model != null && Model.Any())
+                                {
+                                    int index = 1;
+                                    foreach (var period in Model)
+                                    {
+                                        var now = DateTime.Now;
+                                        var isActive = period.StartOfApplication <= now && period.EndOfApplication >= now;
+                                        var isUpcoming = period.StartOfApplication > now;
+                                        var isExpired = period.EndOfApplication < now;
+                                        var status = isActive ? "active" : (isUpcoming ? "upcoming" : "expired");
+                                        var modeIds = string.Join(",", period.ModeOfStudies?.Select(m => m.ModeId) ?? new List<int>());
+
+                                        <tr data-year="@period.Year"
+                                            data-status="@status"
+                                            data-modes="@modeIds"
+                                            class="border-b hover:bg-slate-50 transition-colors">
+                                            <td class="px-2 sm:px-4 py-3">@index</td>
+                                            <td class="px-2 sm:px-4 py-3">
+                                                <div>
+                                                    <p class="font-semibold text-xs sm:text-sm">@period.Name</p>
+                                                    <p class="text-xs text-gray-500 line-clamp-1">@period.Description</p>
+                                                </div>
+                                            </td>
+                                            <td class="px-2 sm:px-4 py-3 hidden md:table-cell">
+                                                <div class="text-xs">
+                                                    <p>@period.StartOfApplication.ToString("MMM dd, yyyy")</p>
+                                                    <p class="text-gray-500">to @period.EndOfApplication.ToString("MMM dd, yyyy")</p>
+                                                </div>
+                                            </td>
+                                            <td class="px-2 sm:px-4 py-3 hidden lg:table-cell whitespace-nowrap">
+                                                <span class="font-semibold">@period.Year</span>
+                                            </td>
+                                            <td class="px-2 sm:px-4 py-3">
+                                                <span class="px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap @(
+                                                    isActive ? "bg-green-100 text-green-800" :
+                                                    isUpcoming ? "bg-blue-100 text-blue-800" :
+                                                    "bg-gray-100 text-gray-800")">
+                                                    @(isActive ? "Active" : (isUpcoming ? "Upcoming" : "Expired"))
+                                                </span>
+                                            </td>
+                                            <td class="px-2 sm:px-4 py-3 hidden sm:table-cell">
+                                                <span class="font-semibold text-cyan-600">@(period.Applicants?.Count ?? 0)</span>
+                                            </td>
+                                            <td class="px-2 sm:px-4 py-3 hidden xl:table-cell">
+                                                <span class="font-semibold">@(period.Programms?.Count ?? 0)</span>
+                                            </td>
+                                            <td class="px-2 sm:px-4 py-3">
+                                                <div class="flex space-x-1 sm:space-x-2">
+                                                    <button type="button"
+                                                            onclick="showPeriodDetails(@period.Id)"
+                                                            class="text-cyan-600 hover:text-cyan-800 p-1"
+                                                            title="View Details">
+                                                        <i class="material-icons text-base sm:text-lg">visibility</i>
+                                                    </button>
+                                                    <button type="button"
+                                                            onclick="showUpdatePeriodModal(@period.Id)"
+                                                            class="text-blue-600 hover:text-blue-800 p-1"
+                                                            title="Edit">
+                                                        <i class="material-icons text-base sm:text-lg">edit</i>
+                                                    </button>
+                                                    <button type="button"
+                                                            onclick="showDeletePeriodModal(@period.Id)"
+                                                            class="text-red-600 hover:text-red-800 p-1"
+                                                            title="Delete">
+                                                        <i class="material-icons text-base sm:text-lg">delete</i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        index++;
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="8" class="px-4 py-8 text-center text-slate-500">
+                                            <div class="flex flex-col items-center">
+                                                <i class="material-icons text-4xl sm:text-6xl mb-2 text-slate-300">event</i>
+                                                <p class="text-sm sm:text-lg">No application periods found</p>
+                                                <p class="text-xs sm:text-sm">Click "New Period" to create your first application period</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Side Statistics Panel -->
+        <div class="w-full lg:w-1/4 order-1 lg:order-2">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
+                <!-- Quick Stats Card -->
+                <div class="bg-white rounded-lg shadow-md p-3 sm:p-4">
+                    <h3 class="text-base sm:text-lg font-semibold text-slate-700 mb-3 flex items-center">
+                        <i class="material-icons mr-2 text-lg sm:text-xl">analytics</i>
+                        <span class="text-sm sm:text-base">Quick Stats</span>
+                    </h3>
+                    <div class="space-y-2 sm:space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs sm:text-sm text-slate-600">Total Periods</span>
+                            <span id="totalPeriods" class="text-lg sm:text-xl font-bold text-cyan-600">@(Model?.Count() ?? 0)</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs sm:text-sm text-slate-600">Active</span>
+                            <span class="text-lg sm:text-xl font-bold text-green-600">
+                                @(Model?.Count(p => p.StartOfApplication <= DateTime.Now && p.EndOfApplication >= DateTime.Now) ?? 0)
+                            </span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs sm:text-sm text-slate-600">Upcoming</span>
+                            <span class="text-lg sm:text-xl font-bold text-blue-600">
+                                @(Model?.Count(p => p.StartOfApplication > DateTime.Now) ?? 0)
+                            </span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs sm:text-sm text-slate-600">Total Applicants</span>
+                            <span class="text-lg sm:text-xl font-bold text-orange-600">
+                                @(Model?.Sum(p => p.Applicants?.Count ?? 0) ?? 0)
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Status Distribution Chart -->
+                <div class="bg-white rounded-lg shadow-md p-3 sm:p-4">
+                    <h3 class="text-base sm:text-lg font-semibold text-slate-700 mb-3 flex items-center">
+                        <i class="material-icons mr-2 text-lg sm:text-xl">pie_chart</i>
+                        <span class="text-sm sm:text-base">Status Distribution</span>
+                    </h3>
+                    <div id="statusChart" style="height: 180px; min-height: 180px;"></div>
+                </div>
+
+                <!-- Timeline Chart -->
+                <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 sm:col-span-2 lg:col-span-1">
+                    <h3 class="text-base sm:text-lg font-semibold text-slate-700 mb-3 flex items-center">
+                        <i class="material-icons mr-2 text-lg sm:text-xl">bar_chart</i>
+                        <span class="text-sm sm:text-base">Applicants by Period</span>
+                    </h3>
+                    <div id="applicantsChart" style="height: 200px; min-height: 200px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Indicator -->
+<div id="loadingIndicator" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-lg p-4 sm:p-6 flex items-center space-x-4 mx-4">
+        <div class="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-cyan-600"></div>
+        <span class="text-slate-700 text-sm sm:text-base">Loading...</span>
+    </div>
+</div>
+
+<!-- Create Period Modal -->
+<div id="createPeriodModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+    <div class="fixed inset-0 bg-black opacity-40" onclick="hideCreatePeriodModal()"></div>
+    <div class="bg-white rounded-lg shadow-lg w-full max-w-3xl z-10 overflow-hidden max-h-[90vh] overflow-y-auto">
+        <div class="px-4 sm:px-6 py-3 sm:py-4 bg-cyan-600 text-white sticky top-0">
+            <h3 class="text-lg sm:text-xl font-semibold flex items-center">
+                <i class="material-icons mr-2">add_circle</i>
+                Create Application Period
+            </h3>
+        </div>
+        <form id="createPeriodForm" method="post" asp-action="CreateApplicationPeriod" onsubmit="handleCreateSubmit(event)">
+            @Html.AntiForgeryToken()
+            <div class="px-4 sm:px-6 py-4">
+                <div class="grid grid-cols-1 gap-6 mb-6">
+                    <!-- Basic Information -->
+                    <div class="border-b pb-4">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-3">Basic Information</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="relative z-0 w-full group sm:col-span-2">
+                                <input required type="text" name="Name" id="createName"
+                                       class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
+                                       placeholder=" " />
+                                <label for="createName"
+                                       class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600">
+                                    Period Name
+                                </label>
+                            </div>
+
+                            <div class="relative z-0 w-full group sm:col-span-2">
+                                <textarea required name="Description" id="createDescription" rows="2"
+                                          class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
+                                          placeholder=" "></textarea>
+                                <label for="createDescription"
+                                       class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600">
+                                    Description
+                                </label>
+                            </div>
+
+                            <div class="relative z-0 w-full group">
+                                <input required type="datetime-local" name="StartOfApplication" id="createStartDate"
+                                       class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
+                                       placeholder=" " />
+                                <label for="createStartDate"
+                                       class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600">
+                                    Start Date & Time
+                                </label>
+                            </div>
+
+                            <div class="relative z-0 w-full group">
+                                <input required type="datetime-local" name="EndOfApplication" id="createEndDate"
+                                       class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
+                                       placeholder=" " />
+                                <label for="createEndDate"
+                                       class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600">
+                                    End Date & Time
+                                </label>
+                            </div>
+
+                            <div class="relative z-0 w-full group">
+                                <select required name="Year" id="createYear"
+                                        class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer">
+                                    <option value="">Select Year</option>
+                                    @if (ViewBag.Years != null)
+                                    {
+                                        foreach (var year in ViewBag.Years)
+                                        {
+                                            <option value="@year.Value" selected="@(year.Value == DateTime.Now.Year.ToString())">@year.Text</option>
+                                        }
+                                    }
+                                </select>
+                                <label for="createYear"
+                                       class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600">
+                                    Academic Year
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mode of Study Selection -->
+                    <div class="border-b pb-4">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-3">Modes of Study</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            @if (ViewBag.ModeOfStudies != null)
+                            {
+                                foreach (var mode in ViewBag.ModeOfStudies)
+                                {
+                                    <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                                        <input type="checkbox" name="selectedModes" value="@mode.Value" class="mr-3 h-4 w-4 text-cyan-600 focus:ring-cyan-500 border-gray-300 rounded" />
+                                        <span class="text-sm">@mode.Text</span>
+                                    </label>
+                                }
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Programme Selection -->
+                    <div>
+                        <h4 class="text-sm font-semibold text-gray-700 mb-3">Available Programmes</h4>
+                        <div class="max-h-60 overflow-y-auto border rounded-lg p-3">
+                            <div class="grid grid-cols-1 gap-2">
+                                @if (ViewBag.Programmes != null)
+                                {
+                                    foreach (var programme in ViewBag.Programmes)
+                                    {
+                                        <label class="flex items-center p-2 hover:bg-gray-50 cursor-pointer rounded">
+                                            <input type="checkbox" name="selectedProgrammes" value="@programme.Value" class="mr-3 h-4 w-4 text-cyan-600 focus:ring-cyan-500 border-gray-300 rounded" />
+                                            <span class="text-sm">@programme.Text</span>
+                                        </label>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="px-4 sm:px-6 py-3 sm:py-4 bg-gray-50 flex flex-col sm:flex-row justify-end gap-2">
+                <button type="button" onclick="hideCreatePeriodModal()" class="w-full sm:w-auto px-4 py-2 bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300 transition-colors text-sm sm:text-base">
+                    Cancel
+                </button>
+                <button type="submit" id="createSubmitBtn" class="w-full sm:w-auto px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors text-sm sm:text-base flex items-center justify-center gap-2">
+                    <span id="createBtnText">Create Period</span>
+                    <div id="createBtnSpinner" class="hidden animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Update Period Modal -->
+<div id="updatePeriodModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+    <div class="fixed inset-0 bg-black opacity-40" onclick="hideUpdatePeriodModal()"></div>
+    <div class="bg-white rounded-lg shadow-lg w-full max-w-3xl z-10 overflow-hidden max-h-[90vh] overflow-y-auto">
+        <div class="px-4 sm:px-6 py-3 sm:py-4 bg-blue-600 text-white sticky top-0">
+            <h3 class="text-lg sm:text-xl font-semibold flex items-center">
+                <i class="material-icons mr-2">edit</i>
+                Update Application Period
+            </h3>
+        </div>
+        <form id="updatePeriodForm" method="post" onsubmit="handleUpdateSubmit(event)">
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="updatePeriodId" name="id" />
+            <div class="px-4 sm:px-6 py-4">
+                <div class="grid grid-cols-1 gap-6 mb-6">
+                    <!-- Basic Information -->
+                    <div class="border-b pb-4">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-3">Basic Information</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="relative z-0 w-full group sm:col-span-2">
+                                <input required type="text" name="Name" id="updateName"
+                                       class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
+                                       placeholder=" " />
+                                <label for="updateName"
+                                       class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600">
+                                    Period Name
+                                </label>
+                            </div>
+
+                            <div class="relative z-0 w-full group sm:col-span-2">
+                                <textarea required name="Description" id="updateDescription" rows="2"
+                                          class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
+                                          placeholder=" "></textarea>
+                                <label for="updateDescription"
+                                       class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600">
+                                    Description
+                                </label>
+                            </div>
+
+                            <div class="relative z-0 w-full group">
+                                <input required type="datetime-local" name="StartOfApplication" id="updateStartDate"
+                                       class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
+                                       placeholder=" " />
+                                <label for="updateStartDate"
+                                       class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600">
+                                    Start Date & Time
+                                </label>
+                            </div>
+
+                            <div class="relative z-0 w-full group">
+                                <input required type="datetime-local" name="EndOfApplication" id="updateEndDate"
+                                       class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
+                                       placeholder=" " />
+                                <label for="updateEndDate"
+                                       class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600">
+                                    End Date & Time
+                                </label>
+                            </div>
+
+                            <div class="relative z-0 w-full group">
+                                <select required name="Year" id="updateYear"
+                                        class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer">
+                                    <option value="">Select Year</option>
+                                    @if (ViewBag.Years != null)
+                                    {
+                                        foreach (var year in ViewBag.Years)
+                                        {
+                                            <option value="@year.Value">@year.Text</option>
+                                        }
+                                    }
+                                </select>
+                                <label for="updateYear"
+                                       class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600">
+                                    Academic Year
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mode of Study Selection -->
+                    <div class="border-b pb-4">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-3">Modes of Study</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="updateModesContainer">
+                            @if (ViewBag.ModeOfStudies != null)
+                            {
+                                foreach (var mode in ViewBag.ModeOfStudies)
+                                {
+                                    <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                                        <input type="checkbox" name="selectedModes" value="@mode.Value" class="mr-3 h-4 w-4 text-cyan-600 focus:ring-cyan-500 border-gray-300 rounded update-mode-checkbox" />
+                                        <span class="text-sm">@mode.Text</span>
+                                    </label>
+                                }
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Programme Selection -->
+                    <div>
+                        <h4 class="text-sm font-semibold text-gray-700 mb-3">Available Programmes</h4>
+                        <div class="max-h-60 overflow-y-auto border rounded-lg p-3" id="updateProgrammesContainer">
+                            <div class="grid grid-cols-1 gap-2">
+                                @if (ViewBag.Programmes != null)
+                                {
+                                    foreach (var programme in ViewBag.Programmes)
+                                    {
+                                        <label class="flex items-center p-2 hover:bg-gray-50 cursor-pointer rounded">
+                                            <input type="checkbox" name="selectedProgrammes" value="@programme.Value" class="mr-3 h-4 w-4 text-cyan-600 focus:ring-cyan-500 border-gray-300 rounded update-programme-checkbox" />
+                                            <span class="text-sm">@programme.Text</span>
+                                        </label>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="px-4 sm:px-6 py-3 sm:py-4 bg-gray-50 flex flex-col sm:flex-row justify-end gap-2">
+                <button type="button" onclick="hideUpdatePeriodModal()" class="w-full sm:w-auto px-4 py-2 bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300 transition-colors text-sm sm:text-base">
+                    Cancel
+                </button>
+                <button type="submit" id="updateSubmitBtn" class="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base flex items-center justify-center gap-2">
+                    <span id="updateBtnText">Update Period</span>
+                    <div id="updateBtnSpinner" class="hidden animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Period Modal -->
+<div id="deletePeriodModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+    <div class="fixed inset-0 bg-black opacity-40" onclick="hideDeletePeriodModal()"></div>
+    <div class="bg-white rounded-lg shadow-lg w-full max-w-md z-10 overflow-hidden">
+        <div class="px-4 sm:px-6 py-3 sm:py-4 bg-red-600 text-white">
+            <h3 class="text-lg sm:text-xl font-semibold flex items-center">
+                <i class="material-icons mr-2">warning</i>
+                Confirm Delete
+            </h3>
+        </div>
+        <form id="deletePeriodForm" method="post" asp-action="DeleteApplicationPeriod" onsubmit="handleDeleteSubmit(event)">
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="deletePeriodId" name="id" />
+            <div class="px-4 sm:px-6 py-4">
+                <p class="text-slate-700 mb-4 text-sm sm:text-base">
+                    Are you sure you want to delete this application period?
+                    This action cannot be undone.
+                </p>
+                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3">
+                    <p class="text-xs sm:text-sm text-yellow-700">
+                        <strong>Note:</strong> Periods with existing applicants cannot be deleted.
+                    </p>
+                </div>
+            </div>
+            <div class="px-4 sm:px-6 py-3 sm:py-4 bg-gray-50 flex flex-col sm:flex-row justify-end gap-2">
+                <button type="button" onclick="hideDeletePeriodModal()" class="w-full sm:w-auto px-4 py-2 bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300 transition-colors text-sm sm:text-base">
+                    Cancel
+                </button>
+                <button type="submit" id="deleteSubmitBtn" class="w-full sm:w-auto px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm sm:text-base flex items-center justify-center gap-2">
+                    <span id="deleteBtnText">Delete Period</span>
+                    <div id="deleteBtnSpinner" class="hidden animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Details Modal -->
+<div id="detailsModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+    <div class="fixed inset-0 bg-black opacity-40" onclick="hideDetailsModal()"></div>
+    <div class="bg-white rounded-lg shadow-lg w-full max-w-3xl z-10 overflow-hidden max-h-[90vh] overflow-y-auto">
+        <div class="px-4 sm:px-6 py-3 sm:py-4 bg-cyan-600 text-white sticky top-0">
+            <h3 class="text-lg sm:text-xl font-semibold flex items-center">
+                <i class="material-icons mr-2">info</i>
+                Period Details
+            </h3>
+        </div>
+        <div id="detailsContent" class="px-4 sm:px-6 py-4">
+            <!-- Details will be loaded here -->
+        </div>
+        <div class="px-4 sm:px-6 py-3 sm:py-4 bg-gray-50 flex justify-end">
+            <button type="button" onclick="hideDetailsModal()" class="w-full sm:w-auto px-4 py-2 bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300 transition-colors text-sm sm:text-base">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- ApexCharts for statistics -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const periodsTableBody = document.getElementById('periodsTableBody');
+            const searchInput = document.getElementById('searchInput');
+            const filterYear = document.getElementById('filterYear');
+            const filterStatus = document.getElementById('filterStatus');
+            const filterMode = document.getElementById('filterMode');
+
+            // LocalStorage keys
+            const STORAGE_KEYS = {
+                year: 'appperiod_filter_year',
+                status: 'appperiod_filter_status',
+                mode: 'appperiod_filter_mode',
+                search: 'appperiod_search_term'
+            };
+
+            // Load saved filter values from localStorage
+            const loadSavedFilters = () => {
+                const savedYear = localStorage.getItem(STORAGE_KEYS.year);
+                const savedStatus = localStorage.getItem(STORAGE_KEYS.status);
+                const savedMode = localStorage.getItem(STORAGE_KEYS.mode);
+                const savedSearch = localStorage.getItem(STORAGE_KEYS.search);
+
+                if (savedYear) filterYear.value = savedYear;
+                if (savedStatus) filterStatus.value = savedStatus;
+                if (savedMode) filterMode.value = savedMode;
+                if (savedSearch) searchInput.value = savedSearch;
+
+                filterTable();
+            };
+
+            // Save filter values to localStorage
+            const saveFilterToStorage = (key, value) => {
+                localStorage.setItem(key, value);
+            };
+
+            // Filtering and Search
+            const filterTable = () => {
+                const searchTerm = searchInput.value.toLowerCase();
+                const selectedYear = filterYear.value;
+                const selectedStatus = filterStatus.value;
+                const selectedMode = filterMode.value;
+
+                const rows = periodsTableBody.querySelectorAll('tr');
+                let visibleCount = 0;
+
+                rows.forEach(row => {
+                    if (row.querySelector('td[colspan]')) return;
+
+                    const name = row.children[1]?.textContent.toLowerCase() || '';
+                    const year = row.getAttribute('data-year');
+                    const status = row.getAttribute('data-status');
+                    const modes = row.getAttribute('data-modes');
+
+                    const matchesSearch = name.includes(searchTerm);
+                    const matchesYear = selectedYear === 'all' || year === selectedYear;
+                    const matchesStatus = selectedStatus === 'all' || status === selectedStatus;
+                    const matchesMode = selectedMode === 'all' || (modes && modes.split(',').includes(selectedMode));
+
+                    if (matchesSearch && matchesYear && matchesStatus && matchesMode) {
+                        row.style.display = '';
+                        visibleCount++;
+                        row.children[0].textContent = visibleCount;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            };
+
+            // Form submission handlers with loading states
+            window.handleCreateSubmit = (event) => {
+                const submitBtn = document.getElementById('createSubmitBtn');
+                const btnText = document.getElementById('createBtnText');
+                const btnSpinner = document.getElementById('createBtnSpinner');
+
+                submitBtn.disabled = true;
+                btnText.textContent = 'Creating...';
+                btnSpinner.classList.remove('hidden');
+            };
+
+            window.handleUpdateSubmit = (event) => {
+                const submitBtn = document.getElementById('updateSubmitBtn');
+                const btnText = document.getElementById('updateBtnText');
+                const btnSpinner = document.getElementById('updateBtnSpinner');
+
+                submitBtn.disabled = true;
+                btnText.textContent = 'Updating...';
+                btnSpinner.classList.remove('hidden');
+            };
+
+            window.handleDeleteSubmit = (event) => {
+                const submitBtn = document.getElementById('deleteSubmitBtn');
+                const btnText = document.getElementById('deleteBtnText');
+                const btnSpinner = document.getElementById('deleteBtnSpinner');
+
+                submitBtn.disabled = true;
+                btnText.textContent = 'Deleting...';
+                btnSpinner.classList.remove('hidden');
+            };
+
+            // Initialize Status Chart
+            const initializeStatusChart = () => {
+                const chartContainer = document.getElementById('statusChart');
+                const rows = periodsTableBody.querySelectorAll('tr');
+
+                if (rows.length === 0 || rows[0].querySelector('td[colspan]')) {
+                    chartContainer.innerHTML = `
+                        <div class="flex flex-col items-center justify-center h-full text-slate-500">
+                            <p class="text-xs sm:text-sm text-center">Chart data will appear here once periods are added.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const statusCounts = { active: 0, upcoming: 0, expired: 0 };
+
+                rows.forEach(row => {
+                    const status = row.getAttribute('data-status');
+                    if (status && statusCounts.hasOwnProperty(status)) {
+                        statusCounts[status]++;
+                    }
+                });
+
+                const series = [statusCounts.active, statusCounts.upcoming, statusCounts.expired];
+                const labels = ['Active', 'Upcoming', 'Expired'];
+
+                const options = {
+                    series: series,
+                    chart: {
+                        type: 'donut',
+                        height: 180
+                    },
+                    labels: labels,
+                    colors: ['#10b981', '#3b82f6', '#6b7280'],
+                    plotOptions: {
+                        pie: {
+                            donut: {
+                                size: '65%',
+                                labels: {
+                                    show: true,
+                                    total: {
+                                        show: true,
+                                        label: 'Total',
+                                        fontSize: '14px',
+                                        formatter: () => series.reduce((a, b) => a + b, 0)
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    dataLabels: { enabled: false },
+                    legend: {
+                        show: true,
+                        position: 'bottom',
+                        fontSize: '12px'
+                    },
+                    responsive: [{
+                        breakpoint: 480,
+                        options: {
+                            chart: { height: 160 },
+                            legend: { fontSize: '10px' }
+                        }
+                    }]
+                };
+
+                const chart = new ApexCharts(chartContainer, options);
+                chart.render();
+            };
+
+            // Initialize Applicants Chart
+            const initializeApplicantsChart = () => {
+                const chartContainer = document.getElementById('applicantsChart');
+                const rows = periodsTableBody.querySelectorAll('tr');
+
+                if (rows.length === 0 || rows[0].querySelector('td[colspan]')) {
+                    chartContainer.innerHTML = `
+                        <div class="flex flex-col items-center justify-center h-full text-slate-500">
+                            <p class="text-xs sm:text-sm text-center">Chart data will appear here once periods are added.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const periodData = [];
+                rows.forEach(row => {
+                    if (!row.querySelector('td[colspan]')) {
+                        const name = row.children[1]?.querySelector('p')?.textContent || '';
+                        const applicants = parseInt(row.children[5]?.textContent || '0');
+                        periodData.push({ name: name.substring(0, 20), count: applicants });
+                    }
+                });
+
+                const options = {
+                    series: [{
+                        name: 'Applicants',
+                        data: periodData.map(p => p.count)
+                    }],
+                    chart: {
+                        type: 'bar',
+                        height: 200,
+                        toolbar: { show: false }
+                    },
+                    plotOptions: {
+                        bar: {
+                            borderRadius: 4,
+                            columnWidth: '60%',
+                            distributed: true
+                        }
+                    },
+                    colors: ['#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b'],
+                    dataLabels: {
+                        enabled: true,
+                        formatter: (val) => val,
+                        style: {
+                            fontSize: '10px',
+                            fontWeight: 'bold',
+                            colors: ['#fff']
+                        }
+                    },
+                    xaxis: {
+                        categories: periodData.map(p => p.name),
+                        labels: {
+                            style: {
+                                fontSize: '10px',
+                                fontWeight: 500
+                            },
+                            rotate: -45
+                        }
+                    },
+                    yaxis: {
+                        labels: {
+                            style: { fontSize: '10px' },
+                            formatter: (val) => Math.floor(val)
+                        }
+                    },
+                    grid: {
+                        show: true,
+                        borderColor: '#f1f1f1',
+                        strokeDashArray: 4
+                    },
+                    legend: { show: false },
+                    tooltip: {
+                        y: {
+                            formatter: function(val) {
+                                return val + " applicant" + (val !== 1 ? "s" : "");
+                            }
+                        }
+                    }
+                };
+
+                const chart = new ApexCharts(chartContainer, options);
+                chart.render();
+            };
+
+            // Modal functions
+            window.showCreatePeriodModal = () => {
+                const form = document.getElementById('createPeriodForm');
+                const submitBtn = document.getElementById('createSubmitBtn');
+                const btnText = document.getElementById('createBtnText');
+                const btnSpinner = document.getElementById('createBtnSpinner');
+
+                form.reset();
+                submitBtn.disabled = false;
+                btnText.textContent = 'Create Period';
+                btnSpinner.classList.add('hidden');
+
+                // Set default year to current year
+                const currentYear = new Date().getFullYear();
+                document.getElementById('createYear').value = currentYear;
+
+                document.getElementById('createPeriodModal').classList.remove('hidden');
+            };
+
+            window.hideCreatePeriodModal = () => {
+                document.getElementById('createPeriodModal').classList.add('hidden');
+            };
+
+            window.showUpdatePeriodModal = async (id) => {
+                loadingIndicator.style.display = 'flex';
+
+                try {
+                    const response = await fetch(`/ApplicationPeriod/GetApplicationPeriod/${id}`);
+                    const period = await response.json();
+
+                    const submitBtn = document.getElementById('updateSubmitBtn');
+                    const btnText = document.getElementById('updateBtnText');
+                    const btnSpinner = document.getElementById('updateBtnSpinner');
+                    submitBtn.disabled = false;
+                    btnText.textContent = 'Update Period';
+                    btnSpinner.classList.add('hidden');
+
+                    document.getElementById('updatePeriodId').value = period.id;
+                    document.getElementById('updateName').value = period.name;
+                    document.getElementById('updateDescription').value = period.description;
+
+                    // Format dates for datetime-local input
+                    const formatDate = (dateString) => {
+                        const date = new Date(dateString);
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const day = String(date.getDate()).padStart(2, '0');
+                        const hours = String(date.getHours()).padStart(2, '0');
+                        const minutes = String(date.getMinutes()).padStart(2, '0');
+                        return `${year}-${month}-${day}T${hours}:${minutes}`;
+                    };
+
+                    document.getElementById('updateStartDate').value = formatDate(period.startOfApplication);
+                    document.getElementById('updateEndDate').value = formatDate(period.endOfApplication);
+                    document.getElementById('updateYear').value = period.year;
+
+                    // Check mode checkboxes
+                    document.querySelectorAll('.update-mode-checkbox').forEach(checkbox => {
+                        checkbox.checked = period.modeOfStudyIds.includes(parseInt(checkbox.value));
+                    });
+
+                    // Check programme checkboxes
+                    document.querySelectorAll('.update-programme-checkbox').forEach(checkbox => {
+                        checkbox.checked = period.programmeIds.includes(parseInt(checkbox.value));
+                    });
+
+                    document.getElementById('updatePeriodModal').classList.remove('hidden');
+                    document.getElementById('updatePeriodForm').action = `/ApplicationPeriod/UpdateApplicationPeriod/${id}`;
+                } catch (error) {
+                    console.error('Error loading period:', error);
+                    alert('Error loading period data');
+                } finally {
+                    loadingIndicator.style.display = 'none';
+                }
+            };
+
+            window.hideUpdatePeriodModal = () => {
+                document.getElementById('updatePeriodModal').classList.add('hidden');
+            };
+
+            window.showDeletePeriodModal = (id) => {
+                const submitBtn = document.getElementById('deleteSubmitBtn');
+                const btnText = document.getElementById('deleteBtnText');
+                const btnSpinner = document.getElementById('deleteBtnSpinner');
+                submitBtn.disabled = false;
+                btnText.textContent = 'Delete Period';
+                btnSpinner.classList.add('hidden');
+
+                document.getElementById('deletePeriodId').value = id;
+                document.getElementById('deletePeriodModal').classList.remove('hidden');
+            };
+
+            window.hideDeletePeriodModal = () => {
+                document.getElementById('deletePeriodModal').classList.add('hidden');
+            };
+
+            window.showPeriodDetails = async (id) => {
+                loadingIndicator.style.display = 'flex';
+
+                try {
+                    const response = await fetch(`/ApplicationPeriod/GetApplicationPeriod/${id}`);
+                    const period = await response.json();
+
+                    const statusClass = period.isActive ? 'text-green-600' : 'text-gray-600';
+
+                    document.getElementById('detailsContent').innerHTML = `
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <p class="text-xs sm:text-sm text-gray-500">Period Name</p>
+                                    <p class="font-semibold text-sm sm:text-base">${period.name}</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs sm:text-sm text-gray-500">Academic Year</p>
+                                    <p class="font-semibold text-sm sm:text-base">${period.year}</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs sm:text-sm text-gray-500">Start Date</p>
+                                    <p class="font-semibold text-sm sm:text-base">${new Date(period.startOfApplication).toLocaleString()}</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs sm:text-sm text-gray-500">End Date</p>
+                                    <p class="font-semibold text-sm sm:text-base">${new Date(period.endOfApplication).toLocaleString()}</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs sm:text-sm text-gray-500">Status</p>
+                                    <p class="font-semibold text-sm sm:text-base ${statusClass}">${period.isActive ? 'Active' : 'Inactive'}</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs sm:text-sm text-gray-500">Days Remaining</p>
+                                    <p class="font-semibold text-sm sm:text-base">${period.daysRemaining > 0 ? period.daysRemaining : 'Expired'}</p>
+                                </div>
+                            </div>
+                            <div>
+                                <p class="text-xs sm:text-sm text-gray-500 mb-2">Description</p>
+                                <div class="p-3 sm:p-4 bg-gray-50 rounded border">
+                                    <p class="text-sm sm:text-base">${period.description}</p>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div class="p-4 bg-cyan-50 rounded-lg">
+                                    <p class="text-xs text-cyan-600 mb-1">Total Applicants</p>
+                                    <p class="text-2xl font-bold text-cyan-700">${period.applicantCount}</p>
+                                </div>
+                                <div class="p-4 bg-blue-50 rounded-lg">
+                                    <p class="text-xs text-blue-600 mb-1">Available Modes</p>
+                                    <p class="text-2xl font-bold text-blue-700">${period.modeOfStudyIds.length}</p>
+                                </div>
+                                <div class="p-4 bg-purple-50 rounded-lg">
+                                    <p class="text-xs text-purple-600 mb-1">Available Programmes</p>
+                                    <p class="text-2xl font-bold text-purple-700">${period.programmeIds.length}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    document.getElementById('detailsModal').classList.remove('hidden');
+                } catch (error) {
+                    console.error('Error loading details:', error);
+                    alert('Error loading period details');
+                } finally {
+                    loadingIndicator.style.display = 'none';
+                }
+            };
+
+            window.hideDetailsModal = () => {
+                document.getElementById('detailsModal').classList.add('hidden');
+            };
+
+            // Clear filters function
+            window.clearFilters = () => {
+                searchInput.value = '';
+                filterYear.value = 'all';
+                filterStatus.value = 'all';
+                filterMode.value = 'all';
+
+                Object.values(STORAGE_KEYS).forEach(key => localStorage.removeItem(key));
+                filterTable();
+            };
+
+            // Add event listeners with localStorage save
+            searchInput.addEventListener('input', () => {
+                saveFilterToStorage(STORAGE_KEYS.search, searchInput.value);
+                filterTable();
+            });
+
+            filterYear.addEventListener('change', () => {
+                saveFilterToStorage(STORAGE_KEYS.year, filterYear.value);
+                filterTable();
+            });
+
+            filterStatus.addEventListener('change', () => {
+                saveFilterToStorage(STORAGE_KEYS.status, filterStatus.value);
+                filterTable();
+            });
+
+            filterMode.addEventListener('change', () => {
+                saveFilterToStorage(STORAGE_KEYS.mode, filterMode.value);
+                filterTable();
+            });
+
+            // Handle Escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    hideCreatePeriodModal();
+                    hideUpdatePeriodModal();
+                    hideDeletePeriodModal();
+                    hideDetailsModal();
+                }
+            });
+
+            // Load saved filters on page load
+            loadSavedFilters();
+
+            // Initialize charts
+            if (periodsTableBody.children.length > 0 && !periodsTableBody.querySelector('tr td[colspan]')) {
+                initializeStatusChart();
+                initializeApplicantsChart();
+            }
+        });
+    </script>
+}

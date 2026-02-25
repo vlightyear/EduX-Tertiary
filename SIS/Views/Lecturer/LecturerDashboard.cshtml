@@ -1,0 +1,255 @@
+﻿@{
+    ViewData["Title"] = "Lecturer Dashboard";
+}
+
+<div class="min-h-[88vh] p-6 bg-slate-50">
+    <!-- Header -->
+    <div class="flex items-center gap-2 mb-6">
+        <i class="material-icons text-3xl text-slate-800">school</i>
+        <h1 class="text-2xl font-bold text-slate-800">Lecturer Dashboard</h1>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <!-- Courses Card -->
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <div class="flex flex-col items-center text-center">
+                <div class="bg-blue-50 p-3 rounded-lg mb-4">
+                    <i class="material-icons text-blue-600 text-3xl">book</i>
+                </div>
+                <h3 class="text-slate-600 font-medium mb-2">My Courses</h3>
+                <span class="text-3xl font-bold text-slate-800">@ViewBag.TotalCourses</span>
+            </div>
+        </div>
+
+        <!-- Students Card -->
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <div class="flex flex-col items-center text-center">
+                <div class="bg-green-50 p-3 rounded-lg mb-4">
+                    <i class="material-icons text-green-600 text-3xl">people</i>
+                </div>
+                <h3 class="text-slate-600 font-medium mb-2">Total Students</h3>
+                <span class="text-3xl font-bold text-slate-800">@ViewBag.TotalStudents</span>
+            </div>
+        </div>
+
+        <!-- Pending Assessments Card -->
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <div class="flex flex-col items-center text-center">
+                <div class="bg-amber-50 p-3 rounded-lg mb-4">
+                    <i class="material-icons text-amber-600 text-3xl">assignment</i>
+                </div>
+                <h3 class="text-slate-600 font-medium mb-2">Pending Assessments</h3>
+                <span class="text-3xl font-bold text-slate-800">@ViewBag.PendingAssessments</span>
+            </div>
+        </div>
+
+        <!-- Grading Progress Card -->
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <div class="flex flex-col items-center text-center">
+                <div class="bg-purple-50 p-3 rounded-lg mb-4">
+                    <i class="material-icons text-purple-600 text-3xl">grading</i>
+                </div>
+                <h3 class="text-slate-600 font-medium mb-2">Grading Progress</h3>
+                <div class="w-full bg-slate-200 rounded-full h-2.5 mb-2">
+                    <div class="bg-purple-600 h-2.5 rounded-full" style="width: @(ViewBag.GradingProgress)%"></div>
+                </div>
+                <span class="text-sm text-slate-600">@(ViewBag.GradingProgress)% Complete</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex flex-col lg:flex-row gap-6">
+        <!-- Main Content -->
+        <div class="flex-1 space-y-6">
+            <!-- Grade Trends Section -->
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+                    <div class="flex items-center gap-2">
+                        <i class="material-icons text-blue-600">analytics</i>
+                        <h2 class="text-lg font-semibold text-slate-800">Grade Trends</h2>
+                    </div>
+                    @if (ViewBag.LecturerCourses != null && ((List<SIS.Models.Admin.Course>)ViewBag.LecturerCourses).Count > 0)
+                    {
+                        <div class="flex items-center">
+                            <label for="courseSelect" class="mr-2 text-sm text-slate-600">Select Course:</label>
+                            <select id="courseSelect" class="bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5">
+                                @foreach (var course in (List<SIS.Models.Admin.Course>)ViewBag.LecturerCourses)
+                                {
+                                    <option value="@course.CourseCode">@course.CourseCode - @course.CourseName</option>
+                                }
+                            </select>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-sm text-slate-500">No courses assigned</div>
+                    }
+                </div>
+                <div id="gradeTrendsChart" class="h-[300px]">
+                    @if (ViewBag.LecturerCourses == null || ((List<SIS.Models.Admin.Course>)ViewBag.LecturerCourses).Count == 0)
+                    {
+                        <div class="flex items-center justify-center h-full text-slate-500">
+                            <div class="text-center">
+                                <i class="material-icons text-4xl mb-2">analytics</i>
+                                <p>No grade data available</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Today's Schedule Section -->
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <div class="flex items-center gap-2 mb-4">
+                    <i class="material-icons text-blue-600">schedule</i>
+                    <h2 class="text-lg font-semibold text-slate-800">Today's Schedule</h2>
+                </div>
+
+                <div id="todaySchedule" class="space-y-4">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Attendance Overview Section - UPDATED -->
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <div class="flex items-center gap-2 mb-4">
+                    <i class="material-icons text-green-600">how_to_reg</i>
+                    <h2 class="text-lg font-semibold text-slate-800">Course Overview</h2>
+                    @if (ViewBag.CurrentAcademicYear != null && ViewBag.CurrentSemester != null)
+                    {
+                        <span class="ml-auto text-sm text-slate-600 bg-slate-100 px-3 py-1 rounded-full">
+                            @ViewBag.CurrentAcademicYear - Semester @ViewBag.CurrentSemester
+                        </span>
+                    }
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white">
+                        <thead class="bg-slate-50">
+                            <tr>
+                                <th class="py-3 px-4 text-left text-sm font-medium text-slate-600">Course</th>
+                                <th class="py-3 px-4 text-left text-sm font-medium text-slate-600">Students Enrolled</th>
+                                <th class="py-3 px-4 text-left text-sm font-medium text-slate-600">Avg. Performance</th>
+                                <th class="py-3 px-4 text-left text-sm font-medium text-slate-600">Grading Status</th>
+                                <th class="py-3 px-4 text-left text-sm font-medium text-slate-600">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="courseOverview" class="divide-y divide-gray-200">
+                            <!-- Will be populated by JavaScript -->
+                            <tr>
+                                <td colspan="5" class="py-6 text-center text-slate-500">
+                                    <div class="flex items-center justify-center">
+                                        <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-slate-400 mr-2"></div>
+                                        Loading course data...
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Side Panel -->
+        <div class="lg:w-2/5 space-y-6">
+            <!-- Upcoming Deadlines Section -->
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <div class="flex items-center gap-2 mb-4">
+                    <i class="material-icons text-red-600">event</i>
+                    <h2 class="text-lg font-semibold text-slate-800">Upcoming Deadlines</h2>
+                </div>
+
+                <div id="upcomingDeadlines" class="space-y-4">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Quick Access Section -->
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <div class="flex items-center gap-2 mb-4">
+                    <i class="material-icons text-blue-600">dashboard</i>
+                    <h2 class="text-lg font-semibold text-slate-800">Quick Access</h2>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <a href="@Url.Action("LecturerCourses", "Lecturer")" class="flex flex-col items-center p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
+                        <div class="bg-blue-100 p-2 rounded-lg mb-2">
+                            <i class="material-icons text-blue-600">book</i>
+                        </div>
+                        <span class="text-sm font-medium text-slate-700">My Courses</span>
+                    </a>
+
+                    @if (ViewBag.LecturerCourses != null && ((List<SIS.Models.Admin.Course>)ViewBag.LecturerCourses).Count > 0)
+                    {
+                        <a href="@Url.Action("UploadContent", "Lecturer", new { id = ((List<SIS.Models.Admin.Course>)ViewBag.LecturerCourses).First().Id })" class="flex flex-col items-center p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
+                            <div class="bg-green-100 p-2 rounded-lg mb-2">
+                                <i class="material-icons text-green-600">upload_file</i>
+                            </div>
+                            <span class="text-sm font-medium text-slate-700">Upload Materials</span>
+                        </a>
+                    }
+                    else
+                    {
+                        <div class="flex flex-col items-center p-4 bg-slate-100 rounded-lg opacity-50">
+                            <div class="bg-slate-200 p-2 rounded-lg mb-2">
+                                <i class="material-icons text-slate-400">upload_file</i>
+                            </div>
+                            <span class="text-sm font-medium text-slate-500">Upload Materials</span>
+                        </div>
+                    }
+
+                    <a href="#" onclick="openGradingModal()" class="flex flex-col items-center p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
+                        <div class="bg-amber-100 p-2 rounded-lg mb-2">
+                            <i class="material-icons text-amber-600">assignment_turned_in</i>
+                        </div>
+                        <span class="text-sm font-medium text-slate-700">Grade Assignments</span>
+                    </a>
+
+                    <a href="#" onclick="showAttendanceModal()" class="flex flex-col items-center p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
+                        <div class="bg-purple-100 p-2 rounded-lg mb-2">
+                            <i class="material-icons text-purple-600">how_to_reg</i>
+                        </div>
+                        <span class="text-sm font-medium text-slate-700">Take Attendance</span>
+                    </a>
+
+                    <a href="#" class="flex flex-col items-center p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
+                        <div class="bg-red-100 p-2 rounded-lg mb-2">
+                            <i class="material-icons text-red-600">message</i>
+                        </div>
+                        <span class="text-sm font-medium text-slate-700">Student Messages</span>
+                    </a>
+
+                    <a href="#" class="flex flex-col items-center p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
+                        <div class="bg-cyan-100 p-2 rounded-lg mb-2">
+                            <i class="material-icons text-cyan-600">calendar_today</i>
+                        </div>
+                        <span class="text-sm font-medium text-slate-700">View Timetable</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.lecturerData = {
+            gradeTrends: @Html.Raw(ViewBag.GradeTrends ?? "{}"),
+            todaySchedule: @Html.Raw(ViewBag.TodaySchedule ?? "[]"),
+            courseOverview: @Html.Raw(ViewBag.CourseOverview ?? "[]"),
+            upcomingDeadlines: @Html.Raw(ViewBag.UpcomingDeadlines ?? "[]")
+        };
+
+        function openGradingModal() {
+            // You can implement a modal or redirect to grading page
+            alert('Grading functionality - to be implemented');
+        }
+
+        function showAttendanceModal() {
+            // You can implement attendance tracking
+            alert('Attendance tracking - to be implemented');
+        }
+    </script>
+    <script src="~/js/lecturer_dashboard.js"></script>
+}

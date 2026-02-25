@@ -1,0 +1,350 @@
+﻿@model IEnumerable<SIS.Models.Admin.AcademicCalendarEvent>
+@{
+    ViewData["Title"] = "Academic Calendar Export";
+    var academicYear = ViewBag.AcademicYear;
+}
+
+<div class="min-h-screen bg-slate-50 p-6">
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row justify-between items-center h-24 mb-4">
+        <div class="flex items-center text-slate-800">
+            <i class="material-icons text-3xl mr-2">calendar_month</i>
+            <div>
+                <h1 class="text-2xl font-bold">Academic Calendar</h1>
+                <p class="text-sm text-slate-600">@academicYear.YearValue</p>
+            </div>
+        </div>
+        <div class="mt-4 md:mt-0 flex flex-wrap gap-2">
+            <a href="javascript:history.back()" class="inline-flex items-center px-4 py-2 text-slate-600 bg-transparent border border-slate-300 rounded-lg hover:bg-slate-100 transition-colors">
+                <i class="material-icons text-sm mr-1">arrow_back</i>
+                <span>Back to Calendar</span>
+            </a>
+
+            @* <a href="@Url.Action("Export", new { academicYearId = academicYear.YearId, format = "pdf" })" target="_blank" *@
+            @*    class="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors border border-red-600"> *@
+            @*     <i class="material-icons text-sm mr-1">picture_as_pdf</i> *@
+            @*     <span>Export as PDF</span> *@
+            @* </a> *@
+
+            <button onclick="window.print()" class="inline-flex items-center px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors">
+                <i class="material-icons text-sm mr-1">print</i>
+                <span>Print View</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Print-only Header -->
+    <div class="hidden print:block text-center mb-8">
+        <h1 class="text-2xl font-bold text-slate-800">Academic Calendar</h1>
+        <h2 class="text-xl text-slate-700">@academicYear.YearValue</h2>
+        <p class="text-sm text-slate-600 mt-2">@academicYear.StartDate.ToString("MMMM d, yyyy") - @academicYear.EndDate.ToString("MMMM d, yyyy")</p>
+        <p class="text-sm text-slate-500 mt-1">Total Events: @ViewBag.EventCount</p>
+        <p class="text-xs text-slate-400 mt-1">Printed on @DateTime.Now.ToString("MMMM d, yyyy")</p>
+    </div>
+
+    <!-- Event Type Legend -->
+    <div class="mb-6 print:mb-4">
+        <h3 class="text-sm font-semibold text-slate-700 mb-2 uppercase tracking-wider">Event Types</h3>
+        <div class="flex flex-wrap gap-2">
+            @{
+                var eventTypes = Model
+                .Select(e => new { Type = e.EventType.Name, Color = e.Color, Icon = e.EventType.IconName })
+                .Distinct()
+                .ToList();
+            }
+
+            @foreach (var type in eventTypes)
+            {
+                <div class="inline-flex items-center px-2 py-1 rounded-full text-xs" style="background-color: @type.Color; color: #ffffff;">
+                    <i class="material-icons text-xs mr-1">@type.Icon</i>
+                    <span>@type.Type</span>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Monthly Calendars (hidden in print view) -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 print:hidden">
+        @{
+            var months = Model
+            .Select(e => new DateTime(e.StartDateTime.Year, e.StartDateTime.Month, 1))
+            .Distinct()
+            .OrderBy(d => d)
+            .ToList();
+        }
+
+        @foreach (var month in months)
+        {
+            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                <div class="bg-slate-50 p-3 border-b">
+                    <h3 class="font-medium text-slate-800">@month.ToString("MMMM yyyy")</h3>
+                </div>
+                <div class="p-4">
+                    <div class="grid grid-cols-7 gap-1 text-center text-xs">
+                        <div class="text-slate-400">Su</div>
+                        <div class="text-slate-400">Mo</div>
+                        <div class="text-slate-400">Tu</div>
+                        <div class="text-slate-400">We</div>
+                        <div class="text-slate-400">Th</div>
+                        <div class="text-slate-400">Fr</div>
+                        <div class="text-slate-400">Sa</div>
+
+                        @{
+                            var firstDay = new DateTime(month.Year, month.Month, 1);
+                            var lastDay = firstDay.AddMonths(1).AddDays(-1);
+                            var startOffset = (int)firstDay.DayOfWeek;
+
+                            // Empty cells for days before the first day of the month
+                            for (int i = 0; i < startOffset; i++)
+                            {
+                                <div class="h-7"></div>
+                            }
+
+                            // Days of the month
+                            for (int day = 1; day <= lastDay.Day; day++)
+                            {
+                                var date = new DateTime(month.Year, month.Month, day);
+                                var eventsOnDate = Model.Where(e =>
+                                (e.StartDateTime.Date <= date && (e.EndDateTime?.Date ?? e.StartDateTime.Date) >= date)
+                                ).ToList();
+
+                                <div class="h-7 flex flex-col justify-center items-center">
+                                    <span class="@(eventsOnDate.Any() ? "font-bold" : "")">@day</span>
+                                    @if (eventsOnDate.Any())
+                                    {
+                                        <div class="flex mt-1 justify-center flex-wrap gap-1">
+                                            @foreach (var evt in eventsOnDate.Take(3))
+                                            {
+                                                <span class="w-2 h-2 rounded-full" style="background-color: @evt.Color"></span>
+                                            }
+                                            @if (eventsOnDate.Count > 3)
+                                            {
+                                                <span class="w-2 h-2 rounded-full bg-slate-300">+</span>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Chronological Event List (shown in both screen and print) -->
+    <div class="mt-8">
+        <h3 class="text-lg font-semibold text-slate-800 mb-4 print:text-base">Events (Chronological Order)</h3>
+
+        @{
+            var eventsByMonth = Model
+            .OrderBy(e => e.StartDateTime)
+            .GroupBy(e => new
+            {
+                Month = e.StartDateTime.Month,
+                Year = e.StartDateTime.Year
+            })
+            .ToDictionary(g => g.Key, g => g.ToList());
+        }
+
+        @foreach (var monthGroup in eventsByMonth.OrderBy(g => g.Key.Year).ThenBy(g => g.Key.Month))
+        {
+            var monthDate = new DateTime(monthGroup.Key.Year, monthGroup.Key.Month, 1);
+
+            <div class="mb-6 print:break-inside-avoid">
+                <h4 class="text-md font-medium text-slate-700 border-b pb-2 mb-3 print:text-sm">
+                    @monthDate.ToString("MMMM yyyy")
+                </h4>
+
+                <div class="space-y-4 print:space-y-2">
+                    @foreach (var evt in monthGroup.Value.OrderBy(e => e.StartDateTime))
+                    {
+                        <div class="flex items-start print:items-center border-l-4 pl-3 py-1 print:py-0.5" style="border-color: @evt.Color;">
+                            <div class="flex-1">
+                                <div class="flex items-center">
+                                    <i class="material-icons text-sm mr-1 hidden print:inline" style="color: @evt.Color;">@evt.EventType.IconName</i>
+                                    <h5 class="font-medium text-slate-800 print:text-sm">
+                                        @evt.Title
+                                    </h5>
+                                </div>
+
+                                <div class="text-sm text-slate-600 print:text-xs mt-1 print:mt-0 ml-0 print:ml-5">
+                                    @if (evt.IsAllDay)
+                                    {
+                                        if (evt.EndDateTime.HasValue && evt.EndDateTime.Value.Date > evt.StartDateTime.Date)
+                                        {
+                                            <span>@evt.StartDateTime.ToString("MMM d") - @evt.EndDateTime.Value.ToString("MMM d, yyyy") (All day)</span>
+                                        }
+                                        else
+                                        {
+                                            <span>@evt.StartDateTime.ToString("MMM d, yyyy") (All day)</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if (evt.EndDateTime.HasValue && evt.EndDateTime.Value.Date > evt.StartDateTime.Date)
+                                        {
+                                            <span>@evt.StartDateTime.ToString("MMM d, yyyy h:mm tt") - @evt.EndDateTime.Value.ToString("MMM d, yyyy h:mm tt")</span>
+                                        }
+                                        else if (evt.EndDateTime.HasValue)
+                                        {
+                                            <span>@evt.StartDateTime.ToString("MMM d, yyyy h:mm tt") - @evt.EndDateTime.Value.ToString("h:mm tt")</span>
+                                        }
+                                        else
+                                        {
+                                            <span>@evt.StartDateTime.ToString("MMM d, yyyy h:mm tt")</span>
+                                        }
+                                    }
+                                </div>
+
+                                @if (!string.IsNullOrEmpty(evt.Description))
+                                {
+                                    <p class="text-sm text-slate-500 print:text-xs mt-1 print:mt-0 ml-0 print:ml-5 print:italic print:leading-tight">
+                                        @(evt.Description.Length > 100 ? evt.Description.Substring(0, 97) + "..." : evt.Description)
+                                    </p>
+                                }
+
+                                <div class="hidden print:block text-xs text-slate-400 mt-0.5 ml-5">
+                                    @evt.EventType.Name
+                                    @if (!string.IsNullOrEmpty(evt.Location))
+                                    {
+                                        <span>| Location: @evt.Location</span>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="hidden md:block print:hidden">
+                                <span class="px-2 py-1 rounded-full text-xs font-medium" style="background-color: @evt.Color; color: #ffffff;">
+                                    @evt.EventType.Name
+                                </span>
+
+                                @if (!string.IsNullOrEmpty(evt.Location))
+                                {
+                                    <div class="text-xs text-slate-500 mt-1">
+                                        <i class="material-icons text-xs align-text-bottom">place</i> @evt.Location
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Footer -->
+    <div class="mt-8 print:mt-6 text-center text-xs text-slate-500 print:text-xs border-t pt-4">
+        <p>@(ViewBag.InstitutionName ?? "University") Academic Calendar @academicYear.YearValue</p>
+        <p class="mt-1">For the most up-to-date information, please refer to the online calendar system.</p>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        @@media print {
+            body
+
+        {
+            font-size: 11pt;
+            color: #000;
+            background-color: #fff;
+        }
+
+        .print-container {
+            max-width: 100%;
+            margin: 0;
+            padding: 0.5cm;
+        }
+
+        a {
+            text-decoration: none !important;
+            color: #000 !important;
+        }
+
+        .print\\:break-inside-avoid {
+            break-inside: avoid;
+        }
+
+        .print\\:hidden {
+            display: none !important;
+        }
+
+        .print\\:block {
+            display: block !important;
+        }
+
+        .print\\:inline {
+            display: inline !important;
+        }
+
+        .print\\:text-sm {
+            font-size: 10pt !important;
+        }
+
+        .print\\:text-xs {
+            font-size: 9pt !important;
+        }
+
+        .print\\:text-base {
+            font-size: 11pt !important;
+        }
+
+        .print\\:items-center {
+            align-items: center !important;
+        }
+
+        .print\\:mt-0 {
+            margin-top: 0 !important;
+        }
+
+        .print\\:mt-6 {
+            margin-top: 1.5rem !important;
+        }
+
+        .print\\:mb-4 {
+            margin-bottom: 1rem !important;
+        }
+
+        .print\\:ml-5 {
+            margin-left: 1.25rem !important;
+        }
+
+        .print\\:py-0\\.5 {
+            padding-top: 0.125rem !important;
+            padding-bottom: 0.125rem !important;
+        }
+
+        .print\\:leading-tight {
+            line-height: 1.25 !important;
+        }
+
+        .print\\:italic {
+            font-style: italic !important;
+        }
+
+        /* Add page breaks after each section except the last one */
+        .print-container > div {
+            page-break-inside: avoid;
+        }
+
+            /* Ensure the events list starts on a new page */
+            .print-container > div:last-child {
+                page-break-before: always;
+            }
+
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Auto print when the ?print=true parameter is in the URL
+            if (new URLSearchParams(window.location.search).get('print') === 'true') {
+                setTimeout(function() {
+                    window.print();
+                }, 1000);
+            }
+        });
+    </script>
+}

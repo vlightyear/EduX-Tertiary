@@ -1,0 +1,480 @@
+﻿@model SIS.Models.Payments.PaymentSelectionViewModel
+
+@{
+    ViewData["Title"] = "Payment Selection";
+}
+
+<div class="bg-slate-50 min-h-screen py-8">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h2 class="text-3xl font-bold text-slate-800">Application Payment</h2>
+            <p class="text-slate-600 text-lg">Complete your payment to submit your application</p>
+        </div>
+
+        <!-- Application Summary Card -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
+            <h3 class="text-xl font-semibold text-slate-800 border-b border-slate-200 pb-4 mb-4">Application Summary</h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <dl class="space-y-4">
+                        <div>
+                            <dt class="text-sm font-medium text-slate-500">Reference Number</dt>
+                            <dd class="text-base font-semibold text-slate-900">@Model.ApplicationReference</dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm font-medium text-slate-500">Applicant Name</dt>
+                            <dd class="text-base font-semibold text-slate-900">@Model.ApplicantName</dd>
+                        </div>
+                    </dl>
+                </div>
+                <div>
+                    <dl class="space-y-4">
+                        <div>
+                            <dt class="text-sm font-medium text-slate-500">Programme</dt>
+                            <dd class="text-base font-semibold text-slate-900">@Model.ProgrammeName</dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm font-medium text-slate-500">School</dt>
+                            <dd class="text-base font-semibold text-slate-900">@Model.SchoolName</dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fee Breakdown Card -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
+            <h3 class="text-xl font-semibold text-slate-800 border-b border-slate-200 pb-4 mb-4">Fee Breakdown</h3>
+
+            <div class="overflow-hidden">
+                <table class="min-w-full divide-y divide-slate-200">
+                    <thead>
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Description</th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-200">
+                        @foreach (var fee in Model.FeeDetails)
+                        {
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">
+                                    <div class="font-medium">@fee.FeeName</div>
+                                    <div class="text-slate-500">@fee.Description</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-slate-800">
+                                    @fee.Amount.ToString("C2", new System.Globalization.CultureInfo("en-ZM"))
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr class="bg-slate-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-800">Total Amount</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-right text-slate-800">@Model.TotalAmount.ToString("C2", new System.Globalization.CultureInfo("en-ZM"))</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- Payment Methods Card -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <h3 class="text-xl font-semibold text-slate-800 border-b border-slate-200 pb-4 mb-6">Select Payment Method</h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Mobile Money Option -->
+                <div class="border border-slate-200 hover:border-cyan-500 rounded-lg p-6 cursor-pointer transition-all hover:shadow-md"
+                     onclick="showPaymentForm('mobile-payment-modal')">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="text-lg font-medium text-slate-800">Mobile Money/Visa Card</h4>
+                        <div class="flex space-x-2">
+                            <img src="https://placehold.co/40x25" alt="Airtel" class="h-6">
+                            <img src="https://placehold.co/40x25" alt="MTN" class="h-6">
+                            <img src="https://placehold.co/40x25" alt="Zamtel" class="h-6">
+                        </div>
+                    </div>
+                    <p class="text-sm text-slate-600 mb-4">Pay using your mobile money or Card</p>
+                    <button type="button" class="w-full px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 transition-colors">
+                        Pay with Mobile Money or Card
+                    </button>
+                </div>
+
+                <!-- 🎯 NEW: Applying for Someone Else Option -->
+                <div class="border border-slate-200 hover:border-emerald-500 rounded-lg p-6 cursor-pointer transition-all hover:shadow-md"
+                     onclick="showPaymentForm('sponsor-verification-modal')">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="text-lg font-medium text-slate-800">Applying for Someone Else</h4>
+                        <div class="flex items-center justify-center w-10 h-10 bg-emerald-100 rounded-full">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <p class="text-sm text-slate-600 mb-4">If you are applying on behalf of an existing student, verify their credentials to skip payment</p>
+                    <button type="button" class="w-full px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-colors">
+                        Verify Student Credentials
+                    </button>
+                </div>
+            </div>
+
+            <div class="mt-8 text-center">
+                <a href="@Url.Action("Index", "StudentApplication")" class="text-cyan-600 hover:text-cyan-800 hover:underline transition-colors">
+                    Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mobile Money Payment Modal -->
+<div id="mobile-payment-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-lg max-w-lg w-full mx-4 p-6 shadow-xl">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-semibold text-slate-800">Mobile Money Payment</h3>
+            <button type="button" class="text-slate-500 hover:text-slate-700" onclick="hidePaymentForm('mobile-payment-modal')">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <form action="@Url.Action("ProcessMobilePayment", "Payments")" method="post">
+            <input type="hidden" name="ApplicationReference" value="@Model.ApplicationReference">
+            <input type="hidden" name="Amount" value="@Model.TotalAmount">
+            <input type="hidden" id="Provider" name="Provider" value="App">
+
+            <div class="mb-6">
+                <label for="PhoneNumber" class="block text-sm font-medium text-slate-700 mb-2">Phone Number</label>
+                <input type="tel" id="PhoneNumber" name="PhoneNumber"
+                       class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500"
+                       placeholder="e.g. 0971234567" pattern="\d{10}" maxlength="10" required>
+                <p class="text-xs text-slate-500 mt-1">Enter the phone number registered with your mobile money account</p>
+            </div>
+
+            <div class="border-t border-slate-200 pt-4">
+                <p class="flex items-center justify-between mb-4">
+                    <span class="text-sm font-medium text-slate-700">Total Amount:</span>
+                    <span class="text-base font-bold text-slate-900">@Model.TotalAmount.ToString("C2", new System.Globalization.CultureInfo("en-ZM"))</span>
+                </p>
+
+                <button type="submit" class="w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors">
+                    Pay @Model.TotalAmount.ToString("C2", new System.Globalization.CultureInfo("en-ZM"))
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 🎯 NEW: Sponsor Verification Modal -->
+<div id="sponsor-verification-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-lg max-w-lg w-full mx-4 p-6 shadow-xl max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-semibold text-slate-800">Verify Student Credentials</h3>
+            <button type="button" class="text-slate-500 hover:text-slate-700" onclick="hidePaymentForm('sponsor-verification-modal')">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Info Banner -->
+        <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-4 mb-6">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-emerald-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <h4 class="text-sm font-medium text-emerald-800">Applying for Someone Else?</h4>
+                    <p class="mt-1 text-sm text-emerald-700">
+                        If you are an existing student applying on behalf of someone else, enter your Student ID and password below.
+                        Once verified, the application will be submitted without requiring payment.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Verification Form -->
+        <form id="sponsor-verification-form">
+            <input type="hidden" name="ApplicationReference" value="@Model.ApplicationReference">
+
+            <div class="mb-4">
+                <label for="SponsorStudentId" class="block text-sm font-medium text-slate-700 mb-2">
+                    <span class="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
+                        </svg>
+                        Student ID
+                    </span>
+                </label>
+                <input type="text" id="SponsorStudentId" name="StudentId"
+                       class="w-full rounded-lg border-slate-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+                       placeholder="e.g. STU2024001" required>
+            </div>
+
+            <div class="mb-6">
+                <label for="SponsorPassword" class="block text-sm font-medium text-slate-700 mb-2">
+                    <span class="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                        Password
+                    </span>
+                </label>
+                <div class="relative">
+                    <input type="password" id="SponsorPassword" name="Password"
+                           class="w-full rounded-lg border-slate-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 pr-10"
+                           placeholder="Enter password" required>
+                    <button type="button" class="absolute inset-y-0 right-0 pr-3 flex items-center" onclick="togglePasswordVisibility()">
+                        <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-400 hover:text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        <svg id="eye-off-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-400 hover:text-slate-600 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                        </svg>
+                    </button>
+                </div>
+                <p class="text-xs text-slate-500 mt-1">Use your custom password or Student@2025 if you haven't changed it</p>
+            </div>
+
+            <!-- Error Message Container -->
+            <div id="sponsor-error-message" class="hidden mb-4 bg-red-50 border border-red-200 rounded-lg p-4">
+                <div class="flex">
+                    <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                    </svg>
+                    <p id="sponsor-error-text" class="ml-3 text-sm text-red-700"></p>
+                </div>
+            </div>
+
+            <!-- Success Container with Credentials -->
+            <div id="sponsor-success-container" class="hidden mb-4">
+                <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                    <div class="flex items-center mb-2">
+                        <svg class="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                        </svg>
+                        <p class="ml-3 text-sm font-medium text-green-700">Verification Successful!</p>
+                    </div>
+                    <p class="text-sm text-green-600">The application has been submitted successfully.</p>
+                </div>
+
+                <!-- Credentials Display -->
+                <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                    <h4 class="text-sm font-semibold text-slate-800 mb-3 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                        </svg>
+                        Login Credentials for Applicant
+                    </h4>
+
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between bg-white p-3 rounded border">
+                            <div>
+                                <span class="text-xs text-slate-500 block">Email</span>
+                                <span id="credential-email" class="font-mono text-sm text-slate-800"></span>
+                            </div>
+                            <button type="button" onclick="copyToClipboard('credential-email')" class="text-cyan-600 hover:text-cyan-800">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div class="flex items-center justify-between bg-white p-3 rounded border">
+                            <div>
+                                <span class="text-xs text-slate-500 block">Password</span>
+                                <span id="credential-password" class="font-mono text-sm text-emerald-600 font-bold"></span>
+                            </div>
+                            <button type="button" onclick="copyToClipboard('credential-password')" class="text-cyan-600 hover:text-cyan-800">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 p-3 bg-amber-50 border border-amber-200 rounded">
+                        <p class="text-xs text-amber-800">
+                            <strong>Important:</strong> Please save these credentials and inform the applicant to change their password after first login.
+                        </p>
+                    </div>
+
+                    <!-- Download PDF Button -->
+                    <div class="mt-4">
+                        <a id="download-pdf-link" href="#"
+                           class="w-full flex items-center justify-center px-4 py-3 bg-slate-800 text-white rounded-lg hover:bg-slate-900 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            Download Credentials PDF
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-t border-slate-200 pt-4">
+                <p class="flex items-center justify-between mb-4">
+                    <span class="text-sm font-medium text-slate-700">Payment Required:</span>
+                    <span class="text-base font-bold text-emerald-600">K0.00 (Sponsored)</span>
+                </p>
+
+                <button type="submit" id="verify-sponsor-btn"
+                        class="w-full px-4 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-colors flex items-center justify-center">
+                    <span id="verify-btn-text">Verify & Submit Application</span>
+                    <svg id="verify-btn-spinner" class="hidden animate-spin ml-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function showPaymentForm(modalId) {
+            document.getElementById(modalId).classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function hidePaymentForm(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+            document.body.style.overflow = 'auto';
+
+            if (modalId === 'sponsor-verification-modal') {
+                document.getElementById('sponsor-error-message').classList.add('hidden');
+                document.getElementById('sponsor-success-container').classList.add('hidden');
+                document.getElementById('verify-sponsor-btn').classList.remove('hidden');
+            }
+        }
+
+        function togglePasswordVisibility() {
+            const passwordInput = document.getElementById('SponsorPassword');
+            const eyeIcon = document.getElementById('eye-icon');
+            const eyeOffIcon = document.getElementById('eye-off-icon');
+
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                eyeIcon.classList.add('hidden');
+                eyeOffIcon.classList.remove('hidden');
+            } else {
+                passwordInput.type = 'password';
+                eyeIcon.classList.remove('hidden');
+                eyeOffIcon.classList.add('hidden');
+            }
+        }
+
+        function copyToClipboard(elementId) {
+            const text = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                // Show brief feedback
+                const btn = event.currentTarget;
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>';
+                setTimeout(() => { btn.innerHTML = originalHTML; }, 1500);
+            });
+        }
+
+        // Close modal when clicking outside
+        document.querySelectorAll('#mobile-payment-modal, #sponsor-verification-modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    hidePaymentForm(modal.id);
+                }
+            });
+        });
+
+        // Handle Sponsor Verification Form Submission
+        document.getElementById('sponsor-verification-form').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const submitBtn = document.getElementById('verify-sponsor-btn');
+            const btnText = document.getElementById('verify-btn-text');
+            const btnSpinner = document.getElementById('verify-btn-spinner');
+            const errorDiv = document.getElementById('sponsor-error-message');
+            const errorText = document.getElementById('sponsor-error-text');
+            const successContainer = document.getElementById('sponsor-success-container');
+
+            // Hide previous messages
+            errorDiv.classList.add('hidden');
+            successContainer.classList.add('hidden');
+
+            // Show loading state
+            submitBtn.disabled = true;
+            btnText.textContent = 'Verifying...';
+            btnSpinner.classList.remove('hidden');
+
+            const formData = new FormData(this);
+            const data = {
+                ApplicationReference: formData.get('ApplicationReference'),
+                StudentId: formData.get('StudentId'),
+                Password: formData.get('Password')
+            };
+
+            try {
+                const response = await fetch('@Url.Action("ProcessSponsorVerification", "Payments")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Hide the submit button
+                    submitBtn.classList.add('hidden');
+
+                    // Show credentials
+                    document.getElementById('credential-email').textContent = result.applicantEmail;
+                    document.getElementById('credential-password').textContent = result.newPassword;
+
+                    // Build PDF download URL
+                    const pdfUrl = '@Url.Action("DownloadCredentialsPdf", "Payments")' +
+                        '?referenceNumber=' + encodeURIComponent(result.referenceNumber) +
+                        '&email=' + encodeURIComponent(result.applicantEmail) +
+                        '&password=' + encodeURIComponent(result.newPassword) +
+                        '&applicantName=' + encodeURIComponent(result.applicantName) +
+                        '&programmeName=' + encodeURIComponent(result.programmeName) +
+                        '&sponsorName=' + encodeURIComponent(result.sponsorName) +
+                        '&sponsorStudentId=' + encodeURIComponent(result.sponsorStudentId);
+
+                    document.getElementById('download-pdf-link').href = pdfUrl;
+
+                    // Show success container
+                    successContainer.classList.remove('hidden');
+
+                    // Scroll to show credentials
+                    successContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                } else {
+                    // Show error message
+                    errorText.textContent = result.message;
+                    errorDiv.classList.remove('hidden');
+
+                    // Reset button state
+                    submitBtn.disabled = false;
+                    btnText.textContent = 'Verify & Submit Application';
+                    btnSpinner.classList.add('hidden');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                errorText.textContent = 'An error occurred. Please try again.';
+                errorDiv.classList.remove('hidden');
+
+                // Reset button state
+                submitBtn.disabled = false;
+                btnText.textContent = 'Verify & Submit Application';
+                btnSpinner.classList.add('hidden');
+            }
+        });
+    </script>
+}

@@ -1,0 +1,839 @@
+﻿@model SIS.Models.Assessments.Question
+@{
+    ViewData["Title"] = "Create Question";
+    var questionGroup = ViewBag.QuestionGroup as SIS.Models.Assessments.QuestionGroup;
+}
+
+<div class="h-[90vh] p-4">
+    <!-- Header Section -->
+    <div class="flex items-center mb-4">
+        <a asp-controller="Assessments" asp-action="QuestionGroupDetails" asp-route-id="@Model.QuestionGroupId"
+           class="bg-slate-100 hover:bg-slate-200 p-2 rounded-full mr-2">
+            <i class="material-icons text-slate-600">arrow_back</i>
+        </a>
+        <div class="text-gray-800">
+            <h1 class="text-2xl font-bold">Create Question</h1>
+            @if (questionGroup != null)
+            {
+                <p class="text-sm text-slate-600">Group: @questionGroup.Name | Course: @questionGroup.Course?.CourseName</p>
+            }
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex gap-4 h-[calc(90vh-80px)]">
+        <!-- Form Section (2/3 width) -->
+        <div class="w-2/3">
+            <div class="bg-white rounded-lg shadow-md h-full overflow-y-auto">
+                <div class="p-6">
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
+                            <p class="font-medium">Please correct the following errors:</p>
+                            <div asp-validation-summary="All" class="text-sm"></div>
+                        </div>
+                    }
+
+                    <form asp-controller="Assessments" asp-action="CreateQuestion" method="post" id="createQuestionForm" enctype="multipart/form-data">
+                        @if (ViewBag.QuestionGroup != null)
+                        {
+                            <input type="hidden" asp-for="QuestionGroupId" value="@ViewBag.QuestionGroup.Id" />
+                        }
+                        else
+                        {
+                            <input type="hidden" asp-for="QuestionGroupId" />
+                        }
+
+                        <!-- Question Type Selector -->
+                        <div class="mb-6">
+                            <label asp-for="QuestionType" class="block text-sm font-medium text-slate-700 mb-1">Question Type*</label>
+                            <div class="grid grid-cols-2 gap-2 md:grid-cols-4">
+                                <div class="question-type-card cursor-pointer" data-type="MultipleChoice">
+                                    <input type="radio" asp-for="QuestionType" value="MultipleChoice" id="typeMultipleChoice" class="hidden" checked />
+                                    <label for="typeMultipleChoice" class="flex flex-col items-center p-4 border rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors">
+                                        <i class="material-icons text-3xl text-blue-600 mb-2">check_circle</i>
+                                        <span class="text-sm font-medium">Multiple Choice</span>
+                                    </label>
+                                </div>
+                                <div class="question-type-card cursor-pointer" data-type="ShortAnswer">
+                                    <input type="radio" asp-for="QuestionType" value="ShortAnswer" id="typeShortAnswer" class="hidden" />
+                                    <label for="typeShortAnswer" class="flex flex-col items-center p-4 border rounded-lg hover:bg-green-50 hover:border-green-300 transition-colors">
+                                        <i class="material-icons text-3xl text-green-600 mb-2">short_text</i>
+                                        <span class="text-sm font-medium">Short Answer</span>
+                                    </label>
+                                </div>
+                                <div class="question-type-card cursor-pointer" data-type="LongText">
+                                    <input type="radio" asp-for="QuestionType" value="LongText" id="typeLongText" class="hidden" />
+                                    <label for="typeLongText" class="flex flex-col items-center p-4 border rounded-lg hover:bg-amber-50 hover:border-amber-300 transition-colors">
+                                        <i class="material-icons text-3xl text-amber-600 mb-2">subject</i>
+                                        <span class="text-sm font-medium">Essay</span>
+                                    </label>
+                                </div>
+                                <div class="question-type-card cursor-pointer" data-type="TrueFalse">
+                                    <input type="radio" asp-for="QuestionType" value="TrueFalse" id="typeTrueFalse" class="hidden" />
+                                    <label for="typeTrueFalse" class="flex flex-col items-center p-4 border rounded-lg hover:bg-red-50 hover:border-red-300 transition-colors">
+                                        <i class="material-icons text-3xl text-red-600 mb-2">rule</i>
+                                        <span class="text-sm font-medium">True/False</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <span asp-validation-for="QuestionType" class="text-sm text-red-600"></span>
+                        </div>
+
+                        <!-- Question Text -->
+                        <div class="mb-6">
+                            <label asp-for="QuestionText" class="block text-sm font-medium text-slate-700 mb-1">Question Text*</label>
+                            <div id="questionTextEditor" class="bg-white border border-slate-300 rounded-lg" style="min-height: 200px;"></div>
+                            <textarea asp-for="QuestionText" id="questionTextHidden" style="display: none;" ></textarea>
+                            <span asp-validation-for="QuestionText" class="text-sm text-red-600"></span>
+                        </div>
+
+                        <!-- Points -->
+                        <div class="mb-6">
+                            <label asp-for="Points" class="block text-sm font-medium text-slate-700 mb-1">Points*</label>
+                            <input asp-for="Points" type="number" step="0.25" min="0.25" class="block w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500"
+                                   placeholder="1.00" required />
+                            <span asp-validation-for="Points" class="text-sm text-red-600"></span>
+                        </div>
+
+                        <!-- Additional Info / Instructions -->
+                        <div class="mb-6">
+                            <label asp-for="AdditionalInfo" class="block text-sm font-medium text-slate-700 mb-1">Additional Instructions (Optional)</label>
+                            <div id="additionalInfoEditor" class="bg-white border border-slate-300 rounded-lg" style="min-height: 150px;"></div>
+                            <textarea asp-for="AdditionalInfo" id="additionalInfoHidden" style="display: none;"></textarea>
+                            <span asp-validation-for="AdditionalInfo" class="text-sm text-red-600"></span>
+                        </div>
+
+                        <!-- Question Image -->
+                        <div class="mb-6">
+                            <label for="questionImage" class="block text-sm font-medium text-slate-700 mb-1">Question Image (Optional)</label>
+                            <div class="flex flex-col space-y-2">
+                                <div class="flex items-center space-x-2">
+                                    <input type="file" name="questionImage" id="questionImage" accept=".jpg,.jpeg,.png,.gif"
+                                           class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-cyan-50 file:text-cyan-700 hover:file:bg-cyan-100" />
+                                </div>
+                                <div id="imagePreviewContainer" class="hidden mt-2">
+                                    <img id="imagePreview" class="max-h-40 rounded border border-slate-300" alt="Preview" />
+                                    <button type="button" id="removeImageBtn" class="mt-1 text-xs text-red-600 hover:text-red-800">
+                                        <i class="material-icons text-sm align-middle">delete</i> Remove
+                                    </button>
+                                </div>
+                                <div class="flex space-x-4">
+                                    <div class="w-1/2">
+                                        <label for="ImageDescription" class="block text-xs font-medium text-slate-700 mb-1">Image Description (Alt Text)</label>
+                                        <input asp-for="ImageDescription" class="block w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500"
+                                               placeholder="Describe the image for accessibility" />
+                                    </div>
+                                    <div class="w-1/2">
+                                        <label for="ImageDisplayPosition" class="block text-xs font-medium text-slate-700 mb-1">Image Position</label>
+                                        <select asp-for="ImageDisplayPosition" class="block w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500">
+                                            <option value="Above">Above Question</option>
+                                            <option value="Below">Below Question</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <span class="text-xs text-slate-500">Maximum file size: 5MB. Supported formats: JPG, PNG, GIF</span>
+                            </div>
+                        </div>
+
+                        <!-- Multiple Choice Options -->
+                        <div id="multipleChoiceOptions" class="mb-6">
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="block text-sm font-medium text-slate-700">Answer Options*</label>
+                                <button type="button" id="addOptionBtn" class="px-2 py-1 bg-slate-100 text-slate-800 rounded hover:bg-slate-200 transition-colors text-sm">
+                                    <i class="material-icons text-sm mr-1 align-text-bottom">add</i>
+                                    Add Option
+                                </button>
+                            </div>
+                            
+                            <div id="optionsContainer" class="space-y-3">
+                                <!-- Option items will be added here -->
+                                <div class="option-item bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                    <div class="flex items-center mb-2">
+                                        <input type="checkbox" name="optionCorrect" id="option0Correct" value="true" class="mr-2" />
+                                        <label for="option0Correct" class="text-sm font-medium text-slate-700">Correct Answer</label>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <input type="text" name="optionTexts" class="option-text block w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500"
+                                               placeholder="Enter answer option..." required />
+                                        <button type="button" class="delete-option px-2 py-1 bg-red-50 text-red-600 rounded hover:bg-red-100 transition-colors">
+                                            <i class="material-icons">delete</i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="text-xs text-slate-500 mt-1">At least one option must be marked as correct.</p>
+                        </div>
+
+                        <!-- True/False Options -->
+                        <div id="trueFalseOptions" class="mb-6" style="display:none;">
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Correct Answer</label>
+                            <div class="flex gap-4">
+                                <div class="flex items-center">
+                                    <input type="radio" name="trueFalseCorrect" id="trueFalseTrue" value="true" class="mr-2" checked />
+                                    <label for="trueFalseTrue" class="text-sm text-slate-700">True</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="radio" name="trueFalseCorrect" id="trueFalseFalse" value="false" class="mr-2" />
+                                    <label for="trueFalseFalse" class="text-sm text-slate-700">False</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Active Status -->
+                        <div class="mb-6">
+                            <div class="flex items-center">
+                                <input asp-for="IsActive" type="checkbox" id="isActive" class="mr-2" checked />
+                                <label for="isActive" class="text-sm font-medium text-slate-700">Make this question active</label>
+                            </div>
+                            <p class="text-xs text-slate-500 mt-1">Inactive questions won't appear in assessments.</p>
+                        </div>
+
+                        <div class="flex justify-end gap-2">
+                            <a asp-controller="Assessments" asp-action="QuestionGroupDetails" asp-route-id="@Model.QuestionGroupId"
+                               class="px-4 py-2 bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300 transition-colors">
+                                Cancel
+                            </a>
+                            <button type="submit" class="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors flex items-center">
+                                <i class="material-icons text-sm mr-1">save</i>
+                                Create Question
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Information Sidebar (1/3 width) -->
+        <div class="w-1/3 space-y-4">
+            <!-- Help Card -->
+            <div class="bg-white rounded-lg shadow p-5">
+                <h3 class="text-lg font-semibold text-gray-800 mb-3">Question Type Tips</h3>
+                
+                <div id="multipleChoiceHelp">
+                    <h4 class="text-md font-medium text-gray-800 mb-2">Multiple Choice</h4>
+                    <p class="text-sm text-slate-600 mb-3">
+                        Create a question with several options where students select one or more correct answers.
+                    </p>
+                    <ul class="text-sm text-slate-600 list-disc list-inside space-y-1 mb-3">
+                        <li>Provide clear, concise answer options</li>
+                        <li>Make all options plausible</li>
+                        <li>Avoid grammatical clues to the correct answer</li>
+                        <li>Mark at least one option as correct</li>
+                    </ul>
+                </div>
+                
+                <div id="shortAnswerHelp" class="hidden">
+                    <h4 class="text-md font-medium text-gray-800 mb-2">Short Answer</h4>
+                    <p class="text-sm text-slate-600 mb-3">
+                        Students provide brief text responses, typically a few words or a sentence.
+                    </p>
+                    <ul class="text-sm text-slate-600 list-disc list-inside space-y-1 mb-3">
+                        <li>Phrase questions clearly to elicit specific answers</li>
+                        <li>Use for definitions, formulas, or specific facts</li>
+                        <li>Keep required answers concise</li>
+                    </ul>
+                </div>
+                
+                <div id="longTextHelp" class="hidden">
+                    <h4 class="text-md font-medium text-gray-800 mb-2">Essay</h4>
+                    <p class="text-sm text-slate-600 mb-3">
+                        Students write extended responses to demonstrate deeper understanding.
+                    </p>
+                    <ul class="text-sm text-slate-600 list-disc list-inside space-y-1 mb-3">
+                        <li>Clearly state expectations for response length</li>
+                        <li>Consider providing a grading rubric</li>
+                        <li>Add any specific instructions in the additional info field</li>
+                    </ul>
+                </div>
+                
+                <div id="trueFalseHelp" class="hidden">
+                    <h4 class="text-md font-medium text-gray-800 mb-2">True/False</h4>
+                    <p class="text-sm text-slate-600 mb-3">
+                        Students determine whether a statement is true or false.
+                    </p>
+                    <ul class="text-sm text-slate-600 list-disc list-inside space-y-1 mb-3">
+                        <li>Keep statements clear and unambiguous</li>
+                        <li>Avoid double negatives</li>
+                        <li>Avoid absolute terms like "always" or "never"</li>
+                        <li>Make statements completely true or completely false</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Preview Card -->
+            <div class="bg-white rounded-lg shadow p-5">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-lg font-semibold text-gray-800">Live Preview</h3>
+                    <span class="text-xs text-slate-500">How students will see this question</span>
+                </div>
+                
+                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                    <div id="previewQuestion" class="text-sm font-medium text-gray-800 mb-3">
+                        Your question will appear here...
+                    </div>
+                    
+                    <div id="previewInstructions" class="text-xs italic text-slate-600 mb-4 hidden">
+                        Instructions will appear here...
+                    </div>
+                    
+                    <!-- Multiple Choice Preview -->
+                    <div id="previewMultipleChoice" class="space-y-2">
+                        <div class="flex items-center">
+                            <input type="radio" disabled class="mr-2" />
+                            <span class="text-sm text-slate-800">Option 1</span>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="radio" disabled class="mr-2" />
+                            <span class="text-sm text-slate-800">Option 2</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Short Answer Preview -->
+                    <div id="previewShortAnswer" class="hidden">
+                        <div class="w-full px-4 py-2 border border-slate-300 rounded-lg bg-white text-sm text-slate-400">
+                            Enter your answer here...
+                        </div>
+                    </div>
+                    
+                    <!-- Essay Preview -->
+                    <div id="previewLongText" class="hidden">
+                        <div class="w-full h-24 px-4 py-2 border border-slate-300 rounded-lg bg-white text-sm text-slate-400">
+                            Enter your essay response here...
+                        </div>
+                    </div>
+                    
+                    <!-- True/False Preview -->
+                    <div id="previewTrueFalse" class="hidden space-y-2">
+                        <div class="flex items-center">
+                            <input type="radio" disabled class="mr-2" />
+                            <span class="text-sm text-slate-800">True</span>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="radio" disabled class="mr-2" />
+                            <span class="text-sm text-slate-800">False</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let questionTextQuill;
+        let additionalInfoQuill;
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // Initialize Quill editors
+            const toolbarOptions = [
+                [{ 'header': [1, 2, 3, false] }],
+                ['bold', 'italic', 'underline', 'strike'],
+                [{ 'color': [] }, { 'background': [] }],
+                [{ 'align': [] }],
+                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                ['blockquote', 'code-block'],
+                ['link', 'image'],
+                [{ 'script': 'sub'}, { 'script': 'super' }],
+                ['formula'],
+                ['clean']
+            ];
+
+            // Question Text Editor
+            questionTextQuill = new Quill('#questionTextEditor', {
+                theme: 'snow',
+                modules: {
+                    toolbar: toolbarOptions,
+                    formula: true
+                },
+                placeholder: 'Enter your question text here...'
+            });
+
+            // Additional Info Editor
+            additionalInfoQuill = new Quill('#additionalInfoEditor', {
+                theme: 'snow',
+                modules: {
+                    toolbar: [
+                        ['bold', 'italic', 'underline'],
+                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                        ['link'],
+                        ['formula'],
+                        ['clean']
+                    ],
+                    formula: true
+                },
+                placeholder: 'Enter any additional instructions, hints, or context...'
+            });
+
+            // Update preview when content changes
+            questionTextQuill.on('text-change', function() {
+                updatePreview();
+            });
+
+            additionalInfoQuill.on('text-change', function() {
+                updatePreview();
+            });
+
+            // Elements
+            const form = document.getElementById('createQuestionForm');
+            const typeCards = document.querySelectorAll('.question-type-card');
+            const optionsContainer = document.getElementById('optionsContainer');
+            const addOptionBtn = document.getElementById('addOptionBtn');
+
+            // Image upload elements
+            const questionImageInput = document.getElementById('questionImage');
+            const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+            const imagePreview = document.getElementById('imagePreview');
+            const removeImageBtn = document.getElementById('removeImageBtn');
+
+            // Preview elements
+            const previewQuestion = document.getElementById('previewQuestion');
+            const previewInstructions = document.getElementById('previewInstructions');
+            const previewMultipleChoice = document.getElementById('previewMultipleChoice');
+            const previewShortAnswer = document.getElementById('previewShortAnswer');
+            const previewLongText = document.getElementById('previewLongText');
+            const previewTrueFalse = document.getElementById('previewTrueFalse');
+
+            // Help sections
+            const multipleChoiceHelp = document.getElementById('multipleChoiceHelp');
+            const shortAnswerHelp = document.getElementById('shortAnswerHelp');
+            const longTextHelp = document.getElementById('longTextHelp');
+            const trueFalseHelp = document.getElementById('trueFalseHelp');
+
+            // Option sections
+            const multipleChoiceOptions = document.getElementById('multipleChoiceOptions');
+            const trueFalseOptions = document.getElementById('trueFalseOptions');
+
+            // Initialize
+            let optionCount = 2;
+            setTimeout(updatePreview, 500); // Wait for Quill to initialize
+
+            // Question type selection
+            typeCards.forEach(card => {
+                card.addEventListener('click', function() {
+                    const type = this.getAttribute('data-type');
+                    document.getElementById('type' + type).checked = true;
+
+                    typeCards.forEach(c => {
+                        c.querySelector('label').classList.remove('bg-blue-50', 'bg-green-50', 'bg-amber-50', 'bg-red-50', 'border-blue-300', 'border-green-300', 'border-amber-300', 'border-red-300');
+                    });
+
+                    const label = this.querySelector('label');
+                    switch(type) {
+                        case 'MultipleChoice':
+                            label.classList.add('bg-blue-50', 'border-blue-300');
+                            break;
+                        case 'ShortAnswer':
+                            label.classList.add('bg-green-50', 'border-green-300');
+                            break;
+                        case 'LongText':
+                            label.classList.add('bg-amber-50', 'border-amber-300');
+                            break;
+                        case 'TrueFalse':
+                            label.classList.add('bg-red-50', 'border-red-300');
+                            break;
+                    }
+
+                    updateQuestionTypeDisplay(type);
+                });
+            });
+
+            // Initialize with Multiple Choice selected
+            document.querySelector('[data-type="MultipleChoice"] label').classList.add('bg-blue-50', 'border-blue-300');
+
+            // Add option button
+            addOptionBtn.addEventListener('click', addOption);
+
+            // Delete option handlers
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('delete-option') || e.target.parentElement.classList.contains('delete-option')) {
+                    const button = e.target.classList.contains('delete-option') ? e.target : e.target.parentElement;
+                    const optionItem = button.closest('.option-item');
+
+                    if (optionsContainer.children.length <= 2) {
+                        alert('Questions must have at least two options.');
+                        return;
+                    }
+
+                    optionItem.remove();
+                    renumberOptions();
+                    updatePreview();
+                }
+            });
+
+            // Image preview functionality
+            questionImageInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    const file = this.files[0];
+
+                    if (file.size > 5 * 1024 * 1024) {
+                        alert('Image size cannot exceed 5MB.');
+                        this.value = '';
+                        imagePreviewContainer.classList.add('hidden');
+                        return;
+                    }
+
+                    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+                    if (!validTypes.includes(file.type)) {
+                        alert('Only JPG, PNG and GIF image types are allowed.');
+                        this.value = '';
+                        imagePreviewContainer.classList.add('hidden');
+                        return;
+                    }
+
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        imagePreview.src = e.target.result;
+                        imagePreviewContainer.classList.remove('hidden');
+                    }
+                    reader.readAsDataURL(file);
+
+                    updatePreview();
+                }
+            });
+
+            removeImageBtn.addEventListener('click', function() {
+                questionImageInput.value = '';
+                imagePreviewContainer.classList.add('hidden');
+                updatePreview();
+            });
+
+            // Update preview when options change
+            document.addEventListener('input', function(e) {
+                if (e.target.classList.contains('option-text') ||
+                    e.target.name.includes('options') ||
+                    e.target.name === 'trueFalseCorrect') {
+                    updatePreview();
+                }
+            });
+
+            // Form submission handling
+            form.addEventListener('submit', function(e) {
+                // Sync Quill content with hidden textareas
+                const questionTextContent = questionTextQuill.root.innerHTML;
+                const additionalInfoContent = additionalInfoQuill.root.innerHTML;
+
+                // Handle empty content properly
+                document.getElementById('questionTextHidden').value =
+                    (questionTextContent === '<p><br></p>' || questionTextContent === '') ? '' : questionTextContent;
+                document.getElementById('additionalInfoHidden').value =
+                    (additionalInfoContent === '<p><br></p>' || additionalInfoContent === '') ? '' : additionalInfoContent;
+
+                // Validate question text is not empty BEFORE other validations
+                if (!questionTextContent ||
+                    questionTextContent.trim() === '' ||
+                    questionTextContent === '<p><br></p>' ||
+                    questionTextQuill.getText().trim() === '') {
+                    e.preventDefault();
+                    alert('Please enter question text.');
+                    questionTextQuill.focus();
+                    return false;
+                }
+
+                const questionType = document.querySelector('input[name="QuestionType"]:checked').value;
+
+                if (questionType === 'MultipleChoice') {
+                    const options = optionsContainer.querySelectorAll('.option-item');
+
+                    if (options.length < 2) {
+                        e.preventDefault();
+                        alert('Multiple choice questions must have at least 2 options.');
+                        return;
+                    }
+
+                    let hasEmptyOption = false;
+                    options.forEach(option => {
+                        const textInput = option.querySelector('.option-text');
+                        if (!textInput.value.trim()) {
+                            hasEmptyOption = true;
+                            textInput.classList.add('border-red-500');
+                        } else {
+                            textInput.classList.remove('border-red-500');
+                        }
+                    });
+
+                    if (hasEmptyOption) {
+                        e.preventDefault();
+                        alert('All options must have text.');
+                        return;
+                    }
+
+                    const hasCorrectOption = Array.from(options).some(option => {
+                        return option.querySelector('input[type="checkbox"]').checked;
+                    });
+
+                    if (!hasCorrectOption) {
+                        e.preventDefault();
+                        alert('At least one option must be marked as correct.');
+                        return;
+                    }
+                } else {
+                    document.querySelectorAll('.option-text').forEach(input => {
+                        input.disabled = true;
+                    });
+                    if (questionType === 'TrueFalse') {
+                        // Remove existing hidden field if it exists
+                        const existingField = form.querySelector('input[name="trueFalseIsTrue"]');
+                        if (existingField) {
+                            existingField.remove();
+                        }
+
+                        const isTrue = document.getElementById('trueFalseTrue').checked;
+                        const trueCorrectField = document.createElement('input');
+                        trueCorrectField.type = 'hidden';
+                        trueCorrectField.name = 'trueFalseIsTrue';
+                        trueCorrectField.value = isTrue.toString();
+                        form.appendChild(trueCorrectField);
+                    }
+                }
+            });
+
+            // Functions
+            function addOption() {
+                const newOption = document.createElement('div');
+                newOption.className = 'option-item bg-slate-50 p-3 rounded-lg border border-slate-200';
+                newOption.innerHTML = `
+                    <div class="flex items-center mb-2">
+                        <input type="checkbox" name="optionCorrect" id="option${optionCount}Correct" value="true" class="mr-2" />
+                        <label for="option${optionCount}Correct" class="text-sm font-medium text-slate-700">Correct Answer</label>
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="text" name="optionTexts" class="option-text block w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500"
+                               placeholder="Enter answer option..." required />
+                        <button type="button" class="delete-option px-2 py-1 bg-red-50 text-red-600 rounded hover:bg-red-100 transition-colors">
+                            <i class="material-icons">delete</i>
+                        </button>
+                    </div>
+                `;
+
+                optionsContainer.appendChild(newOption);
+                optionCount++;
+
+                const newInput = newOption.querySelector('input[type="text"]');
+                newInput.focus();
+
+                updatePreview();
+            }
+
+            function renumberOptions() {
+                const options = optionsContainer.querySelectorAll('.option-item');
+                options.forEach((option, index) => {
+                    const checkbox = option.querySelector('input[type="checkbox"]');
+                    checkbox.name = `options[${index}].IsCorrect`;
+                    checkbox.id = `option${index}Correct`;
+
+                    const label = option.querySelector('label');
+                    label.setAttribute('for', `option${index}Correct`);
+
+                    const textInput = option.querySelector('input[type="text"]');
+                    textInput.name = `options[${index}].OptionText`;
+                });
+
+                optionCount = options.length;
+            }
+
+            function updateQuestionTypeDisplay(type) {
+                multipleChoiceHelp.classList.add('hidden');
+                shortAnswerHelp.classList.add('hidden');
+                longTextHelp.classList.add('hidden');
+                trueFalseHelp.classList.add('hidden');
+
+                switch(type) {
+                    case 'MultipleChoice':
+                        multipleChoiceHelp.classList.remove('hidden');
+                        multipleChoiceOptions.style.display = 'block';
+                        trueFalseOptions.style.display = 'none';
+                        document.querySelectorAll('.option-text').forEach(input => {
+                            input.setAttribute('required', '');
+                        });
+                        break;
+                    case 'ShortAnswer':
+                        shortAnswerHelp.classList.remove('hidden');
+                        multipleChoiceOptions.style.display = 'none';
+                        trueFalseOptions.style.display = 'none';
+                        document.querySelectorAll('.option-text').forEach(input => {
+                            input.removeAttribute('required');
+                        });
+                        break;
+                    case 'LongText':
+                        longTextHelp.classList.remove('hidden');
+                        multipleChoiceOptions.style.display = 'none';
+                        trueFalseOptions.style.display = 'none';
+                        document.querySelectorAll('.option-text').forEach(input => {
+                            input.removeAttribute('required');
+                        });
+                        break;
+                    case 'TrueFalse':
+                        trueFalseHelp.classList.remove('hidden');
+                        multipleChoiceOptions.style.display = 'none';
+                        trueFalseOptions.style.display = 'block';
+                        document.querySelectorAll('.option-text').forEach(input => {
+                            input.removeAttribute('required');
+                        });
+                        break;
+                }
+
+                updatePreview();
+            }
+
+            function updatePreview() {
+                // Get content from Quill editors
+                const questionText = questionTextQuill.root.innerHTML || 'Your question will appear here...';
+                const additionalInfo = additionalInfoQuill.root.innerHTML || '';
+
+                // Update question text (render HTML)
+                previewQuestion.innerHTML = questionText;
+
+                // Update instructions
+                if (additionalInfo.trim() && additionalInfo !== '<p><br></p>') {
+                    previewInstructions.innerHTML = additionalInfo;
+                    previewInstructions.classList.remove('hidden');
+                } else {
+                    previewInstructions.classList.add('hidden');
+                }
+
+                // Render KaTeX if present
+                if (window.katex) {
+                    // Find and render formula elements
+                    const formulas = previewQuestion.querySelectorAll('.ql-formula');
+                    formulas.forEach(formula => {
+                        try {
+                            const latex = formula.getAttribute('data-value');
+                            if (latex) {
+                                katex.render(latex, formula, {
+                                    throwOnError: false,
+                                    displayMode: false
+                                });
+                            }
+                        } catch (e) {
+                            console.log('KaTeX render error:', e);
+                        }
+                    });
+
+                    const additionalFormulas = previewInstructions.querySelectorAll('.ql-formula');
+                    additionalFormulas.forEach(formula => {
+                        try {
+                            const latex = formula.getAttribute('data-value');
+                            if (latex) {
+                                katex.render(latex, formula, {
+                                    throwOnError: false,
+                                    displayMode: false
+                                });
+                            }
+                        } catch (e) {
+                            console.log('KaTeX render error:', e);
+                        }
+                    });
+                }
+
+                // Handle image preview
+                let previewImg = previewQuestion.parentElement.querySelector('img.preview-image');
+                if (previewImg) {
+                    previewImg.remove();
+                }
+
+                if (questionImageInput.files && questionImageInput.files[0] && !imagePreviewContainer.classList.contains('hidden')) {
+                    previewImg = document.createElement('img');
+                    previewImg.className = 'preview-image mb-3 rounded max-h-40 mx-auto';
+                    previewImg.alt = document.getElementById('ImageDescription').value || 'Question image';
+                    previewImg.src = imagePreview.src;
+
+                    const position = document.getElementById('ImageDisplayPosition').value;
+                    if (position === 'Above') {
+                        previewQuestion.parentElement.insertBefore(previewImg, previewQuestion);
+                    } else {
+                        const insertAfter = previewInstructions.classList.contains('hidden') ?
+                            previewQuestion : previewInstructions;
+                        insertAfter.parentElement.insertBefore(previewImg, insertAfter.nextSibling);
+                    }
+                }
+
+                const questionType = document.querySelector('input[name="QuestionType"]:checked').value;
+
+                previewMultipleChoice.classList.add('hidden');
+                previewShortAnswer.classList.add('hidden');
+                previewLongText.classList.add('hidden');
+                previewTrueFalse.classList.add('hidden');
+
+                switch(questionType) {
+                    case 'MultipleChoice':
+                        updateMultipleChoicePreview();
+                        previewMultipleChoice.classList.remove('hidden');
+                        break;
+                    case 'ShortAnswer':
+                        previewShortAnswer.classList.remove('hidden');
+                        break;
+                    case 'LongText':
+                        previewLongText.classList.remove('hidden');
+                        break;
+                    case 'TrueFalse':
+                        updateTrueFalsePreview();
+                        previewTrueFalse.classList.remove('hidden');
+                        break;
+                }
+            }
+
+            function updateMultipleChoicePreview() {
+                previewMultipleChoice.innerHTML = '';
+
+                const options = optionsContainer.querySelectorAll('.option-item');
+
+                options.forEach((option, index) => {
+                    const optionText = option.querySelector('.option-text').value.trim() || `Option ${index + 1}`;
+                    const isCorrect = option.querySelector('input[type="checkbox"]').checked;
+
+                    const optionEl = document.createElement('div');
+                    optionEl.className = 'flex items-center mb-2';
+                    optionEl.innerHTML = `
+                        <input type="radio" disabled class="mr-2" ${isCorrect ? 'checked' : ''} />
+                        <span class="text-sm ${isCorrect ? 'font-medium' : ''} text-slate-800">${optionText}</span>
+                    `;
+
+                    previewMultipleChoice.appendChild(optionEl);
+                });
+            }
+
+            function updateTrueFalsePreview() {
+                const trueChecked = document.getElementById('trueFalseTrue').checked;
+                const falseChecked = document.getElementById('trueFalseFalse').checked;
+
+                const trueRadio = previewTrueFalse.querySelector('div:nth-child(1) input');
+                const falseRadio = previewTrueFalse.querySelector('div:nth-child(2) input');
+
+                if (trueRadio && falseRadio) {
+                    trueRadio.checked = trueChecked;
+                    falseRadio.checked = falseChecked;
+                }
+            }
+
+            function initializeQuestionType() {
+                const selectedType = document.querySelector('input[name="QuestionType"]:checked').value;
+                const selectedCard = document.querySelector(`[data-type="${selectedType}"]`);
+
+                if (selectedCard) {
+                    const label = selectedCard.querySelector('label');
+
+                    switch(selectedType) {
+                        case 'MultipleChoice':
+                            label.classList.add('bg-blue-50', 'border-blue-300');
+                            break;
+                        case 'ShortAnswer':
+                            label.classList.add('bg-green-50', 'border-green-300');
+                            break;
+                        case 'LongText':
+                            label.classList.add('bg-amber-50', 'border-amber-300');
+                            break;
+                        case 'TrueFalse':
+                            label.classList.add('bg-red-50', 'border-red-300');
+                            break;
+                    }
+
+                    updateQuestionTypeDisplay(selectedType);
+                }
+            }
+
+            initializeQuestionType();
+        });
+    </script>
+}

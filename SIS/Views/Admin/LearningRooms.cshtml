@@ -1,0 +1,490 @@
+﻿@model IEnumerable<SIS.Models.Admin.LearningRoom>
+
+<div class="h-[90vh] p-4">
+    <!-- Header Section -->
+    <div class="flex justify-between items-center mb-4">
+        <h1 class="text-2xl font-bold text-gray-800 flex items-center">
+            <i class="material-icons mr-2">meeting_room</i>
+            Learning Rooms
+        </h1>
+        <button type="button"
+                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+                onclick="showCreateRoomModal()">
+            <i class="material-icons mr-2">add</i>
+            Create Learning Room
+        </button>
+    </div>
+
+    <!-- Main Content Layout -->
+    <div class="flex gap-4 h-[calc(90vh-80px)]">
+        <!-- Main Table Section (3/4 width) -->
+        <div class="w-3/4">
+            <div class="bg-white rounded-lg shadow-md h-full overflow-auto">
+                <div class="p-4">
+                    <table id="roomsTable" class="w-full text-sm text-gray-600">
+                        <thead>
+                            <tr>
+                                <th class="px-6 py-4">
+                                    <span class="flex items-center">
+                                        #
+                                        <svg class="w-4 h-4 ms-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 15 4 4 4-4m0-6-4-4-4 4" />
+                                        </svg>
+                                    </span>
+                                </th>
+                                <th class="px-6 py-4">
+                                    <span class="flex items-center">
+                                        Room Name
+                                        <svg class="w-4 h-4 ms-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 15 4 4 4-4m0-6-4-4-4 4" />
+                                        </svg>
+                                    </span>
+                                </th>
+                                <th class="px-6 py-4">
+                                    <span class="flex items-center">
+                                        Building
+                                        <svg class="w-4 h-4 ms-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 15 4 4 4-4m0-6-4-4-4 4" />
+                                        </svg>
+                                    </span>
+                                </th>
+                                <th class="px-6 py-4">
+                                    <span class="flex items-center">
+                                        Room Type
+                                        <svg class="w-4 h-4 ms-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 15 4 4 4-4m0-6-4-4-4 4" />
+                                        </svg>
+                                    </span>
+                                </th>
+                                <th class="px-6 py-4">
+                                    <span class="flex items-center">
+                                        Capacity
+                                        <svg class="w-4 h-4 ms-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 15 4 4 4-4m0-6-4-4-4 4" />
+                                        </svg>
+                                    </span>
+                                </th>
+                                <th class="px-6 py-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model != null && Model.Any())
+                            {
+                                int index = 1;
+                                foreach (var room in Model)
+                                {
+                                    <tr class="border-b hover:bg-gray-50 transition-colors">
+                                        <td class="px-6 py-4">@index</td>
+                                        <td class="px-6 py-4 font-medium text-gray-900">@room.Name</td>
+                                        <td class="px-6 py-4">@room.Building.Name</td>
+                                        <td class="px-6 py-4">@room.RoomType</td>
+                                        <td class="px-6 py-4">
+                                            <div class="flex flex-col">
+                                                <span>Learning: @room.LearningCapacity</span>
+                                                <span>Exam: @room.ExamCapacity</span>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="flex space-x-2">
+                                                <button onclick="showUpdateRoomModal('@room.Id', '@room.Name', '@room.BuildingId', '@room.RoomType', '@room.LearningCapacity', '@room.ExamCapacity', '@room.Area', '@room.Description')"
+                                                        class="inline-flex items-center px-3 py-1 text-sm text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
+                                                    <i class="material-icons text-sm mr-1">edit</i> Edit
+                                                </button>
+                                                <button onclick="showDeleteRoomModal('@room.Id', '@room.Name')"
+                                                        class="inline-flex items-center px-3 py-1 text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
+                                                    <i class="material-icons text-sm mr-1">delete</i> Delete
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    index++;
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">No learning rooms found.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Sidebar (1/4 width) -->
+        <div class="w-1/4 space-y-4">
+            <!-- Statistics Cards -->
+            <div class="grid grid-cols-1 gap-4">
+                <!-- Total Rooms -->
+                <div class="bg-white rounded-lg shadow p-4">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-blue-100 rounded-lg">
+                            <i class="material-icons text-blue-600 text-xl">meeting_room</i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-gray-500 text-sm">Total Rooms</p>
+                            <p class="text-xl font-semibold">@Model.Count()</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Total Capacity -->
+                <div class="bg-white rounded-lg shadow p-4">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-green-100 rounded-lg">
+                            <i class="material-icons text-green-600 text-xl">groups</i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-gray-500 text-sm">Total Learning Capacity</p>
+                            <p class="text-xl font-semibold text-green-600">
+                                @Model.Sum(r => r.LearningCapacity)
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Exam Capacity -->
+                <div class="bg-white rounded-lg shadow p-4">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-purple-100 rounded-lg">
+                            <i class="material-icons text-purple-600 text-xl">assignment</i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-gray-500 text-sm">Total Exam Capacity</p>
+                            <p class="text-xl font-semibold text-purple-600">@Model.Sum(r => r.ExamCapacity)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Room Distribution Chart -->
+            <div class="bg-white rounded-lg shadow p-4">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Rooms by Type</h3>
+                <div id="roomStatsChart" class="min-h-64"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Learning Room Modal -->
+<div id="createRoomModal" class="hidden fixed inset-0 z-50">
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-lg shadow-xl w-full max-w-2xl">
+                <!-- Modal Header -->
+                <div class="bg-blue-600 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
+                    <h3 class="text-lg font-semibold flex items-center">
+                        <i class="material-icons mr-2">add</i>
+                        Create New Learning Room
+                    </h3>
+                    <button type="button" class="text-white hover:text-gray-200" data-bs-dismiss="modal">
+                        <i class="material-icons">close</i>
+                    </button>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="p-6">
+                    <form id="createRoomForm" method="post" asp-controller="Admin" asp-action="CreateLearningRoom">
+                        @Html.AntiForgeryToken()
+
+                        <div class="space-y-6">
+                            <!-- Room Name -->
+                            <div class="relative z-0 w-full group">
+                                <input type="text" name="Name" id="roomName"
+                                       class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                                       placeholder=" " required />
+                                <label for="roomName"
+                                       class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                    Room Name
+                                </label>
+                            </div>
+
+                            <!-- Building Selection -->
+                            <div class="relative z-0 w-full group">
+                                <select name="BuildingId" id="buildingId"
+                                        class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                                        required>
+                                    <option value="" disabled selected></option>
+                                    @foreach (var building in ViewBag.BuildingId)
+                                    {
+                                        <option value="@building.Value">@building.Text</option>
+                                    }
+                                </select>
+                                <label for="buildingId"
+                                       class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                    Select Building
+                                </label>
+                            </div>
+
+                            <!-- Room Type -->
+                            <div class="relative z-0 w-full group">
+                                <input type="text" name="RoomType" id="roomType"
+                                       class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                                       placeholder=" " required />
+                                <label for="roomType"
+                                       class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                    Room Type
+                                </label>
+                            </div>
+
+                            <!-- Capacity Section -->
+                            <div class="grid grid-cols-2 gap-6">
+                                <!-- Learning Capacity -->
+                                <div class="relative z-0 w-full group">
+                                    <input type="number" name="LearningCapacity" id="learningCapacity"
+                                           class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                                           placeholder=" " required />
+                                    <label for="learningCapacity"
+                                           class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                        Learning Capacity
+                                    </label>
+                                </div>
+
+                                <!-- Exam Capacity -->
+                                <div class="relative z-0 w-full group">
+                                    <input type="number" name="ExamCapacity" id="examCapacity"
+                                           class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                                           placeholder=" " required />
+                                    <label for="examCapacity"
+                                           class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                        Exam Capacity
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Room Area -->
+                            <div class="relative z-0 w-full group">
+                                <input type="number" name="Area" id="area"
+                                       class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                                       placeholder=" " required />
+                                <label for="area"
+                                       class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                    Room Area (sq ft)
+                                </label>
+                            </div>
+
+                            <!-- Description -->
+                            <div class="relative z-0 w-full group">
+                                <textarea name="Description" id="description" rows="3"
+                                          class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                                          placeholder=" "></textarea>
+                                <label for="description"
+                                       class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                    Description
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-end space-x-2">
+                    <button type="button" class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center" data-bs-dismiss="modal">
+                        <i class="material-icons mr-1">close</i>Cancel
+                    </button>
+                    <button type="button" id="confirmCreate" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+                        <i class="material-icons mr-1">add</i>Create
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Update Learning Room Modal -->
+<div id="updateRoomModal" class="hidden fixed inset-0 z-50">
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-lg shadow-xl w-full max-w-2xl">
+                <!-- Modal Header -->
+                <div class="bg-gray-700 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
+                    <h3 class="text-lg font-semibold flex items-center">
+                        <i class="material-icons mr-2">edit</i>
+                        Update Learning Room
+                    </h3>
+                    <button type="button" class="text-white hover:text-gray-200" data-bs-dismiss="modal">
+                        <i class="material-icons">close</i>
+                    </button>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="p-6">
+                    <form id="updateRoomForm" method="post" asp-controller="Admin" asp-action="UpdateLearningRoom">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" id="updateRoomId" name="Id" />
+
+                        <div class="space-y-6">
+                            <!-- Room Name -->
+                            <div class="relative z-0 w-full group">
+                                <input type="text" name="Name" id="updateRoomName"
+                                       class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                                       placeholder=" " required />
+                                <label for="updateRoomName"
+                                       class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                    Room Name
+                                </label>
+                            </div>
+
+                            <!-- Building Selection -->
+                            <div class="relative z-0 w-full group">
+                                <select name="BuildingId" id="updateBuildingId"
+                                        class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                                        required>
+                                    <option value="" disabled selected></option>
+                                    @foreach (var building in ViewBag.BuildingId)
+                                    {
+                                        <option value="@building.Value">@building.Text</option>
+                                    }
+                                </select>
+                                <label for="updateBuildingId"
+                                       class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                    Select Building
+                                </label>
+                            </div>
+
+                            <!-- Room Type -->
+                            <div class="relative z-0 w-full group">
+                                <input type="text" name="RoomType" id="updateRoomType"
+                                       class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                                       placeholder=" " required />
+                                <label for="updateRoomType"
+                                       class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                    Room Type
+                                </label>
+                            </div>
+
+                            <!-- Capacity Section -->
+                            <div class="grid grid-cols-2 gap-6">
+                                <!-- Learning Capacity -->
+                                <div class="relative z-0 w-full group">
+                                    <input type="number" name="LearningCapacity" id="updateLearningCapacity"
+                                           class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                                           placeholder=" " required />
+                                    <label for="updateLearningCapacity"
+                                           class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                        Learning Capacity
+                                    </label>
+                                </div>
+
+                                <!-- Exam Capacity -->
+                                <div class="relative z-0 w-full group">
+                                    <input type="number" name="ExamCapacity" id="updateExamCapacity"
+                                           class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                                           placeholder=" " required />
+                                    <label for="updateExamCapacity"
+                                           class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                        Exam Capacity
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Room Area -->
+                            <div class="relative z-0 w-full group">
+                                <input type="number" name="Area" id="updateArea"
+                                       class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                                       placeholder=" " required />
+                                <label for="updateArea"
+                                       class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                    Room Area (sq ft)
+                                </label>
+                            </div>
+
+                            <!-- Description -->
+                            <div class="relative z-0 w-full group">
+                                <textarea name="Description" id="updateDescription" rows="3"
+                                          class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                                          placeholder=" "></textarea>
+                                <label for="updateDescription"
+                                       class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                    Description
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-end space-x-2">
+                    <button type="button" class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center" data-bs-dismiss="modal">
+                        <i class="material-icons mr-1">close</i>Cancel
+                    </button>
+                    <button type="button" id="confirmUpdate" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+                        <i class="material-icons mr-1">save</i>Update
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Learning Room Modal -->
+<div id="deleteRoomModal" class="hidden fixed inset-0 z-50">
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-lg shadow-xl w-full max-w-lg">
+                <!-- Modal Header -->
+                <div class="bg-red-600 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
+                    <h3 class="text-lg font-semibold flex items-center">
+                        <i class="material-icons mr-2">warning</i>
+                        Confirm Delete
+                    </h3>
+                    <button type="button" class="text-white hover:text-gray-200" data-bs-dismiss="modal">
+                        <i class="material-icons">close</i>
+                    </button>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="p-6">
+                    <form id="deleteRoomForm" method="post" asp-controller="Admin" asp-action="DeleteLearningRoom">
+                        <input type="hidden" id="deleteRoomId" name="Id" />
+                        @Html.AntiForgeryToken()
+
+                        <div class="space-y-4">
+                            <div class="flex items-center text-red-600 mb-4">
+                                <i class="material-icons mr-2">error_outline</i>
+                                <p class="text-lg font-medium">Delete Learning Room</p>
+                            </div>
+
+                            <p class="text-gray-700">Are you sure you want to delete this learning room? This action cannot be undone.</p>
+
+                            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-4">
+                                <p class="text-gray-700 font-medium mb-2">Room Details:</p>
+                                <p class="text-gray-600">
+                                    <span class="font-medium">Room Name:</span>
+                                    <span id="deleteRoomName" class="ml-2"></span>
+                                </p>
+                            </div>
+
+                            <div class="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                                <div class="flex items-center text-red-800">
+                                    <i class="material-icons text-red-600 mr-2 text-sm">info</i>
+                                    <p class="text-sm">This action cannot be undone. All associated data will be permanently deleted.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-end space-x-2">
+                    <button type="button" class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center" data-bs-dismiss="modal">
+                        <i class="material-icons mr-1">close</i>Cancel
+                    </button>
+                    <button type="button" id="confirmDelete" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center">
+                        <i class="material-icons mr-1">delete</i>Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module" src="~/js/rooms.js"></script>

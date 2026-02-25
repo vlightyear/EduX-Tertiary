@@ -1,0 +1,152 @@
+﻿@model SIS.DTOs.StudentApplication.InitApplicationDto
+
+@{
+    ViewData["Title"] = "Application Successful";
+    Layout = "_Layout";
+}
+
+<div class="max-w-4xl mx-auto p-6">
+    <!-- Header -->
+    <div class="bg-green-50 rounded-t-xl p-6 border-b border-green-200">
+        <h2 class="text-3xl font-bold text-slate-800">@ViewData["Title"]</h2>
+    </div>
+
+    <!-- Main Content -->
+    <div class="bg-white rounded-b-xl shadow-sm p-6 space-y-6">
+        <div class="space-y-2">
+            <p class="text-slate-600">Your application has been successfully submitted. Check your email for further instructions.</p>
+            <p class="text-slate-600">Your Reference Number is: <strong class="font-semibold text-slate-800">@Model.ReferenceNumber</strong></p>
+        </div>
+
+        @{
+            // Check if this is a free application based on URL parameters or TempData
+            var isFreeApplication = ViewBag.IsFreeApplication as bool? ?? false;
+        }
+
+        @if (!isFreeApplication)
+        {
+            <!-- PAID APPLICATION - Show payment options -->
+            <div class="space-y-4">
+                <p class="text-slate-600">You can pay now or later for your application.</p>
+
+                <!-- Payment Form -->
+                <form id="payNowForm" method="post" class="space-y-4">
+                    <div class="hidden">
+                        <input type="hidden" id="referenceNumber" name="ReferenceNumber" value="@Model.ReferenceNumber" />
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <input type="submit"
+                               value="Pay Now"
+                               class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors cursor-pointer" />
+
+                        <a asp-action="Index"
+                           asp-controller="StudentApplication"
+                           class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
+                            Pay Later
+                        </a>
+                    </div>
+                </form>
+            </div>
+        }
+        else
+        {
+            <!-- FREE APPLICATION - Show completion message -->
+            <div class="bg-green-50 border border-green-200 rounded-lg p-6">
+                <div class="flex items-center space-x-3">
+                    <div class="flex-shrink-0">
+                        <svg class="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-green-800">Application Fully Submitted!</h3>
+                        <p class="text-green-700 mt-1">No payment is required for this application. Your application is now under review.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <h4 class="text-lg font-semibold text-slate-800">What's Next?</h4>
+                <ul class="list-disc list-inside space-y-2 text-slate-600">
+                    <li>You will receive a confirmation email shortly</li>
+                    <li>Our admissions team will review your application</li>
+                    <li>You'll be notified of any updates via email</li>
+                    <li>Check your application status anytime in your dashboard</li>
+                </ul>
+
+                <div class="pt-4">
+                    <a asp-action="Index"
+                       asp-controller="StudentApplication"
+                       class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
+                        Go to Dashboard
+                    </a>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@if (!isFreeApplication)
+{
+    <!-- Scripts - Only load for paid applications -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.0/dist/sweetalert2.min.js"></script>
+
+    <script>
+        $('#payNowForm').on('submit', function(e) {
+            e.preventDefault();
+            submitPaymentFormViaAjax();
+        });
+
+        function submitPaymentFormViaAjax() {
+            const referenceNumber = document.getElementById('referenceNumber').value;
+            if (referenceNumber) {
+                $.ajax({
+                    url: '/Payments/PayNow',
+                    method: 'POST',
+                    data: JSON.stringify(referenceNumber),
+                    contentType: 'application/json',
+                    success: function(response) {
+                        console.log("AJAX Response:", response);
+
+                        if (response.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Payment Successful!',
+                                text: response.message,
+                                confirmButtonText: 'OK'
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    window.location.href = '/StudentApplication/Index';
+                                }
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Payment Failed',
+                                text: response.message,
+                                confirmButtonText: 'OK'
+                            });
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.log("AJAX Error:", error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'An unexpected error occurred. Please try again.',
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Invalid Reference Number',
+                    text: 'The reference number is missing.',
+                    confirmButtonText: 'OK'
+                });
+            }
+        }
+    </script>
+}

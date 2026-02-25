@@ -1,0 +1,168 @@
+﻿@model SIS.Models.Admin.WorkingDayConfiguration
+
+<div class="h-[90vh] p-4">
+    <!-- Header Section -->
+    <div class="flex justify-between items-center mb-4">
+        <h1 class="text-2xl font-bold text-gray-800 flex items-center">
+            <i class="material-icons mr-2">calendar_month</i>
+            Create Working Day Configuration
+        </h1>
+        <a asp-controller="Admin" asp-action="WorkingDayConfigurations"
+           class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center">
+            <i class="material-icons mr-2">arrow_back</i>
+            Back
+        </a>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex gap-4 h-[calc(90vh-80px)]">
+        <div class="w-3/4">
+            <div class="bg-white rounded-lg shadow-md overflow-auto">
+                <form asp-action="CreateWorkingDayConfig" method="post" id="workingDayForm" class="space-y-6">
+                    @Html.AntiForgeryToken()
+
+                    <!-- Basic Configuration Details -->
+                    <div class="bg-white rounded-lg border border-gray-200 p-6">
+                        <h2 class="text-lg font-semibold text-gray-800 mb-4">Configuration Details</h2>
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label asp-for="AcademicYearId" class="block text-sm font-medium text-gray-700 mb-1">Academic Year</label>
+                                    <select asp-for="AcademicYearId"
+                                            asp-items="ViewBag.AcademicYears"
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="">Select Academic Year</option>
+                                    </select>
+                                    <span asp-validation-for="AcademicYearId" class="text-sm text-red-600"></span>
+                                </div>
+                                <div>
+                                    <label asp-for="ModeOfStudyId" class="block text-sm font-medium text-gray-700 mb-1">Mode of Study</label>
+                                    <select asp-for="ModeOfStudyId"
+                                            asp-items="ViewBag.ModesOfStudy"
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="">Select Mode of Study</option>
+                                    </select>
+                                    <span asp-validation-for="ModeOfStudyId" class="text-sm text-red-600"></span>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input asp-for="IsActive" type="checkbox" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300
+                                        rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full
+                                        peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px]
+                                        after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5
+                                        after:transition-all peer-checked:bg-blue-600"></div>
+                                    <span class="ms-3 text-sm font-medium text-gray-700">Active Configuration</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Working Days Table -->
+                    <div class="bg-white rounded-lg border border-gray-200 p-6">
+                        <h2 class="text-lg font-semibold text-gray-800 mb-4">Working Days</h2>
+                        <div class="border rounded-lg overflow-hidden">
+                            <table class="w-full text-sm text-gray-600">
+                                <thead>
+                                    <tr class="bg-gray-50 border-b">
+                                        <th class="px-4 py-3 text-left">Day</th>
+                                        <th class="px-4 py-3 text-left">Working Day</th>
+                                        <th class="px-4 py-3 text-left">Time Slot Configuration</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="workingDaysTableBody">
+                                    <!-- Days will be added here dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Hidden input for working days data -->
+                        <input type="hidden" asp-for="WorkingDaysData" id="workingDaysData" />
+                    </div>
+
+                    <!-- Validation Summary -->
+                    <div id="validationSummary" class="hidden p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50" role="alert">
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="flex justify-end p-6">
+                        <button type="submit" class="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+                            <i class="material-icons mr-2">save</i>
+                            Create Configuration
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="w-1/4 space-y-4">
+            <!-- Validation Guide -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Validation Rules</h3>
+                <ul class="space-y-3 text-sm text-gray-600">
+                    <li class="flex items-start">
+                        <i class="material-icons text-blue-600 mr-2">check_circle</i>
+                        <span>Academic Year and Mode of Study are required</span>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="material-icons text-blue-600 mr-2">check_circle</i>
+                        <span>At least one working day must be configured</span>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="material-icons text-blue-600 mr-2">check_circle</i>
+                        <span>Working days must have an assigned time slot configuration</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Configuration Summary -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Configuration Summary</h3>
+                <div class="space-y-4">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-blue-100 rounded-lg">
+                            <i class="material-icons text-blue-600 text-xl">calendar_today</i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-gray-500 text-sm">Working Days</p>
+                            <p class="text-xl font-semibold" id="totalWorkingDays">0</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center">
+                        <div class="p-3 bg-orange-100 rounded-lg">
+                            <i class="material-icons text-orange-600 text-xl">event_busy</i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-gray-500 text-sm">Non-Working Days</p>
+                            <p class="text-xl font-semibold text-orange-600" id="totalNonWorkingDays">0</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Initialize with all days of the week
+        const initialWorkingDaysData = [
+            { day: 'Monday', isWorkingDay: false, timeSlotConfigId: null },
+            { day: 'Tuesday', isWorkingDay: false, timeSlotConfigId: null },
+            { day: 'Wednesday', isWorkingDay: false, timeSlotConfigId: null },
+            { day: 'Thursday', isWorkingDay: false, timeSlotConfigId: null },
+            { day: 'Friday', isWorkingDay: false, timeSlotConfigId: null },
+            { day: 'Saturday', isWorkingDay: false, timeSlotConfigId: null },
+            { day: 'Sunday', isWorkingDay: false, timeSlotConfigId: null }
+        ];
+
+        // Pass time slot configurations to JavaScript
+        const timeSlotConfigs = @Html.Raw(Json.Serialize(ViewBag.TimeSlotConfigs));
+    </script>
+    <script type="module" src="~/js/workingDayConfig.js"></script>
+}

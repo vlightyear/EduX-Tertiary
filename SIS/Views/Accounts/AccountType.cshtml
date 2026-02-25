@@ -1,0 +1,91 @@
+﻿@model IEnumerable<SIS.Models.Accounts.AccountType>
+
+<div>
+    <div class="container mt-2">
+        <div class="pt-4 row" style="height: 10vh;">
+            <div class="col-10 text-black">
+                <h2>Accounts List</h2>
+            </div>
+            <div class="col-2 d-flex justify-content-end">
+                <a asp-controller="Accounts" asp-action="CreateAccountType" class="btn btn-primary rounded-2" style="height: 40px; padding-top: 8px;">
+                    <i class="bi bi-plus-circle"></i>
+                    Create Account Type
+                </a>
+            </div>
+        </div>
+
+        <div class="card shadow mt-2 ml-0" style="height: 75vh; overflow: auto;">
+            <div class="card-body" style="overflow-y: auto;">
+                <table class="table table-hover mb-0" id="accountsTable">
+                    <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Account Name</th>
+                            <th scope="col">Description</th>
+                            <th scope="col">Account Type</th>
+                            <th scope="col">Code</th>
+                            <th scope="col">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            int index = 1;
+                            foreach (var account in Model)
+                            {
+                                <tr>
+                                    <th scope="row">@index</th>
+                                    <td>@account.Name</td>
+                                    <td>@account.Description</td>
+                                    <td>@account.Type</td>
+                                    <td>@account.Code</td>
+                                    <td>
+                                        <a asp-controller="Accounts" asp-action="EditAccountType" asp-route-id="@account.Id" class="btn btn-sm btn-outline-secondary rounded-1 me-2">
+                                            <i class="bi bi-pencil-square"></i> Edit
+                                        </a>
+                                        <a asp-controller="Accounts" asp-action="DeleteAccountType" asp-route-id="@account.Id" class="btn btn-sm btn-outline-danger rounded-1">
+                                            <i class="bi bi-trash"></i> Delete
+                                        </a>
+                                    </td>
+                                </tr>
+                                index++;
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="4" class="text-center">No Accounts found.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- jQuery and DataTables JS -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $('#accountsTable').DataTable({
+            paging: true,         // Enable pagination
+            searching: true,      // Enable search box
+            ordering: true,       // Enable column sorting
+            lengthChange: true,   // Enable "Show entries" dropdown
+            info: true,           // Show table information
+            pageLength: 10,       // Default rows per page
+            columnDefs: [
+                { orderable: false, targets: -1 } // Disable sorting on the Actions column
+            ],
+            language: {
+                search: "Search accounts:",  // Customize search box text
+                lengthMenu: "Show _MENU_ entries per page",
+                info: "Showing _START_ to _END_ of _TOTAL_ entries",
+                infoEmpty: "No accounts available",
+                zeroRecords: "No account records found"
+            }
+        });
+    });
+</script>
+

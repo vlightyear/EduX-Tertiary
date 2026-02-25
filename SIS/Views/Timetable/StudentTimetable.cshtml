@@ -1,0 +1,111 @@
+﻿@model SIS.Models.TimeTabling.StudentTimetableViewModel
+
+<div class="h-[90vh] p-4">
+    <!-- Header Section -->
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-800 flex items-center">
+            <i class="material-icons mr-2">schedule</i>
+            My Timetable
+        </h1>
+        <div class="mt-2 text-gray-600">
+            <span class="font-medium">Student:</span> @Model.Student.FullName |
+            <span class="font-medium">ID:</span> @Model.Student.StudentId_Number |
+            <span class="font-medium">Programme:</span> @Model.Student.Programme.Name
+        </div>
+        <div class="mt-1 text-gray-600">
+            <span class="font-medium">Academic Year:</span> @Model.AcademicYearValue |
+            <span class="font-medium">Semester:</span> @Model.Semester |
+            <span class="font-medium">Mode of Study:</span> @Model.ModeOfStudyName
+        </div>
+    </div>
+
+    <!-- Timetable Grid -->
+    <div class="bg-white rounded-lg shadow-md overflow-auto">
+        <table class="w-full border-collapse min-w-[800px]">
+            <thead>
+                <tr class="bg-gray-100">
+                    <th class="p-3 text-left border-b border-gray-200 w-20">Day</th>
+                    @foreach (var period in Model.Periods)
+                    {
+                        <th class="p-3 text-center border-b border-gray-200 border-l">
+                            <div class="font-semibold">Period @period.PeriodNumber</div>
+                            <div class="text-sm text-gray-600">@period.StartTime - @period.EndTime</div>
+                        </th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var day in Model.WorkingDays)
+                {
+                    <tr>
+                        <td class="p-3 font-medium border-b border-gray-200 align-top">@day</td>
+                        @foreach (var period in Model.Periods)
+                        {
+                            <td class="p-2 border-b border-l border-gray-200 align-top">
+                                @if (Model.WeeklyTimetable.ContainsKey(day) &&
+                               Model.WeeklyTimetable[day].ContainsKey(period.PeriodNumber) &&
+                               Model.WeeklyTimetable[day][period.PeriodNumber].Any())
+                                {
+                                    @foreach (var session in Model.WeeklyTimetable[day][period.PeriodNumber])
+                                    {
+                                        <div class="mb-2 p-3 rounded-lg shadow-sm border
+                                            @(session.Status == "Published" ? "bg-blue-50 border-blue-200" : "bg-gray-50 border-gray-200")">
+                                            <div class="font-semibold text-sm">@session.CourseCode</div>
+                                            <div class="text-xs text-gray-700 mt-1">@session.CourseName</div>
+                                            <div class="text-xs text-gray-600 mt-1">
+                                                <i class="material-icons text-xs align-middle">room</i> @session.RoomName
+                                            </div>
+                                            <div class="text-xs text-gray-600 mt-1">
+                                                <i class="material-icons text-xs align-middle">person</i> @session.InstructorName
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                            </td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Legend and Additional Information -->
+    <div class="mt-6 bg-white rounded-lg shadow-md p-4">
+        <h3 class="text-lg font-semibold mb-3">Legend</h3>
+        <div class="flex flex-wrap gap-4">
+            <div class="flex items-center">
+                <div class="w-4 h-4 bg-blue-50 border border-blue-200 rounded mr-2"></div>
+                <span class="text-sm text-gray-600">Regular Session</span>
+            </div>
+            <div class="flex items-center">
+                <div class="w-4 h-4 bg-gray-50 border border-gray-200 rounded mr-2"></div>
+                <span class="text-sm text-gray-600">Draft (Subject to change)</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Options -->
+    <div class="mt-4 flex gap-3">
+        <button onclick="printTimetable()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+            <i class="material-icons mr-2 text-sm">print</i>
+            Print
+        </button>
+        <button onclick="exportToPDF()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center">
+            <i class="material-icons mr-2 text-sm">picture_as_pdf</i>
+            Export PDF
+        </button>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function printTimetable() {
+            window.print();
+        }
+
+        function exportToPDF() {
+            // You can implement PDF export functionality here using a library like jsPDF
+            alert('PDF export functionality will be implemented');
+        }
+    </script>
+}

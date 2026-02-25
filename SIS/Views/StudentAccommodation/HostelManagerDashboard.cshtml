@@ -1,0 +1,464 @@
+﻿@model SIS.Models.StudentAccommodation.HostelManagerDashboardViewModel
+@{
+    ViewData["Title"] = "Hostel Manager Dashboard";
+}
+
+<div class="p-6 space-y-6">
+    <!-- Header -->
+    <div class="flex items-center gap-2">
+        <i class="material-icons text-3xl text-slate-800">apartment</i>
+        <h1 class="text-2xl font-bold text-slate-800">Hostel Manager Dashboard</h1>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Total Beds Card -->
+        <div class="bg-white rounded-xl shadow-sm p-6 cursor-pointer transition-all duration-300 hover:shadow-md hover:-translate-y-1">
+            <div class="flex flex-col items-center text-center">
+                <div class="bg-blue-50 p-3 rounded-lg mb-4">
+                    <i class="material-icons text-blue-600 text-3xl">hotel</i>
+                </div>
+                <h3 class="text-slate-600 font-medium mb-2">Total Beds</h3>
+                <span class="text-3xl font-bold text-slate-800">@Model.TotalBeds</span>
+            </div>
+        </div>
+
+        <!-- Occupied Beds Card -->
+        <div class="bg-white rounded-xl shadow-sm p-6 cursor-pointer transition-all duration-300 hover:shadow-md hover:-translate-y-1">
+            <div class="flex flex-col items-center text-center">
+                <div class="bg-green-50 p-3 rounded-lg mb-4">
+                    <i class="material-icons text-green-600 text-3xl">person</i>
+                </div>
+                <h3 class="text-slate-600 font-medium mb-2">Occupied Beds</h3>
+                <span class="text-3xl font-bold text-slate-800">@Model.OccupiedBeds</span>
+                @if (Model.TotalBeds > 0)
+                {
+                    <span class="text-sm text-slate-500">(@Math.Round((double)Model.OccupiedBeds / Model.TotalBeds * 100, 1)%)</span>
+                }
+            </div>
+        </div>
+
+        <!-- Available Beds Card -->
+        <div class="bg-white rounded-xl shadow-sm p-6 cursor-pointer transition-all duration-300 hover:shadow-md hover:-translate-y-1">
+            <div class="flex flex-col items-center text-center">
+                <div class="bg-purple-50 p-3 rounded-lg mb-4">
+                    <i class="material-icons text-purple-600 text-3xl">bed</i>
+                </div>
+                <h3 class="text-slate-600 font-medium mb-2">Available Beds</h3>
+                <span class="text-3xl font-bold text-slate-800">@Model.AvailableBeds</span>
+                @if (Model.TotalBeds > 0)
+                {
+                    <span class="text-sm text-slate-500">(@Math.Round((double)Model.AvailableBeds / Model.TotalBeds * 100, 1)%)</span>
+                }
+            </div>
+        </div>
+
+        <!-- Maintenance Beds Card -->
+        <div class="bg-white rounded-xl shadow-sm p-6 cursor-pointer transition-all duration-300 hover:shadow-md hover:-translate-y-1">
+            <div class="flex flex-col items-center text-center">
+                <div class="bg-amber-50 p-3 rounded-lg mb-4">
+                    <i class="material-icons text-amber-600 text-3xl">construction</i>
+                </div>
+                <h3 class="text-slate-600 font-medium mb-2">Under Maintenance</h3>
+                <span class="text-3xl font-bold text-slate-800">@Model.MaintenanceBeds</span>
+                @if (Model.TotalBeds > 0)
+                {
+                    <span class="text-sm text-slate-500">(@Math.Round((double)Model.MaintenanceBeds / Model.TotalBeds * 100, 1)%)</span>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="grid lg:grid-cols-3 gap-6">
+        <!-- Main Charts Container -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Occupancy Chart -->
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <h2 class="text-lg font-semibold text-slate-800 mb-4">Bed Occupancy Status</h2>
+                <div id="occupancyChart" class="w-full h-[320px]"></div>
+            </div>
+
+            <!-- Hostel Occupancy Chart -->
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <h2 class="text-lg font-semibold text-slate-800 mb-4">Occupancy by Hostel</h2>
+                <div id="hostelOccupancyChart" class="w-full h-[320px]"></div>
+            </div>
+        </div>
+
+        <!-- Side Stats -->
+        <div class="space-y-6">
+            <!-- Pending Applications Card -->
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-slate-800">Pending Applications</h2>
+                    <a href="@Url.Action("Applications", "StudentAccommodation")" class="text-blue-600 text-sm hover:underline">View All</a>
+                </div>
+                <div class="flex items-center justify-center p-6 bg-slate-50 rounded-lg">
+                    <div class="text-center">
+                        <div class="text-5xl font-bold text-blue-600 mb-2">@Model.PendingApplications</div>
+                        <p class="text-slate-600">Pending Allocations</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Maintenance Requests Card -->
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-slate-800">Maintenance</h2>
+                    <a href="#" class="text-blue-600 text-sm hover:underline">View All</a>
+                </div>
+                <div class="space-y-3">
+                    <div class="flex items-center gap-4 p-3 bg-red-50 rounded-lg">
+                        <div class="bg-red-100 p-2 rounded-lg">
+                            <i class="material-icons text-red-600">priority_high</i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm text-slate-600">Resources Need Repair</p>
+                            <p class="text-xl font-bold text-slate-800">@Model.ResourcesNeedingRepair</p>
+                        </div>
+                    </div>
+
+                    @if (Model.MaintenanceRequests.Any())
+                    {
+                        <div class="mt-4">
+                            <h3 class="text-sm font-medium text-slate-500 mb-2">Recent Requests:</h3>
+                            <div class="space-y-2">
+                                @foreach (var request in Model.MaintenanceRequests)
+                                {
+                                    <div class="bg-slate-50 p-3 rounded-lg">
+                                        <div class="flex items-start justify-between">
+                                            <div>
+                                                <p class="font-medium text-slate-800">@request.Room.Hostel.HostelName - Room @request.Room.RoomNumber</p>
+                                                <p class="text-sm text-slate-600 truncate max-w-xs">@request.Description</p>
+                                            </div>
+                                            <span class="text-xs px-2 py-1 rounded-full
+                                                @(request.Priority == "high" ? "bg-red-100 text-red-800" :
+                                                  request.Priority == "medium" ? "bg-amber-100 text-amber-800" :
+                                                  "bg-blue-100 text-blue-800")">
+                                                @request.Priority.ToUpper()
+                                            </span>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center p-4 text-slate-500">
+                            <p>No recent maintenance requests</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activities Section -->
+    <div class="grid md:grid-cols-2 gap-6">
+        <!-- Recent Check-Ins -->
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-slate-800">Recent Check-ins/Check-outs</h2>
+                <a href="#" class="text-blue-600 text-sm hover:underline">View All</a>
+            </div>
+
+            @if (Model.RecentCheckIns.Any())
+            {
+                <div class="space-y-3">
+                    @foreach (var check in Model.RecentCheckIns)
+                    {
+                        <div class="flex items-start gap-3 p-3 bg-slate-50 rounded-lg">
+                            <div class="bg-@(check.CheckOutDate.HasValue ? "red" : "green")-100 p-2 rounded-full">
+                                <i class="material-icons text-@(check.CheckOutDate.HasValue ? "red" : "green")-600 text-lg">
+                                    @(check.CheckOutDate.HasValue ? "logout" : "login")
+                                </i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex justify-between">
+                                    <p class="font-medium text-slate-800">
+                                        @check.Allocation.Application.Student.FullName
+                                    </p>
+                                    <span class="text-xs text-slate-500">
+                                        @((check.CheckOutDate ?? check.CheckInDate)?.ToString("MMM dd, yyyy"))
+                                    </span>
+                                </div>
+                                <p class="text-sm text-slate-600">
+                                    @(check.CheckOutDate.HasValue ? "Checked out from" : "Checked in to")
+                                    @check.Allocation.Bed.Room.Hostel.HostelName, Room @check.Allocation.Bed.Room.RoomNumber
+                                </p>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="flex items-center justify-center p-6 text-slate-500">
+                    <p>No recent check-ins or check-outs</p>
+                </div>
+            }
+        </div>
+
+        <!-- Room Status Overview -->
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-slate-800">Room Status Overview</h2>
+                <a href="#" class="text-blue-600 text-sm hover:underline">Manage Rooms</a>
+            </div>
+
+            <div class="grid grid-cols-3 gap-4 mb-6">
+                <div class="bg-green-50 p-4 rounded-lg text-center">
+                    <span class="block text-2xl font-bold text-green-600">
+                        @{
+                            var availableCount = 0;
+                            dynamic roomData = Model.RoomStatusData;
+                            if (roomData != null)
+                            {
+                                availableCount = Convert.ToInt32(roomData.available);
+                            }
+                        }
+                        @availableCount
+                    </span>
+                    <span class="text-sm text-slate-600">Available</span>
+                </div>
+                <div class="bg-amber-50 p-4 rounded-lg text-center">
+                    <span class="block text-2xl font-bold text-amber-600">
+                        @{
+                            var maintenanceCount = 0;
+                            dynamic roomData2 = Model.RoomStatusData;
+                            if (roomData2 != null)
+                            {
+                                maintenanceCount = Convert.ToInt32(roomData2.maintenance);
+                            }
+                        }
+                        @maintenanceCount
+                    </span>
+                    <span class="text-sm text-slate-600">Maintenance</span>
+                </div>
+                <div class="bg-blue-50 p-4 rounded-lg text-center">
+                    <span class="block text-2xl font-bold text-blue-600">
+                        @{
+                            var reservedCount = 0;
+                            dynamic roomData3 = Model.RoomStatusData;
+                            if (roomData3 != null)
+                            {
+                                reservedCount = Convert.ToInt32(roomData3.reserved);
+                            }
+                        }
+                        @reservedCount
+                    </span>
+                    <span class="text-sm text-slate-600">Reserved</span>
+                </div>
+            </div>
+
+            <!-- Hostel Quick Status -->
+            <h3 class="text-sm font-medium text-slate-500 mb-3">Managed Hostels:</h3>
+            <div class="space-y-3">
+                @foreach (var hostel in Model.ManagedHostels)
+                {
+                    <div class="bg-slate-50 p-3 rounded-lg">
+                        <div class="flex justify-between items-center mb-2">
+                            <p class="font-medium text-slate-800">@hostel.HostelName</p>
+                            <span class="text-xs px-2 py-1 rounded-full @(hostel.Status == SIS.Enums.Status.Active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800")">
+                                @hostel.Status
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="flex-1 bg-slate-200 h-2 rounded-full overflow-hidden">
+                                @{
+                                    var occupancyRate = hostel.TotalCapacity > 0
+                                    ? (double)(hostel.TotalCapacity - hostel.TotalRooms) / hostel.TotalCapacity * 100
+                                    : 0;
+                                }
+                                <div class="bg-blue-600 h-full rounded-full" style="width: @occupancyRate%"></div>
+                            </div>
+                            <span class="text-xs text-slate-600">
+                                @(occupancyRate.HasValue ? $"{Math.Round(occupancyRate.Value, 1)}% occupied" : "N/A")
+                            </span>
+
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Action Buttons -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <a href="@Url.Action("Applications", "StudentAccommodation")"
+           class="bg-blue-600 text-white rounded-xl p-4 text-center hover:bg-blue-700 transition-colors">
+            <i class="material-icons text-2xl mb-1">people_alt</i>
+            <p class="text-sm">Manage Applications</p>
+        </a>
+        <a href="#"
+           class="bg-purple-600 text-white rounded-xl p-4 text-center hover:bg-purple-700 transition-colors">
+            <i class="material-icons text-2xl mb-1">bed</i>
+            <p class="text-sm">Bed Allocation</p>
+        </a>
+        <a href="#"
+           class="bg-amber-600 text-white rounded-xl p-4 text-center hover:bg-amber-700 transition-colors">
+            <i class="material-icons text-2xl mb-1">construction</i>
+            <p class="text-sm">Maintenance</p>
+        </a>
+        <a href="#"
+           class="bg-green-600 text-white rounded-xl p-4 text-center hover:bg-green-700 transition-colors">
+            <i class="material-icons text-2xl mb-1">assignment_turned_in</i>
+            <p class="text-sm">Check-in/Check-out</p>
+        </a>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Chart data from server
+        const occupancyData = @Html.Raw(ViewBag.OccupancyData);
+        const hostelNames = @Html.Raw(ViewBag.HostelNames);
+        const hostelOccupancyData = @Html.Raw(ViewBag.HostelOccupancyData);
+
+        // Initialize charts when document is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            // Occupancy chart
+            const occupancyOptions = {
+                series: occupancyData,
+                chart: {
+                    type: 'donut',
+                    height: 320,
+                    fontFamily: 'inherit'
+                },
+                labels: ['Occupied', 'Available', 'Maintenance', 'Reserved'],
+                colors: ['#16a34a', '#6366f1', '#f59e0b', '#0ea5e9'],
+                legend: {
+                    position: 'bottom',
+                    fontFamily: 'inherit'
+                },
+                plotOptions: {
+                    pie: {
+                        donut: {
+                            size: '55%',
+                            labels: {
+                                show: true,
+                                name: {
+                                    show: true,
+                                    fontSize: '14px',
+                                    fontFamily: 'inherit'
+                                },
+                                value: {
+                                    show: true,
+                                    fontSize: '16px',
+                                    fontFamily: 'inherit',
+                                    formatter: function(val) {
+                                        return val;
+                                    }
+                                },
+                                total: {
+                                    show: true,
+                                    fontSize: '14px',
+                                    fontFamily: 'inherit',
+                                    label: 'Total Beds',
+                                    formatter: function(w) {
+                                        return w.globals.seriesTotals.reduce((a, b) => a + b, 0);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                responsive: [{
+                    breakpoint: 480,
+                    options: {
+                        chart: {
+                            height: 250
+                        },
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }]
+            };
+
+            const occupancyChart = new ApexCharts(document.querySelector("#occupancyChart"), occupancyOptions);
+            occupancyChart.render();
+
+            // Hostel Occupancy Chart
+            const hostelOccupancyOptions = {
+                series: [{
+                    name: 'Occupancy Rate',
+                    data: hostelOccupancyData
+                }],
+                chart: {
+                    type: 'bar',
+                    height: 320,
+                    toolbar: {
+                        show: false
+                    },
+                    fontFamily: 'inherit'
+                },
+                plotOptions: {
+                    bar: {
+                        horizontal: false,
+                        columnWidth: '55%',
+                        borderRadius: 6,
+                        distributed: true
+                    },
+                },
+                dataLabels: {
+                    enabled: false
+                },
+                stroke: {
+                    show: true,
+                    width: 2,
+                    colors: ['transparent']
+                },
+                xaxis: {
+                    categories: hostelNames,
+                    labels: {
+                        style: {
+                            fontSize: '12px',
+                            fontFamily: 'inherit'
+                        }
+                    }
+                },
+                yaxis: {
+                    title: {
+                        text: 'Occupancy Rate (%)',
+                        style: {
+                            fontSize: '12px',
+                            fontFamily: 'inherit'
+                        }
+                    },
+                    labels: {
+                        formatter: function(val) {
+                            return val.toFixed(1) + '%';
+                        },
+                        style: {
+                            fontSize: '12px',
+                            fontFamily: 'inherit'
+                        }
+                    },
+                    min: 0,
+                    max: 100
+                },
+                fill: {
+                    opacity: 1,
+                    colors: ['#3b82f6']
+                },
+                tooltip: {
+                    y: {
+                        formatter: function(val) {
+                            return val.toFixed(1) + '%';
+                        }
+                    }
+                },
+                grid: {
+                    borderColor: '#f1f5f9',
+                    strokeDashArray: 4
+                }
+            };
+
+            const hostelOccupancyChart = new ApexCharts(document.querySelector("#hostelOccupancyChart"), hostelOccupancyOptions);
+            hostelOccupancyChart.render();
+        });
+    </script>
+}

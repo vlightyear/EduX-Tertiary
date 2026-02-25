@@ -1,0 +1,274 @@
+﻿@{
+    ViewData["Title"] = "Program Coordinator Dashboard";
+}
+
+<div class="min-h-[88vh] p-6 bg-slate-50">
+    <!-- Header -->
+    <div class="flex items-center gap-2 mb-6">
+        <i class="material-icons text-3xl text-indigo-800">supervisor_account</i>
+        <h1 class="text-2xl font-bold text-slate-800">Program Coordinator Dashboard</h1>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <!-- Programs Card -->
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <div class="flex flex-col items-center text-center">
+                <div class="bg-indigo-50 p-3 rounded-lg mb-4">
+                    <i class="material-icons text-indigo-600 text-3xl">school</i>
+                </div>
+                <h3 class="text-slate-600 font-medium mb-2">Coordinated Programs</h3>
+                <span class="text-3xl font-bold text-slate-800">@ViewBag.CoordinatedPrograms.Count</span>
+            </div>
+        </div>
+
+        <!-- Students Card -->
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <div class="flex flex-col items-center text-center">
+                <div class="bg-blue-50 p-3 rounded-lg mb-4">
+                    <i class="material-icons text-blue-600 text-3xl">people</i>
+                </div>
+                <h3 class="text-slate-600 font-medium mb-2">Total Students</h3>
+                <span class="text-3xl font-bold text-slate-800">@ViewBag.TotalStudents</span>
+            </div>
+        </div>
+
+        <!-- Pending Admissions Card -->
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <div class="flex flex-col items-center text-center">
+                <div class="bg-amber-50 p-3 rounded-lg mb-4">
+                    <i class="material-icons text-amber-600 text-3xl">how_to_reg</i>
+                </div>
+                <h3 class="text-slate-600 font-medium mb-2">Pending Admissions</h3>
+                <span class="text-3xl font-bold text-slate-800">@ViewBag.PendingAdmissions</span>
+            </div>
+        </div>
+
+        <!-- Lecturers Card -->
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <div class="flex flex-col items-center text-center">
+                <div class="bg-teal-50 p-3 rounded-lg mb-4">
+                    <i class="material-icons text-teal-600 text-3xl">groups</i>
+                </div>
+                <h3 class="text-slate-600 font-medium mb-2">Lecturers</h3>
+                <span class="text-3xl font-bold text-slate-800">@ViewBag.LecturersCount</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex flex-col lg:flex-row gap-6">
+        <!-- Main Content -->
+        <div class="flex-1 space-y-6">
+            <!-- Program Enrollment Trends Section -->
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+                    <div class="flex items-center gap-2">
+                        <i class="material-icons text-indigo-600">trending_up</i>
+                        <h2 class="text-lg font-semibold text-slate-800">Program Enrollment Trends</h2>
+                    </div>
+                    <div class="flex items-center">
+                        <label for="programSelect" class="mr-2 text-sm text-slate-600">Select Program:</label>
+                        <select id="programSelect" class="bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2.5">
+                            @foreach (var program in ViewBag.CoordinatedPrograms)
+                            {
+                                <option value="@program.Name">@program.Name</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div id="enrollmentTrendsChart" class="h-[300px]"></div>
+            </div>
+
+            <!-- Recent Registrations Section -->
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <div class="flex items-center gap-2 mb-4">
+                    <i class="material-icons text-indigo-600">playlist_add_check</i>
+                    <h2 class="text-lg font-semibold text-slate-800">Recent Course Registrations</h2>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white">
+                        <thead class="bg-slate-50">
+                            <tr>
+                                <th class="py-3 px-4 text-left text-sm font-medium text-slate-600">Student</th>
+                                <th class="py-3 px-4 text-left text-sm font-medium text-slate-600">Program</th>
+                                <th class="py-3 px-4 text-left text-sm font-medium text-slate-600">Date</th>
+                                <th class="py-3 px-4 text-left text-sm font-medium text-slate-600">Status</th>
+                                <th class="py-3 px-4 text-left text-sm font-medium text-slate-600">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            @foreach (var registration in ViewBag.RecentRegistrations)
+                            {
+                                <tr>
+                                    <td class="py-3 px-4 text-sm text-slate-800">@registration.name</td>
+                                    <td class="py-3 px-4 text-sm text-slate-800">@registration.program</td>
+                                    <td class="py-3 px-4 text-sm text-slate-800">@registration.date</td>
+                                    <td class="py-3 px-4 text-sm">
+                                        @if (registration.status == "Completed")
+                                        {
+                                            <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">Completed</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="px-2 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-medium">Pending</span>
+                                        }
+                                    </td>
+                                    <td class="py-3 px-4 text-sm">
+                                        <a href="#" class="text-indigo-600 hover:text-indigo-800">View Details</a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Programs Overview Section -->
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <div class="flex items-center gap-2 mb-4">
+                    <i class="material-icons text-indigo-600">view_list</i>
+                    <h2 class="text-lg font-semibold text-slate-800">Coordinated Programs</h2>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white">
+                        <thead class="bg-slate-50">
+                            <tr>
+                                <th class="py-3 px-4 text-left text-sm font-medium text-slate-600">Program</th>
+                                <th class="py-3 px-4 text-left text-sm font-medium text-slate-600">Department</th>
+                                <th class="py-3 px-4 text-left text-sm font-medium text-slate-600">Duration</th>
+                                <th class="py-3 px-4 text-left text-sm font-medium text-slate-600">Enrollment</th>
+                                <th class="py-3 px-4 text-left text-sm font-medium text-slate-600">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            @foreach (var program in ViewBag.CoordinatedPrograms)
+                            {
+                                <tr>
+                                    <td class="py-3 px-4 text-sm font-medium text-slate-800">@program.Name</td>
+                                    <td class="py-3 px-4 text-sm text-slate-800">@program.Department.Name</td>
+                                    <td class="py-3 px-4 text-sm text-slate-800">@program.DurationYears years</td>
+                                    <td class="py-3 px-4 text-sm text-slate-800">@program.EnrollmentCount students</td>
+                                    <td class="py-3 px-4 text-sm space-x-2">
+                                        <a href="@Url.Action("ProgramDetails", new { id = program.Id })" class="text-indigo-600 hover:text-indigo-800">Details</a>
+                                        <a href="#" class="text-blue-600 hover:text-blue-800">Manage</a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Side Panel -->
+        <div class="lg:w-2/5 space-y-6">
+            <!-- Gender Distribution Section -->
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <div class="flex items-center gap-2 mb-4">
+                    <i class="material-icons text-indigo-600">pie_chart</i>
+                    <h2 class="text-lg font-semibold text-slate-800">Student Gender Distribution</h2>
+                </div>
+                <div id="genderDistributionChart" class="h-[250px]"></div>
+            </div>
+
+            <!-- Quick Actions Section -->
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <div class="flex items-center gap-2 mb-4">
+                    <i class="material-icons text-indigo-600">speed</i>
+                    <h2 class="text-lg font-semibold text-slate-800">Quick Actions</h2>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <a href="@Url.Action("AdmissionsManagement")" class="flex flex-col items-center p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
+                        <div class="bg-amber-100 p-2 rounded-lg mb-2">
+                            <i class="material-icons text-amber-600">how_to_reg</i>
+                        </div>
+                        <span class="text-sm font-medium text-slate-700 text-center">Manage Admissions</span>
+                    </a>
+
+                    <a href="@Url.Action("LecturerManagement")" class="flex flex-col items-center p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
+                        <div class="bg-blue-100 p-2 rounded-lg mb-2">
+                            <i class="material-icons text-blue-600">groups</i>
+                        </div>
+                        <span class="text-sm font-medium text-slate-700 text-center">Manage Lecturers</span>
+                    </a>
+
+                    <a href="@Url.Action("CourseRegistration")" class="flex flex-col items-center p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
+                        <div class="bg-green-100 p-2 rounded-lg mb-2">
+                            <i class="material-icons text-green-600">app_registration</i>
+                        </div>
+                        <span class="text-sm font-medium text-slate-700 text-center">Course Registration</span>
+                    </a>
+
+                    <a href="@Url.Action("Announcements")" class="flex flex-col items-center p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
+                        <div class="bg-purple-100 p-2 rounded-lg mb-2">
+                            <i class="material-icons text-purple-600">campaign</i>
+                        </div>
+                        <span class="text-sm font-medium text-slate-700 text-center">Create Announcement</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Pending Tasks Section -->
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <div class="flex items-center gap-2 mb-4">
+                    <i class="material-icons text-indigo-600">checklist</i>
+                    <h2 class="text-lg font-semibold text-slate-800">Pending Tasks</h2>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="flex gap-3 p-3 bg-red-50 rounded-lg">
+                        <div class="bg-red-100 p-2 rounded-lg">
+                            <i class="material-icons text-red-600">priority_high</i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex justify-between">
+                                <p class="font-medium text-slate-800">Review Admission Applications</p>
+                                <span class="text-xs font-medium bg-red-100 text-red-800 px-2 py-0.5 rounded-full">Today</span>
+                            </div>
+                            <p class="text-xs text-slate-500 mt-1">@ViewBag.PendingAdmissions pending applications</p>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-3 p-3 bg-amber-50 rounded-lg">
+                        <div class="bg-amber-100 p-2 rounded-lg">
+                            <i class="material-icons text-amber-600">description</i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex justify-between">
+                                <p class="font-medium text-slate-800">Review Course Registration Requests</p>
+                                <span class="text-xs font-medium bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">2 days</span>
+                            </div>
+                            <p class="text-xs text-slate-500 mt-1">8 students waiting for approval</p>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-3 p-3 bg-slate-50 rounded-lg">
+                        <div class="bg-blue-100 p-2 rounded-lg">
+                            <i class="material-icons text-blue-600">content_paste</i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex justify-between">
+                                <p class="font-medium text-slate-800">Update Program Course Catalog</p>
+                                <span class="text-xs font-medium bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">5 days</span>
+                            </div>
+                            <p class="text-xs text-slate-500 mt-1">For upcoming registration period</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.coordinatorData = {
+            enrollmentTrends: @Html.Raw(ViewBag.EnrollmentTrends),
+            genderDistribution: @Html.Raw(ViewBag.GenderDistribution)
+        };
+    </script>
+    <script src="~/js/coordinator_dashboard.js"></script>
+}

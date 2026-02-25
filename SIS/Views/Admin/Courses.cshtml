@@ -1,0 +1,701 @@
+﻿@{
+    ViewData["Title"] = "Course Management";
+}
+
+<link rel="stylesheet" href="~/css/course-management.css" />
+
+<div class="h-[90vh] p-4">
+    <!-- Header Section -->
+    <div class="flex justify-between items-center mb-4">
+        <h1 class="text-2xl font-bold text-primary-800 flex items-center">
+            <i class="material-icons mr-2">library_books</i>
+            Course Management
+        </h1>
+        <button type="button"
+                onclick="location.href='@Url.Action("CreateCourse", "Admin")'"
+                class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center">
+            <i class="material-icons mr-2">add</i>
+            Create Course
+        </button>
+    </div>
+
+    <!-- Main Content Layout -->
+    <div class="flex gap-4 h-[calc(90vh-80px)]">
+        <!-- Main Table Section (3/4 width) -->
+        <div class="w-3/4">
+            <div class="bg-white rounded-lg shadow-md h-full overflow-auto">
+                <div class="p-4">
+                    <!-- Search and Filter Bar -->
+                    <div class="mb-4 flex gap-4">
+                        <div class="flex-1">
+                            <input type="text" id="courseSearch" placeholder="Search courses..."
+                                   class="min-w-[36] px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                        </div>
+
+                        <select id="courseTypeFilter" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                            <option value="all">All Types</option>
+                            <option value="Full Course">Full Course</option>
+                            <option value="Half Course">Half Course</option>
+                        </select>
+
+                        <select id="yearFilter" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                            <option value="all">All Years</option>
+                            @foreach (var year in ViewBag.YearTakenValues)
+                            {
+                                <option value="@year">Year @year</option>
+                            }
+                        </select>
+
+                        <select id="programmeFilter" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                            <option value="all">All Programmes</option>
+                            @foreach (var programme in ViewBag.Programmes)
+                            {
+                                <option value="@programme.Name">@programme.Name</option>
+                            }
+                        </select>
+                    </div>
+
+                    <!-- Loading Indicator -->
+                    <div id="loadingIndicator" class="hidden text-center py-8">
+                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+                        <p class="mt-2 text-gray-600">Loading courses...</p>
+                    </div>
+
+                    <!-- Table -->
+                    <div id="tableContainer">
+                        <table id="courseTable" class="w-full text-sm text-gray-600">
+                            <thead>
+                                <tr class="bg-gray-50 text-left border-b">
+                                    <th class="px-6 py-4 cursor-pointer" data-sort="index">
+                                        <span class="flex items-center">
+                                            #
+                                            <svg class="w-4 h-4 ms-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 15 4 4 4-4m0-6-4-4-4 4" />
+                                            </svg>
+                                        </span>
+                                    </th>
+                                    <th class="px-6 py-4 cursor-pointer" data-sort="code">
+                                        <span class="flex items-center">
+                                            Course Code
+                                            <svg class="w-4 h-4 ms-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 15 4 4 4-4m0-6-4-4-4 4" />
+                                            </svg>
+                                        </span>
+                                    </th>
+                                    <th class="px-6 py-4 cursor-pointer" data-sort="name">
+                                        <span class="flex items-center">
+                                            Course Name
+                                            <svg class="w-4 h-4 ms-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 15 4 4 4-4m0-6-4-4-4 4" />
+                                            </svg>
+                                        </span>
+                                    </th>
+                                    <th class="px-6 py-4 cursor-pointer" data-sort="type">Course Type</th>
+                                    <th class="px-6 py-4 cursor-pointer" data-sort="year">Year</th>
+                                    <th class="px-6 py-4 cursor-pointer" data-sort="semester">Semester</th>
+                                    <th class="px-6 py-4 cursor-pointer" data-sort="mandatory">Mandatory</th>
+                                    <th class="px-6 py-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="courseTableBody">
+                                <!-- Data will be loaded via AJAX -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Enhanced Pagination -->
+                    <div class="flex justify-between items-center mt-4">
+                        <div class="text-sm text-gray-500">
+                            Showing <span id="startRow">0</span> to <span id="endRow">0</span> of <span id="totalRows">0</span> entries
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button id="firstPage" class="px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 rounded-md disabled:opacity-50 disabled:cursor-not-allowed">First</button>
+                            <button id="prevPage" class="px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 rounded-md disabled:opacity-50 disabled:cursor-not-allowed">Previous</button>
+
+                            <div id="paginationButtons" class="flex space-x-1">
+                                <!-- Smart pagination buttons will be inserted here -->
+                            </div>
+
+                            <button id="nextPage" class="px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 rounded-md disabled:opacity-50 disabled:cursor-not-allowed">Next</button>
+                            <button id="lastPage" class="px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 rounded-md disabled:opacity-50 disabled:cursor-not-allowed">Last</button>
+
+                            <div class="ml-4 flex items-center space-x-2">
+                                <span class="text-sm text-gray-600">Show:</span>
+                                <select id="pageSizeSelect" class="px-2 py-1 text-sm border border-gray-300 rounded">
+                                    <option value="10">10</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Sidebar (1/4 width) -->
+        <div class="w-1/4 space-y-4">
+            <!-- Statistics Cards -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Course Summary</h3>
+                <div id="statisticsContent" class="space-y-6">
+                    <!-- Loading indicator for statistics -->
+                    <div class="text-center py-4">
+                        <div class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
+                        <p class="mt-2 text-sm text-gray-600">Loading statistics...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Course Distribution Chart -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Course Distribution</h3>
+                <div id="courseDistributionChart" class="min-h-64"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Course Modal -->
+<div id="deleteCourseModal" class="hidden fixed inset-0 z-50">
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-lg shadow-xl w-full max-w-lg">
+                <!-- Modal Header -->
+                <div class="bg-red-600 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
+                    <h3 class="text-lg font-semibold flex items-center">
+                        <i class="material-icons mr-2">warning</i>
+                        Confirm Delete
+                    </h3>
+                    <button type="button" class="text-white hover:text-gray-200" data-bs-dismiss="modal">
+                        <i class="material-icons">close</i>
+                    </button>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="p-6">
+                    <form id="deleteCourseForm" method="post">
+                        <input type="hidden" id="deleteCourseId" name="id" />
+                        @Html.AntiForgeryToken()
+
+                        <div class="space-y-4">
+                            <div class="flex items-center text-red-600 mb-4">
+                                <i class="material-icons mr-2">error_outline</i>
+                                <p class="text-lg font-medium">Delete Course</p>
+                            </div>
+
+                            <p class="text-gray-700">Are you sure you want to delete this course? This action cannot be undone.</p>
+
+                            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-4">
+                                <p class="text-gray-700 font-medium mb-2">Course Details:</p>
+                                <p class="text-gray-600">
+                                    <span class="font-medium">Course Code:</span>
+                                    <span id="deleteCourseCode" class="ml-2"></span>
+                                </p>
+                                <p class="text-gray-600">
+                                    <span class="font-medium">Course Name:</span>
+                                    <span id="deleteCourseName" class="ml-2"></span>
+                                </p>
+                            </div>
+
+                            <div class="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                                <div class="flex items-center text-red-800">
+                                    <i class="material-icons text-red-600 mr-2 text-sm">info</i>
+                                    <p class="text-sm">This action cannot be undone. All associated data will be permanently deleted.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-end space-x-2">
+                    <button type="button" class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center" data-bs-dismiss="modal">
+                        <i class="material-icons mr-1">close</i>Cancel
+                    </button>
+                    <button type="button" id="confirmDelete" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center">
+                        <i class="material-icons mr-1">delete</i>Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Configuration
+            const config = {
+                currentPage: 1,
+                pageSize: 10,
+                sortColumn: 'index',
+                sortDirection: 'asc',
+                searchTerm: '',
+                courseType: 'all',
+                year: 'all',
+                programme: 'all',
+                debounceTimeout: null
+            };
+
+            // DOM elements
+            const courseTableBody = document.getElementById('courseTableBody');
+            const courseSearch = document.getElementById('courseSearch');
+            const courseTypeFilter = document.getElementById('courseTypeFilter');
+            const yearFilter = document.getElementById('yearFilter');
+            const programmeFilter = document.getElementById('programmeFilter');
+            const pageSizeSelect = document.getElementById('pageSizeSelect');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const tableContainer = document.getElementById('tableContainer');
+            const deleteCourseModal = document.getElementById('deleteCourseModal');
+            const deleteCourseForm = document.getElementById('deleteCourseForm');
+            const confirmDeleteBtn = document.getElementById('confirmDelete');
+
+            // Pagination elements
+            const paginationButtons = document.getElementById('paginationButtons');
+            const firstPageBtn = document.getElementById('firstPage');
+            const prevPageBtn = document.getElementById('prevPage');
+            const nextPageBtn = document.getElementById('nextPage');
+            const lastPageBtn = document.getElementById('lastPage');
+            const startRowElem = document.getElementById('startRow');
+            const endRowElem = document.getElementById('endRow');
+            const totalRowsElem = document.getElementById('totalRows');
+
+            // Initialize
+            loadCourseData();
+            loadStatistics();
+
+            // Event listeners
+            courseSearch.addEventListener('input', debounceSearch);
+            courseTypeFilter.addEventListener('change', filterChanged);
+            yearFilter.addEventListener('change', filterChanged);
+            programmeFilter.addEventListener('change', filterChanged);
+            pageSizeSelect.addEventListener('change', pageSizeChanged);
+
+            // Sorting event listeners
+            document.querySelectorAll('th[data-sort]').forEach(header => {
+                header.addEventListener('click', () => sortChanged(header.getAttribute('data-sort')));
+            });
+
+            // Pagination event listeners
+            firstPageBtn.addEventListener('click', () => goToPage(1));
+            prevPageBtn.addEventListener('click', () => goToPage(config.currentPage - 1));
+            nextPageBtn.addEventListener('click', () => goToPage(config.currentPage + 1));
+            lastPageBtn.addEventListener('click', () => goToPage(config.totalPages));
+
+            // Debounced search
+            function debounceSearch() {
+                clearTimeout(config.debounceTimeout);
+                config.debounceTimeout = setTimeout(() => {
+                    config.searchTerm = courseSearch.value;
+                    config.currentPage = 1;
+                    loadCourseData();
+                }, 300);
+            }
+
+            // Filter change handlers
+            function filterChanged() {
+                config.courseType = courseTypeFilter.value;
+                config.year = yearFilter.value;
+                config.programme = programmeFilter.value;
+                config.currentPage = 1;
+                loadCourseData();
+            }
+
+            function pageSizeChanged() {
+                config.pageSize = parseInt(pageSizeSelect.value);
+                config.currentPage = 1;
+                loadCourseData();
+            }
+
+            function sortChanged(column) {
+                if (config.sortColumn === column) {
+                    config.sortDirection = config.sortDirection === 'asc' ? 'desc' : 'asc';
+                } else {
+                    config.sortColumn = column;
+                    config.sortDirection = 'asc';
+                }
+                loadCourseData();
+            }
+
+            function goToPage(page) {
+                if (page >= 1 && page <= config.totalPages) {
+                    config.currentPage = page;
+                    loadCourseData();
+                }
+            }
+
+            // Load course data via AJAX
+            async function loadCourseData() {
+                showLoading(true);
+
+                try {
+                    const response = await fetch('@Url.Action("GetCoursesData", "Admin")', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                        },
+                        body: JSON.stringify({
+                            page: config.currentPage,
+                            pageSize: config.pageSize,
+                            searchTerm: config.searchTerm,
+                            courseType: config.courseType,
+                            year: config.year,
+                            programme: config.programme,
+                            sortColumn: config.sortColumn,
+                            sortDirection: config.sortDirection
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+
+                    const data = await response.json();
+
+                    if (data.success === false) {
+                        throw new Error(data.message || 'Unknown error occurred');
+                    }
+
+                    renderTable(data);
+                    renderPagination(data);
+                    updatePaginationInfo(data);
+                    config.totalPages = data.totalPages;
+
+                } catch (error) {
+                    console.error('Error loading course data:', error);
+                    courseTableBody.innerHTML = `
+                        <tr>
+                            <td colspan="8" class="px-6 py-4 text-center text-red-500">
+                                Error loading courses: ${error.message}
+                            </td>
+                        </tr>
+                    `;
+                } finally {
+                    showLoading(false);
+                }
+            }
+
+            // Render table data
+            function renderTable(data) {
+                if (!data.courses || data.courses.length === 0) {
+                    courseTableBody.innerHTML = `
+                        <tr>
+                            <td colspan="8" class="px-6 py-4 text-center text-gray-500">
+                                No courses found matching your criteria.
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                courseTableBody.innerHTML = data.courses.map(course => `
+                    <tr class="border-b hover:bg-gray-50 transition-colors">
+                        <td class="px-6 py-4">${course.rowNumber}</td>
+                        <td class="px-6 py-4 font-medium text-gray-900">${course.courseCode}</td>
+                        <td class="px-6 py-4">${course.courseName}</td>
+                        <td class="px-6 py-4">${course.courseType}</td>
+                        <td class="px-6 py-4">Year ${course.yearTaken}</td>
+                        <td class="px-6 py-4">Semester ${course.semesterTaken}</td>
+                        <td class="px-6 py-4">
+                            ${course.isMandatory ?
+                                `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary-100 text-secondary-800">
+                                    <i class="material-icons text-sm mr-1">check_circle</i> Yes
+                                </span>` :
+                                `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                    <i class="material-icons text-sm mr-1">radio_button_unchecked</i> No
+                                </span>`
+                            }
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex space-x-2">
+                                <a href="@Url.Action("UpdateCourse", "Admin")/${course.id}"
+                                   class="inline-flex items-center px-3 py-1 text-sm text-primary-600 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors">
+                                    <i class="material-icons text-sm mr-1">edit</i> Edit
+                                </a>
+                                <button onclick="showDeleteCourseModal('${course.id}', '${course.courseCode}', '${course.courseName}')"
+                                        class="inline-flex items-center px-3 py-1 text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
+                                    <i class="material-icons text-sm mr-1">delete</i> Delete
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            // Smart pagination rendering
+            function renderPagination(data) {
+                const totalPages = data.totalPages;
+                const currentPage = data.currentPage;
+
+                if (totalPages <= 1) {
+                    paginationButtons.innerHTML = '';
+                    updatePaginationButtonStates(data);
+                    return;
+                }
+
+                let buttons = [];
+                const maxVisiblePages = 5;
+
+                if (totalPages <= maxVisiblePages) {
+                    // Show all pages if total is small
+                    for (let i = 1; i <= totalPages; i++) {
+                        buttons.push(createPageButton(i, i === currentPage));
+                    }
+                } else {
+                    // Smart pagination with ellipsis
+                    const startPage = Math.max(1, currentPage - 2);
+                    const endPage = Math.min(totalPages, currentPage + 2);
+
+                    if (startPage > 1) {
+                        buttons.push(createPageButton(1, false));
+                        if (startPage > 2) {
+                            buttons.push('<span class="px-3 py-1 text-sm text-gray-500">...</span>');
+                        }
+                    }
+
+                    for (let i = startPage; i <= endPage; i++) {
+                        buttons.push(createPageButton(i, i === currentPage));
+                    }
+
+                    if (endPage < totalPages) {
+                        if (endPage < totalPages - 1) {
+                            buttons.push('<span class="px-3 py-1 text-sm text-gray-500">...</span>');
+                        }
+                        buttons.push(createPageButton(totalPages, false));
+                    }
+                }
+
+                paginationButtons.innerHTML = buttons.join('');
+                updatePaginationButtonStates(data);
+            }
+
+            function createPageButton(pageNumber, isActive) {
+                const activeClass = isActive
+                    ? 'bg-primary-100 text-primary-600'
+                    : 'text-gray-600 hover:bg-gray-100';
+
+                return `<button onclick="goToPage(${pageNumber})"
+                        class="px-3 py-1 text-sm ${activeClass} rounded-md transition-colors">
+                        ${pageNumber}
+                    </button>`;
+            }
+
+            function updatePaginationButtonStates(data) {
+                firstPageBtn.disabled = data.currentPage === 1;
+                prevPageBtn.disabled = data.currentPage === 1;
+                nextPageBtn.disabled = data.currentPage === data.totalPages;
+                lastPageBtn.disabled = data.currentPage === data.totalPages;
+            }
+
+            function updatePaginationInfo(data) {
+                const startRow = data.totalRecords === 0 ? 0 : (data.currentPage - 1) * data.pageSize + 1;
+                const endRow = Math.min(data.currentPage * data.pageSize, data.totalRecords);
+
+                startRowElem.textContent = startRow;
+                endRowElem.textContent = endRow;
+                totalRowsElem.textContent = data.totalRecords;
+            }
+
+            function showLoading(show) {
+                if (show) {
+                    loadingIndicator.classList.remove('hidden');
+                    tableContainer.style.opacity = '0.5';
+                } else {
+                    loadingIndicator.classList.add('hidden');
+                    tableContainer.style.opacity = '1';
+                }
+            }
+
+            // Load statistics
+            async function loadStatistics() {
+                try {
+                    const response = await fetch('@Url.Action("GetCourseStatistics", "Admin")');
+
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+
+                    const data = await response.json();
+
+                    if (data.success === false) {
+                        throw new Error(data.message || 'Unknown error occurred');
+                    }
+
+                    renderStatistics(data);
+                    renderChart(data.courseDistribution);
+
+                } catch (error) {
+                    console.error('Error loading statistics:', error);
+                    document.getElementById('statisticsContent').innerHTML = `
+                        <div class="text-center text-red-500">
+                            <p>Error loading statistics</p>
+                        </div>
+                    `;
+                }
+            }
+
+            function renderStatistics(data) {
+                document.getElementById('statisticsContent').innerHTML = `
+                    <!-- Total Courses -->
+                    <div class="flex items-center">
+                        <div class="p-3 bg-primary-100 rounded-lg">
+                            <i class="material-icons text-primary-600 text-xl">library_books</i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-gray-500 text-sm">Total Courses</p>
+                            <p class="text-xl font-semibold">${data.totalCourses}</p>
+                        </div>
+                    </div>
+
+                    <!-- Full/Half Courses -->
+                    <div class="flex items-center">
+                        <div class="p-3 bg-secondary-100 rounded-lg">
+                            <i class="material-icons text-secondary-600 text-xl">school</i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-gray-500 text-sm">Full Courses</p>
+                            <p class="text-xl font-semibold text-secondary-600">${data.fullCourses}</p>
+                        </div>
+                    </div>
+
+                    <!-- Mandatory Courses -->
+                    <div class="flex items-center">
+                        <div class="p-3 bg-purple-100 rounded-lg">
+                            <i class="material-icons text-purple-600 text-xl">verified</i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-gray-500 text-sm">Mandatory Courses</p>
+                            <p class="text-xl font-semibold text-purple-600">${data.mandatoryCourses}</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            function renderChart(courseDistribution) {
+                // Initialize Course Distribution Chart if ApexCharts is available
+                if (typeof ApexCharts !== 'undefined' && courseDistribution && courseDistribution.length > 0) {
+                    const courseDistributionChart = new ApexCharts(document.querySelector("#courseDistributionChart"), {
+                        series: courseDistribution.map(item => item.count),
+                        chart: {
+                            type: 'donut',
+                            height: '100%'
+                        },
+                        labels: courseDistribution.map(item => item.type),
+                        colors: ['#0891b2', '#10b981', '#f59e0b', '#ef4444'],
+                        plotOptions: {
+                            pie: {
+                                donut: {
+                                    size: '70%',
+                                    labels: {
+                                        show: true,
+                                        name: {
+                                            show: true,
+                                            fontSize: '14px',
+                                            fontFamily: 'inherit',
+                                            offsetY: -4
+                                        },
+                                        value: {
+                                            show: true,
+                                            fontSize: '16px',
+                                            fontFamily: 'inherit',
+                                            formatter: function (val) {
+                                                return val + ' courses'
+                                            }
+                                        },
+                                        total: {
+                                            show: true,
+                                            label: 'Total Courses',
+                                            color: '#373d3f',
+                                            formatter: function (w) {
+                                                const total = w.globals.seriesTotals.reduce((a, b) => a + b, 0)
+                                                return total + ' courses'
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        legend: {
+                            show: false
+                        },
+                        dataLabels: {
+                            enabled: false
+                        },
+                        responsive: [{
+                            breakpoint: 480,
+                            options: {
+                                chart: {
+                                    height: 200
+                                }
+                            }
+                        }]
+                    });
+
+                    courseDistributionChart.render();
+                }
+            }
+
+            // Modal handling functions
+            function showModal(modalElement) {
+                modalElement.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function hideModal(modalElement) {
+                modalElement.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }
+
+            // Setup modal close handlers
+            function setupModalCloseHandlers(modalElement) {
+                // Close on backdrop click
+                modalElement.addEventListener('click', (e) => {
+                    if (e.target === modalElement) {
+                        hideModal(modalElement);
+                    }
+                });
+
+                // Close on button click
+                modalElement.querySelectorAll('[data-bs-dismiss="modal"]').forEach(button => {
+                    button.addEventListener('click', () => hideModal(modalElement));
+                });
+            }
+
+            // Setup close handlers for modals
+            setupModalCloseHandlers(deleteCourseModal);
+
+            // Handle Escape key
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    if (!deleteCourseModal.classList.contains('hidden')) {
+                        hideModal(deleteCourseModal);
+                    }
+                }
+            });
+
+            // Show delete modal (global function)
+            window.showDeleteCourseModal = function (id, courseCode, courseName) {
+                document.getElementById('deleteCourseId').value = id;
+                document.getElementById('deleteCourseCode').textContent = courseCode;
+                document.getElementById('deleteCourseName').textContent = courseName;
+
+                // Update form action to use the proper action URL
+                deleteCourseForm.action = `/Admin/DeleteCourse/${id}`;
+                showModal(deleteCourseModal);
+            };
+
+            // Handle delete form submission
+            confirmDeleteBtn.addEventListener('click', function () {
+                deleteCourseForm.submit();
+            });
+
+            // Make goToPage globally accessible
+            window.goToPage = goToPage;
+        });
+    </script>
+}

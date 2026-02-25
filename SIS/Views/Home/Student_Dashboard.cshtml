@@ -1,0 +1,354 @@
+﻿@model SIS.Models.StudentApplication.Student
+
+@* Default Password Warning Modal *@
+@if (TempData["DefaultPasswordWarning"] != null && (bool)TempData["DefaultPasswordWarning"])
+{
+    <!-- Modal Overlay -->
+    <div id="passwordWarningModal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-70">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 overflow-hidden transform transition-all">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-red-600 to-red-700 px-6 py-5">
+                <div class="flex items-center text-white">
+                    <div class="bg-white bg-opacity-20 p-2 rounded-full mr-4">
+                        <svg class="w-8 h-8 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold">⚠️ Security Warning</h3>
+                        <p class="text-red-100 text-sm">Action Required</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Body -->
+            <div class="px-6 py-5">
+                <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-4 rounded-r-lg">
+                    <p class="text-red-800 font-bold text-lg">
+                        You are using a default password!
+                    </p>
+                </div>
+
+                <div class="flex items-center bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                    <svg class="w-6 h-6 text-amber-600 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <p class="text-amber-800 font-semibold">
+                        Default passwords will be <span class="text-red-600">disabled in 24 hours</span>.
+                    </p>
+                </div>
+
+                <p class="text-gray-600 text-sm">
+                    Update your password now to avoid losing access to your account.
+                </p>
+            </div>
+
+            <!-- Footer -->
+            <div class="bg-gray-50 px-6 py-4 flex flex-col sm:flex-row justify-end gap-3">
+                <button onclick="closePasswordWarning()"
+                        class="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors order-2 sm:order-1">
+                    Remind Me Later
+                </button>
+                <a href="/Profile/Index"
+                   class="px-6 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors text-center order-1 sm:order-2 flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
+                    </svg>
+                    Change Password Now
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function closePasswordWarning() {
+            const modal = document.getElementById('passwordWarningModal');
+            if (modal) {
+                modal.style.opacity = '0';
+                modal.style.transition = 'opacity 0.3s ease-out';
+                setTimeout(() => modal.remove(), 300);
+            }
+        }
+    </script>
+
+    <style>
+        #passwordWarningModal > div {
+            animation: modalBounceIn 0.4s ease-out;
+        }
+
+        @@keyframes modalBounceIn {
+            0% {
+                transform: scale(0.8) translateY(-20px);
+                opacity: 0;
+            }
+
+            60% {
+                transform: scale(1.02) translateY(0);
+            }
+
+            100% {
+                transform: scale(1) translateY(0);
+                opacity: 1;
+            }
+        }
+    </style>
+}
+
+<div class="min-h-[88vh] p-6 bg-slate-50">
+    <div class="flex flex-col lg:flex-row gap-6">
+        <!-- Main Content -->
+        <div class="flex-1 space-y-6">
+            <!-- Header -->
+            <div class="flex items-center gap-2">
+                <i class="material-icons text-3xl text-slate-800">dashboard</i>
+                <h1 class="text-2xl font-bold text-slate-800">Student Dashboard</h1>
+            </div>
+
+            <!-- Student Profile Card -->
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                <!-- Profile Header -->
+                <div class="p-6 flex flex-col md:flex-row justify-between items-center border-b border-slate-200">
+                    <div class="text-center md:text-left mb-4 md:mb-0">
+                        <h2 class="text-2xl font-bold text-slate-800">@Model.FullName</h2>
+                        <p class="text-slate-600">@Model.StudentId_Number</p>
+                    </div>
+                    <div class="h-40 w-40 rounded-full bg-slate-200 flex items-center justify-center overflow-hidden border-4 border-slate-300 relative">
+                        @if (!string.IsNullOrEmpty(Model.PassportPhotoPath))
+                        {
+                            <!-- Loading indicator -->
+                            <div class="absolute inset-0 flex items-center justify-center bg-slate-200 z-10" id="photoLoader">
+                                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-400"></div>
+                            </div>
+
+                            <!-- Student photo -->
+                            <img src="/uploads/student-photos/@($"{Model.StudentId_Number}.png")"
+                                 class="h-full w-full object-cover transition-opacity duration-300"
+                                 onload="hidePhotoLoader()"
+                                 onerror="showDefaultIcon()">
+
+                            <!-- Default icon (hidden initially) -->
+                            <div class="h-full w-full flex items-center justify-center absolute inset-0" id="defaultIcon" style="display: none;">
+                                <i class="material-icons text-slate-400 text-6xl">person</i>
+                            </div>
+                        }
+                        else
+                        {
+                            <!-- Default icon when no photo -->
+                            <i class="material-icons text-slate-400 text-6xl">person</i>
+                        }
+                    </div>
+                </div>
+
+                <!-- Student Details Grid -->
+                <div class="p-6 grid md:grid-cols-2 gap-6">
+                    <!-- School -->
+                    <div class="flex items-start gap-3">
+                        <div class="bg-blue-50 p-2 rounded-lg">
+                            <i class="material-icons text-blue-600">school</i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-slate-500">School</p>
+                            <p class="font-semibold text-slate-800">@Model.School.Name</p>
+                        </div>
+                    </div>
+
+                    <!-- Programme -->
+                    <div class="flex items-start gap-3">
+                        <div class="bg-green-50 p-2 rounded-lg">
+                            <i class="material-icons text-green-600">book</i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-slate-500">Programme</p>
+                            <p class="font-semibold text-slate-800">@Model.Programme.Name</p>
+                        </div>
+                    </div>
+
+                    <!-- Academic Session -->
+                    <div class="flex items-start gap-3">
+                        <div class="bg-indigo-50 p-2 rounded-lg">
+                            <i class="material-icons text-indigo-600">calendar_today</i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-slate-500">Academic Session</p>
+                            <p class="font-semibold text-slate-800">@Model.AcademicYear.YearName</p>
+                        </div>
+                    </div>
+
+                    <!-- Academic Level -->
+                    <div class="flex items-start gap-3">
+                        <div class="bg-purple-50 p-2 rounded-lg">
+                            <i class="material-icons text-purple-600">grade</i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-slate-500">Academic Level</p>
+                            <p class="font-semibold text-slate-800">Year @Model.StudentCurrentYear Semester @Model.CurrentSemester</p>
+                        </div>
+                    </div>
+
+                    <!-- Current CGPA -->
+                    <div class="flex items-start gap-3">
+                        <div class="bg-amber-50 p-2 rounded-lg">
+                            <i class="material-icons text-amber-600">analytics</i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-slate-500">Current CGPA</p>
+                            <p class="font-semibold text-slate-800">@(((ViewData["PerformanceData"] as SIS.Models.Results.StudentPerformanceViewModel)?.OverallGPA ?? 0).ToString("F2")) / 4.00</p>
+                        </div>
+                    </div>
+
+                    <!-- Registration Status -->
+                    <div class="flex items-start gap-3">
+                        <div class="@(Model.IsRegistered ? "bg-green-50" : "bg-amber-50") p-2 rounded-lg">
+                            <i class="material-icons @(Model.IsRegistered ? "text-green-600" : "text-amber-600")">
+                                @(Model.IsRegistered ? "check_circle" : "pending")
+                            </i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-slate-500">Registration Status</p>
+                            <p class="font-semibold text-slate-800">
+                                @(Model.IsRegistered ? "Registered" : "Waiting student input")
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Student Sponsor -->
+                    <div class="flex items-start gap-3">
+                        <div class="bg-red-50 p-2 rounded-lg">
+                            <i class="material-icons text-red-600">account_balance</i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-slate-500">Student Sponsor</p>
+                            <p class="font-semibold text-slate-800">SELF</p>
+                        </div>
+                    </div>
+
+                    <!-- Outstanding Balance -->
+                    <div class="flex items-start gap-3">
+                        <div class="bg-cyan-50 p-2 rounded-lg">
+                            <i class="material-icons text-cyan-600">payments</i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-slate-500">Outstanding Balance</p>
+                            <p class="font-semibold text-slate-800">K @Model.OutstandingFees.ToString("N2")</p>
+                        </div>
+                    </div>
+
+                    <!-- Accommodation -->
+                    <div class="flex items-start gap-3">
+                        <div class="bg-blue-50 p-2 rounded-lg">
+                            <i class="material-icons text-blue-600">apartment</i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-slate-500">Accommodation</p>
+                            <p class="font-semibold text-slate-800">NON-RESIDENT</p>
+                        </div>
+                    </div>
+
+                    <!-- Remark -->
+                    <div class="flex items-start gap-3">
+                        <div class="bg-violet-50 p-2 rounded-lg">
+                            <i class="material-icons text-violet-600">comment</i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-slate-500">Remark</p>
+                            <p class="font-semibold text-slate-800">NO COMMENT ADDED YET</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Today's Timetable Section -->
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <div class="flex items-center gap-2 mb-4">
+                    <i class="material-icons text-blue-600">schedule</i>
+                    <h2 class="text-lg font-semibold text-slate-800">Today's Schedule</h2>
+                </div>
+
+                <div id="timetableContent">
+                    <!-- Content will be dynamically inserted here -->
+                </div>
+            </div>
+        </div>
+
+
+
+        <!-- Side Panel -->
+        <div class="lg:w-2/5 space-y-6">
+            <!-- Performance Chart -->
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <div class="flex items-center gap-2 mb-4">
+                    <i class="material-icons text-blue-600">bar_chart</i>
+                    <h2 class="text-lg font-semibold text-slate-800">Performance Summary - @DateTime.Now.Year</h2>
+                </div>
+                <div class="h-[300px]" id="coursePerformanceChart"></div>
+            </div>
+
+            <!-- Quick Actions & Notifications -->
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <div class="flex items-center gap-2 mb-4">
+                    <i class="material-icons text-amber-600">notifications</i>
+                    <h2 class="text-lg font-semibold text-slate-800">Quick Actions & Notifications</h2>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="bg-slate-900 rounded-xl p-4 mb-4">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <a href="#" class="flex flex-col items-center gap-2 text-white hover:text-blue-400 transition-colors">
+                            <i class="material-icons">app_registration</i>
+                            <span class="text-sm">Registration</span>
+                        </a>
+                        <a href="#" class="flex flex-col items-center gap-2 text-white hover:text-green-400 transition-colors">
+                            <i class="material-icons">payment</i>
+                            <span class="text-sm">Fees</span>
+                        </a>
+                        <a href="#" class="flex flex-col items-center gap-2 text-white hover:text-cyan-400 transition-colors">
+                            <i class="material-icons">calendar_today</i>
+                            <span class="text-sm">Timetable</span>
+                        </a>
+                        <a href="/StudentResults/Results" class="flex flex-col items-center gap-2 text-white hover:text-amber-400 transition-colors">
+                            <i class="material-icons">school</i>
+                            <span class="text-sm">Results</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Notifications -->
+                <div class="space-y-4">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function hidePhotoLoader() {
+        const loader = document.getElementById('photoLoader');
+        if (loader) {
+            loader.style.display = 'none';
+        }
+    }
+
+    function showDefaultIcon() {
+        const loader = document.getElementById('photoLoader');
+        const defaultIcon = document.getElementById('defaultIcon');
+
+        if (loader) {
+            loader.style.display = 'none';
+        }
+
+        if (defaultIcon) {
+            defaultIcon.style.display = 'flex';
+        }
+    }
+</script>
+
+@section Scripts {
+    <script>
+        window.studentData = {
+            isRegistered: @Json.Serialize(Model.IsRegistered),
+            performanceData: @Json.Serialize(ViewData["PerformanceData"]),
+            canViewCompleteResults: @Json.Serialize(ViewData["CanViewCompleteResults"])
+        };
+    </script>
+    <script src="~/js/student_dashboard.js"></script>
+}

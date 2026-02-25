@@ -1,0 +1,997 @@
+﻿@model SIS.Models.HostelManager.ApplicationListViewModel
+@using SIS.Enums
+
+<div class="h-[90vh] p-4">
+    <!-- Header Section -->
+    <div class="flex justify-between items-center mb-4">
+        <div class="flex items-center text-gray-800">
+            <i class="material-icons text-3xl mr-2">people</i>
+            <div>
+                <h1 class="text-2xl font-bold">Applications for @Model.AcademicYearName</h1>
+                <p class="text-sm text-slate-600">Manage student accommodation applications</p>
+            </div>
+        </div>
+        <a asp-action="ViewApplicationPeriods" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300 transition-colors flex items-center">
+            <i class="material-icons mr-2">arrow_back</i>
+            Back to Periods
+        </a>
+    </div>
+
+    <!-- Period Information Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="flex items-center">
+                <div class="p-3 bg-cyan-100 rounded-lg">
+                    <i class="material-icons text-cyan-600 text-xl">calendar_today</i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-gray-500 text-sm">Period</p>
+                    <div class="text-lg font-semibold">@Model.AcademicYearName</div>
+                    <p class="text-xs text-slate-500">@Model.PeriodDateRange</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="flex items-center">
+                <div class="p-3 bg-purple-100 rounded-lg">
+                    <i class="material-icons text-purple-600 text-xl">list_alt</i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-gray-500 text-sm">Applications</p>
+                    <div class="text-lg font-semibold">@Model.Applications.Count</div>
+                    <p class="text-xs text-slate-500">
+                        @Model.Applications.Count(a => a.HasAllocation) allocated, 
+                        @(Model.Applications.Count - Model.Applications.Count(a => a.HasAllocation)) pending
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="flex items-center">
+                <div class="p-3 bg-amber-100 rounded-lg">
+                    <i class="material-icons text-amber-600 text-xl">assignment</i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-gray-500 text-sm">Status</p>
+                    <div class="text-lg font-semibold">
+                        <span class="px-2 py-1 @(Model.PeriodStatus == Status.Active ? "bg-green-100 text-green-800" : 
+                                              Model.PeriodStatus == Status.Upcoming ? "bg-blue-100 text-blue-800" : 
+                                              "bg-gray-100 text-gray-800") rounded-full text-sm">
+                            @Model.PeriodStatus
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter and Action Bar -->
+    <div class="bg-white rounded-lg shadow-md p-4 mb-4">
+        <div class="flex flex-wrap gap-4 justify-between items-center">
+            <!-- Left Side: Search and Filters -->
+            <div class="flex flex-wrap gap-2 items-center">
+                <div class="relative w-64">
+                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                        <i class="material-icons text-slate-400 text-sm">search</i>
+                    </div>
+                    <input type="text" id="searchInput"
+                           class="block w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500"
+                           placeholder="Search students..." />
+                </div>
+                
+                <div class="flex items-center gap-2">
+                    <select id="filterGender" class="px-3 py-2 border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500 text-sm">
+                        <option value="all">All Genders</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                    </select>
+                    
+                    <select id="filterStatus" class="px-3 py-2 border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500 text-sm">
+                        <option value="all">All Status</option>
+                        <option value="allocated">Allocated</option>
+                        <option value="pending">Pending</option>
+                    </select>
+
+                    <select id="filterType" class="px-3 py-2 border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500 text-sm">
+                        <option value="all">All Students</option>
+                        <option value="international">International</option>
+                        <option value="local">Local</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Right Side: Bulk Allocation Button -->
+            <button type="button" id="bulkAllocationBtn" 
+                    class="px-4 py-2.5 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors flex items-center"
+                    data-bs-toggle="modal" data-bs-target="#bulkAllocationModal">
+                <i class="material-icons mr-2">group_add</i>
+                Bulk Allocation
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex gap-4 h-[calc(90vh-280px)]">
+        <!-- Table Section -->
+        <div class="w-full bg-white rounded-lg shadow-md">
+            <div class="p-4 h-full">
+                @if (TempData["Success"] != null)
+                {
+                    <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4" role="alert">
+                        <p>@TempData["Success"]</p>
+                    </div>
+                }
+
+                @if (TempData["Error"] != null)
+                {
+                    <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" role="alert">
+                        <p>@TempData["Error"]</p>
+                    </div>
+                }
+
+                <div class="overflow-y-auto h-[calc(100%-60px)]">
+                    <table id="applicationsTable" class="w-full text-sm text-gray-600">
+                        <thead class="sticky top-0 bg-slate-50">
+                            <tr>
+                                <th class="px-4 py-3 text-left">
+                                    <div class="flex items-center">
+                                        <input class="h-4 w-4 text-cyan-600 rounded border-gray-300 focus:ring-cyan-500" 
+                                               type="checkbox" id="selectAll">
+                                        <span class="ml-2">Select</span>
+                                    </div>
+                                </th>
+                                <th class="px-4 py-3 text-left">
+                                    <span class="flex items-center">
+                                        Student Details
+                                        <button class="sort-btn ml-1" data-sort="name">
+                                            <svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 15 4 4 4-4m0-6-4-4-4 4" />
+                                            </svg>
+                                        </button>
+                                    </span>
+                                </th>
+                                <th class="px-4 py-3 text-left">
+                                    <span class="flex items-center">
+                                        Gender
+                                    </span>
+                                </th>
+                                <th class="px-4 py-3 text-left">
+                                    <span class="flex items-center">
+                                        Programme
+                                    </span>
+                                </th>
+                                <th class="px-4 py-3 text-left">
+                                    <span class="flex items-center">
+                                        Year
+                                    </span>
+                                </th>
+                                <th class="px-4 py-3 text-left">
+                                    <span class="flex items-center">
+                                        Applied
+                                        <button class="sort-btn ml-1" data-sort="date">
+                                            <svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 15 4 4 4-4m0-6-4-4-4 4" />
+                                            </svg>
+                                        </button>
+                                    </span>
+                                </th>
+                                <th class="px-4 py-3 text-left">Status</th>
+                                <th class="px-4 py-3 text-left">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="applicationsTableBody">
+                            @if (Model.Applications.Any())
+                            {
+                                foreach (var app in Model.Applications)
+                                {
+                                    <tr class="hover:bg-slate-50 border-b" 
+                                        data-gender="@app.Gender.ToLower()" 
+                                        data-international="@app.IsInternational.ToString().ToLower()" 
+                                        data-allocated="@app.HasAllocation.ToString().ToLower()"
+                                        data-status="@app.Status.ToString().ToLower()">
+                                        <td class="px-4 py-3">
+                                            <input class="h-4 w-4 text-cyan-600 rounded border-gray-300 focus:ring-cyan-500 application-checkbox" 
+                                                   type="checkbox" value="@app.ApplicationId" id="app-@app.ApplicationId"
+                                                   @(app.HasAllocation ? "disabled" : "")>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <div class="flex flex-col">
+                                                <span class="font-medium text-cyan-600">@app.StudentName</span>
+                                                <span class="text-xs text-slate-500">@app.MatricNumber</span>
+                                                @if (app.IsInternational)
+                                                {
+                                                    <span class="inline-flex items-center mt-1 px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">
+                                                        International
+                                                    </span>
+                                                }
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-3 capitalize">@app.Gender</td>
+                                        <td class="px-4 py-3">@app.Programme</td>
+                                        <td class="px-4 py-3">@(app.YearOfStudy ?? 1)</td>
+                                        <td class="px-4 py-3">@app.ApplicationDate.ToString("MMM dd, yyyy")</td>
+                                        <td class="px-4 py-3">
+                                            <span class="px-2 py-1 @app.StatusBadgeClass text-xs rounded-full">
+                                                @app.StatusString
+                                            </span>
+                                            @if (app.HasAllocation)
+                                            {
+                                                <span class="ml-1 px-2 py-1 bg-emerald-100 text-emerald-800 text-xs rounded-full">
+                                                    Allocated
+                                                </span>
+                                            }
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <div class="flex gap-1">
+                                                <a href="#" onclick="showApplicantDetailsModal(@app.ApplicationId); return false;"
+                                                   data-action="view-details" data-id="@app.ApplicationId"
+                                                   class="p-1.5 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors">
+                                                    <i class="material-icons text-sm">info</i>
+                                                </a>
+
+                                                @if (!app.HasAllocation)
+                                                {
+                                                    <a href="#" onclick="showAllocateRoomModal(@app.ApplicationId); return false;"
+                                                       data-action="allocate" data-id="@app.ApplicationId"
+                                                       class="p-1.5 bg-emerald-100 text-emerald-700 rounded hover:bg-emerald-200 transition-colors">
+                                                        <i class="material-icons text-sm">home</i>
+                                                    </a>
+                                                }
+                                                else
+                                                {
+                                                    <a href="#" onclick="showViewAllocationModal(@app.ApplicationId); return false;"
+                                                       data-action="view-allocation" data-id="@app.ApplicationId"
+                                                       class="p-1.5 bg-amber-100 text-amber-700 rounded hover:bg-amber-200 transition-colors">
+                                                        <i class="material-icons text-sm">visibility</i>
+                                                    </a>
+                                                }
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+
+                    <!-- Empty state message -->
+                    <div id="emptyStateMessage" class="flex flex-col items-center justify-center h-64 text-slate-500"
+                         style="@(Model.Applications.Any() ? "display: none;" : "")">
+                        <i class="material-icons text-5xl mb-4">person_search</i>
+                        <h3 class="text-xl font-medium mb-2">No Applications Found</h3>
+                        <p class="text-sm mb-4">There are no applications matching your criteria.</p>
+                    </div>
+                </div>
+
+                <!-- Selected count and actions -->
+                <div class="flex justify-between items-center mt-4">
+                    <div class="text-sm text-slate-600">
+                        <span id="selectedCount">0</span> applications selected
+                    </div>
+                    <button id="allocateSelectedBtn" type="button" disabled
+                            class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors
+                                   disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                        <i class="material-icons mr-2">add_home</i>
+                        Allocate Selected
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Allocation Modal -->
+<div id="bulkAllocationModal" class="fixed inset-0 z-50 hidden flex items-center justify-center">
+    <div class="fixed inset-0 bg-black opacity-40" onclick="hideBulkAllocationModal()"></div>
+    <div class="bg-white rounded-lg shadow-lg w-11/12 md:w-2/3 z-10 overflow-hidden">
+        <div class="px-6 py-4 bg-cyan-600 text-white">
+            <h3 class="text-xl font-semibold flex items-center">
+                <i class="material-icons mr-2">group_add</i>
+                Bulk Allocation
+            </h3>
+        </div>
+        <form id="bulkAllocationForm" method="post" asp-action="ExecuteBulkAllocation">
+            <input type="hidden" name="PeriodId" value="@Model.PeriodId" />
+
+            <div class="px-6 py-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Left Column: Allocation Method -->
+                    <div>
+                        <h4 class="text-lg font-medium text-gray-800 mb-4">Allocation Method</h4>
+
+                        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6">
+                            <div class="flex items-center mb-4">
+                                <input id="fcfsOption" type="radio" name="AllocationType" value="FCFS" checked
+                                       class="h-4 w-4 text-cyan-600 border-gray-300 focus:ring-cyan-500">
+                                <label for="fcfsOption" class="ml-2 block text-sm font-medium text-gray-700">
+                                    First Come, First Served
+                                </label>
+                            </div>
+                            <div class="flex items-center">
+                                <input id="randomOption" type="radio" name="AllocationType" value="Random"
+                                       class="h-4 w-4 text-cyan-600 border-gray-300 focus:ring-cyan-500">
+                                <label for="randomOption" class="ml-2 block text-sm font-medium text-gray-700">
+                                    Random Fair Allocation
+                                </label>
+                            </div>
+                        </div>
+
+                        <h4 class="text-md font-medium text-gray-800 mb-3">Maximum Allocations</h4>
+                        <div class="relative mb-6">
+                            <input type="number" name="MaxAllocations" id="MaxAllocations" min="1" value="50"
+                                   class="block w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500">
+                            <p class="mt-1 text-xs text-gray-500">Leave empty for no limit</p>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Filters -->
+                    <div>
+                        <h4 class="text-lg font-medium text-gray-800 mb-4">Allocation Filters</h4>
+
+                        <div class="space-y-4">
+                            <!-- Status Filter -->
+                            <div class="relative z-0 w-full group">
+                                <label for="StatusFilter" class="block text-sm font-medium text-gray-700 mb-1">Application Status</label>
+                                <select name="StatusFilter" id="StatusFilter"
+                                        class="block w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500">
+                                    <option value="">All Statuses</option>
+                                    <option value="Submitted">Submitted</option>
+                                    <option value="Approved">Approved</option>
+                                    <option value="Waitlisted">Waitlisted</option>
+                                </select>
+                            </div>
+
+                            <!-- Gender Filter -->
+                            <div class="relative z-0 w-full group">
+                                <label for="GenderFilter" class="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+                                <select name="GenderFilter" id="GenderFilter"
+                                        class="block w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500">
+                                    <option value="">All Genders</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                </select>
+                            </div>
+
+                            <!-- Student Type Filter -->
+                            <div class="relative z-0 w-full group">
+                                <label for="StudentTypeFilter" class="block text-sm font-medium text-gray-700 mb-1">Student Type</label>
+                                <select name="StudentTypeFilter" id="StudentTypeFilter"
+                                        class="block w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500">
+                                    <option value="">All Students</option>
+                                    <option value="International">International</option>
+                                    <option value="Local">Local</option>
+                                </select>
+                            </div>
+
+                            <!-- Year of Study Filter -->
+                            <div class="relative z-0 w-full group">
+                                <label for="YearOfStudyFilter" class="block text-sm font-medium text-gray-700 mb-1">Year of Study</label>
+                                <select name="YearOfStudyFilter" id="YearOfStudyFilter"
+                                        class="block w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500">
+                                    <option value="">All Years</option>
+                                    <option value="1">Year 1</option>
+                                    <option value="2">Year 2</option>
+                                    <option value="3">Year 3</option>
+                                    <option value="4">Year 4</option>
+                                    <option value="5">Year 5</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-6 py-4 bg-gray-50 flex justify-end gap-2">
+                <button type="button" onclick="hideBulkAllocationModal()"
+                        class="px-4 py-2 bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit"
+                        class="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors">
+                    Allocate Rooms
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Applicant Details Modal -->
+<div id="applicantDetailsModal" class="fixed inset-0 z-50 hidden flex items-center justify-center">
+    <div class="fixed inset-0 bg-black opacity-40" onclick="hideApplicantDetailsModal()"></div>
+    <div class="bg-white rounded-lg shadow-lg w-11/12 md:w-3/4 lg:w-2/3 z-10 overflow-hidden">
+        <div class="px-6 py-4 bg-blue-600 text-white">
+            <h3 class="text-xl font-semibold flex items-center">
+                <i class="material-icons mr-2">person</i>
+                <span id="applicantDetailsTitle">Student Details</span>
+            </h3>
+        </div>
+        <div class="p-6 max-h-[70vh] overflow-y-auto" id="applicantDetailsContent">
+            <!-- Content will be loaded here via AJAX -->
+            <div class="flex justify-center items-center h-32">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            </div>
+        </div>
+        <div class="px-6 py-4 bg-gray-50 flex justify-end gap-2">
+            <button type="button" onclick="hideApplicantDetailsModal()"
+                    class="px-4 py-2 bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300 transition-colors">
+                Close
+            </button>
+            <button type="button" id="proceedToAllocationBtn"
+                    class="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors">
+                Allocate Room
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Allocate Room Modal -->
+<div id="allocateRoomModal" class="fixed inset-0 z-50 hidden flex items-center justify-center">
+    <div class="fixed inset-0 bg-black opacity-40" onclick="hideAllocateRoomModal()"></div>
+    <div class="bg-white rounded-lg shadow-lg w-11/12 md:w-2/3 z-10 overflow-hidden">
+        <div class="px-6 py-4 bg-emerald-600 text-white">
+            <h3 class="text-xl font-semibold flex items-center">
+                <i class="material-icons mr-2">home</i>
+                <span id="allocateRoomTitle">Allocate Room</span>
+            </h3>
+        </div>
+        <form id="allocateRoomForm" method="post">
+            <input type="hidden" id="allocationApplicationId" name="ApplicationId" value="" />
+            <div class="p-6" id="allocateRoomContent">
+                <!-- Content will be loaded here via AJAX -->
+                <div class="flex justify-center items-center h-32">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-gray-50 flex justify-end gap-2">
+                <button type="button" onclick="hideAllocateRoomModal()"
+                        class="px-4 py-2 bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit"
+                        class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors">
+                    Confirm Allocation
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- View Allocation Modal -->
+<div id="viewAllocationModal" class="fixed inset-0 z-50 hidden flex items-center justify-center">
+    <div class="fixed inset-0 bg-black opacity-40" onclick="hideViewAllocationModal()"></div>
+    <div class="bg-white rounded-lg shadow-lg w-11/12 md:w-2/3 z-10 overflow-hidden">
+        <div class="px-6 py-4 bg-amber-600 text-white">
+            <h3 class="text-xl font-semibold flex items-center">
+                <i class="material-icons mr-2">apartment</i>
+                <span id="viewAllocationTitle">Room Allocation Details</span>
+            </h3>
+        </div>
+        <div class="p-6" id="viewAllocationContent">
+            <!-- Content will be loaded here via AJAX -->
+            <div class="flex justify-center items-center h-32">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600"></div>
+            </div>
+        </div>
+        <div class="px-6 py-4 bg-gray-50 flex justify-end gap-2">
+            <button type="button" onclick="hideViewAllocationModal()"
+                    class="px-4 py-2 bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300 transition-colors">
+                Close
+            </button>
+            <button type="button" id="reallocateBtn"
+                    class="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors">
+                Reallocate
+            </button>
+        </div>
+    </div>
+</div>
+
+
+
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Show/hide bulk allocation modal
+            window.showBulkAllocationModal = function() {
+                document.getElementById('bulkAllocationModal').classList.remove('hidden');
+            };
+
+            window.hideBulkAllocationModal = function() {
+                document.getElementById('bulkAllocationModal').classList.add('hidden');
+            };
+
+            // Toggle bulk allocation modal when button is clicked
+            document.getElementById('bulkAllocationBtn').addEventListener('click', function() {
+                showBulkAllocationModal();
+            });
+
+            // Search functionality
+            document.getElementById('searchInput').addEventListener('keyup', function() {
+                const searchText = this.value.toLowerCase();
+                filterTable();
+            });
+
+            // Filter dropdowns
+            document.getElementById('filterGender').addEventListener('change', filterTable);
+            document.getElementById('filterStatus').addEventListener('change', filterTable);
+            document.getElementById('filterType').addEventListener('change', filterTable);
+
+            function filterTable() {
+                const searchText = document.getElementById('searchInput').value.toLowerCase();
+                const genderFilter = document.getElementById('filterGender').value;
+                const statusFilter = document.getElementById('filterStatus').value;
+                const typeFilter = document.getElementById('filterType').value;
+
+                const rows = document.querySelectorAll('#applicationsTableBody tr');
+                let visibleCount = 0;
+
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    const gender = row.getAttribute('data-gender');
+                    const isAllocated = row.getAttribute('data-allocated') === 'true';
+                    const isInternational = row.getAttribute('data-international') === 'true';
+
+                    let showRow = text.includes(searchText);
+
+                    // Apply gender filter
+                    if (genderFilter !== 'all' && gender !== genderFilter) {
+                        showRow = false;
+                    }
+
+                    // Apply status filter
+                    if (statusFilter === 'allocated' && !isAllocated) {
+                        showRow = false;
+                    } else if (statusFilter === 'pending' && isAllocated) {
+                        showRow = false;
+                    }
+
+                    // Apply type filter
+                    if (typeFilter === 'international' && !isInternational) {
+                        showRow = false;
+                    } else if (typeFilter === 'local' && isInternational) {
+                        showRow = false;
+                    }
+
+                    row.style.display = showRow ? '' : 'none';
+                    if (showRow) visibleCount++;
+                });
+
+                // Show/hide empty state message
+                document.getElementById('emptyStateMessage').style.display = visibleCount === 0 ? 'flex' : 'none';
+            }
+
+            // Select all functionality
+            document.getElementById('selectAll').addEventListener('change', function() {
+                const checkboxes = document.querySelectorAll('.application-checkbox:not([disabled])');
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = this.checked;
+                });
+                updateSelectedCount();
+            });
+
+            // Individual checkbox selection
+            document.querySelectorAll('.application-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', updateSelectedCount);
+            });
+
+            // Update selected count and enable/disable allocate button
+            function updateSelectedCount() {
+                const selectedCheckboxes = document.querySelectorAll('.application-checkbox:checked');
+                const count = selectedCheckboxes.length;
+                document.getElementById('selectedCount').textContent = count;
+
+                const allocateBtn = document.getElementById('allocateSelectedBtn');
+                allocateBtn.disabled = count === 0;
+            }
+
+            // Allocate selected button click
+            document.getElementById('allocateSelectedBtn').addEventListener('click', function() {
+                const selectedIds = [];
+                document.querySelectorAll('.application-checkbox:checked').forEach(checkbox => {
+                    selectedIds.push(checkbox.value);
+                });
+
+                if (selectedIds.length > 0) {
+                    window.location.href = '@Url.Action("AllocateSelected")/' + selectedIds.join(',');
+                }
+            });
+        });
+    </script>
+
+    <script>
+        // Additional functions for modal management
+        document.addEventListener('DOMContentLoaded', function () {
+            // Applicant Details Modal
+            window.showApplicantDetailsModal = function(applicationId) {
+                document.getElementById('applicantDetailsModal').classList.remove('hidden');
+                loadApplicantDetails(applicationId);
+            };
+
+            window.hideApplicantDetailsModal = function() {
+                document.getElementById('applicantDetailsModal').classList.add('hidden');
+            };
+
+            // Allocate Room Modal
+            window.showAllocateRoomModal = function(applicationId) {
+                document.getElementById('allocateRoomModal').classList.remove('hidden');
+                document.getElementById('allocationApplicationId').value = applicationId;
+                loadAllocationForm(applicationId);
+            };
+
+            window.hideAllocateRoomModal = function() {
+                document.getElementById('allocateRoomModal').classList.add('hidden');
+            };
+
+            // View Allocation Modal
+            window.showViewAllocationModal = function(applicationId) {
+                document.getElementById('viewAllocationModal').classList.remove('hidden');
+                loadAllocationDetails(applicationId);
+            };
+
+            window.hideViewAllocationModal = function() {
+                document.getElementById('viewAllocationModal').classList.add('hidden');
+            };
+
+            // Connect modal buttons to appropriate actions
+            document.getElementById('proceedToAllocationBtn').addEventListener('click', function() {
+                const applicationId = this.getAttribute('data-application-id');
+                hideApplicantDetailsModal();
+                showAllocateRoomModal(applicationId);
+            });
+
+            document.getElementById('reallocateBtn').addEventListener('click', function() {
+                const applicationId = this.getAttribute('data-application-id');
+                hideViewAllocationModal();
+                showAllocateRoomModal(applicationId);
+            });
+
+            // Form submission with AJAX
+            document.getElementById('allocateRoomForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                const form = this;
+                const formData = new FormData(form);
+
+                fetch(form.action || '@Url.Action("AllocateRoomSubmit")', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Show success message
+                        hideAllocateRoomModal();
+
+                        // Update the table row
+                        updateTableRow(data.applicationId, data.newStatus, true);
+
+                        // Show a notification
+                        showNotification('Room allocation successful!', 'success');
+                    } else {
+                        // Show error message
+                        showNotification(data.message || 'Allocation failed.', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('An error occurred.', 'error');
+                });
+            });
+
+            // Update click handlers for all detail buttons
+            document.querySelectorAll('[data-action="view-details"]').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const applicationId = this.getAttribute('data-id');
+                    showApplicantDetailsModal(applicationId);
+                });
+            });
+
+            document.querySelectorAll('[data-action="allocate"]').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const applicationId = this.getAttribute('data-id');
+                    showAllocateRoomModal(applicationId);
+                });
+            });
+
+            document.querySelectorAll('[data-action="view-allocation"]').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const applicationId = this.getAttribute('data-id');
+                    showViewAllocationModal(applicationId);
+                });
+            });
+        });
+
+        // AJAX functions to load content
+        function loadApplicantDetails(applicationId) {
+            const contentElement = document.getElementById('applicantDetailsContent');
+            contentElement.innerHTML = '<div class="flex justify-center items-center h-32"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>';
+
+            fetch(`@Url.Action("GetApplicantDetails")?applicationId=${applicationId}`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.text())
+            .then(html => {
+                contentElement.innerHTML = html;
+
+                // Set up the proceed button
+                const proceedBtn = document.getElementById('proceedToAllocationBtn');
+                proceedBtn.setAttribute('data-application-id', applicationId);
+
+                // Check if student already has allocation
+                const hasAllocation = contentElement.querySelector('[data-has-allocation]')?.getAttribute('data-has-allocation') === 'true';
+                if (hasAllocation) {
+                    proceedBtn.textContent = 'View Allocation';
+                    proceedBtn.addEventListener('click', function() {
+                        hideApplicantDetailsModal();
+                        showViewAllocationModal(applicationId);
+                    }, { once: true });
+                } else {
+                    proceedBtn.textContent = 'Allocate Room';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                contentElement.innerHTML = '<div class="text-center text-red-500">Error loading student details</div>';
+            });
+        }
+
+        function loadAllocationForm(applicationId) {
+            const contentElement = document.getElementById('allocateRoomContent');
+            contentElement.innerHTML = '<div class="flex justify-center items-center h-32"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div></div>';
+
+            fetch(`@Url.Action("GetAllocationForm")?applicationId=${applicationId}`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.text())
+            .then(html => {
+                contentElement.innerHTML = html;
+
+                // Set up the form action
+                const form = document.getElementById('allocateRoomForm');
+                form.action = '@Url.Action("AllocateRoomSubmit")';
+
+                // Set up dynamic hostel/room selection
+                setupHostelRoomSelections();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                contentElement.innerHTML = '<div class="text-center text-red-500">Error loading allocation form</div>';
+            });
+        }
+
+        function loadAllocationDetails(applicationId) {
+            const contentElement = document.getElementById('viewAllocationContent');
+            contentElement.innerHTML = '<div class="flex justify-center items-center h-32"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600"></div></div>';
+
+            fetch(`@Url.Action("GetAllocationDetails")?applicationId=${applicationId}`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.text())
+            .then(html => {
+                contentElement.innerHTML = html;
+
+                // Set up the reallocate button
+                const reallocateBtn = document.getElementById('reallocateBtn');
+                reallocateBtn.setAttribute('data-application-id', applicationId);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                contentElement.innerHTML = '<div class="text-center text-red-500">Error loading allocation details</div>';
+            });
+        }
+
+        function setupHostelRoomSelections() {
+            const hostelSelect = document.getElementById('HostelId');
+            const roomSelect = document.getElementById('RoomId');
+            const bedSelect = document.getElementById('BedId');
+
+            if (hostelSelect && roomSelect) {
+                hostelSelect.addEventListener('change', function() {
+                    const hostelId = this.value;
+                    if (hostelId) {
+                        // Clear room and bed selects
+                        roomSelect.innerHTML = '<option value="">Select Room</option>';
+                        if (bedSelect) bedSelect.innerHTML = '<option value="">Select Bed</option>';
+
+                        // Load rooms for this hostel
+                        fetch(`@Url.Action("GetAvailableRooms")?hostelId=${hostelId}`, {
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success && data.rooms.length > 0) {
+                                data.rooms.forEach(room => {
+                                    const option = document.createElement('option');
+                                    option.value = room.roomId;
+                                    option.textContent = `${room.roomNumber} (${room.roomType}, ${room.availableBeds} beds)`;
+                                    roomSelect.appendChild(option);
+                                });
+                            } else {
+                                const option = document.createElement('option');
+                                option.value = "";
+                                option.textContent = "No available rooms";
+                                roomSelect.appendChild(option);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                        });
+                    }
+                });
+
+                if (roomSelect && bedSelect) {
+                    roomSelect.addEventListener('change', function() {
+                        const roomId = this.value;
+                        if (roomId) {
+                            // Clear bed select
+                            bedSelect.innerHTML = '<option value="">Select Bed</option>';
+
+                            // Load beds for this room
+                            fetch(`@Url.Action("GetAvailableBeds")?roomId=${roomId}`, {
+                                headers: {
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                }
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success && data.beds.length > 0) {
+                                    data.beds.forEach(bed => {
+                                        const option = document.createElement('option');
+                                        option.value = bed.bedId;
+                                        option.textContent = bed.bedIdentifier;
+                                        bedSelect.appendChild(option);
+                                    });
+                                } else {
+                                    const option = document.createElement('option');
+                                    option.value = "";
+                                    option.textContent = "No available beds";
+                                    bedSelect.appendChild(option);
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                            });
+                        }
+                    });
+                }
+            }
+        }
+
+        function updateTableRow(applicationId, newStatus, isAllocated) {
+            const row = document.querySelector(`tr[data-application-id="${applicationId}"]`);
+            if (row) {
+                // Update status cell
+                const statusCell = row.querySelector('td:nth-child(7)');
+                if (statusCell) {
+                    let statusHTML = '';
+
+                    // Add appropriate status badge based on new status
+                    switch(newStatus) {
+                        case 'Approved':
+                            statusHTML = '<span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">Approved</span>';
+                            break;
+                        case 'Rejected':
+                            statusHTML = '<span class="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">Rejected</span>';
+                            break;
+                        case 'Waitlisted':
+                            statusHTML = '<span class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">Waitlisted</span>';
+                            break;
+                        default:
+                            statusHTML = '<span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">' + newStatus + '</span>';
+                    }
+
+                    // Add allocation badge if allocated
+                    if (isAllocated) {
+                        statusHTML += ' <span class="ml-1 px-2 py-1 bg-emerald-100 text-emerald-800 text-xs rounded-full">Allocated</span>';
+                    }
+
+                    statusCell.innerHTML = statusHTML;
+                }
+
+                // Update actions cell
+                const actionsCell = row.querySelector('td:nth-child(8)');
+                if (actionsCell) {
+                    if (isAllocated) {
+                        actionsCell.innerHTML = `
+                            <div class="flex gap-1">
+                                <a href="#" data-action="view-details" data-id="${applicationId}"
+                                   class="p-1.5 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors">
+                                    <i class="material-icons text-sm">info</i>
+                                </a>
+                                <a href="#" data-action="view-allocation" data-id="${applicationId}"
+                                   class="p-1.5 bg-amber-100 text-amber-700 rounded hover:bg-amber-200 transition-colors">
+                                    <i class="material-icons text-sm">visibility</i>
+                                </a>
+                            </div>
+                        `;
+                    } else {
+                        actionsCell.innerHTML = `
+                            <div class="flex gap-1">
+                                <a href="#" data-action="view-details" data-id="${applicationId}"
+                                   class="p-1.5 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors">
+                                    <i class="material-icons text-sm">info</i>
+                                </a>
+                                <a href="#" data-action="allocate" data-id="${applicationId}"
+                                   class="p-1.5 bg-emerald-100 text-emerald-700 rounded hover:bg-emerald-200 transition-colors">
+                                    <i class="material-icons text-sm">home</i>
+                                </a>
+                            </div>
+                        `;
+                    }
+
+                    // Re-attach event listeners
+                    actionsCell.querySelectorAll('[data-action="view-details"]').forEach(btn => {
+                        btn.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            showApplicantDetailsModal(applicationId);
+                        });
+                    });
+
+                    actionsCell.querySelectorAll('[data-action="allocate"]').forEach(btn => {
+                        btn.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            showAllocateRoomModal(applicationId);
+                        });
+                    });
+
+                    actionsCell.querySelectorAll('[data-action="view-allocation"]').forEach(btn => {
+                        btn.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            showViewAllocationModal(applicationId);
+                        });
+                    });
+                }
+
+                // Update row data attributes
+                row.setAttribute('data-allocated', isAllocated.toString());
+
+                // Disable/enable checkbox if applicable
+                const checkbox = row.querySelector('.application-checkbox');
+                if (checkbox) {
+                    checkbox.disabled = isAllocated;
+                    if (isAllocated) checkbox.checked = false;
+                }
+            }
+        }
+
+        function showNotification(message, type = 'success') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${
+                type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+            }`;
+            notification.innerHTML = `
+                <div class="flex items-center">
+                    <i class="material-icons mr-2">${type === 'success' ? 'check_circle' : 'error'}</i>
+                    <span>${message}</span>
+                </div>
+            `;
+
+            // Add to document
+            document.body.appendChild(notification);
+
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.classList.add('opacity-0', 'transition-opacity', 'duration-500');
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 500);
+            }, 3000);
+        }
+    </script>
+}

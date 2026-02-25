@@ -1,0 +1,941 @@
+﻿@model SIS.Models.Admin.Course
+
+<div class="min-h-screen bg-slate-50 p-6">
+    @Html.AntiForgeryToken()
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row justify-between items-center h-24 mb-4">
+        <div class="flex items-center text-slate-800">
+            <i class="material-icons text-3xl mr-2">article</i>
+            <div>
+                <h1 class="text-2xl font-bold">Course Content</h1>
+                <p class="text-sm text-slate-600">@Model.CourseCode - @Model.CourseName</p>
+            </div>
+        </div>
+        <div class="mt-4 md:mt-0 flex gap-2">
+            <a href="javascript:void(0)" onclick="openAddChapterModal()"
+               class="inline-flex items-center px-4 py-2 text-cyan-600 bg-transparent border border-cyan-600 rounded-lg hover:bg-cyan-600 hover:text-white transition-colors">
+                <i class="material-icons text-sm mr-1">create_new_folder</i>
+                <span>New Chapter</span>
+            </a>
+
+            <a asp-controller="Lecturer" asp-action="UploadContent" asp-route-id="@Model.Id"
+               class="inline-flex items-center px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors border border-cyan-600">
+                <i class="material-icons text-sm mr-1">upload_file</i>
+                <span>Upload Content</span>
+            </a>
+
+            <a asp-controller="Lecturer" asp-action="ManageCourseAssessments" asp-route-id="@Model.Id"
+               class="inline-flex items-center px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors border border-slate-600">
+                <i class="material-icons text-sm mr-1">category</i>
+                <span>Manage Assessments</span>
+            </a>
+        </div>
+
+    </div>
+
+    <!-- Course Statistics Card -->
+    <div class="bg-white rounded-xl shadow-sm mb-6">
+        <div class="p-6">
+            <h2 class="text-lg font-semibold text-slate-800 mb-4">Course Statistics</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Enrolled Students -->
+                <div class="bg-blue-50 rounded-lg p-4">
+                    <div class="flex justify-between items-start">
+                        <div class="flex items-start">
+                            <div class="bg-blue-100 rounded-full p-2 mr-3">
+                                <i class="material-icons text-blue-600">people</i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-blue-700 font-medium">Enrolled Students</p>
+                                <h3 class="text-2xl font-semibold text-slate-800">@ViewBag.TotalStudents</h3>
+                            </div>
+                        </div>
+                        <a asp-controller="Lecturer" asp-action="CourseStudents" asp-route-id="@Model.Id"
+                           class="text-blue-600 hover:text-blue-800" title="View Student List">
+                            <i class="material-icons">visibility</i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Content Items -->
+                <div class="bg-green-50 rounded-lg p-4">
+                    <div class="flex items-start">
+                        <div class="bg-green-100 rounded-full p-2 mr-3">
+                            <i class="material-icons text-green-600">folder</i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-green-700 font-medium">Content Items</p>
+                            <h3 class="text-2xl font-semibold text-slate-800">@ViewBag.ContentItems</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chapter Progress -->
+                <div class="bg-purple-50 rounded-lg p-4">
+                    <div class="flex items-start">
+                        <div class="bg-purple-100 rounded-full p-2 mr-3">
+                            <i class="material-icons text-purple-600">trending_up</i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-purple-700 font-medium">Chapter Completion</p>
+                            <h3 class="text-2xl font-semibold text-slate-800">@ViewBag.CompletionPercentage%</h3>
+                            <p class="text-xs text-purple-600 mt-1">@ViewBag.CompletedChapters completed chapters</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NEW: Average Course Rating -->
+                <div class="bg-yellow-50 rounded-lg p-4">
+                    <div class="flex justify-between items-start">
+                        <div class="flex items-start">
+                            <div class="bg-yellow-100 rounded-full p-2 mr-3">
+                                <i class="material-icons text-yellow-600">star</i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-yellow-700 font-medium">Average Rating</p>
+                                <h3 class="text-2xl font-semibold text-slate-800">
+                                    @if (ViewBag.AverageRating > 0)
+                                    {
+                                        @ViewBag.AverageRating
+
+                                        <span class="text-lg text-slate-600">/5</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-slate-400">N/A</span>
+                                    }
+                                </h3>
+                                <p class="text-xs text-yellow-600 mt-1">@ViewBag.TotalRatings total ratings</p>
+                            </div>
+                        </div>
+                        <a asp-controller="Lecturer" asp-action="CourseRatingAnalytics" asp-route-id="@Model.Id"
+                           class="text-yellow-600 hover:text-yellow-800" title="View Rating Analytics">
+                            <i class="material-icons">analytics</i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chapter Content Section -->
+    <div class="bg-white rounded-xl shadow-sm mb-6">
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-lg font-semibold text-slate-800">Course Chapters</h2>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                        <i class="material-icons text-slate-400 text-sm">search</i>
+                    </div>
+                    <input type="text" id="contentSearch"
+                           class="block w-60 pl-10 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:ring-cyan-500 focus:border-cyan-500"
+                           placeholder="Search materials..."
+                           onkeyup="searchContent()">
+                </div>
+            </div>
+
+            @if ((ViewBag.CourseChapters == null || ViewBag.CourseChapters.Count == 0) &&
+            (ViewBag.UncategorizedContent == null || ViewBag.UncategorizedContent.Count == 0))
+            {
+                <div class="flex items-center gap-2 p-4 bg-amber-50 text-amber-800 rounded-lg">
+                    <i class="material-icons">info</i>
+                    <p>No content has been uploaded for this course yet.</p>
+                </div>
+            }
+            else
+            {
+                <!-- Uncategorized Content Section -->
+                @if (ViewBag.UncategorizedContent != null && ViewBag.UncategorizedContent.Count > 0)
+                {
+                    <div class="mb-6">
+                        <div class="flex items-center justify-between bg-slate-100 p-3 rounded-t-lg cursor-pointer hover:bg-slate-200 transition-colors"
+                             onclick="toggleSection('uncategorized-content')">
+                            <div class="flex items-center">
+                                <i class="material-icons text-slate-600 mr-2">folder</i>
+                                <h3 class="text-md font-medium text-slate-700">Uncategorized Content</h3>
+                                <span class="ml-2 bg-slate-200 text-slate-600 text-xs font-medium px-2 py-1 rounded-full">
+                                    @ViewBag.UncategorizedContent.Count items
+                                </span>
+                            </div>
+                            <i class="material-icons text-slate-500 transform transition-transform" id="uncategorized-icon">expand_more</i>
+                        </div>
+
+                        <div class="border border-t-0 border-slate-200 rounded-b-lg overflow-hidden" id="uncategorized-content">
+                            <table class="w-full text-sm text-left text-slate-700">
+                                <thead class="text-xs uppercase bg-slate-50">
+                                    <tr>
+                                        <th class="px-4 py-3">Title</th>
+                                        <th class="px-4 py-3">Type</th>
+                                        <th class="px-4 py-3">Size</th>
+                                        <th class="px-4 py-3">Uploaded</th>
+                                        <th class="px-4 py-3">Views</th>
+                                        <th class="px-4 py-3">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var content in ViewBag.UncategorizedContent)
+                                    {
+                                        <tr class="content-row bg-white border-b hover:bg-slate-50">
+                                            <td class="px-4 py-3 font-medium">
+                                                <div class="flex items-center">
+                                                    @{
+                                                        var fileType = content.FileType.ToLower();
+                                                        var iconClass = "text-slate-500";
+                                                        var iconName = "insert_drive_file";
+
+                                                        if (fileType == "pdf")
+                                                        {
+                                                            iconClass = "text-red-500";
+                                                            iconName = "picture_as_pdf";
+                                                        }
+                                                        else if (fileType == "docx" || fileType == "doc" || fileType == "txt")
+                                                        {
+                                                            iconClass = "text-blue-500";
+                                                            iconName = "description";
+                                                        }
+                                                        else if (fileType == "pptx" || fileType == "ppt")
+                                                        {
+                                                            iconClass = "text-orange-500";
+                                                            iconName = "slideshow";
+                                                        }
+                                                        else if (fileType == "mp4" || fileType == "avi" || fileType == "mov")
+                                                        {
+                                                            iconClass = "text-purple-500";
+                                                            iconName = "video_library";
+                                                        }
+                                                        else if (fileType == "url" || fileType == "link")
+                                                        {
+                                                            iconClass = "text-green-500";
+                                                            iconName = "link";
+                                                        }
+                                                    }
+                                                    <i class="material-icons @iconClass mr-2">@iconName</i>
+                                                    @content.Title
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-3">@content.FileType.ToUpper()</td>
+                                            <td class="px-4 py-3">@content.FileSizeFormatted</td>
+                                            <td class="px-4 py-3">@content.CreatedAt.ToString("MMM dd, yyyy")</td>
+                                            <td class="px-4 py-3">@content.ViewCount</td>
+                                            <td class="px-4 py-3">
+                                                <div class="flex gap-2">
+                                                    @if (content.FileType.ToLower() == "url" || content.FileType.ToLower() == "link")
+                                                    {
+                                                        <a href="@content.FilePath" target="_blank" class="text-cyan-600 hover:text-cyan-800" title="Open Link">
+                                                            <i class="material-icons">open_in_new</i>
+                                                        </a>
+                                                    }
+                                                    else
+                                                    {
+                                                        <a href="@Url.Content("~/" + content.FilePath)" target="_blank" class="text-cyan-600 hover:text-cyan-800" title="Download">
+                                                            <i class="material-icons">download</i>
+                                                        </a>
+                                                    }
+                                                    @* <a asp-controller="Course" asp-action="EditContent" asp-route-id="@content.Id" class="text-amber-600 hover:text-amber-800" title="Edit"> *@
+                                                    @*     <i class="material-icons">edit</i> *@
+                                                    @* </a> *@
+                                                    <a href="javascript:void(0)" onclick="confirmDelete(@content.Id)" class="text-red-600 hover:text-red-800" title="Delete">
+                                                        <i class="material-icons">delete</i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                }
+
+                <!-- Chapters Content -->
+                @foreach (var chapter in ViewBag.CourseChapters)
+                {
+                    var contentCount = (ViewBag.ContentByChapter != null && ViewBag.ContentByChapter.ContainsKey(chapter.Id)
+                    ? ViewBag.ContentByChapter[chapter.Id].Count : 0);
+
+                    // Add assessment count
+                    var assessmentCount = (ViewBag.AssessmentsByChapter != null && ViewBag.AssessmentsByChapter.ContainsKey(chapter.Id)
+                    ? ViewBag.AssessmentsByChapter[chapter.Id].Count : 0);
+
+                    // Total count
+                    var totalItemCount = contentCount + assessmentCount;
+
+                    <div class="mb-6" data-chapter-id="@chapter.Id">
+                        <div class="flex items-center justify-between bg-slate-100 p-3 rounded-t-lg cursor-pointer hover:bg-slate-200 transition-colors"
+                             onclick="toggleSection('chapter-@chapter.Id')">
+                            <div class="flex items-center">
+                                <i class="material-icons text-blue-600 mr-2">menu_book</i>
+                                <h3 class="text-md font-medium text-slate-700">@chapter.Title</h3>
+                                <span class="ml-2 bg-blue-100 text-blue-600 text-xs font-medium px-2 py-1 rounded-full">
+                                    @totalItemCount items
+                                </span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <a href="javascript:void(0)" onclick="openEditChapterModal(@chapter.Id)" class="text-amber-600 hover:text-amber-800 mr-2" title="Edit Chapter">
+                                        <i class="material-icons">edit</i>
+                                    </a>
+                                    <a href="javascript:void(0)" onclick="confirmDeleteChapter(@chapter.Id)" class="text-red-600 hover:text-red-800 mr-2" title="Delete Chapter">
+                                        <i class="material-icons">delete</i>
+                                    </a>
+                                    <input type="hidden" data-chapter-order="@chapter.Id" value="@chapter.OrderIndex" />
+                                    <i class="material-icons text-slate-500 transform transition-transform" id="chapter-@chapter.Id-icon">expand_more</i>
+                                </div>
+                            </div>
+
+                            <div class="border border-t-0 border-slate-200 rounded-b-lg overflow-hidden" id="chapter-@chapter.Id">
+                                @if (contentCount > 0)
+                                {
+                                    <table class="w-full text-sm text-left text-slate-700">
+                                        <thead class="text-xs uppercase bg-slate-50">
+                                            <tr>
+                                                <th class="px-4 py-3">Title</th>
+                                                <th class="px-4 py-3">Type</th>
+                                                <th class="px-4 py-3">Size</th>
+                                                <th class="px-4 py-3">Uploaded</th>
+                                                <th class="px-4 py-3">Views</th>
+                                                <th class="px-4 py-3">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var content in ViewBag.ContentByChapter[chapter.Id])
+                                            {
+                                                <tr class="content-row bg-white border-b hover:bg-slate-50">
+                                                    <td class="px-4 py-3 font-medium">
+                                                        <div class="flex items-center">
+                                                            @{
+                                                                var fileType = content.FileType.ToLower();
+                                                                var iconClass = "text-slate-500";
+                                                                var iconName = "insert_drive_file";
+
+                                                                if (fileType == "pdf")
+                                                                {
+                                                                    iconClass = "text-red-500";
+                                                                    iconName = "picture_as_pdf";
+                                                                }
+                                                                else if (fileType == "docx" || fileType == "doc" || fileType == "txt")
+                                                                {
+                                                                    iconClass = "text-blue-500";
+                                                                    iconName = "description";
+                                                                }
+                                                                else if (fileType == "pptx" || fileType == "ppt")
+                                                                {
+                                                                    iconClass = "text-orange-500";
+                                                                    iconName = "slideshow";
+                                                                }
+                                                                else if (fileType == "mp4" || fileType == "avi" || fileType == "mov")
+                                                                {
+                                                                    iconClass = "text-purple-500";
+                                                                    iconName = "video_library";
+                                                                }
+                                                                else if (fileType == "url" || fileType == "link")
+                                                                {
+                                                                    iconClass = "text-green-500";
+                                                                    iconName = "link";
+                                                                }
+                                                            }
+                                                            <i class="material-icons @iconClass mr-2">@iconName</i>
+                                                            @content.Title
+                                                        </div>
+                                                    </td>
+                                                    <td class="px-4 py-3">@content.FileType.ToUpper()</td>
+                                                    <td class="px-4 py-3">@content.FileSizeFormatted</td>
+                                                    <td class="px-4 py-3">@content.CreatedAt.ToString("MMM dd, yyyy")</td>
+                                                    <td class="px-4 py-3">@content.ViewCount</td>
+                                                    <td class="px-4 py-3">
+                                                        <div class="flex gap-2">
+                                                            @if (content.FileType.ToLower() == "url" || content.FileType.ToLower() == "link")
+                                                            {
+                                                                <a href="@content.FilePath" target="_blank" class="text-cyan-600 hover:text-cyan-800" title="Open Link">
+                                                                    <i class="material-icons">open_in_new</i>
+                                                                </a>
+                                                            }
+                                                            else
+                                                            {
+                                                                <a href="@Url.Content("~/" + content.FilePath)" target="_blank" class="text-cyan-600 hover:text-cyan-800" title="Download">
+                                                                    <i class="material-icons">download</i>
+                                                                </a>
+                                                            }
+                                                            @* <a asp-controller="Course" asp-action="EditContent" asp-route-id="@content.Id" class="text-amber-600 hover:text-amber-800" title="Edit"> *@
+                                                            @*     <i class="material-icons">edit</i> *@
+                                                            @* </a> *@
+                                                            <a href="javascript:void(0)" onclick="confirmDelete(@content.Id)" class="text-red-600 hover:text-red-800" title="Delete">
+                                                                <i class="material-icons">delete</i>
+                                                            </a>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                }
+                                else
+                                {
+                                    <div class="p-6 text-center">
+                                        <p class="text-slate-500">No content in this chapter yet</p>
+                                        <a asp-controller="Lecturer" asp-action="UploadContent" asp-route-id="@Model.Id" asp-route-chapterId="@chapter.Id"
+                                           class="inline-flex items-center px-3 py-1 mt-2 text-sm bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors">
+                                            <i class="material-icons text-sm mr-1">upload_file</i>
+                                            <span>Add Content</span>
+                                        </a>
+                                    </div>
+                                }
+
+                                <!-- Add assessments section INSIDE the chapter loop -->
+                                @if (ViewBag.AssessmentsByChapter != null && ViewBag.AssessmentsByChapter.ContainsKey(chapter.Id) && ViewBag.AssessmentsByChapter[chapter.Id].Count > 0)
+                                {
+                                    <div class="mt-4 border-t border-slate-200 pt-4 px-4 pb-4">
+                                        <h4 class="text-sm font-semibold text-slate-700 mb-2">Assessments in this chapter</h4>
+                                        <div class="space-y-2">
+                                            @foreach (var assessment in ViewBag.AssessmentsByChapter[chapter.Id])
+                                            {
+                                                <div class="flex items-center bg-amber-50 rounded-lg p-3">
+                                                    <i class="material-icons text-amber-600 mr-2">assignment</i>
+                                                    <div>
+                                                        <div class="font-medium">@assessment.Assessment.Name</div>
+                                                        <div class="text-xs text-slate-500">
+                                                            Due: @assessment.EndDateTime.ToString("MMM dd, yyyy - HH:mm") •
+                                                            Duration: @assessment.DurationMinutes min •
+                                                            @(assessment.IsPublished ? "Published" : "Draft")
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    
+                }
+
+                
+            }
+        </div>
+    </div>
+
+    <!-- Course Assessments Section -->
+    <div class="mt-8">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold text-slate-800">Course Assessments</h2>
+            <a asp-controller="Lecturer" asp-action="CreateAssessmentConfig" asp-route-id="@Model.Id"
+               class="inline-flex items-center px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors">
+                <i class="material-icons text-sm mr-1">add</i>
+                <span>Configure Assessment</span>
+            </a>
+        </div>
+
+        @if (ViewBag.CourseAssessments != null && ViewBag.CourseAssessments.Count > 0)
+        {
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                <table class="min-w-full divide-y divide-slate-200">
+                    <thead class="bg-slate-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Assessment</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Academic Year</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Schedule</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Duration</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-200">
+                        @foreach (var assessment in ViewBag.CourseAssessments)
+                        {
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap">@assessment.Assessment.Name</td>
+                                <td class="px-6 py-4 whitespace-nowrap">@assessment.AcademicYear.YearValue</td>
+                                <td class="px-6 py-4 whitespace-nowrap">@assessment.StartDateTime.ToString("MMM dd, yyyy - HH:mm")</td>
+                                <td class="px-6 py-4 whitespace-nowrap">@assessment.DurationMinutes min</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    @if (assessment.IsPublished)
+                                    {
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Published</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-slate-100 text-slate-800">Draft</span>
+                                    }
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex space-x-2">
+                                        <!-- Assessment Info Icon -->
+                                        <a href="@Url.Action("AssessmentDetails", "Lecturer", new { id = assessment.Id })"
+                                           class="text-blue-600 hover:text-blue-900" title="Assessment Info">
+                                            <i class="material-icons">assessment</i>
+                                        </a>
+
+                                        <!-- Edit Icon -->
+                                        <a href="@Url.Action("EditAssessmentConfig", "Lecturer", new { id = Model.Id, assessmentConfigId = assessment.Id })"
+                                           class="text-cyan-600 hover:text-cyan-900" title="Edit Assessment">
+                                            <i class="material-icons">edit</i>
+                                        </a>
+
+                                        <!-- Preview Icon -->
+                                        <a href="@Url.Action("PreviewAssessment", "Lecturer", new { id = assessment.Id })"
+                                           class="text-purple-600 hover:text-purple-900" title="Preview Assessment">
+                                            <i class="material-icons">visibility</i>
+                                        </a>
+
+                                        <!-- Publish/Unpublish Icon -->
+                                        @if (!assessment.IsPublished)
+                                        {
+                                            <a href="@Url.Action("PublishAssessment", "Lecturer", new { id = assessment.Id })"
+                                               class="text-green-600 hover:text-green-900" title="Publish Assessment">
+                                                <i class="material-icons">publish</i>
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <a href="@Url.Action("UnpublishAssessment", "Lecturer", new { id = assessment.Id })"
+                                               class="text-amber-600 hover:text-amber-900" title="Unpublish Assessment">
+                                                <i class="material-icons">unpublished</i>
+                                            </a>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="bg-white rounded-xl shadow-sm p-6 text-center">
+                <i class="material-icons text-5xl text-slate-300 mb-2">assignment</i>
+                <h3 class="text-lg font-medium text-slate-700 mb-2">No assessments configured</h3>
+                <p class="text-sm text-slate-500 mb-4">Configure your first assessment for this course.</p>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Confirm Delete</h3>
+        <p class="text-sm text-gray-500 mb-4">Are you sure you want to delete this content? This action cannot be undone.</p>
+        <div class="flex justify-end gap-3">
+            <button type="button" onclick="closeDeleteModal()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">
+                Cancel
+            </button>
+            <form id="deleteForm" method="post">
+                <input type="hidden" name="id" id="deleteContentId" />
+                <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                    Delete
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+<!-- Add Chapter Modal -->
+<div id="addChapterModal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-medium text-gray-900">Add New Chapter</h3>
+            <button type="button" onclick="closeModal('addChapterModal')" class="text-gray-400 hover:text-gray-500">
+                <i class="material-icons">close</i>
+            </button>
+        </div>
+        <form id="addChapterForm" class="space-y-4">
+            <input type="hidden" id="addChapterCourseId" name="CourseId" value="@Model.Id" />
+            <div>
+                <label for="addChapterTitle" class="block text-sm font-medium text-gray-700">Chapter Title</label>
+                <input type="text" id="addChapterTitle" name="Title" required
+                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm" />
+            </div>
+            <div>
+                <label for="addChapterDescription" class="block text-sm font-medium text-gray-700">Description (Optional)</label>
+                <textarea id="addChapterDescription" name="Description" rows="3"
+                          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm"></textarea>
+            </div>
+            <div>
+                <label for="addChapterOrder" class="block text-sm font-medium text-gray-700">Order</label>
+                <input type="number" id="addChapterOrder" name="OrderIndex" value="1" min="1"
+                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm" />
+            </div>
+            <div class="flex justify-end gap-3 pt-4">
+                <button type="button" onclick="closeModal('addChapterModal')"
+                        class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">
+                    Cancel
+                </button>
+                <button type="submit"
+                        class="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700">
+                    Save Chapter
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Chapter Modal -->
+<div id="editChapterModal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-medium text-gray-900">Edit Chapter</h3>
+            <button type="button" onclick="closeModal('editChapterModal')" class="text-gray-400 hover:text-gray-500">
+                <i class="material-icons">close</i>
+            </button>
+        </div>
+        <form id="editChapterForm" class="space-y-4">
+            <input type="hidden" id="editChapterId" name="Id" />
+            <input type="hidden" id="editChapterCourseId" name="CourseId" />
+            <div>
+                <label for="editChapterTitle" class="block text-sm font-medium text-gray-700">Chapter Title</label>
+                <input type="text" id="editChapterTitle" name="Title" required
+                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm" />
+            </div>
+            <div>
+                <label for="editChapterDescription" class="block text-sm font-medium text-gray-700">Description (Optional)</label>
+                <textarea id="editChapterDescription" name="Description" rows="3"
+                          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm"></textarea>
+            </div>
+            <div>
+                <label for="editChapterOrder" class="block text-sm font-medium text-gray-700">Order</label>
+                <input type="number" id="editChapterOrder" name="OrderIndex" min="1"
+                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm" />
+            </div>
+            <div class="flex items-center">
+                <input type="checkbox" id="editChapterIsActive" name="IsActive" class="h-4 w-4 rounded border-gray-300 text-cyan-600 focus:ring-cyan-500" />
+                <label for="editChapterIsActive" class="ml-2 block text-sm text-gray-700">Active</label>
+            </div>
+            <div class="flex justify-end gap-3 pt-4">
+                <button type="button" onclick="closeModal('editChapterModal')"
+                        class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">
+                    Cancel
+                </button>
+                <button type="submit"
+                        class="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700">
+                    Update Chapter
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Chapter Modal -->
+<div id="deleteChapterModal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Confirm Delete Chapter</h3>
+        <p class="text-sm text-gray-500 mb-4">Are you sure you want to delete this chapter? This won't delete the content inside the chapter, but will move it to "Uncategorized Content".</p>
+        <div class="flex justify-end gap-3">
+            <button type="button" onclick="closeModal('deleteChapterModal')" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">
+                Cancel
+            </button>
+            <button type="button" onclick="deleteChapter()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                Delete
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Success/Error Toast Notification -->
+<div id="toastNotification" class="hidden fixed bottom-4 right-4 p-4 rounded-lg shadow-lg max-w-xs z-50">
+    <div class="flex items-center">
+        <i id="toastIcon" class="material-icons mr-2"></i>
+        <p id="toastMessage"></p>
+    </div>
+</div>
+
+
+
+
+
+@section Scripts {
+    <script>
+        function searchContent() {
+            const searchInput = document.getElementById('contentSearch');
+            const filter = searchInput.value.toUpperCase();
+            const contentRows = document.querySelectorAll('.content-row');
+
+            contentRows.forEach(row => {
+                const rowText = row.textContent || row.innerText;
+                if (rowText.toUpperCase().indexOf(filter) > -1) {
+                    row.style.display = '';
+                    // Make parent chapter visible
+                    const chapterSection = row.closest('[id^="chapter-"]');
+                    if (chapterSection) {
+                        chapterSection.style.display = 'block';
+                    }
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        function toggleSection(id) {
+            const section = document.getElementById(id);
+            const icon = document.getElementById(id + '-icon');
+
+            if (section.style.display === 'none') {
+                section.style.display = 'block';
+                icon.classList.remove('rotate-180');
+            } else {
+                section.style.display = 'none';
+                icon.classList.add('rotate-180');
+            }
+        }
+
+        function confirmDelete(id) {
+            document.getElementById('deleteContentId').value = id;
+            document.getElementById('deleteForm').action = '@Url.Action("DeleteContent", "Lecturer")';
+            document.getElementById('deleteModal').classList.remove('hidden');
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.add('hidden');
+        }
+
+        // Initialize all sections as expanded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Expand all sections by default
+            const sections = document.querySelectorAll('[id^="chapter-"], #uncategorized-content');
+            sections.forEach(section => {
+                section.style.display = 'block';
+            });
+        });
+
+
+
+
+
+        // Chapter CRUD functions
+        function openAddChapterModal() {
+            document.getElementById('addChapterModal').classList.remove('hidden');
+            document.getElementById('addChapterTitle').focus();
+    
+            // Set default order as highest order + 1
+            const chapters = document.querySelectorAll('[id^="chapter-"]:not([id$="-icon"])');
+            let maxOrder = 0;
+    
+            if (chapters.length > 0) {
+                chapters.forEach(chapter => {
+                    const chapterId = chapter.id.replace('chapter-', '');
+                    const orderElement = document.querySelector(`[data-chapter-order="${chapterId}"]`);
+                    if (orderElement) {
+                        const order = parseInt(orderElement.value || '0');
+                        maxOrder = Math.max(maxOrder, order);
+                    }
+                });
+            }
+    
+            document.getElementById('addChapterOrder').value = maxOrder + 1;
+        }
+
+        function openEditChapterModal(chapterId) {
+            // Prevent event propagation to avoid toggling the chapter
+            event.stopPropagation();
+    
+            // Get chapter data via AJAX
+            fetch(`/Lecturer/GetChapter/${chapterId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Populate form
+                    document.getElementById('editChapterId').value = data.id;
+                    document.getElementById('editChapterCourseId').value = data.courseId;
+                    document.getElementById('editChapterTitle').value = data.title;
+                    document.getElementById('editChapterDescription').value = data.description || '';
+                    document.getElementById('editChapterOrder').value = data.orderIndex;
+                    document.getElementById('editChapterIsActive').checked = data.isActive;
+            
+                    // Show modal
+                    document.getElementById('editChapterModal').classList.remove('hidden');
+                    document.getElementById('editChapterTitle').focus();
+                })
+                .catch(error => {
+                    showToast('Error loading chapter data. Please try again.', 'error');
+                    console.error('Error fetching chapter:', error);
+                });
+        }
+
+                function confirmDeleteChapter(chapterId) {
+            // Prevent event propagation to avoid toggling the chapter
+            event.stopPropagation();
+
+            // Store the chapter ID for deletion
+            window.chapterToDelete = chapterId;
+
+            // Show confirmation modal
+            document.getElementById('deleteChapterModal').classList.remove('hidden');
+        }
+
+                function deleteChapter() {
+            const chapterId = window.chapterToDelete;
+            if (!chapterId) return;
+
+            // Send delete request via AJAX
+            fetch(`/Lecturer/DeleteChapter/${chapterId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    showToast('Chapter deleted successfully', 'success');
+
+                    // Reload the page after a short delay (to allow the toast to be seen)
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000); // 1-second delay
+                } else {
+                    showToast(data.message || 'Failed to delete chapter', 'error');
+                    closeModal('deleteChapterModal');
+                }
+            })
+            .catch(error => {
+                console.error("Error in deleteChapter:", error);
+                showToast('Error deleting chapter. Please try again.', 'error');
+                closeModal('deleteChapterModal');
+            });
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toastNotification');
+            const toastMessage = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+    
+            // Set message
+            toastMessage.textContent = message;
+    
+            // Set colors and icon based on type
+            if (type === 'error') {
+                toast.className = 'fixed bottom-4 right-4 p-4 rounded-lg shadow-lg max-w-xs z-50 bg-red-100 text-red-800';
+                toastIcon.textContent = 'error';
+                toastIcon.className = 'material-icons mr-2 text-red-500';
+            } else {
+                toast.className = 'fixed bottom-4 right-4 p-4 rounded-lg shadow-lg max-w-xs z-50 bg-green-100 text-green-800';
+                toastIcon.textContent = 'check_circle';
+                toastIcon.className = 'material-icons mr-2 text-green-500';
+            }
+    
+            // Show toast
+            toast.classList.remove('hidden');
+    
+            // Hide after 3 seconds
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 5000);
+        }
+
+        // Initialize forms with AJAX submission
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add Chapter Form
+        const addChapterForm = document.getElementById('addChapterForm');
+            if (addChapterForm) {
+                addChapterForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+
+                    // Create data object directly (instead of using FormData)
+                    const chapterData = {
+                        CourseId: document.getElementById('addChapterCourseId').value,
+                        Title: document.getElementById('addChapterTitle').value,
+                        Description: document.getElementById('addChapterDescription').value,
+                        OrderIndex: parseInt(document.getElementById('addChapterOrder').value),
+                        CreatedAt: new Date().toISOString()
+                    };
+
+                    console.log("Sending data:", JSON.stringify(chapterData));
+
+                    fetch('/Lecturer/CreateChapter', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                        },
+                        body: JSON.stringify(chapterData)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log("Response:", data);
+                        if (data.success) {
+                            window.location.reload();
+                        } else {
+                            showToast(data.message || 'Failed to create chapter', 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error:", error);
+                        showToast('Error creating chapter. Please try again.', 'error');
+                    });
+                });
+            }
+    
+            // Edit Chapter Form
+            const editChapterForm = document.getElementById('editChapterForm');
+            if (editChapterForm) {
+                editChapterForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+            
+                    const formData = new FormData(editChapterForm);
+                    const chapterData = {};
+            
+                    formData.forEach((value, key) => {
+                        if (key === 'IsActive') {
+                            chapterData[key] = true; // Checkbox is checked
+                        } else {
+                            chapterData[key] = value;
+                        }
+                    });
+            
+                    // Handle unchecked checkbox (not included in FormData)
+                    if (!formData.has('IsActive')) {
+                        chapterData['IsActive'] = false;
+                    }
+            
+                    // Add UpdatedAt and UpdatedBy fields
+                    chapterData.UpdatedAt = new Date().toISOString();
+            
+                    fetch('/Lecturer/UpdateChapter', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                        },
+                        body: JSON.stringify(chapterData)
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            // Reload page to show updated chapter
+                            window.location.reload();
+                        } else {
+                            showToast(data.message || 'Failed to update chapter', 'error');
+                        }
+                    })
+                    .catch(error => {
+                        showToast('Error updating chapter. Please try again.', 'error');
+                        console.error('Error updating chapter:', error);
+                    });
+                });
+            }
+        });
+    </script>
+}

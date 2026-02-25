@@ -1,0 +1,1385 @@
+﻿@model IEnumerable<SIS.Models.StudentAccommodation.Hostel>
+
+<div class="h-[90vh] p-4">
+    <!-- Header Section -->
+    <div class="flex justify-between items-center mb-4">
+        <div class="flex items-center text-gray-800">
+            <i class="material-icons text-3xl mr-2">apartment</i>
+            <div>
+                <h1 class="text-2xl font-bold">Hostel Management</h1>
+                <p class="text-sm text-slate-600">Manage hostel buildings for student accommodation</p>
+            </div>
+        </div>
+        <button type="button"
+                onclick="showCreateHostelModal()"
+                class="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors flex items-center">
+            <i class="material-icons mr-2">add_circle</i>
+            Create Hostel
+        </button>
+    </div>
+
+    <!-- Main Content Layout -->
+    <div class="flex gap-4 h-[calc(90vh-80px)]">
+        <!-- Main Table Section (3/4 width) -->
+        <div class="w-3/4">
+            <div class="bg-white rounded-lg shadow-md h-full">
+                <div class="p-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <i class="material-icons text-slate-400 text-sm">search</i>
+                            </div>
+                            <input type="text" id="searchInput"
+                                   class="block w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500"
+                                   placeholder="Search hostels..." />
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <div class="flex items-center">
+                                <label for="filterCampus" class="text-sm text-slate-600 mr-2">Campus:</label>
+                                <select id="filterCampus"
+                                        class="px-4 py-2 border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500">
+                                    <option value="all">All Campuses</option>
+                                    @if (ViewBag.Campuses != null)
+                                    {
+                                        foreach (var item in ViewBag.Campuses)
+                                        {
+                                            <option value="@item.Value">@item.Text</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                            <div class="flex items-center">
+                                <label for="filterGender" class="text-sm text-slate-600 mr-2">Gender:</label>
+                                <select id="filterGender"
+                                        class="px-4 py-2 border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500">
+                                    <option value="all">All Types</option>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                    <option value="mixed">Mixed</option>
+                                </select>
+                            </div>
+                            <div class="flex items-center">
+                                <label for="filterStatus" class="text-sm text-slate-600 mr-2">Status:</label>
+                                <select id="filterStatus"
+                                        class="px-4 py-2 border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500">
+                                    <option value="all">All Statuses</option>
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="overflow-y-auto h-[calc(100%-60px)]">
+                        @if (TempData["Success"] != null)
+                        {
+                            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4" role="alert">
+                                <p>@TempData["Success"]</p>
+                            </div>
+                        }
+
+                        @if (TempData["Error"] != null)
+                        {
+                            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" role="alert">
+                                <p>@TempData["Error"]</p>
+                            </div>
+                        }
+
+                        <table id="hostelsTable" class="w-full text-sm text-gray-600">
+                            <thead class="sticky top-0 bg-slate-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left">
+                                        <span class="flex items-center">
+                                            #
+                                            <button class="sort-btn ml-1" data-sort="index">
+                                                <svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 15 4 4 4-4m0-6-4-4-4 4" />
+                                                </svg>
+                                            </button>
+                                        </span>
+                                    </th>
+                                    <th class="px-6 py-3 text-left">
+                                        <span class="flex items-center">
+                                            Hostel Name
+                                            <button class="sort-btn ml-1" data-sort="name">
+                                                <svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 15 4 4 4-4m0-6-4-4-4 4" />
+                                                </svg>
+                                            </button>
+                                        </span>
+                                    </th>
+                                    <th class="px-6 py-3 text-left">
+                                        <span class="flex items-center">
+                                            Campus
+                                        </span>
+                                    </th>
+                                    <th class="px-6 py-3 text-left">
+                                        <span class="flex items-center">
+                                            Gender
+                                        </span>
+                                    </th>
+                                    <th class="px-6 py-3 text-left">
+                                        <span class="flex items-center">
+                                            Capacity
+                                            <button class="sort-btn ml-1" data-sort="capacity">
+                                                <svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 15 4 4 4-4m0-6-4-4-4 4" />
+                                                </svg>
+                                            </button>
+                                        </span>
+                                    </th>
+                                    <th class="px-6 py-3 text-left">Status</th>
+                                    <th class="px-6 py-3 text-left">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="hostelsTableBody">
+                                @if (Model != null && Model.Any())
+                                {
+                                    int index = 1;
+                                    foreach (var hostel in Model)
+                                    {
+                                        <tr data-campus="@hostel.CampusId"
+                                            data-gender="@hostel.Gender?.ToLower()"
+                                            data-status="@hostel.Status.ToString().ToLower()"
+                                            class="border-b hover:bg-slate-50 transition-colors">
+                                            <td class="px-6 py-4">@index</td>
+                                            <td class="px-6 py-4 font-medium">@hostel.HostelName</td>
+                                            <td class="px-6 py-4">@(hostel.Campus?.CampusName ?? "N/A")</td>
+                                            <td class="px-6 py-4">
+                                                <span class="px-2 py-1 rounded-full text-xs @(hostel.Gender == "Male" ? "bg-blue-100 text-blue-800" : hostel.Gender == "Female" ? "bg-pink-100 text-pink-800" : "bg-purple-100 text-purple-800")">
+                                                    @hostel.Gender
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4">@hostel.TotalCapacity</td>
+                                            <td class="px-6 py-4">
+                                                <span class="px-2 py-1 rounded-full text-xs @(hostel.Status.ToString().ToLower() == "active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800")">
+                                                    @hostel.Status
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <div class="flex space-x-2">
+                                                    <a href="@Url.Action("Details", new { id = hostel.HostelId })"
+                                                       class="text-cyan-600 hover:text-cyan-800"
+                                                       title="View Details">
+                                                        <i class="material-icons text-lg">visibility</i>
+                                                    </a>
+                                                    <button type="button"
+                                                            onclick="showUpdateHostelModal(@hostel.HostelId)"
+                                                            class="text-blue-600 hover:text-blue-800"
+                                                            title="Edit">
+                                                        <i class="material-icons text-lg">edit</i>
+                                                    </button>
+                                                    <button type="button"
+                                                            onclick="showDeleteHostelModal(@hostel.HostelId, '@hostel.HostelName')"
+                                                            class="text-red-600 hover:text-red-800"
+                                                            title="Delete">
+                                                        <i class="material-icons text-lg">delete</i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        index++;
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="7" class="px-6 py-8 text-center text-slate-500">
+                                            <div class="flex flex-col items-center">
+                                                <i class="material-icons text-6xl mb-2 text-slate-300">apartment</i>
+                                                <p class="text-lg">No hostels found</p>
+                                                <p class="text-sm">Click "Create Hostel" to add your first hostel</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Side Statistics Panel (1/4 width) -->
+        <div class="w-1/4 flex flex-col gap-4">
+            <!-- Quick Stats Card -->
+            <div class="bg-white rounded-lg shadow-md p-4">
+                <h3 class="text-lg font-semibold text-slate-700 mb-3 flex items-center">
+                    <i class="material-icons mr-2">analytics</i>
+                    Quick Stats
+                </h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-slate-600">Total Hostels</span>
+                        <span id="totalHostels" class="text-xl font-bold text-cyan-600">@(Model?.Count() ?? 0)</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-slate-600">Total Capacity</span>
+                        <span class="text-xl font-bold text-blue-600">@(Model?.Sum(h => h.TotalCapacity ?? 0) ?? 0)</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-slate-600">Active</span>
+                        <span class="text-xl font-bold text-green-600">@(Model?.Count(h => h.Status.ToString().ToLower() == "active") ?? 0)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gender Distribution Chart -->
+            <div class="bg-white rounded-lg shadow-md p-4 flex-1">
+                <h3 class="text-lg font-semibold text-slate-700 mb-3 flex items-center">
+                    <i class="material-icons mr-2">pie_chart</i>
+                    Gender Distribution
+                </h3>
+                <div id="hostelGenderChart" class="h-[200px]"></div>
+            </div>
+
+            <!-- Campus Distribution Chart -->
+            <div class="bg-white rounded-lg shadow-md p-4 flex-1">
+                <h3 class="text-lg font-semibold text-slate-700 mb-3 flex items-center">
+                    <i class="material-icons mr-2">bar_chart</i>
+                    Campus Distribution
+                </h3>
+                <div id="hostelCampusChart" class="h-[200px]"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Indicator -->
+<div id="loadingIndicator" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-lg p-6 flex items-center space-x-4">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600"></div>
+        <span class="text-slate-700">Loading...</span>
+    </div>
+</div>
+
+<!-- Create Hostel Modal -->
+<div id="createHostelModal" class="fixed inset-0 z-50 hidden flex items-center justify-center">
+    <div class="fixed inset-0 bg-black opacity-40" onclick="hideCreateHostelModal()"></div>
+    <div class="bg-white rounded-lg shadow-lg w-11/12 md:w-2/3 z-10 overflow-hidden max-h-[90vh] overflow-y-auto">
+        <div class="px-6 py-4 bg-cyan-600 text-white sticky top-0">
+            <h3 class="text-xl font-semibold flex items-center">
+                <i class="material-icons mr-2">add_circle</i>
+                Create New Hostel
+            </h3>
+        </div>
+        <form id="createHostelForm" method="post">
+            @Html.AntiForgeryToken()
+            <div class="px-6 py-4">
+                <!-- Basic Information -->
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="relative z-0 w-full group">
+                        <input required type="text" name="HostelName" id="hostelName"
+                               class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
+                               placeholder=" " />
+                        <label for="hostelName"
+                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                            Hostel Name
+                        </label>
+                    </div>
+
+                    <div class="relative z-0 w-full group">
+                        <select required name="CampusId" id="campusID"
+                                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer">
+                            <option value="">Select Campus</option>
+                            @if (ViewBag.Campuses != null)
+                            {
+                                foreach (var item in ViewBag.Campuses)
+                                {
+                                    <option value="@item.Value">@item.Text</option>
+                                }
+                            }
+                        </select>
+                        <label for="campusID"
+                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                            Campus
+                        </label>
+                    </div>
+
+                    <div class="relative z-0 w-full group">
+                        <select required name="Gender" id="gender"
+                                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer">
+                            <option value="">Select Gender</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Mixed">Mixed</option>
+                        </select>
+                        <label for="gender"
+                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                            Gender
+                        </label>
+                    </div>
+
+                    <div class="relative z-0 w-full group">
+                        <select name="WardenId" id="wardenID"
+                                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer">
+                            <option value="">Select Warden (Optional)</option>
+                            @if (ViewBag.Wardens != null)
+                            {
+                                foreach (var item in ViewBag.Wardens)
+                                {
+                                    <option value="@item.Value">@item.Text</option>
+                                }
+                            }
+                        </select>
+                        <label for="wardenID"
+                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                            Warden
+                        </label>
+                    </div>
+
+                    <div class="relative z-0 w-full group">
+                        <input required type="number" name="TotalRooms" id="totalRooms"
+                               class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
+                               placeholder=" " min="1" />
+                        <label for="totalRooms"
+                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                            Total Rooms
+                        </label>
+                    </div>
+
+                    <div class="relative z-0 w-full group">
+                        <select required name="Status" id="status"
+                                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer">
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                            <option value="Maintenance">Maintenance</option>
+                        </select>
+                        <label for="status"
+                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                            Status
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Room Generation Settings -->
+                <div class="border-t border-slate-200 pt-4 mb-6">
+                    <h4 class="text-md font-semibold text-slate-700 mb-4 flex items-center">
+                        <i class="material-icons mr-2 text-lg">settings</i>
+                        Room Generation Settings
+                    </h4>
+                    <div class="grid grid-cols-3 gap-4">
+                        <!-- Default Room Type -->
+                        <div class="relative z-0 w-full group">
+                            <select name="DefaultRoomType" id="defaultRoomType"
+                                    class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer">
+                                <option value="Single">Single</option>
+                                <option value="Double">Double</option>
+                                <option value="Triple">Triple</option>
+                                <option value="Quad">Quad</option>
+                            </select>
+                            <label for="defaultRoomType"
+                                   class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                Default Room Type
+                            </label>
+                        </div>
+
+                        <!-- Default Capacity -->
+                        <div class="relative z-0 w-full group">
+                            <input type="number" name="DefaultCapacity" id="defaultCapacity"
+                                   class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
+                                   placeholder=" " required min="1" max="10" value="1" onchange="generateBedDistributionInputs()" />
+                            <label for="defaultCapacity"
+                                   class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                Capacity Per Room
+                            </label>
+                        </div>
+
+                        <!-- Rooms Per Floor -->
+                        <div class="relative z-0 w-full group">
+                            <input type="number" name="RoomsPerFloor" id="roomsPerFloor"
+                                   class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
+                                   placeholder=" " required min="1" value="10" />
+                            <label for="roomsPerFloor"
+                                   class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                Rooms Per Floor
+                            </label>
+                        </div>
+
+                        <!-- Room Numbering Pattern -->
+                        <div class="relative z-0 w-full group col-span-3">
+                            <input type="text" name="RoomNumberingPattern" id="roomNumberingPattern"
+                                   class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
+                                   placeholder=" " required value="F{0}R{1}" />
+                            <label for="roomNumberingPattern"
+                                   class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                Room Numbering Pattern (e.g., F{0}R{1})
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Auto Generate Beds -->
+                    <div class="flex items-center mt-4">
+                        <input id="autoGenerateBeds" name="AutoGenerateBeds" type="checkbox" value="true" checked onchange="toggleBedDistributionSection()"
+                               class="w-4 h-4 text-cyan-600 bg-gray-100 border-gray-300 rounded focus:ring-cyan-500 focus:ring-2">
+                        <label for="autoGenerateBeds" class="ms-2 text-sm font-medium text-gray-700">Automatically create bed spaces for each room</label>
+                    </div>
+                </div>
+
+                <!-- Bed Distribution Configuration Section -->
+                <div id="bedDistributionSection" class="border-t border-slate-200 pt-4 mb-6">
+                    <h4 class="text-md font-semibold text-slate-700 mb-4 flex items-center">
+                        <i class="material-icons mr-2 text-lg">bed</i>
+                        Bed Space Distribution (Year & Semester)
+                        <span class="ml-2 text-xs text-slate-500 font-normal">(0 = All Years/Semesters)</span>
+                    </h4>
+                    <div id="bedDistributionInputs" class="grid grid-cols-2 gap-4">
+                        <!-- Dynamic inputs will be generated here -->
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div class="relative z-0 w-full group">
+                    <textarea required name="Description" id="description" rows="3"
+                              class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
+                              placeholder=" "></textarea>
+                    <label for="description"
+                           class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                        Description
+                    </label>
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-gray-50 flex justify-end gap-2">
+                <button type="button" onclick="hideCreateHostelModal()" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit" class="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors">
+                    Create Hostel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Update Hostel Modal -->
+<div id="updateHostelModal" class="fixed inset-0 z-50 hidden flex items-center justify-center">
+    <div class="fixed inset-0 bg-black opacity-40" onclick="hideUpdateHostelModal()"></div>
+    <div class="bg-white rounded-lg shadow-lg w-11/12 md:w-2/3 z-10 overflow-hidden max-h-[90vh] overflow-y-auto">
+        <div class="px-6 py-4 bg-blue-600 text-white sticky top-0">
+            <h3 class="text-xl font-semibold flex items-center">
+                <i class="material-icons mr-2">edit</i>
+                Update Hostel
+            </h3>
+        </div>
+        <form id="updateHostelForm" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="updateHostelID" name="HostelId" />
+            <input type="hidden" id="updateHostelIDForUrl" />
+            <div class="px-6 py-4">
+                <!-- Basic Information -->
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="relative z-0 w-full group">
+                        <input required type="text" name="HostelName" id="updateHostelName"
+                               class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
+                               placeholder=" " />
+                        <label for="updateHostelName"
+                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                            Hostel Name
+                        </label>
+                    </div>
+
+                    <div class="relative z-0 w-full group">
+                        <select required name="CampusId" id="updateCampusID"
+                                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer">
+                            <option value="">Select Campus</option>
+                            @if (ViewBag.Campuses != null)
+                            {
+                                foreach (var item in ViewBag.Campuses)
+                                {
+                                    <option value="@item.Value">@item.Text</option>
+                                }
+                            }
+                        </select>
+                        <label for="updateCampusID"
+                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                            Campus
+                        </label>
+                    </div>
+
+                    <div class="relative z-0 w-full group">
+                        <select required name="Gender" id="updateGender"
+                                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer">
+                            <option value="">Select Gender</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Mixed">Mixed</option>
+                        </select>
+                        <label for="updateGender"
+                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                            Gender
+                        </label>
+                    </div>
+
+                    <div class="relative z-0 w-full group">
+                        <select name="WardenId" id="updateWardenID"
+                                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer">
+                            <option value="">Select Warden (Optional)</option>
+                            @if (ViewBag.Wardens != null)
+                            {
+                                foreach (var item in ViewBag.Wardens)
+                                {
+                                    <option value="@item.Value">@item.Text</option>
+                                }
+                            }
+                        </select>
+                        <label for="updateWardenID"
+                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                            Warden
+                        </label>
+                    </div>
+
+                    <div class="relative z-0 w-full group">
+                        <input required type="number" name="TotalRooms" id="updateTotalRooms"
+                               class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
+                               placeholder=" " min="1" />
+                        <label for="updateTotalRooms"
+                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                            Total Rooms
+                        </label>
+                    </div>
+
+                    <div class="relative z-0 w-full group">
+                        <select required name="Status" id="updateStatus"
+                                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer">
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                            <option value="Maintenance">Maintenance</option>
+                        </select>
+                        <label for="updateStatus"
+                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                            Status
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Room Generation Settings -->
+                <div class="border-t border-slate-200 pt-4 mb-6">
+                    <h4 class="text-md font-semibold text-slate-700 mb-4 flex items-center">
+                        <i class="material-icons mr-2 text-lg">settings</i>
+                        Room Generation Settings
+                    </h4>
+                    <div class="grid grid-cols-3 gap-4">
+                        <!-- Default Room Type -->
+                        <div class="relative z-0 w-full group">
+                            <select name="DefaultRoomType" id="updateDefaultRoomType"
+                                    class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer">
+                                <option value="Single">Single</option>
+                                <option value="Double">Double</option>
+                                <option value="Triple">Triple</option>
+                                <option value="Quad">Quad</option>
+                            </select>
+                            <label for="updateDefaultRoomType"
+                                   class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                Default Room Type
+                            </label>
+                        </div>
+
+                        <!-- Default Capacity -->
+                        <div class="relative z-0 w-full group">
+                            <input type="number" name="DefaultCapacity" id="updateDefaultCapacity"
+                                   class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
+                                   placeholder=" " required min="1" />
+                            <label for="updateDefaultCapacity"
+                                   class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                Capacity Per Room
+                            </label>
+                        </div>
+
+                        <!-- Rooms Per Floor -->
+                        <div class="relative z-0 w-full group">
+                            <input type="number" name="RoomsPerFloor" id="updateRoomsPerFloor"
+                                   class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
+                                   placeholder=" " required min="1" />
+                            <label for="updateRoomsPerFloor"
+                                   class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                Rooms Per Floor
+                            </label>
+                        </div>
+
+                        <!-- Room Numbering Pattern -->
+                        <div class="relative z-0 w-full group col-span-3">
+                            <input type="text" name="RoomNumberingPattern" id="updateRoomNumberingPattern"
+                                   class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
+                                   placeholder=" " required />
+                            <label for="updateRoomNumberingPattern"
+                                   class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                Room Numbering Pattern (e.g., F{0}R{1})
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Auto Generate Beds -->
+                    <div class="flex items-center mt-4">
+                        <input id="updateAutoGenerateBeds" name="AutoGenerateBeds" type="checkbox" value="true"
+                               class="w-4 h-4 text-cyan-600 bg-gray-100 border-gray-300 rounded focus:ring-cyan-500 focus:ring-2">
+                        <label for="updateAutoGenerateBeds" class="ms-2 text-sm font-medium text-gray-700">Automatically create bed spaces for new rooms</label>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div class="relative z-0 w-full group">
+                    <textarea required name="Description" id="updateDescription" rows="3"
+                              class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
+                              placeholder=" "></textarea>
+                    <label for="updateDescription"
+                           class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                        Description
+                    </label>
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-gray-50 flex justify-end gap-2">
+                <button type="button" onclick="hideUpdateHostelModal()" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    Update Hostel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Hostel Modal -->
+<div id="deleteHostelModal" class="fixed inset-0 z-50 hidden flex items-center justify-center">
+    <div class="fixed inset-0 bg-black opacity-40" onclick="hideDeleteHostelModal()"></div>
+    <div class="bg-white rounded-lg shadow-lg w-full md:w-1/3 z-10 overflow-hidden">
+        <div class="px-6 py-4 bg-red-600 text-white">
+            <h3 class="text-xl font-semibold flex items-center">
+                <i class="material-icons mr-2">warning</i>
+                Confirm Delete
+            </h3>
+        </div>
+        <form id="deleteHostelForm" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="deleteHostelID" name="id" />
+            <div class="px-6 py-4">
+                <p class="text-slate-700 mb-4">
+                    Are you sure you want to delete the hostel
+                    <strong id="deleteHostelName"></strong>?
+                    This action cannot be undone.
+                </p>
+                <div id="hasRoomsWarning" class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mt-4 hidden">
+                    <p class="font-bold">Warning!</p>
+                    <p>This hostel has existing rooms. You must remove all rooms before deleting the hostel.</p>
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-gray-50 flex justify-end gap-2">
+                <button type="button" onclick="hideDeleteHostelModal()" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit" id="confirmDeleteBtn" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                    Delete Hostel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- ApexCharts for statistics -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+    <script>
+        // Function to generate bed distribution inputs based on capacity
+        function generateBedDistributionInputs() {
+            const capacity = parseInt(document.getElementById('defaultCapacity').value) || 0;
+            const container = document.getElementById('bedDistributionInputs');
+            const autoGenerate = document.getElementById('autoGenerateBeds').checked;
+
+            // Clear existing inputs
+            container.innerHTML = '';
+
+            if (!autoGenerate || capacity <= 0) {
+                document.getElementById('bedDistributionSection').style.display = 'none';
+                return;
+            }
+
+            document.getElementById('bedDistributionSection').style.display = 'block';
+
+            // Generate inputs for each bed space
+            for (let i = 0; i < capacity; i++) {
+                const bedLetter = String.fromCharCode(65 + i); // A, B, C, etc.
+
+                const bedCard = document.createElement('div');
+                bedCard.className = 'border border-slate-200 rounded-lg p-4 bg-slate-50';
+
+                bedCard.innerHTML = `
+                    <h5 class="font-semibold text-slate-700 mb-3 flex items-center">
+                        <i class="material-icons text-sm mr-1">bed</i>
+                        Bed Space ${bedLetter}
+                    </h5>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="relative z-0 w-full group">
+                            <input type="number"
+                                   name="bedDistributions[${i}].Year"
+                                   id="bed${i}Year"
+                                   class="block py-2 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
+                                   placeholder=" "
+                                   min="0"
+                                   max="7"
+                                   value="0" />
+                            <label for="bed${i}Year"
+                                   class="peer-focus:font-medium absolute text-xs text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                Year (0 = All)
+                            </label>
+                        </div>
+                        <div class="relative z-0 w-full group">
+                            <input type="number"
+                                   name="bedDistributions[${i}].Semester"
+                                   id="bed${i}Semester"
+                                   class="block py-2 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
+                                   placeholder=" "
+                                   min="0"
+                                   max="2"
+                                   value="0" />
+                            <label for="bed${i}Semester"
+                                   class="peer-focus:font-medium absolute text-xs text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                Semester (0 = All)
+                            </label>
+                        </div>
+                        <input type="hidden" name="bedDistributions[${i}].BedIndex" value="${i}" />
+                    </div>
+                `;
+
+                container.appendChild(bedCard);
+            }
+        }
+
+        // Function to toggle bed distribution section
+        function toggleBedDistributionSection() {
+            const autoGenerate = document.getElementById('autoGenerateBeds').checked;
+            if (autoGenerate) {
+                generateBedDistributionInputs();
+            } else {
+                document.getElementById('bedDistributionSection').style.display = 'none';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const createHostelModal = document.getElementById('createHostelModal');
+            const updateHostelModal = document.getElementById('updateHostelModal');
+            const deleteHostelModal = document.getElementById('deleteHostelModal');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+
+            const hostelsTableBody = document.getElementById('hostelsTableBody');
+            const searchInput = document.getElementById('searchInput');
+            const filterCampus = document.getElementById('filterCampus');
+            const filterGender = document.getElementById('filterGender');
+            const filterStatus = document.getElementById('filterStatus');
+
+            // Initialize bed distribution inputs when capacity changes
+            document.getElementById('defaultCapacity').addEventListener('change', generateBedDistributionInputs);
+
+            // Initialize on page load
+            generateBedDistributionInputs();
+
+            // Filtering and Search
+            const filterTable = () => {
+                const searchTerm = searchInput.value.toLowerCase();
+                const selectedCampus = filterCampus.value;
+                const selectedGender = filterGender.value;
+                const selectedStatus = filterStatus.value;
+
+                const rows = hostelsTableBody.querySelectorAll('tr');
+                let visibleCount = 0;
+
+                rows.forEach(row => {
+                    if (row.querySelector('td[colspan]')) return;
+
+                    const hostelName = row.children[1]?.textContent.toLowerCase() || '';
+                    const campusId = row.getAttribute('data-campus');
+                    const gender = row.getAttribute('data-gender');
+                    const status = row.getAttribute('data-status');
+
+                    const matchesSearch = hostelName.includes(searchTerm);
+                    const matchesCampus = selectedCampus === 'all' || campusId === selectedCampus;
+                    const matchesGender = selectedGender === 'all' || gender === selectedGender;
+                    const matchesStatus = selectedStatus === 'all' || status === selectedStatus;
+
+                    if (matchesSearch && matchesCampus && matchesGender && matchesStatus) {
+                        row.style.display = '';
+                        visibleCount++;
+                        row.children[0].textContent = visibleCount;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            };
+
+            // Sorting
+            let sortState = {};
+            const sortTable = (key) => {
+                const rows = Array.from(hostelsTableBody.querySelectorAll('tr')).filter(row => !row.querySelector('td[colspan]'));
+
+                if (!sortState[key]) sortState[key] = 'asc';
+                else sortState[key] = sortState[key] === 'asc' ? 'desc' : 'asc';
+
+                rows.sort((a, b) => {
+                    let aVal, bVal;
+
+                    switch (key) {
+                        case 'index':
+                            aVal = parseInt(a.children[0].textContent);
+                            bVal = parseInt(b.children[0].textContent);
+                            break;
+                        case 'name':
+                            aVal = a.children[1].textContent.toLowerCase();
+                            bVal = b.children[1].textContent.toLowerCase();
+                            break;
+                        case 'capacity':
+                            aVal = parseInt(a.children[4].textContent) || 0;
+                            bVal = parseInt(b.children[4].textContent) || 0;
+                            break;
+                        default:
+                            return 0;
+                    }
+
+                    if (sortState[key] === 'asc') {
+                        return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
+                    } else {
+                        return aVal < bVal ? 1 : aVal > bVal ? -1 : 0;
+                    }
+                });
+
+                rows.forEach((row, index) => {
+                    hostelsTableBody.appendChild(row);
+                    row.children[0].textContent = index + 1;
+                });
+            };
+
+            // Initialize ApexCharts donut chart for gender distribution
+            const initializeGenderChart = () => {
+                const chartContainer = document.getElementById('hostelGenderChart');
+                const rows = hostelsTableBody.querySelectorAll('tr');
+
+                if (rows.length === 0) {
+                    chartContainer.innerHTML = `
+                        <div class="flex flex-col items-center justify-center h-full text-slate-500">
+                            <p class="text-sm">Chart data will appear here once hostels are added.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const genderCounts = { male: 0, female: 0, mixed: 0 };
+
+                rows.forEach(row => {
+                    const gender = row.getAttribute('data-gender');
+                    if (gender && genderCounts.hasOwnProperty(gender)) {
+                        genderCounts[gender]++;
+                    }
+                });
+
+                const series = [genderCounts.male, genderCounts.female, genderCounts.mixed];
+                const labels = ['Male', 'Female', 'Mixed'];
+
+                const options = {
+                    series: series,
+                    chart: {
+                        type: 'donut',
+                        height: '90%'
+                    },
+                    labels: labels,
+                    colors: ['#3b82f6', '#ec4899', '#a855f7'],
+                    plotOptions: {
+                        pie: {
+                            donut: {
+                                size: '70%',
+                                labels: {
+                                    show: true,
+                                    total: {
+                                        show: true,
+                                        label: 'Total',
+                                        formatter: () => series.reduce((a, b) => a + b, 0)
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    dataLabels: { enabled: false },
+                    responsive: [{
+                        breakpoint: 480,
+                        options: {
+                            chart: { height: 200 },
+                            legend: { show: false }
+                        }
+                    }],
+                    legend: { show: false }
+                };
+
+                const chart = new ApexCharts(chartContainer, options);
+                chart.render();
+            };
+
+            // Initialize ApexCharts bar chart for campus distribution
+            const initializeCampusChart = () => {
+                const chartContainer = document.getElementById('hostelCampusChart');
+                const rows = hostelsTableBody.querySelectorAll('tr');
+
+                if (rows.length === 0) {
+                    chartContainer.innerHTML = `
+                        <div class="flex flex-col items-center justify-center h-full text-slate-500">
+                            <p class="text-sm">Chart data will appear here once hostels are added.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const campusCounts = {};
+                const campusNames = {};
+
+                Array.from(filterCampus.options).forEach(option => {
+                    if (option.value !== 'all') {
+                        campusCounts[option.value] = 0;
+                        campusNames[option.value] = option.text;
+                    }
+                });
+
+                rows.forEach(row => {
+                    const campusId = row.getAttribute('data-campus');
+                    if (campusId in campusCounts) {
+                        campusCounts[campusId]++;
+                    }
+                });
+
+                const campusData = [];
+                for (const campusId in campusCounts) {
+                    campusData.push({
+                        x: campusNames[campusId] || `Campus ${campusId}`,
+                        y: campusCounts[campusId]
+                    });
+                }
+
+                campusData.sort((a, b) => b.y - a.y);
+
+                const options = {
+                    series: [{ name: 'Hostels', data: campusData }],
+                    chart: {
+                        type: 'bar',
+                        height: '90%',
+                        toolbar: { show: false }
+                    },
+                    plotOptions: {
+                        bar: {
+                            borderRadius: 4,
+                            horizontal: true,
+                            barHeight: '70%',
+                            distributed: true
+                        }
+                    },
+                    colors: ['#06b6d4', '#0891b2', '#0e7490', '#155e75', '#164e63'],
+                    dataLabels: {
+                        enabled: true,
+                        formatter: (val) => val,
+                        style: {
+                            fontSize: '12px',
+                            colors: ['#fff']
+                        }
+                    },
+                    xaxis: {
+                        categories: campusData.map(item => item.x),
+                        labels: { style: { fontSize: '12px' } }
+                    },
+                    yaxis: { labels: { show: true } },
+                    grid: { show: false },
+                    legend: { show: false }
+                };
+
+                const chart = new ApexCharts(chartContainer, options);
+                chart.render();
+            };
+
+            // Notification function for user feedback
+            const showNotification = (message, type = 'success') => {
+                const notification = document.createElement('div');
+                notification.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg transition-all transform translate-x-0 ${
+                    type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+                }`;
+                notification.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <i class="material-icons">${type === 'success' ? 'check_circle' : 'error'}</i>
+                        <span>${message}</span>
+                    </div>
+                `;
+                document.body.appendChild(notification);
+
+                // Animate in
+                setTimeout(() => {
+                    notification.style.transform = 'translateX(0)';
+                }, 10);
+
+                // Remove after 3 seconds
+                setTimeout(() => {
+                    notification.style.transform = 'translateX(400px)';
+                    setTimeout(() => {
+                        notification.remove();
+                    }, 300);
+                }, 3000);
+            };
+
+            // Helper function to clean form data before submission
+            const cleanFormData = (formData) => {
+                // If WardenId is empty string, remove it so it's not sent
+                if (formData.get('WardenId') === '') {
+                    formData.delete('WardenId');
+                }
+                return formData;
+            };
+
+            // Handle create form submission
+            const createHostelForm = document.getElementById('createHostelForm');
+            const createSubmitBtn = createHostelForm.querySelector('button[type="submit"]');
+            const createSubmitBtnOriginalText = createSubmitBtn.innerHTML;
+
+            createHostelForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                // Show loading on button
+                createSubmitBtn.disabled = true;
+                createSubmitBtn.innerHTML = `
+                    <div class="flex items-center justify-center">
+                        <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                        Creating...
+                    </div>
+                `;
+                loadingIndicator.style.display = 'flex';
+
+                try {
+                    let formData = new FormData(createHostelForm);
+                    formData = cleanFormData(formData);
+
+                    const response = await fetch('/Hostel/CreateHostel', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (response.redirected) {
+                        // If redirected, it likely succeeded - follow the redirect
+                        window.location.href = response.url;
+                        return;
+                    }
+
+                    if (response.ok) {
+                        // Close modal
+                        hideCreateHostelModal();
+
+                        // Show success message
+                        showNotification('Hostel created successfully!', 'success');
+
+                        // Reload the page to show updated data with new statistics
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    } else {
+                        let errorText = 'Error creating hostel';
+                        try {
+                            errorText = await response.text();
+                            // Try to extract meaningful error message
+                            const parser = new DOMParser();
+                            const doc = parser.parseFromString(errorText, 'text/html');
+                            const errorMsg = doc.querySelector('.validation-summary-errors') ||
+                                           doc.querySelector('.field-validation-error');
+                            if (errorMsg) {
+                                errorText = errorMsg.textContent.trim();
+                            }
+                        } catch (parseError) {
+                            console.error('Error parsing response:', parseError);
+                        }
+                        console.error('Server response:', errorText);
+                        showNotification(errorText, 'error');
+                    }
+                } catch (error) {
+                    console.error('Network error:', error);
+                    showNotification('Network error. Please check your connection and try again.', 'error');
+                } finally {
+                    // Reset button state
+                    createSubmitBtn.disabled = false;
+                    createSubmitBtn.innerHTML = createSubmitBtnOriginalText;
+                    loadingIndicator.style.display = 'none';
+                }
+            });
+
+            // Modal functions
+            window.showCreateHostelModal = () => {
+                document.getElementById('createHostelForm').reset();
+                generateBedDistributionInputs(); // Generate inputs for default capacity
+                createHostelModal.classList.remove('hidden');
+            };
+
+            window.hideCreateHostelModal = () => {
+                createHostelModal.classList.add('hidden');
+            };
+
+            // Handle update form submission
+            const updateHostelForm = document.getElementById('updateHostelForm');
+            const updateSubmitBtn = updateHostelForm.querySelector('button[type="submit"]');
+            const updateSubmitBtnOriginalText = updateSubmitBtn.innerHTML;
+
+            updateHostelForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                // Show loading on button
+                updateSubmitBtn.disabled = true;
+                updateSubmitBtn.innerHTML = `
+                    <div class="flex items-center justify-center">
+                        <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                        Updating...
+                    </div>
+                `;
+                loadingIndicator.style.display = 'flex';
+
+                try {
+                    let formData = new FormData(updateHostelForm);
+                    formData = cleanFormData(formData);
+
+                    // Get the hostel ID from the hidden field
+                    const hostelId = document.getElementById('updateHostelIDForUrl').value;
+
+                    console.log('Updating hostel with ID:', hostelId);
+                    console.log('Form data:', Array.from(formData.entries()));
+
+                    const response = await fetch(`/Hostel/UpdateHostel/${hostelId}`, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    console.log('Response status:', response.status);
+                    console.log('Response redirected:', response.redirected);
+
+                    if (response.redirected) {
+                        // If redirected, it likely succeeded - follow the redirect
+                        window.location.href = response.url;
+                        return;
+                    }
+
+                    if (response.ok) {
+                        // Close modal
+                        hideUpdateHostelModal();
+
+                        // Show success message
+                        showNotification('Hostel updated successfully!', 'success');
+
+                        // Reload the page to show updated data
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    } else {
+                        let errorText = 'Error updating hostel';
+                        try {
+                            const responseText = await response.text();
+                            console.error('Error response:', responseText);
+                            errorText = responseText;
+
+                            const parser = new DOMParser();
+                            const doc = parser.parseFromString(errorText, 'text/html');
+                            const errorMsg = doc.querySelector('.validation-summary-errors') ||
+                                           doc.querySelector('.field-validation-error');
+                            if (errorMsg) {
+                                errorText = errorMsg.textContent.trim();
+                            }
+                        } catch (parseError) {
+                            console.error('Error parsing response:', parseError);
+                        }
+                        showNotification(errorText, 'error');
+                    }
+                } catch (error) {
+                    console.error('Network error:', error);
+                    showNotification('Network error. Please check your connection and try again.', 'error');
+                } finally {
+                    // Reset button state
+                    updateSubmitBtn.disabled = false;
+                    updateSubmitBtn.innerHTML = updateSubmitBtnOriginalText;
+                    loadingIndicator.style.display = 'none';
+                }
+            });
+
+            window.showUpdateHostelModal = async (id) => {
+                console.log('=== Opening Update Modal ===');
+                console.log('Hostel ID:', id);
+                loadingIndicator.style.display = 'flex';
+
+                try {
+                    const response = await fetch(`/Hostel/GetHostel/${id}`);
+                    console.log('GetHostel response status:', response.status);
+
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch hostel data');
+                    }
+
+                    const hostel = await response.json();
+                    console.log('Hostel data received:', hostel);
+
+                    // Set both hidden fields for the ID
+                    document.getElementById('updateHostelID').value = hostel.id;
+                    document.getElementById('updateHostelIDForUrl').value = hostel.id;
+
+                    console.log('Set updateHostelID to:', document.getElementById('updateHostelID').value);
+                    console.log('Set updateHostelIDForUrl to:', document.getElementById('updateHostelIDForUrl').value);
+
+                    document.getElementById('updateHostelName').value = hostel.name;
+                    document.getElementById('updateCampusID').value = hostel.campusId;
+                    document.getElementById('updateGender').value = hostel.gender;
+                    document.getElementById('updateWardenID').value = hostel.wardenId || '';
+                    document.getElementById('updateTotalRooms').value = hostel.totalRooms;
+                    document.getElementById('updateStatus').value = hostel.status;
+                    document.getElementById('updateDescription').value = hostel.description || '';
+
+                    document.getElementById('updateDefaultRoomType').value = hostel.defaultRoomType;
+                    document.getElementById('updateDefaultCapacity').value = hostel.defaultCapacity;
+                    document.getElementById('updateRoomsPerFloor').value = hostel.roomsPerFloor;
+                    document.getElementById('updateRoomNumberingPattern').value = hostel.roomNumberingPattern;
+                    document.getElementById('updateAutoGenerateBeds').checked = hostel.autoGenerateBeds;
+
+                    console.log('All form fields populated');
+                    updateHostelModal.classList.remove('hidden');
+                    console.log('Modal opened');
+                } catch (error) {
+                    console.error('Error fetching hostel data:', error);
+                    alert('Error loading hostel data. Please try again.');
+                } finally {
+                    loadingIndicator.style.display = 'none';
+                }
+            };
+
+            window.hideUpdateHostelModal = () => {
+                updateHostelModal.classList.add('hidden');
+            };
+
+            // Handle delete form submission
+            const deleteHostelForm = document.getElementById('deleteHostelForm');
+            const deleteSubmitBtn = document.getElementById('confirmDeleteBtn');
+            const deleteSubmitBtnOriginalText = deleteSubmitBtn.innerHTML;
+
+            deleteHostelForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                // Show loading on button
+                deleteSubmitBtn.disabled = true;
+                deleteSubmitBtn.innerHTML = `
+                    <div class="flex items-center justify-center">
+                        <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                        Deleting...
+                    </div>
+                `;
+                loadingIndicator.style.display = 'flex';
+
+                try {
+                    const formData = new FormData(deleteHostelForm);
+
+                    const response = await fetch('/Hostel/DeleteHostel', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (response.redirected) {
+                        // If redirected, it likely succeeded - follow the redirect
+                        window.location.href = response.url;
+                        return;
+                    }
+
+                    if (response.ok) {
+                        // Close modal
+                        hideDeleteHostelModal();
+
+                        // Show success message
+                        showNotification('Hostel deleted successfully!', 'success');
+
+                        // Reload the page to show updated data
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    } else {
+                        let errorText = 'Error deleting hostel';
+                        try {
+                            errorText = await response.text();
+                            const parser = new DOMParser();
+                            const doc = parser.parseFromString(errorText, 'text/html');
+                            const errorMsg = doc.querySelector('.validation-summary-errors') ||
+                                           doc.querySelector('.field-validation-error');
+                            if (errorMsg) {
+                                errorText = errorMsg.textContent.trim();
+                            }
+                        } catch (parseError) {
+                            console.error('Error parsing response:', parseError);
+                        }
+                        console.error('Server response:', errorText);
+                        showNotification(errorText, 'error');
+                    }
+                } catch (error) {
+                    console.error('Network error:', error);
+                    showNotification('Network error. Please check your connection and try again.', 'error');
+                } finally {
+                    // Reset button state
+                    deleteSubmitBtn.disabled = false;
+                    deleteSubmitBtn.innerHTML = deleteSubmitBtnOriginalText;
+                    loadingIndicator.style.display = 'none';
+                }
+            });
+
+            window.showDeleteHostelModal = async (id, name) => {
+                try {
+                    document.getElementById('deleteHostelID').value = id;
+                    document.getElementById('deleteHostelName').textContent = name;
+
+                    loadingIndicator.style.display = 'flex';
+
+                    const response = await fetch(`/Hostel/GetHostel/${id}`);
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch hostel data');
+                    }
+
+                    const hostel = await response.json();
+
+                    const hasRoomsWarning = document.getElementById('hasRoomsWarning');
+                    const hasRooms = hostel.statistics && hostel.statistics.totalRooms > 0;
+
+                    hasRoomsWarning.classList.toggle('hidden', !hasRooms);
+                    confirmDeleteBtn.disabled = hasRooms;
+                    confirmDeleteBtn.classList.toggle('opacity-50', hasRooms);
+                    confirmDeleteBtn.classList.toggle('cursor-not-allowed', hasRooms);
+
+                    deleteHostelModal.classList.remove('hidden');
+                } catch (error) {
+                    console.error('Error checking hostel details:', error);
+                    deleteHostelModal.classList.remove('hidden');
+                } finally {
+                    loadingIndicator.style.display = 'none';
+                }
+            };
+
+            window.hideDeleteHostelModal = () => {
+                deleteHostelModal.classList.add('hidden');
+            };
+
+            // Add event listeners for filtering
+            searchInput.addEventListener('input', filterTable);
+            filterCampus.addEventListener('change', filterTable);
+            filterGender.addEventListener('change', filterTable);
+            filterStatus.addEventListener('change', filterTable);
+
+            // Setup sorting buttons
+            document.querySelectorAll('.sort-btn').forEach(button => {
+                button.addEventListener('click', function () {
+                    const sortKey = this.getAttribute('data-sort');
+                    sortTable(sortKey);
+                });
+            });
+
+            // Handle Escape key to close modals
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    hideCreateHostelModal();
+                    hideUpdateHostelModal();
+                    hideDeleteHostelModal();
+                }
+            });
+
+            // Initialize charts if we have data
+            if (hostelsTableBody.children.length > 0) {
+                initializeGenderChart();
+                initializeCampusChart();
+            }
+        });
+    </script>
+}

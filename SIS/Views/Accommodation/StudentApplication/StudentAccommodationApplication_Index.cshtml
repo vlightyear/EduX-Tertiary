@@ -1,0 +1,1157 @@
+﻿@{
+    var config = ViewBag.Config as SIS.Models.StudentAccommodation.AccomodationConfiguration;
+    var period = ViewBag.Period as SIS.Models.StudentAccommodation.AccommodationPeriod;
+    var student = ViewBag.Student as SIS.Models.StudentApplication.Student;
+    var isEligible = ViewBag.IsEligible as bool? ?? false;
+    var ineligibilityReasons = ViewBag.IneligibilityReasons as List<string> ?? new List<string>();
+    var hasExpiredApplication = ViewBag.HasExpiredApplication as bool? ?? false;
+    var expirationMessage = ViewBag.ExpirationMessage as string;
+    var maxDaysAllowed = ViewBag.MaxDaysAllowed as int? ?? 0;
+    ViewData["Title"] = "Apply for Accommodation";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!-- SweetAlert2 CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+<style>
+    :root {
+        --primary-color: #16697a;
+        --primary-dark: #0d4b56;
+        --primary-light: #1e8599;
+        --secondary-color: #17a2b8;
+        --accent-color: #00bcd4;
+        --success-color: #10b981;
+        --danger-color: #ef4444;
+        --warning-color: #ffc107;
+        --info-color: #3b82f6;
+        --light-bg: #f8fafc;
+        --border-color: #e2e8f0;
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #f5f7fa 0%, #e4e9f2 100%);
+        color: #334155;
+    }
+
+    .container-fluid {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .page-header {
+        background: linear-gradient(135deg, #3e5c76 0%, #2d4456 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+        .page-header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .page-header p {
+            font-size: 16px;
+            opacity: 0.95;
+            margin-bottom: 0;
+        }
+
+    .expired-application-alert {
+        background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%);
+        border: 3px solid var(--warning-color);
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
+    }
+
+        .expired-application-alert h3 {
+            color: #92400e;
+            font-size: 22px;
+            margin-bottom: 15px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .expired-application-alert p {
+            color: #78350f;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .expired-application-alert .reapply-notice {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid var(--success-color);
+            margin-top: 15px;
+        }
+
+            .expired-application-alert .reapply-notice strong {
+                color: var(--success-color);
+                font-size: 16px;
+            }
+
+    .payment-notice-banner {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+        padding: 20px 25px;
+        border-radius: 12px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+        .payment-notice-banner i {
+            font-size: 36px;
+            flex-shrink: 0;
+        }
+
+        .payment-notice-banner .content {
+            flex: 1;
+        }
+
+        .payment-notice-banner h4 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .payment-notice-banner p {
+            font-size: 14px;
+            margin: 0;
+            opacity: 0.95;
+        }
+
+        .payment-notice-banner .fee-amount {
+            font-size: 24px;
+            font-weight: 800;
+            margin: 5px 0;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+    .student-info-card {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border-left: 4px solid var(--warning-color);
+    }
+
+        .student-info-card h3 {
+            color: var(--primary-color);
+            font-size: 20px;
+            margin-bottom: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 15px;
+    }
+
+    .info-item {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .info-label {
+        font-size: 13px;
+        color: #64748b;
+        font-weight: 600;
+        text-transform: uppercase;
+        margin-bottom: 5px;
+        letter-spacing: 0.5px;
+    }
+
+    .info-value {
+        font-size: 16px;
+        color: var(--primary-color);
+        font-weight: 600;
+    }
+
+    .period-info-card {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+        .period-info-card h3 {
+            font-size: 20px;
+            margin-bottom: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+    .period-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+    }
+
+    .period-item {
+        background: rgba(255, 255, 255, 0.15);
+        padding: 15px;
+        border-radius: 8px;
+        backdrop-filter: blur(10px);
+    }
+
+    .period-item-label {
+        font-size: 12px;
+        opacity: 0.9;
+        text-transform: uppercase;
+        margin-bottom: 5px;
+    }
+
+    .period-item-value {
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    .not-eligible-notice {
+        background: white;
+        border-radius: 12px;
+        padding: 40px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        border-left: 6px solid var(--danger-color);
+        text-align: center;
+    }
+
+        .not-eligible-notice .icon {
+            font-size: 100px;
+            color: #fca5a5;
+            margin-bottom: 25px;
+        }
+
+        .not-eligible-notice h2 {
+            color: var(--danger-color);
+            font-size: 32px;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        .not-eligible-notice .message {
+            font-size: 18px;
+            color: #64748b;
+            margin-bottom: 35px;
+            line-height: 1.6;
+        }
+
+    .ineligibility-reasons {
+        background: #fef2f2;
+        border: 2px solid #fecaca;
+        border-radius: 12px;
+        padding: 30px;
+        margin-bottom: 30px;
+        text-align: left;
+    }
+
+        .ineligibility-reasons h3 {
+            color: #991b1b;
+            font-size: 20px;
+            margin-bottom: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .ineligibility-reasons ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .ineligibility-reasons li {
+            background: white;
+            padding: 18px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border-left: 4px solid var(--danger-color);
+            color: #7f1d1d;
+            font-size: 16px;
+            line-height: 1.6;
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+            .ineligibility-reasons li i {
+                color: var(--danger-color);
+                font-size: 24px;
+                flex-shrink: 0;
+                margin-top: 2px;
+            }
+
+    .action-buttons {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-top: 30px;
+    }
+
+        .action-buttons .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 32px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .action-buttons .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+            .action-buttons .btn-primary:hover {
+                background: var(--primary-dark);
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(22, 105, 122, 0.4);
+            }
+
+    .filter-section {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+        .filter-section h3 {
+            color: var(--primary-color);
+            font-size: 20px;
+            margin-bottom: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+        .form-group label {
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+    .form-control {
+        width: 100%;
+        padding: 12px 15px;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 15px;
+        transition: all 0.3s ease;
+        background: white;
+    }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(22, 105, 122, 0.1);
+        }
+
+        .form-control:disabled {
+            background: #f1f5f9;
+            cursor: not-allowed;
+        }
+
+    .days-input-section {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        border: 2px solid #fcd34d;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 25px;
+    }
+
+        .days-input-section h4 {
+            color: #92400e;
+            font-size: 18px;
+            margin-bottom: 15px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .days-input-section .days-input-wrapper {
+            display: flex;
+            gap: 20px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .days-input-section .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .days-input-section .calculated-fee {
+            background: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            text-align: center;
+            min-width: 200px;
+        }
+
+            .days-input-section .calculated-fee .fee-label {
+                font-size: 12px;
+                color: #92400e;
+                text-transform: uppercase;
+                margin-bottom: 5px;
+            }
+
+            .days-input-section .calculated-fee .fee-value {
+                font-size: 28px;
+                font-weight: 800;
+                color: #d97706;
+            }
+
+        .days-input-section .rate-info {
+            margin-top: 15px;
+            padding: 10px 15px;
+            background: white;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #78350f;
+        }
+
+    .beds-section {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+        .beds-section h3 {
+            color: var(--primary-color);
+            font-size: 20px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+    .beds-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 20px;
+    }
+
+    .bed-card {
+        background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+        border: 2px solid var(--border-color);
+        border-radius: 10px;
+        padding: 20px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        position: relative;
+    }
+
+        .bed-card.special-reservation::after {
+            content: '⭐ Special';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .bed-card:hover {
+            border-color: var(--primary-color);
+            box-shadow: 0 6px 20px rgba(22, 105, 122, 0.15);
+            transform: translateY(-5px);
+        }
+
+        .bed-card.selected {
+            border-color: var(--success-color);
+            background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
+        }
+
+    .bed-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    .bed-number {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--primary-color);
+    }
+
+    .badge {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .badge-available {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .bed-details {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .bed-detail-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+        color: #64748b;
+    }
+
+        .bed-detail-item i {
+            font-size: 20px;
+            color: var(--primary-color);
+        }
+
+        .bed-detail-item.highlight {
+            background: #f0f9ff;
+            padding: 8px;
+            border-radius: 6px;
+            border-left: 3px solid var(--info-color);
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #94a3b8;
+    }
+
+        .empty-state i {
+            font-size: 80px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-state h4 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #64748b;
+        }
+
+        .empty-state p {
+            font-size: 16px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+    .application-form {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        border-top: 4px solid var(--success-color);
+        display: none;
+    }
+
+        .application-form.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+    @@keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .application-form h3 {
+        color: var(--primary-color);
+        font-size: 24px;
+        margin-bottom: 20px;
+        font-weight: 600;
+    }
+
+    .selected-bed-info {
+        background: #f0fdf4;
+        border: 2px solid #bbf7d0;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 25px;
+    }
+
+        .selected-bed-info h4 {
+            color: var(--success-color);
+            font-size: 18px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+    .fee-summary {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        border: 2px solid #fcd34d;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 25px;
+    }
+
+        .fee-summary h4 {
+            color: #92400e;
+            font-size: 18px;
+            margin-bottom: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .fee-summary .fee-breakdown {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .fee-summary .fee-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+            .fee-summary .fee-item .label {
+                font-size: 12px;
+                color: #92400e;
+                text-transform: uppercase;
+                margin-bottom: 5px;
+            }
+
+            .fee-summary .fee-item .value {
+                font-size: 20px;
+                font-weight: 700;
+                color: #d97706;
+            }
+
+            .fee-summary .fee-item.total .value {
+                font-size: 28px;
+                color: #059669;
+            }
+
+    .btn-actions {
+        display: flex;
+        gap: 15px;
+        margin-top: 20px;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+
+        .btn i {
+            font-size: 20px;
+        }
+
+    .btn-primary {
+        background: var(--primary-color);
+        color: white;
+    }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(22, 105, 122, 0.3);
+        }
+
+    .btn-success {
+        background: var(--success-color);
+        color: white;
+    }
+
+        .btn-success:hover {
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+    .btn-secondary {
+        background: #e2e8f0;
+        color: #475569;
+    }
+
+        .btn-secondary:hover {
+            background: #cbd5e1;
+        }
+
+    .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+        .btn:disabled:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+    }
+
+        .loading-overlay.show {
+            display: flex;
+        }
+
+    .loading-spinner {
+        background: white;
+        padding: 40px;
+        border-radius: 12px;
+        text-align: center;
+    }
+
+    .spinner {
+        border: 4px solid var(--border-color);
+        border-top: 4px solid var(--primary-color);
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 20px;
+    }
+
+    @@keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .loading-spinner p {
+        color: var(--primary-color);
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    @@media (max-width: 768px) {
+        .container-fluid {
+            padding: 15px;
+        }
+
+        .page-header h1 {
+            font-size: 24px;
+        }
+
+        .info-grid, .period-details, .filter-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .beds-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .btn-actions, .action-buttons {
+            flex-direction: column;
+        }
+
+            .btn, .action-buttons .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+        .not-eligible-notice {
+            padding: 25px;
+        }
+
+            .not-eligible-notice .icon {
+                font-size: 70px;
+            }
+
+            .not-eligible-notice h2 {
+                font-size: 24px;
+            }
+
+        .payment-notice-banner {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .days-input-section .days-input-wrapper {
+            flex-direction: column;
+        }
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="page-header">
+        <h1>🏠 Student Accommodation Application</h1>
+        <p>Apply for on-campus accommodation - @period?.Type Period</p>
+    </div>
+
+    @if (hasExpiredApplication)
+    {
+        <div class="expired-application-alert">
+            <h3><i class="material-icons">history</i> Previous Application Expired</h3>
+            <p>@expirationMessage</p>
+            <div class="reapply-notice">
+                <p style="margin: 0;"><strong>✅ Good News!</strong> The application period is still open, and you can submit a new application below.</p>
+            </div>
+        </div>
+    }
+
+    @if (isEligible)
+    {
+        <div class="payment-notice-banner">
+            <i class="material-icons">info</i>
+            <div class="content">
+                <h4>💰 Accommodation Fee Notice</h4>
+                @if (period?.TypeOfPayment == "PerDay")
+                {
+                    <div class="fee-amount">K @period?.TypeOfPaymentAmount.ToString("N2") per day</div>
+                    <p><strong>Important:</strong> This period charges <strong>K @period?.TypeOfPaymentAmount.ToString("N2") per day</strong>. You will need to specify the number of days (maximum @maxDaysAllowed days). Payment must be made within <strong>@config?.ReservationHoursValidity hours</strong> at <strong>@config?.LocationToTakeAccommodationPaymentReceipt</strong>.</p>
+                }
+                else
+                {
+                    <div class="fee-amount">K @period?.TypeOfPaymentAmount.ToString("N2")</div>
+                    <p><strong>Important:</strong> The accommodation fee is <strong>K @period?.TypeOfPaymentAmount.ToString("N2")</strong> (@period?.TypeOfPayment). Payment must be made within <strong>@config?.ReservationHoursValidity hours</strong> at <strong>@config?.LocationToTakeAccommodationPaymentReceipt</strong>.</p>
+                }
+            </div>
+        </div>
+    }
+
+    <div class="student-info-card">
+        <h3><i class="material-icons">person</i> Student Information</h3>
+        <div class="info-grid">
+            <div class="info-item"><span class="info-label">Student ID</span><span class="info-value">@student?.StudentId_Number</span></div>
+            <div class="info-item"><span class="info-label">Full Name</span><span class="info-value">@student?.FullName</span></div>
+            <div class="info-item"><span class="info-label">Programme</span><span class="info-value">@student?.Programme?.Name</span></div>
+            <div class="info-item"><span class="info-label">Gender</span><span class="info-value">@student?.Gender</span></div>
+            <div class="info-item"><span class="info-label">Academic Progress</span><span class="info-value">Year @student?.StudentCurrentYear - Semester @student?.CurrentSemester</span></div>
+            <div class="info-item"><span class="info-label">Email</span><span class="info-value">@student?.Email</span></div>
+        </div>
+    </div>
+
+    <div class="period-info-card">
+        <h3><i class="material-icons">calendar_today</i> Accommodation Period</h3>
+        <div class="period-details">
+            <div class="period-item"><div class="period-item-label">Period Type</div><div class="period-item-value">@period?.Type</div></div>
+            <div class="period-item"><div class="period-item-label">Payment Type</div><div class="period-item-value">@period?.TypeOfPayment (K @period?.TypeOfPaymentAmount.ToString("N2")@(period?.TypeOfPayment == "PerDay" ? "/day" : ""))</div></div>
+            <div class="period-item"><div class="period-item-label">Application Period</div><div class="period-item-value">@period?.ApplicationStartDate.ToString("MMM dd") - @period?.ApplicationEndDate.ToString("MMM dd, yyyy")</div></div>
+            <div class="period-item"><div class="period-item-label">Accommodation Period</div><div class="period-item-value">@period?.StartDate.ToString("MMM dd, yyyy") - @(period?.EndDate?.ToString("MMM dd, yyyy") ?? "Until Graduation")</div></div>
+        </div>
+    </div>
+
+    @if (!isEligible)
+    {
+        <div class="not-eligible-notice">
+            <i class="material-icons icon">block</i>
+            <h2>Not Eligible for This Accommodation Period</h2>
+            <p class="message">Based on the criteria for this accommodation period and your current student profile, you are not eligible to apply at this time.</p>
+            @if (ineligibilityReasons != null && ineligibilityReasons.Any())
+            {
+                <div class="ineligibility-reasons">
+                    <h3><i class="material-icons">report_problem</i> Reason(s) for Ineligibility:</h3>
+                    <ul>
+                        @foreach (var reason in ineligibilityReasons)
+                        {
+                            <li><i class="material-icons">error_outline</i><span>@reason</span></li>
+                        }
+                    </ul>
+                </div>
+            }
+            <div class="action-buttons"><a href="/" class="btn btn-primary"><i class="material-icons">home</i> Return to Dashboard</a></div>
+        </div>
+    }
+    else
+    {
+        @if (period?.TypeOfPayment == "PerDay")
+        {
+            <div class="days-input-section">
+                <h4><i class="material-icons">today</i> Specify Number of Days</h4>
+                <div class="days-input-wrapper">
+                    <div class="form-group">
+                        <label for="numberOfDaysInput">Number of Days <span style="color: #ef4444;">*</span></label>
+                        <input type="number" id="numberOfDaysInput" class="form-control" min="1" max="@maxDaysAllowed" placeholder="Enter number of days" onchange="calculateFee()" oninput="calculateFee()" />
+                        <small style="color: #78350f; margin-top: 5px; display: block;">Maximum @maxDaysAllowed days (until end of period: @period?.EndDate?.ToString("MMM dd, yyyy"))</small>
+                    </div>
+                    <div class="calculated-fee">
+                        <div class="fee-label">Total Fee</div>
+                        <div class="fee-value" id="calculatedFeeDisplay">K 0.00</div>
+                    </div>
+                </div>
+                <div class="rate-info"><strong>💡 Rate:</strong> K @period?.TypeOfPaymentAmount.ToString("N2") per day × <span id="daysDisplay">0</span> days = <strong id="totalFeeDisplay">K 0.00</strong></div>
+            </div>
+        }
+
+        <div class="filter-section">
+            <h3><i class="material-icons">filter_list</i> Search Available Accommodation</h3>
+            <div class="filter-grid">
+                <div class="form-group"><label for="campusFilter">Campus</label><select id="campusFilter" class="form-control" onchange="loadHostels()"><option value="">-- Select Campus --</option></select></div>
+                <div class="form-group"><label for="hostelFilter">Hostel (Optional)</label><select id="hostelFilter" class="form-control" disabled onchange="searchBeds()"><option value="">-- Select Campus First --</option></select></div>
+            </div>
+        </div>
+
+        <div class="beds-section">
+            <h3>🛏️ Available Beds (Select One to Continue)</h3>
+            <div id="bedsContainer">
+                <div class="empty-state"><i class="material-icons">info</i><h4>Select Your Preferences</h4><p>Please select a campus to view available accommodation options.</p></div>
+            </div>
+        </div>
+
+        <div id="applicationForm" class="application-form">
+            <h3>📝 Submit @(hasExpiredApplication ? "New" : "") Application</h3>
+            <div class="selected-bed-info"><h4>✅ Selected Accommodation:</h4><div id="selectedBedDetails"></div></div>
+            <div class="fee-summary">
+                <h4><i class="material-icons">receipt</i> Fee Summary</h4>
+                <div class="fee-breakdown">
+                    @if (period?.TypeOfPayment == "PerDay")
+                    {
+                        <div class="fee-item"><div class="label">Rate per Day</div><div class="value">K @period?.TypeOfPaymentAmount.ToString("N2")</div></div>
+                        <div class="fee-item"><div class="label">Number of Days</div><div class="value" id="summaryDays">0</div></div>
+                    }
+                    else
+                    {
+                        <div class="fee-item"><div class="label">Payment Type</div><div class="value">@period?.TypeOfPayment</div></div>
+                    }
+                    <div class="fee-item total"><div class="label">Total Amount</div><div class="value" id="summaryTotal">K @period?.TypeOfPaymentAmount.ToString("N2")</div></div>
+                </div>
+            </div>
+            <form id="applicationFormElement">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="selectedBedIdInput" name="selectedBedId" value="0" />
+                <input type="hidden" id="numberOfDaysHidden" name="numberOfDays" value="" />
+                <div class="form-group"><label for="notes">Additional Notes (Optional)</label><textarea id="notes" name="notes" class="form-control" rows="4" placeholder="Any special requirements..."></textarea></div>
+                <div class="btn-actions">
+                    <button type="button" class="btn btn-success" onclick="submitApplication()"><i class="material-icons">check_circle</i> Submit Application</button>
+                    <button type="button" class="btn btn-secondary" onclick="cancelApplication()"><i class="material-icons">cancel</i> Cancel</button>
+                </div>
+            </form>
+        </div>
+    }
+</div>
+
+<div id="loadingOverlay" class="loading-overlay"><div class="loading-spinner"><div class="spinner"></div><p>Processing...</p></div></div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        let selectedBedId = null, selectedBedData = null;
+        const studentGender = '@student?.Gender', studentYear = @(student?.StudentCurrentYear ?? 0), studentSemester = @(student?.CurrentSemester ?? 0);
+        const periodId = @(period?.PeriodId ?? 0), typeOfPayment = '@period?.TypeOfPayment', ratePerDay = @(period?.TypeOfPaymentAmount ?? 0), maxDaysAllowed = @maxDaysAllowed;
+        const reservationHours = @(config?.ReservationHoursValidity ?? 0), paymentLocation = '@config?.LocationToTakeAccommodationPaymentReceipt';
+
+        document.addEventListener('DOMContentLoaded', function() { loadCampuses(); if (typeOfPayment === 'PerDay') calculateFee(); });
+
+        function showLoading() { document.getElementById('loadingOverlay').classList.add('show'); }
+        function hideLoading() { document.getElementById('loadingOverlay').classList.remove('show'); }
+
+        function calculateFee() {
+            if (typeOfPayment !== 'PerDay') return;
+            const daysInput = document.getElementById('numberOfDaysInput');
+            let days = parseInt(daysInput.value) || 0;
+            if (days < 0) days = 0;
+            if (days > maxDaysAllowed) { days = maxDaysAllowed; daysInput.value = maxDaysAllowed; Swal.fire({icon:'warning',title:'Maximum Days',text:`Maximum ${maxDaysAllowed} days allowed`,confirmButtonColor:'#16697a'}); }
+            const totalFee = ratePerDay * days;
+            document.getElementById('calculatedFeeDisplay').textContent = `K ${totalFee.toFixed(2)}`;
+            document.getElementById('daysDisplay').textContent = days;
+            document.getElementById('totalFeeDisplay').textContent = `K ${totalFee.toFixed(2)}`;
+            document.getElementById('numberOfDaysHidden').value = days;
+            const summaryDays = document.getElementById('summaryDays'), summaryTotal = document.getElementById('summaryTotal');
+            if (summaryDays) summaryDays.textContent = days;
+            if (summaryTotal) summaryTotal.textContent = `K ${totalFee.toFixed(2)}`;
+            return totalFee;
+        }
+
+        async function loadCampuses() {
+            const campusSelect = document.getElementById('campusFilter');
+            campusSelect.innerHTML = '<option value="">Loading...</option>'; campusSelect.disabled = true;
+            try {
+                const response = await fetch('@Url.Action("GetCampuses", "StudentAccommodationApplication")');
+                const campuses = await response.json();
+                if (campuses.length === 0) { campusSelect.innerHTML = '<option value="">-- No Campuses --</option>'; }
+                else { campusSelect.innerHTML = '<option value="">-- Select Campus --</option>'; campuses.forEach(c => { const o = document.createElement('option'); o.value = c.campusId; o.textContent = c.campusName; campusSelect.appendChild(o); }); campusSelect.disabled = false; }
+            } catch (e) { console.error(e); campusSelect.innerHTML = '<option value="">-- Error --</option>'; }
+        }
+
+        async function loadHostels() {
+            const campusId = document.getElementById('campusFilter').value, hostelSelect = document.getElementById('hostelFilter');
+            if (!campusId) { hostelSelect.innerHTML = '<option value="">-- Select Campus First --</option>'; hostelSelect.disabled = true; document.getElementById('bedsContainer').innerHTML = '<div class="empty-state"><i class="material-icons">info</i><h4>Select a Campus</h4></div>'; return; }
+            hostelSelect.innerHTML = '<option value="">Loading...</option>'; hostelSelect.disabled = true;
+            try {
+                const response = await fetch(`@Url.Action("GetHostelsByCampusWithAvailability", "StudentAccommodationApplication")?campusId=${campusId}&gender=${studentGender}`);
+                const hostels = await response.json();
+                if (hostels.length === 0) { hostelSelect.innerHTML = '<option value="">-- No Hostels --</option>'; }
+                else { hostelSelect.innerHTML = '<option value="">-- All Hostels --</option>'; hostels.forEach(h => { const o = document.createElement('option'); o.value = h.id; o.textContent = `${h.name} (${h.availableBeds} beds)`; hostelSelect.appendChild(o); }); hostelSelect.disabled = false; }
+                searchBeds();
+            } catch (e) { console.error(e); hostelSelect.innerHTML = '<option value="">-- Error --</option>'; }
+        }
+
+        async function searchBeds() {
+            const campusId = document.getElementById('campusFilter').value, hostelId = document.getElementById('hostelFilter').value, container = document.getElementById('bedsContainer');
+            if (!campusId) return;
+            showLoading();
+            try {
+                const url = `@Url.Action("GetAvailableRooms", "StudentAccommodationApplication")?gender=${studentGender}&campusId=${campusId}${hostelId ? '&hostelId=' + hostelId : ''}`;
+                const response = await fetch(url), data = await response.json();
+                if (!data.success) { container.innerHTML = `<div class="empty-state"><i class="material-icons">error</i><h4>Error</h4><p>${data.message}</p></div>`; return; }
+                const beds = data.beds || [];
+                if (beds.length === 0) { container.innerHTML = `<div class="empty-state"><i class="material-icons">hotel</i><h4>No Available Beds</h4><p>No beds match your criteria.</p></div>`; }
+                else { displayBeds(beds); }
+            } catch (e) { console.error(e); container.innerHTML = '<div class="empty-state"><i class="material-icons">error</i><h4>Error</h4></div>'; }
+            finally { hideLoading(); }
+        }
+
+        function displayBeds(beds) {
+            const container = document.getElementById('bedsContainer');
+            let html = '<div class="beds-grid">';
+            beds.forEach(bed => {
+                const bedDataString = JSON.stringify(bed).replace(/"/g, '&quot;'), specialClass = bed.isSpecialReservation ? ' special-reservation' : '';
+                const yearInfo = bed.currentStudentYear === 0 ? 'All Years' : `Year ${bed.currentStudentYear}`;
+                const semesterInfo = bed.currentStudentSemister === 0 ? 'All Semesters' : `Sem ${bed.currentStudentSemister}`;
+                html += `<div class="bed-card${specialClass}" onclick='selectBed(${bed.bedId}, ${bedDataString})'><div class="bed-header"><div class="bed-number">${bed.hostelName} - Room ${bed.roomNumber}</div><span class="badge badge-available">Available</span></div><div class="bed-details"><div class="bed-detail-item"><i class="material-icons">bed</i><span>Bed ${bed.bedIdentifier}</span></div><div class="bed-detail-item"><i class="material-icons">home</i><span>${bed.roomType}</span></div><div class="bed-detail-item"><i class="material-icons">layers</i><span>Floor ${bed.floor}</span></div><div class="bed-detail-item"><i class="material-icons">location_on</i><span>${bed.campusName}</span></div><div class="bed-detail-item highlight"><i class="material-icons">school</i><span><strong>${yearInfo}</strong> • <strong>${semesterInfo}</strong></span></div></div></div>`;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function selectBed(bedId, bedData) {
+            if (typeOfPayment === 'PerDay') {
+                const days = parseInt(document.getElementById('numberOfDaysInput').value) || 0;
+                if (days <= 0) { Swal.fire({icon:'warning',title:'Days Required',text:'Please enter number of days first.',confirmButtonColor:'#16697a'}); document.getElementById('numberOfDaysInput').focus(); return; }
+            }
+            selectedBedId = bedId; selectedBedData = bedData;
+            document.getElementById('selectedBedIdInput').value = bedId;
+            document.querySelectorAll('.bed-card').forEach(card => card.classList.remove('selected'));
+            event.currentTarget.classList.add('selected');
+            document.getElementById('applicationForm').classList.add('show');
+            if (typeOfPayment === 'PerDay') {
+                const days = parseInt(document.getElementById('numberOfDaysInput').value) || 0;
+                document.getElementById('numberOfDaysHidden').value = days;
+                const summaryDays = document.getElementById('summaryDays'), summaryTotal = document.getElementById('summaryTotal');
+                if (summaryDays) summaryDays.textContent = days;
+                if (summaryTotal) summaryTotal.textContent = `K ${(ratePerDay * days).toFixed(2)}`;
+            }
+            const yearInfo = bedData.currentStudentYear === 0 ? 'All Years' : `Year ${bedData.currentStudentYear}`;
+            const semesterInfo = bedData.currentStudentSemister === 0 ? 'All Semesters' : `Semester ${bedData.currentStudentSemister}`;
+            document.getElementById('selectedBedDetails').innerHTML = `<div class="info-grid"><div class="info-item"><span class="info-label">Hostel</span><span class="info-value">${bedData.hostelName}</span></div><div class="info-item"><span class="info-label">Room</span><span class="info-value">${bedData.roomNumber}</span></div><div class="info-item"><span class="info-label">Bed</span><span class="info-value">${bedData.bedIdentifier}</span></div><div class="info-item"><span class="info-label">Room Type</span><span class="info-value">${bedData.roomType}</span></div><div class="info-item"><span class="info-label">Floor</span><span class="info-value">${bedData.floor}</span></div><div class="info-item"><span class="info-label">Campus</span><span class="info-value">${bedData.campusName}</span></div></div>`;
+            document.getElementById('applicationForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        async function submitApplication() {
+            if (!selectedBedId) { Swal.fire({icon:'warning',title:'No Bed Selected',text:'Please select a bed first.',confirmButtonColor:'#16697a'}); return; }
+            let numberOfDays = null, totalFee = ratePerDay;
+            if (typeOfPayment === 'PerDay') {
+                numberOfDays = parseInt(document.getElementById('numberOfDaysInput').value) || 0;
+                if (numberOfDays <= 0) { Swal.fire({icon:'warning',title:'Days Required',text:'Please enter number of days.',confirmButtonColor:'#16697a'}); return; }
+                if (numberOfDays > maxDaysAllowed) { Swal.fire({icon:'warning',title:'Invalid Days',text:`Max ${maxDaysAllowed} days.`,confirmButtonColor:'#16697a'}); return; }
+                totalFee = ratePerDay * numberOfDays;
+            }
+            const notes = document.getElementById('notes').value;
+            const now = new Date(), expiryDate = new Date(now.getTime() + (reservationHours * 60 * 60 * 1000));
+            const expiryString = expiryDate.toLocaleString('en-US', { month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
+            const result = await Swal.fire({
+                title: 'Confirm Application',
+                html: `<div style="text-align:left;padding:20px;"><div style="background:linear-gradient(135deg,#f59e0b,#d97706);color:white;padding:20px;border-radius:12px;margin-bottom:20px;text-align:center;"><div style="font-size:14px;opacity:0.9;">ACCOMMODATION FEE</div><div style="font-size:32px;font-weight:800;">K ${totalFee.toFixed(2)}</div>${typeOfPayment === 'PerDay' ? `<div style="font-size:14px;opacity:0.9;">(${numberOfDays} days × K ${ratePerDay.toFixed(2)}/day)</div>` : ''}</div><p><strong>Selected:</strong> ${selectedBedData.hostelName}, Room ${selectedBedData.roomNumber}, Bed ${selectedBedData.bedIdentifier}</p><div style="background:#fff7ed;border:2px solid #fed7aa;padding:15px;border-radius:8px;margin:15px 0;"><p style="color:#9a3412;font-weight:600;margin:0 0 10px;">⚠️ PAYMENT NOTICE</p><p style="color:#7c2d12;font-size:14px;margin:5px 0;">✓ Pay <strong>K ${totalFee.toFixed(2)}</strong> at <strong>${paymentLocation}</strong></p><p style="color:#7c2d12;font-size:14px;margin:5px 0;">✓ Deadline: <strong>${expiryString}</strong></p></div></div>`,
+                icon: 'question', showCancelButton: true, confirmButtonColor: '#10b981', cancelButtonColor: '#94a3b8', confirmButtonText: 'Submit Application', cancelButtonText: 'Cancel', width: '600px'
+            });
+            if (!result.isConfirmed) return;
+            showLoading();
+            const formData = new FormData();
+            formData.append('periodId', periodId); formData.append('selectedBedId', selectedBedId); formData.append('notes', notes || '');
+            if (typeOfPayment === 'PerDay' && numberOfDays) formData.append('numberOfDays', numberOfDays);
+            formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
+            try {
+                const response = await fetch('@Url.Action("SubmitApplication", "StudentAccommodationApplication")', { method: 'POST', body: formData });
+                const responseData = await response.json();
+                hideLoading();
+                if (responseData.success) {
+                    const pi = responseData.paymentInfo;
+                    await Swal.fire({ icon: 'success', title: 'Application Submitted!', html: `<div style="text-align:left;padding:20px;"><div style="background:linear-gradient(135deg,#10b981,#059669);color:white;padding:20px;border-radius:12px;margin-bottom:20px;text-align:center;"><div style="font-size:14px;opacity:0.9;">PAYMENT AMOUNT</div><div style="font-size:36px;font-weight:800;">K ${pi.accommodationFee.toFixed(2)}</div></div><div style="background:#fff7ed;border:2px solid #fed7aa;padding:20px;border-radius:8px;"><h4 style="color:#9a3412;margin:0 0 15px;">⏰ Payment Deadline</h4><p style="font-size:18px;color:#7c2d12;font-weight:600;">${pi.reservationValidUntil}</p><p style="font-size:14px;color:#7c2d12;">Location: ${pi.paymentLocation}</p></div><p style="color:#ef4444;font-size:14px;margin-top:20px;text-align:center;font-weight:600;">⚠️ Failure to pay will cancel your reservation.</p></div>`, confirmButtonColor: '#10b981', confirmButtonText: 'I Understand', width: '600px', allowOutsideClick: false });
+                    window.location.reload();
+                } else { Swal.fire({ icon: 'error', title: 'Failed', text: responseData.message, confirmButtonColor: '#16697a' }); }
+            } catch (e) { hideLoading(); console.error(e); Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to submit.', confirmButtonColor: '#16697a' }); }
+        }
+
+        function cancelApplication() {
+            Swal.fire({ title: 'Cancel?', text: 'Your selection will be cleared.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', cancelButtonColor: '#94a3b8', confirmButtonText: 'Yes, Cancel', cancelButtonText: 'Keep Editing' }).then((result) => {
+                if (result.isConfirmed) { selectedBedId = null; selectedBedData = null; document.getElementById('selectedBedIdInput').value = '0'; document.getElementById('notes').value = ''; document.getElementById('applicationForm').classList.remove('show'); document.querySelectorAll('.bed-card').forEach(card => card.classList.remove('selected')); }
+            });
+        }
+    </script>
+}

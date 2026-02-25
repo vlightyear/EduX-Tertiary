@@ -1,0 +1,489 @@
+﻿@model SIS.Models.ViewModels.StudentProfileViewModel
+
+<div class="space-y-6">
+    <!-- Student Header -->
+    <div class="bg-gradient-to-r from-primary-500 to-primary-600 rounded-lg p-4 text-white">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <div class="w-32 h-32 rounded-lg bg-white bg-opacity-20 flex items-center justify-center overflow-hidden border-2 border-white border-opacity-30 mr-4">
+                    @if (!string.IsNullOrEmpty(Model.PassportPhotoPath))
+                    {
+                        var path = $"/uploads/student-photos/{Model.StudentNumber}.png";
+                        @* <img src="/StudentLookup/PreviewFile?filePath=@Uri.EscapeDataString(Model.PassportPhotoPath)" *@
+                        <img src="@path"
+                             alt="@Model.FullName"
+                             class="w-full h-full object-cover"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="w-full h-full flex items-center justify-center" style="display: none;">
+                            <i class="material-icons text-white text-2xl">person</i>
+                        </div>
+                    }
+                    else
+                    {
+                        var path = $"/uploads/student-photos/{Model.StudentNumber}.png";
+                        <img src="@path" alt="Image"
+                             alt="@Model.FullName"
+                             class="w-full h-full object-cover"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    }
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold">@Model.FullName</h2>
+                    <p class="text-primary-100 text-sm">Student Number: @Model.StudentNumber</p>
+                </div>
+            </div>
+            <div class="text-right">
+                <div class="bg-white bg-opacity-20 rounded-lg px-3 py-2 mb-2">
+                    <span class="text-sm font-medium">@Model.StudentStatus</span>
+                </div>
+                <div class="bg-white bg-opacity-20 rounded-lg px-3 py-2">
+                    <span class="text-sm font-medium">@Model.RegistrationStatus</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Personal Information -->
+    <div class="bg-white rounded-lg border border-slate-200 overflow-hidden">
+        <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+            <h3 class="text-lg font-semibold text-slate-800 flex items-center">
+                <i class="material-icons text-primary-600 mr-2">person_outline</i>
+                Personal Information
+            </h3>
+        </div>
+        <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600 mb-1">Full Name</label>
+                        <p class="text-slate-800 font-medium">@Model.FullName</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600 mb-1">Email Address</label>
+                        <p class="text-slate-800">
+                            <a href="mailto:@Model.Email" class="text-primary-600 hover:text-primary-700">@Model.Email</a>
+                        </p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600 mb-1">Phone Number</label>
+                        <p class="text-slate-800">
+                            <a href="tel:@Model.Phone" class="text-primary-600 hover:text-primary-700">@Model.Phone</a>
+                        </p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600 mb-1">Date of Birth</label>
+                        <p class="text-slate-800">@Model.DateOfBirth.ToString("MMM dd, yyyy")</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600 mb-1">Gender</label>
+                        <p class="text-slate-800">@Model.Gender</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600 mb-1">Marital Status</label>
+                        <p class="text-slate-800">@Model.MaritalStatus</p>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600 mb-1">Nationality</label>
+                        <p class="text-slate-800">@Model.Nationality</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600 mb-1">Religion</label>
+                        <p class="text-slate-800">@Model.Religion</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600 mb-1">
+                            @(Model.IsForeigner ? "Passport Number" : "NRC Number")
+                        </label>
+                        <p class="text-slate-800">@Model.NrcOrPassportNumber</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600 mb-1">Student Type</label>
+                        <div class="flex items-center">
+                            @if (Model.IsForeigner)
+                            {
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                                    <i class="material-icons text-sm mr-1">public</i>
+                                    International Student
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                                    <i class="material-icons text-sm mr-1">home</i>
+                                    Local Student
+                                </span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Study Permit -->
+    @if ((Model.IsForeigner || !string.Equals(Model.Nationality, "Zambian", StringComparison.OrdinalIgnoreCase)) && (User.IsInRole("Admin") || User.IsInRole("International Relations")  || User.IsInRole("ISO")))
+    {
+        var activePermit = Model.StudyPermits
+        .Where(sp => sp.IsActive && sp.ExpiryDate >= DateTime.Now)
+        .OrderByDescending(sp => sp.ExpiryDate)
+        .FirstOrDefault();
+
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col" style="height: calc(100vh - 320px);">
+                <div class="p-4 border-b border-slate-200 flex-shrink-0">
+                    <h3 class="text-lg font-semibold text-slate-800">
+                        Study Permit 
+                        @if (activePermit != null)
+                        {
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                                <i class="material-icons text-sm mr-1">public</i>
+                                @activePermit.PermitNumber (Expiry Date: @activePermit.ExpiryDate.ToString("dd MMM yyyy"))
+                            </span>
+                            <br />
+                            <br />
+
+                            @if (activePermit.ExpiryDate >= DateTime.Now)
+                            {
+                                <button type="button"
+                                        onclick="openPermitModal()"
+                                        class="flex items-center gap-1 bg-amber-500 hover:bg-amber-600 text-white text-sm px-3 py-1.5 rounded-md shadow-sm transition duration-150"
+                                        data-mode="edit"
+                                        data-permit-id="@activePermit.Id">
+                                    <i class="material-icons text-sm">edit</i>
+                                    Renew Permit
+                                </button>
+                            }
+                            else
+                            {
+                                <button type="button"
+                                        onclick="openPermitModal()"
+                                        class="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white text-sm px-3 py-1.5 rounded-md shadow-sm transition duration-150"
+                                        data-mode="edit"
+                                        data-permit-id="@activePermit.Id">
+                                    <i class="material-icons text-sm">edit</i>
+                                    Update Permit
+                                </button>
+                            }
+                        }
+                        else
+                        {
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-700">
+                                <i class="material-icons text-sm mr-1">public</i>
+                                No valid permit found
+                            </span>
+                            <br />
+                            <br />
+
+                            <button type="button"
+                                    onclick="openPermitModal()"
+                                    class="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white text-sm px-3 py-1.5 rounded-md shadow-sm transition duration-150"
+                                    data-mode="add">
+                                <i class="material-icons text-sm">add</i>
+                                Add Study Permit
+                            </button>
+                        }
+                    </h3>
+                </div>
+                @if(activePermit != null)
+                {
+                    var fileExtension = System.IO.Path.GetExtension(activePermit.PermitDocumentPath).ToLower();
+                    var absoluteUrl = $"{Context.Request.Scheme}://{Context.Request.Host}{Url.Content(activePermit.PermitDocumentPath)}";
+                    var viewerBase = "/pdfjs/web/viewer.html";
+                    absoluteUrl = $"{viewerBase}?file={absoluteUrl}";
+
+                    if (fileExtension == ".pdf")
+                    {
+                        <iframe id="pdfFrame" src="@absoluteUrl"
+                        class="w-full h-screen border-0 rounded-md shadow"></iframe>
+                    }
+                    else if (fileExtension == ".jpg" || fileExtension == ".jpeg" || fileExtension == ".png")
+                    {
+                        <img src="@Url.Content(activePermit.PermitDocumentPath)"
+                             alt="Permit Document"
+                            class="w-auto h-[40vh] rounded-md shadow mx-auto block" />
+                    }
+                    else
+                    {
+                        <p class="text-red-600">Unsupported file format.</p>
+                    }
+                }
+                else
+                {
+                    <p class="text-red-600">No valid permit found.</p>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Academic Information -->
+    <div class="bg-white rounded-lg border border-slate-200 overflow-hidden">
+        <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+            <h3 class="text-lg font-semibold text-slate-800 flex items-center">
+                <i class="material-icons text-primary-600 mr-2">school</i>
+                Academic Information
+            </h3>
+        </div>
+        <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600 mb-1">Programme</label>
+                        <p class="text-slate-800 font-medium">@Model.ProgrammeName</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600 mb-1">School</label>
+                        <p class="text-slate-800">@Model.SchoolName</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600 mb-1">Department</label>
+                        <p class="text-slate-800">@Model.DepartmentName</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600 mb-1">Programme Level</label>
+                        <p class="text-slate-800">@Model.ProgrammeLevelName</p>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600 mb-1">Mode of Study</label>
+                        <p class="text-slate-800">@Model.ModeOfStudyName</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600 mb-1">Academic Year</label>
+                        <p class="text-slate-800">@Model.AcademicYear</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600 mb-1">Current Year of Study</label>
+                        <p class="text-slate-800">Year @Model.CurrentYear</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600 mb-1">Current Semester</label>
+                        <p class="text-slate-800">Semester @Model.CurrentSemester</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Information -->
+    <div class="bg-white rounded-lg border border-slate-200 overflow-hidden">
+        <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+            <h3 class="text-lg font-semibold text-slate-800 flex items-center">
+                <i class="material-icons text-primary-600 mr-2">info</i>
+                Status Information
+            </h3>
+        </div>
+        <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600 mb-1">Student Status</label>
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+                                   @(Model.StudentStatus == "Active" ? "bg-green-100 text-green-800" :
+                                     Model.StudentStatus == "Suspended" ? "bg-red-100 text-red-800" :
+                                     "bg-slate-100 text-slate-800")">
+                            @Model.StudentStatus
+                        </span>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600 mb-1">Registration Status</label>
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+                                   @(Model.RegistrationStatus == "Registered" ? "bg-green-100 text-green-800" :
+                                     Model.RegistrationStatus == "Unregistered" ? "bg-amber-100 text-amber-800" :
+                                     Model.RegistrationStatus == "Pending" ? "bg-blue-100 text-blue-800" :
+                                     "bg-slate-100 text-slate-800")">
+                            @Model.RegistrationStatus
+                        </span>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600 mb-1">Is Registered</label>
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+                                   @(Model.IsRegistered ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800")">
+                            <i class="material-icons text-sm mr-1">@(Model.IsRegistered ? "check_circle" : "cancel")</i>
+                            @(Model.IsRegistered ? "Yes" : "No")
+                        </span>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600 mb-1">Is Admitted</label>
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+                                   @(Model.IsAdmitted ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800")">
+                            <i class="material-icons text-sm mr-1">@(Model.IsAdmitted ? "check_circle" : "cancel")</i>
+                            @(Model.IsAdmitted ? "Yes" : "No")
+                        </span>
+                    </div>
+                    @if (Model.AdmissionDate.HasValue)
+                    {
+                        <div>
+                            <label class="block text-sm font-medium text-slate-600 mb-1">Admission Date</label>
+                            <p class="text-slate-800">@Model.AdmissionDate.Value.ToString("MMM dd, yyyy")</p>
+                        </div>
+                    }
+                    @if (Model.RegistrationDate.HasValue)
+                    {
+                        <div>
+                            <label class="block text-sm font-medium text-slate-600 mb-1">Registration Date</label>
+                            <p class="text-slate-800">@Model.RegistrationDate.Value.ToString("MMM dd, yyyy")</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Address Information -->
+    @if (Model.Address != null)
+    {
+        <div class="bg-white rounded-lg border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h3 class="text-lg font-semibold text-slate-800 flex items-center">
+                    <i class="material-icons text-primary-600 mr-2">home</i>
+                    Address Information
+                </h3>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-600 mb-1">Address Line 1</label>
+                            <p class="text-slate-800">@Model.Address.AddressLine1</p>
+                        </div>
+                        @if (!string.IsNullOrEmpty(Model.Address.AddressLine2))
+                        {
+                            <div>
+                                <label class="block text-sm font-medium text-slate-600 mb-1">Address Line 2</label>
+                                <p class="text-slate-800">@Model.Address.AddressLine2</p>
+                            </div>
+                        }
+                        <div>
+                            <label class="block text-sm font-medium text-slate-600 mb-1">City</label>
+                            <p class="text-slate-800">@Model.Address.City</p>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-600 mb-1">State/Province</label>
+                            <p class="text-slate-800">@Model.Address.State</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-600 mb-1">Country</label>
+                            <p class="text-slate-800">@Model.Address.Country</p>
+                        </div>
+                        @if (!string.IsNullOrEmpty(Model.Address.PostalCode))
+                        {
+                            <div>
+                                <label class="block text-sm font-medium text-slate-600 mb-1">Postal Code</label>
+                                <p class="text-slate-800">@Model.Address.PostalCode</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Next of Kin Information -->
+    @if (Model.NextOfKin != null)
+    {
+        <div class="bg-white rounded-lg border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h3 class="text-lg font-semibold text-slate-800 flex items-center">
+                    <i class="material-icons text-primary-600 mr-2">family_restroom</i>
+                    Next of Kin Information
+                </h3>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-600 mb-1">Full Name</label>
+                            <p class="text-slate-800 font-medium">@Model.NextOfKin.Name</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-600 mb-1">Relationship</label>
+                            <p class="text-slate-800">@Model.NextOfKin.Relationship</p>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-600 mb-1">Phone Number</label>
+                            <p class="text-slate-800">
+                                <a href="tel:@Model.NextOfKin.Phone" class="text-primary-600 hover:text-primary-700">@Model.NextOfKin.Phone</a>
+                            </p>
+                        </div>
+                        @if (!string.IsNullOrEmpty(Model.NextOfKin.Email))
+                        {
+                            <div>
+                                <label class="block text-sm font-medium text-slate-600 mb-1">Email Address</label>
+                                <p class="text-slate-800">
+                                    <a href="mailto:@Model.NextOfKin.Email" class="text-primary-600 hover:text-primary-700">@Model.NextOfKin.Email</a>
+                                </p>
+                            </div>
+                        }
+                    </div>
+                </div>
+                @if (!string.IsNullOrEmpty(Model.NextOfKin.Address))
+                {
+                    <div class="mt-4">
+                        <label class="block text-sm font-medium text-slate-600 mb-1">Address</label>
+                        <p class="text-slate-800">@Model.NextOfKin.Address</p>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Tailwind Modal -->
+@* <div id="studyPermitModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 transition-opacity"> *@
+<div id="studyPermitModal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+    <div class="bg-white rounded-xl shadow-lg w-full max-w-md p-6 relative">
+        <h2 id="studyPermitLabel" class="text-lg font-semibold text-gray-800 mb-4">Study Permit</h2>
+        <form id="studyPermitForm" class="space-y-3">
+            <input type="hidden" id="PermitId" name="Id" />
+            <input type="hidden" id="StudentId" name="StudentId" value="@Model.StudentId" />
+
+            <div>
+                <label for="PermitNumber" class="block text-sm font-medium text-gray-600">Permit Number</label>
+                <input type="text" id="PermitNumber" name="PermitNumber"
+                       class="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none" required />
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label for="IssueDate" class="block text-sm font-medium text-gray-600">Issue Date</label>
+                    <input type="date" id="IssueDate" name="IssueDate"
+                           class="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none" />
+                </div>
+                <div>
+                    <label for="ExpiryDate" class="block text-sm font-medium text-gray-600">Expiry Date</label>
+                    <input type="date" id="ExpiryDate" name="ExpiryDate"
+                           class="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none" required />
+                </div>
+            </div>
+
+            <div>
+                <label for="IssuingAuthority" class="block text-sm font-medium text-gray-600">Issuing Authority</label>
+                <input type="text" id="IssuingAuthority" name="IssuingAuthority"
+                       class="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none" />
+            </div>
+
+            <div>
+                <label for="PermitDocumentPath" class="block text-sm font-medium text-gray-600">Permit Document</label>
+                <input type="file" id="PermitDocumentPath" name="PermitDocumentPath"
+                       class="w-full border border-gray-300 rounded-md p-2 text-sm file:mr-2 file:py-1 file:px-3 file:rounded-md file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+            </div>
+
+            <div class="flex justify-end gap-2 pt-4 border-t mt-4">
+                <button type="button" id="cancelPermitBtn" onclick="closeModal()" class="px-3 py-1.5 text-sm bg-gray-200 hover:bg-gray-300 rounded-md text-gray-700">Cancel</button>
+                <button type="submit" id="savePermitBtn" class="px-4 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md">Save Permit</button>
+            </div>
+        </form>
+        <button id="closePermitModal" onclick="closeModal()" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600">
+            <i class="material-icons">close</i>
+        </button>
+    </div>
+</div>

@@ -1,0 +1,2238 @@
+﻿@{
+    ViewData["Title"] = "Manage Academic Calendar";
+}
+
+<div class="min-h-screen bg-slate-50 p-4 md:p-6">
+    <!-- Header Section with Improved Styling -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 bg-white rounded-xl shadow-sm p-5">
+        <div class="flex items-center text-slate-800 mb-4 md:mb-0">
+            <div class="bg-cyan-100 p-3 rounded-full mr-4">
+                <i class="material-icons text-3xl text-cyan-600">calendar_month</i>
+            </div>
+            <div>
+                <h1 class="text-2xl font-bold">Academic Calendar</h1>
+                <p class="text-sm text-slate-600">Manage academic events and deadlines across the institution</p>
+            </div>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <a href="javascript:void(0)" onclick="openAddEventModal()"
+               class="inline-flex items-center px-4 py-2.5 text-cyan-600 bg-cyan-50 border border-cyan-200 rounded-lg hover:bg-cyan-600 hover:text-white transition-colors shadow-sm">
+                <i class="material-icons text-sm mr-2">add_circle</i>
+                <span>Add Event</span>
+            </a>
+
+            <a asp-controller="AcademicEventType" asp-action="Index"
+               class="inline-flex items-center px-4 py-2.5 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors border border-cyan-600 shadow-sm">
+                <i class="material-icons text-sm mr-2">category</i>
+                <span>Manage Event Types</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <!-- Sidebar with Filters - Moved to the left -->
+        <div class="lg:col-span-1">
+            <!-- Filters Card with Improved Design -->
+            <div class="bg-white rounded-xl shadow-sm mb-6 border border-slate-100 overflow-hidden">
+                <div class="bg-slate-50 border-b border-slate-100 px-5 py-4">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-base font-semibold text-slate-800 flex items-center">
+                            <i class="material-icons text-cyan-600 mr-2">filter_list</i>
+                            <span>Filters</span>
+                        </h2>
+                        <button id="toggleFiltersBtn" class="text-cyan-600 hover:text-cyan-800 flex items-center text-xs">
+                            <i class="material-icons text-sm mr-1">tune</i>
+                            <span>Toggle</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="filtersContainer" class="p-5 space-y-4">
+                    <!-- Academic Year -->
+                    <div>
+                        <label for="academicYearSelect" class="block text-sm font-medium text-slate-700 mb-1">Academic Year</label>
+                        <div class="relative">
+                            <select id="academicYearSelect" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pr-8 sm:text-sm">
+                                @foreach (var year in ViewBag.AcademicYears)
+                                {
+                                    <option value="@year.Value" selected="@year.Selected">@year.Text</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Event Types -->
+                    <div>
+                        <label for="eventTypeSelect" class="block text-sm font-medium text-slate-700 mb-1">Event Type</label>
+                        <div class="relative">
+                            <select id="eventTypeSelect" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pr-8 sm:text-sm">
+                                <option value="">All Event Types</option>
+                                @foreach (var type in ViewBag.EventTypes)
+                                {
+                                    <option value="@type.Value">@type.Text</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Event Status -->
+                    <div>
+                        <label for="eventStatusSelect" class="block text-sm font-medium text-slate-700 mb-1">Status</label>
+                        <div class="relative">
+                            <select id="eventStatusSelect" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pr-8 sm:text-sm">
+                                <option value="all">All Events</option>
+                                <option value="published" selected>Published Only</option>
+                                <option value="unpublished">Unpublished Only</option>
+                                <option value="system">System Events Only</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Legend with improved visualization -->
+                    <div class="pt-4 border-t border-slate-100">
+                        <p class="text-xs font-medium text-slate-600 mb-2">Event Legend</p>
+                        <div class="space-y-2">
+                            <div class="flex items-center">
+                                <span class="inline-block w-3 h-3 rounded-full bg-blue-500 mr-2"></span>
+                                <span class="text-xs text-slate-600">Published</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="inline-block w-3 h-3 rounded-full bg-slate-300 mr-2"></span>
+                                <span class="text-xs text-slate-600">Unpublished</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="inline-block w-3 h-3 rounded-full bg-amber-500 mr-2"></span>
+                                <span class="text-xs text-slate-600">System Generated</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Calendar Actions -->
+                    <div class="pt-4 border-t border-slate-100">
+                        <button id="todayBtn" class="w-full mb-2 bg-cyan-50 text-cyan-600 px-4 py-2 text-sm font-medium rounded-lg hover:bg-cyan-100 transition-colors flex items-center justify-center">
+                            <i class="material-icons text-sm mr-2">today</i>
+                            <span>Today</span>
+                        </button>
+
+                        <a asp-controller="AcademicCalendar" asp-action="Export" asp-route-academicYearId="@ViewBag.CurrentAcademicYearId" target="_blank"
+                           class="w-full bg-slate-100 text-slate-700 px-4 py-2 text-sm font-medium rounded-lg hover:bg-slate-200 transition-colors flex items-center justify-center">
+                            <i class="material-icons text-sm mr-2">print</i>
+                            <span>Print Calendar</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Calendar Area - Takes more space -->
+        <div class="lg:col-span-3">
+            <!-- Calendar Card with Improved Design -->
+            <div class="bg-white rounded-xl shadow-sm mb-6 border border-slate-100 overflow-hidden">
+                <div class="bg-slate-50 border-b border-slate-100 px-5 py-4">
+                    <div class="flex flex-col md:flex-row md:justify-between md:items-center">
+                        <h2 class="text-base font-semibold text-slate-800 mb-3 md:mb-0 flex items-center">
+                            <i class="material-icons text-cyan-600 mr-2">event</i>
+                            <span>Calendar</span>
+                        </h2>
+
+                        <!-- View Type Toggle with improved styling -->
+                        <div class="inline-flex rounded-md shadow-sm" role="group">
+                            <button type="button" id="monthViewBtn" class="bg-cyan-600 text-white px-4 py-2 text-sm font-medium rounded-l-lg hover:bg-cyan-700 flex items-center">
+                                <i class="material-icons text-sm mr-1">calendar_view_month</i>
+                                <span>Month</span>
+                            </button>
+                            <button type="button" id="weekViewBtn" class="bg-slate-100 text-slate-700 px-4 py-2 text-sm font-medium hover:bg-slate-200 flex items-center">
+                                <i class="material-icons text-sm mr-1">calendar_view_week</i>
+                                <span>Week</span>
+                            </button>
+                            <button type="button" id="listViewBtn" class="bg-slate-100 text-slate-700 px-4 py-2 text-sm font-medium rounded-r-lg hover:bg-slate-200 flex items-center">
+                                <i class="material-icons text-sm mr-1">view_list</i>
+                                <span>List</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Calendar Container with improved spacing and shadow -->
+                <div class="p-5">
+                    <div id="calendar" class="calendar-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Event Modal with Improved Design -->
+<div id="eventFormModal" class="hidden fixed inset-0 bg-slate-900 bg-opacity-60 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-10 mx-auto p-0 border-0 w-full max-w-4xl shadow-xl rounded-xl bg-white">
+        <div class="bg-slate-50 rounded-t-xl px-6 py-4 flex justify-between items-center border-b">
+            <h3 id="eventFormTitle" class="text-lg font-medium text-slate-900 flex items-center">
+                <i class="material-icons text-cyan-600 mr-2">event_note</i>
+                <span>Add New Event</span>
+            </h3>
+            <button onclick="closeEventFormModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100 transition-colors">
+                <i class="material-icons">close</i>
+            </button>
+        </div>
+
+        <form id="eventForm" class="p-6">
+            <input type="hidden" id="RequestVerificationToken"
+                   name="__RequestVerificationToken" value="@Html.AntiForgeryToken()">
+            <input type="hidden" id="eventId" name="Id" value="0">
+            <input type="hidden" id="eventSystemEvent" name="IsSystemEvent" value="false">
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Left Column -->
+                <div class="space-y-5">
+                    <div class="bg-slate-50 px-4 py-2 rounded-lg">
+                        <h4 class="font-medium text-slate-800">Event Details</h4>
+                    </div>
+
+                    <!-- Title -->
+                    <div>
+                        <label for="eventTitle" class="block text-sm font-medium text-slate-700 mb-1">Title*</label>
+                        <input type="text" id="eventTitle" name="Title" required
+                               class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm">
+                    </div>
+
+                    <!-- Description -->
+                    <div>
+                        <label for="eventDescription" class="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                        <textarea id="eventDescription" name="Description" rows="3"
+                                  class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm"></textarea>
+                    </div>
+
+                    <!-- Event Type -->
+                    <div>
+                        <label for="eventTypeId" class="block text-sm font-medium text-slate-700 mb-1">Event Type*</label>
+                        <div class="relative">
+                            <select id="eventTypeId" name="EventTypeId" required
+                                    class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pr-8 sm:text-sm">
+                                @foreach (var type in ViewBag.EventTypes)
+                                {
+                                    <option value="@type.Value">@type.Text</option>
+                                }
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                                <i class="material-icons text-sm">expand_more</i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Color Picker with improved UI -->
+                    <div>
+                        <label for="eventColor" class="block text-sm font-medium text-slate-700 mb-1">Color</label>
+                        <div class="flex items-center bg-slate-50 p-2 rounded-md border border-slate-200">
+                            <input type="color" id="eventColor" name="Color" value="#3788d8"
+                                   class="h-8 w-8 border-0 rounded mr-2">
+                            <input type="text" id="eventColorHex"
+                                   class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm"
+                                   placeholder="#RRGGBB" pattern="^#[0-9A-Fa-f]{6}$">
+                        </div>
+                        <div class="flex flex-wrap gap-2 mt-2 bg-slate-50 p-2 rounded-md">
+                            <div class="h-6 w-6 rounded cursor-pointer shadow-sm hover:scale-110 transition-transform" style="background-color: #4285F4;" onclick="setColor('#4285F4')"></div>
+                            <div class="h-6 w-6 rounded cursor-pointer shadow-sm hover:scale-110 transition-transform" style="background-color: #0F9D58;" onclick="setColor('#0F9D58')"></div>
+                            <div class="h-6 w-6 rounded cursor-pointer shadow-sm hover:scale-110 transition-transform" style="background-color: #DB4437;" onclick="setColor('#DB4437')"></div>
+                            <div class="h-6 w-6 rounded cursor-pointer shadow-sm hover:scale-110 transition-transform" style="background-color: #F4B400;" onclick="setColor('#F4B400')"></div>
+                            <div class="h-6 w-6 rounded cursor-pointer shadow-sm hover:scale-110 transition-transform" style="background-color: #673AB7;" onclick="setColor('#673AB7')"></div>
+                            <div class="h-6 w-6 rounded cursor-pointer shadow-sm hover:scale-110 transition-transform" style="background-color: #3F51B5;" onclick="setColor('#3F51B5')"></div>
+                            <div class="h-6 w-6 rounded cursor-pointer shadow-sm hover:scale-110 transition-transform" style="background-color: #009688;" onclick="setColor('#009688')"></div>
+                            <div class="h-6 w-6 rounded cursor-pointer shadow-sm hover:scale-110 transition-transform" style="background-color: #FF5722;" onclick="setColor('#FF5722')"></div>
+                        </div>
+                    </div>
+
+                    <!-- Published Status with better visual indicator -->
+                    <div class="flex items-center bg-slate-50 p-3 rounded-md">
+                        <input type="checkbox" id="eventIsPublished" name="IsPublished" checked
+                               class="h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500">
+                        <label for="eventIsPublished" class="ml-2 block text-sm text-slate-700">Published</label>
+                        <div class="ml-auto flex items-center">
+                            <span class="text-xs text-slate-500 mr-2">Status:</span>
+                            <span id="publishStatus" class="inline-block px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">Visible to users</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column -->
+                <div class="space-y-5">
+                    <div class="bg-slate-50 px-4 py-2 rounded-lg">
+                        <h4 class="font-medium text-slate-800">Date & Time</h4>
+                    </div>
+
+                    <!-- Academic Year -->
+                    <div>
+                        <label for="eventAcademicYearId" class="block text-sm font-medium text-slate-700 mb-1">Academic Year*</label>
+                        <div class="relative">
+                            <select id="eventAcademicYearId" name="AcademicYearId" required
+                                    class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pr-8 sm:text-sm">
+                                @foreach (var year in ViewBag.AcademicYears)
+                                {
+                                    <option value="@year.Value" selected="@year.Selected">@year.Text</option>
+                                }
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                                <i class="material-icons text-sm">expand_more</i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- All Day Checkbox with visual enhancement -->
+                    <div class="flex items-center bg-slate-50 p-3 rounded-md">
+                        <input type="checkbox" id="eventIsAllDay" name="IsAllDay"
+                               class="h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500">
+                        <label for="eventIsAllDay" class="ml-2 block text-sm text-slate-700">All Day Event</label>
+                        <div class="ml-auto flex items-center text-xs text-slate-500">
+                            <i class="material-icons text-sm mr-1">schedule</i>
+                            <span>No specific time</span>
+                        </div>
+                    </div>
+
+                    <!-- Start Date/Time with improved styling -->
+                    <div class="grid grid-cols-2 gap-4 bg-slate-50 p-3 rounded-md">
+                        <div>
+                            <label for="eventStartDate" class="block text-sm font-medium text-slate-700 mb-1">Start Date*</label>
+                            <input type="date" id="eventStartDate" name="StartDate" required
+                                   class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm">
+                        </div>
+                        <div id="startTimeContainer">
+                            <label for="eventStartTime" class="block text-sm font-medium text-slate-700 mb-1">Start Time*</label>
+                            <input type="time" id="eventStartTime" name="StartTime" required
+                                   class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm">
+                        </div>
+                    </div>
+
+                    <!-- End Date/Time with improved styling -->
+                    <div class="grid grid-cols-2 gap-4 bg-slate-50 p-3 rounded-md" id="endDateTimeContainer">
+                        <div>
+                            <label for="eventEndDate" class="block text-sm font-medium text-slate-700 mb-1">End Date</label>
+                            <input type="date" id="eventEndDate" name="EndDate"
+                                   class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm">
+                        </div>
+                        <div id="endTimeContainer">
+                            <label for="eventEndTime" class="block text-sm font-medium text-slate-700 mb-1">End Time</label>
+                            <input type="time" id="eventEndTime" name="EndTime"
+                                   class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm">
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-50 px-4 py-2 rounded-lg">
+                        <h4 class="font-medium text-slate-800">Additional Information</h4>
+                    </div>
+
+                    <!-- Location with icon -->
+                    <div class="flex items-center">
+                        <i class="material-icons text-slate-400 mr-2">location_on</i>
+                        <div class="w-full">
+                            <label for="eventLocation" class="block text-sm font-medium text-slate-700 mb-1">Location</label>
+                            <input type="text" id="eventLocation" name="Location"
+                                   class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm">
+                        </div>
+                    </div>
+
+                    <!-- Contact Person with icon -->
+                    <div class="flex items-center">
+                        <i class="material-icons text-slate-400 mr-2">person</i>
+                        <div class="w-full">
+                            <label for="eventContactPerson" class="block text-sm font-medium text-slate-700 mb-1">Contact Person</label>
+                            <input type="text" id="eventContactPerson" name="ContactPerson"
+                                   class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm">
+                        </div>
+                    </div>
+
+                    <!-- Contact Email with icon -->
+                    <div class="flex items-center">
+                        <i class="material-icons text-slate-400 mr-2">email</i>
+                        <div class="w-full">
+                            <label for="eventContactEmail" class="block text-sm font-medium text-slate-700 mb-1">Contact Email</label>
+                            <input type="email" id="eventContactEmail" name="ContactEmail"
+                                   class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Event Audience Section with improved UI -->
+            <div class="mt-6 bg-slate-50 p-4 rounded-lg">
+                <h4 class="font-medium text-slate-800 mb-3 flex items-center">
+                    <i class="material-icons text-cyan-600 mr-2">groups</i>
+                    <span>Event Audience</span>
+                    <span class="ml-2 text-xs text-slate-500">(Leave blank to apply to everyone)</span>
+                </h4>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+                    <!-- School -->
+                    <div>
+                        <label for="eventSchoolId" class="block text-sm font-medium text-slate-700 mb-1">School</label>
+                        <div class="relative">
+                            <select id="eventSchoolId" name="SchoolId"
+                                    class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pr-8 sm:text-sm">
+                                <option value="">All Schools</option>
+                                @foreach (var school in ViewBag.Schools)
+                                {
+                                    <option value="@school.Value">@school.Text</option>
+                                }
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                                @* <i class="material-icons text-sm">expand_more</i> *@
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Programme (will be populated via AJAX) -->
+                    <div>
+                        <label for="eventProgrammeId" class="block text-sm font-medium text-slate-700 mb-1">Programme</label>
+                        <div class="relative">
+                            <select id="eventProgrammeId" name="ProgrammeId" disabled
+                                    class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pr-8 sm:text-sm">
+                                <option value="">All Programmes</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                                @* <i class="material-icons text-sm">expand_more</i> *@
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Programme Level -->
+                    <div>
+                        <label for="eventProgrammeLevelId" class="block text-sm font-medium text-slate-700 mb-1">Programme Level</label>
+                        <div class="relative">
+                            <select id="eventProgrammeLevelId" name="ProgrammeLevelId"
+                                    class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pr-8 sm:text-sm">
+                                <option value="">All Levels</option>
+                                @foreach (var level in ViewBag.ProgrammeLevels)
+                                {
+                                    <option value="@level.Value">@level.Text</option>
+                                }
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                                @* <i class="material-icons text-sm">expand_more</i> *@
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mode of Study -->
+                    <div>
+                        <label for="eventModeOfStudyId" class="block text-sm font-medium text-slate-700 mb-1">Mode of Study</label>
+                        <div class="relative">
+                            <select id="eventModeOfStudyId" name="ModeOfStudyId"
+                                    class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pr-8 sm:text-sm">
+                                <option value="">All Modes</option>
+                                @foreach (var mode in ViewBag.ModesOfStudy)
+                                {
+                                    <option value="@mode.Value">@mode.Text</option>
+                                }
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                                @* <i class="material-icons text-sm">expand_more</i> *@
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Student Year -->
+                    <div>
+                        <label for="eventStudentYear" class="block text-sm font-medium text-slate-700 mb-1">Student Year</label>
+                        <div class="relative">
+                            <select id="eventStudentYear" name="StudentYear"
+                                    class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pr-8 sm:text-sm">
+                                <option value="">All Years</option>
+                                <option value="1">Year 1</option>
+                                <option value="2">Year 2</option>
+                                <option value="3">Year 3</option>
+                                <option value="4">Year 4</option>
+                                <option value="5">Year 5</option>
+                                <option value="6">Year 6</option>
+                                <option value="7">Year 7</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                                @* <i class="material-icons text-sm">expand_more</i> *@
+                            </div>
+                        </div>
+                    </div>
+
+                      
+
+                    <!-- Semester -->
+                    <div>
+                        <label for="eventSemester" class="block text-sm font-medium text-slate-700 mb-1">Semester</label>
+                        <div class="relative">
+                            <select id="eventSemester" name="Semester"
+                                    class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pr-8 sm:text-sm">
+                                <option value="">All Semesters</option>
+                                <option value="1">Semester 1</option>
+                                <option value="2">Semester 2</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                                @* <i class="material-icons text-sm">expand_more</i> *@
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions with improved styling -->
+            <div class="flex justify-end gap-3 mt-6 bg-slate-50 p-4 rounded-lg border-t border-slate-100">
+                <button type="button" onclick="closeEventFormModal()"
+                        class="px-4 py-2.5 bg-white text-slate-700 rounded-lg hover:bg-slate-100 transition-colors border border-slate-300 shadow-sm flex items-center">
+                    <i class="material-icons text-sm mr-2">close</i>
+                    <span>Cancel</span>
+                </button>
+                <button type="button" id="deleteEventBtn" onclick="confirmDeleteEvent()"
+                        class="px-4 py-2.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-colors border border-red-200 shadow-sm hidden flex items-center">
+                    <i class="material-icons text-sm mr-2">delete</i>
+                    <span>Delete Event</span>
+                </button>
+                <button type="submit" id="saveEventBtn"
+                        class="px-4 py-2.5 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors border border-cyan-600 shadow-sm flex items-center">
+                    <i class="material-icons text-sm mr-2">save</i>
+                    <span>Save Event</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Bulk Create Modal with Improved Design -->
+<div id="bulkCreateModal" class="hidden fixed inset-0 bg-slate-900 bg-opacity-60 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-10 mx-auto p-0 border-0 w-full max-w-4xl shadow-xl rounded-xl bg-white">
+        <div class="bg-slate-50 rounded-t-xl px-6 py-4 flex justify-between items-center border-b">
+            <h3 class="text-lg font-medium text-slate-900 flex items-center">
+                <i class="material-icons text-purple-600 mr-2">playlist_add</i>
+                <span>Bulk Create Events</span>
+            </h3>
+            <button onclick="closeBulkCreateModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100 transition-colors">
+                <i class="material-icons">close</i>
+            </button>
+        </div>
+
+        <form id="bulkCreateForm" class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Left Column -->
+                <div class="space-y-5">
+                    <div class="bg-slate-50 px-4 py-2 rounded-lg">
+                        <h4 class="font-medium text-slate-800">Event Details</h4>
+                    </div>
+
+                    <!-- Title -->
+                    <div>
+                        <label for="bulkTitle" class="block text-sm font-medium text-slate-700 mb-1">Title*</label>
+                        <input type="text" id="bulkTitle" name="Title" required
+                               class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm">
+                    </div>
+
+                    <!-- Description -->
+                    <div>
+                        <label for="bulkDescription" class="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                        <textarea id="bulkDescription" name="Description" rows="3"
+                                  class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm"></textarea>
+                    </div>
+
+                    <!-- Event Type -->
+                    <div>
+                        <label for="bulkEventTypeId" class="block text-sm font-medium text-slate-700 mb-1">Event Type*</label>
+                        <div class="relative">
+                            <select id="bulkEventTypeId" name="EventTypeId" required
+                                    class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pr-8 sm:text-sm">
+                                @foreach (var type in ViewBag.EventTypes)
+                                {
+                                    <option value="@type.Value">@type.Text</option>
+                                }
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                                @* <i class="material-icons text-sm">expand_more</i> *@
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Color Picker -->
+                    <div>
+                        <label for="bulkColor" class="block text-sm font-medium text-slate-700 mb-1">Color</label>
+                        <div class="flex items-center bg-slate-50 p-2 rounded-md border border-slate-200">
+                            <input type="color" id="bulkColor" name="Color" value="#3788d8"
+                                   class="h-8 w-8 border-0 rounded mr-2">
+                            <input type="text" id="bulkColorHex"
+                                   class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm"
+                                   placeholder="#RRGGBB" pattern="^#[0-9A-Fa-f]{6}$">
+                        </div>
+                    </div>
+
+                    <!-- Published Status -->
+                    <div class="flex items-center bg-slate-50 p-3 rounded-md">
+                        <input type="checkbox" id="bulkIsPublished" name="IsPublished" checked
+                               class="h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500">
+                        <label for="bulkIsPublished" class="ml-2 block text-sm text-slate-700">Published</label>
+                        <div class="ml-auto flex items-center">
+                            <span class="text-xs text-slate-500 mr-2">Status:</span>
+                            <span id="bulkPublishStatus" class="inline-block px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">Visible to users</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column -->
+                <div class="space-y-5">
+                    <div class="bg-slate-50 px-4 py-2 rounded-lg">
+                        <h4 class="font-medium text-slate-800">Date & Time</h4>
+                    </div>
+
+                    <!-- Academic Year -->
+                    <div>
+                        <label for="bulkAcademicYearId" class="block text-sm font-medium text-slate-700 mb-1">Academic Year*</label>
+                        <div class="relative">
+                            <select id="bulkAcademicYearId" name="AcademicYearId" required
+                                    class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pr-8 sm:text-sm">
+                                @foreach (var year in ViewBag.AcademicYears)
+                                {
+                                    <option value="@year.Value" selected="@year.Selected">@year.Text</option>
+                                }
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                                <i class="material-icons text-sm">expand_more</i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Date Range with improved styling -->
+                    <div class="bg-slate-50 p-3 rounded-md">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="bulkStartDate" class="block text-sm font-medium text-slate-700 mb-1">Start Date*</label>
+                                <input type="date" id="bulkStartDate" name="StartDate" required
+                                       class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm">
+                            </div>
+                            <div>
+                                <label for="bulkEndDate" class="block text-sm font-medium text-slate-700 mb-1">End Date*</label>
+                                <input type="date" id="bulkEndDate" name="EndDate" required
+                                       class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- All Day Checkbox with improved styling -->
+                    <div class="flex items-center bg-slate-50 p-3 rounded-md">
+                        <input type="checkbox" id="bulkIsAllDay" name="IsAllDay"
+                               class="h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500">
+                        <label for="bulkIsAllDay" class="ml-2 block text-sm text-slate-700">All Day Events</label>
+                        <div class="ml-auto flex items-center text-xs text-slate-500">
+                            <i class="material-icons text-sm mr-1">schedule</i>
+                            <span>No specific time</span>
+                        </div>
+                    </div>
+
+                    <!-- Time with improved styling -->
+                    <div class="grid grid-cols-2 gap-4 bg-slate-50 p-3 rounded-md" id="bulkTimeContainer">
+                        <div>
+                            <label for="bulkStartTime" class="block text-sm font-medium text-slate-700 mb-1">Start Time*</label>
+                            <input type="time" id="bulkStartTime" name="StartTime" required
+                                   class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm">
+                        </div>
+                        <div>
+                            <label for="bulkEndTime" class="block text-sm font-medium text-slate-700 mb-1">End Time*</label>
+                            <input type="time" id="bulkEndTime" name="EndTime" required
+                                   class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm">
+                        </div>
+                    </div>
+                    
+                    <!-- Repeat Pattern with visual indicator -->
+                    <div>
+                        <label for="bulkRepeatPattern" class="block text-sm font-medium text-slate-700 mb-1">Repeat Pattern</label>
+                        <div class="relative">
+                            <select id="bulkRepeatPattern" name="RepeatPattern"
+                                    class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pr-8 sm:text-sm">
+                                <option value="none">No Repeat (Single Event)</option>
+                                <option value="daily">Daily</option>
+                                <option value="weekdays">Weekdays Only (Mon-Fri)</option>
+                                <option value="weekly">Weekly (Same Day of Week)</option>
+                                <option value="biweekly">Bi-Weekly (Every 2 Weeks)</option>
+                                <option value="monthly">Monthly (Same Day of Month)</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                                <i class="material-icons text-sm">expand_more</i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Location with icon -->
+                    <div class="flex items-center">
+                        <i class="material-icons text-slate-400 mr-2">location_on</i>
+                        <div class="w-full">
+                            <label for="bulkLocation" class="block text-sm font-medium text-slate-700 mb-1">Location</label>
+                            <input type="text" id="bulkLocation" name="Location"
+                                   class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Event Audience Section with improved UI -->
+            <div class="mt-6 bg-slate-50 p-4 rounded-lg">
+                <h4 class="font-medium text-slate-800 mb-3 flex items-center">
+                    <i class="material-icons text-cyan-600 mr-2">groups</i>
+                    <span>Event Audience</span>
+                    <span class="ml-2 text-xs text-slate-500">(Leave blank to apply to everyone)</span>
+                </h4>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+                    <!-- School -->
+                    <div>
+                        <label for="bulkSchoolId" class="block text-sm font-medium text-slate-700 mb-1">School</label>
+                        <div class="relative">
+                            <select id="bulkSchoolId" name="SchoolId"
+                                    class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pr-8 sm:text-sm">
+                                <option value="">All Schools</option>
+                                @foreach (var school in ViewBag.Schools)
+                                {
+                                    <option value="@school.Value">@school.Text</option>
+                                }
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                                <i class="material-icons text-sm">expand_more</i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Programme (will be populated via AJAX) -->
+                    <div>
+                        <label for="bulkProgrammeId" class="block text-sm font-medium text-slate-700 mb-1">Programme</label>
+                        <div class="relative">
+                            <select id="bulkProgrammeId" name="ProgrammeId" disabled
+                                    class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pr-8 sm:text-sm">
+                                <option value="">All Programmes</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                                <i class="material-icons text-sm">expand_more</i>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- Programme Level -->
+                    <div>
+                        <label for="bulkProgrammeLevelId" class="block text-sm font-medium text-slate-700 mb-1">Programme Level</label>
+                        <div class="relative">
+                            <select id="bulkProgrammeLevelId" name="ProgrammeLevelId"
+                                    class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pr-8 sm:text-sm">
+                                <option value="">All Levels</option>
+                                @foreach (var level in ViewBag.ProgrammeLevels)
+                                {
+                                    <option value="@level.Value">@level.Text</option>
+                                }
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                                @* <i class="material-icons text-sm">expand_more</i> *@
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- Mode of Study -->
+                    <div>
+                        <label for="bulkModeOfStudyId" class="block text-sm font-medium text-slate-700 mb-1">Mode of Study</label>
+                        <div class="relative">
+                            <select id="bulkModeOfStudyId" name="ModeOfStudyId"
+                                    class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pr-8 sm:text-sm">
+                                <option value="">All Modes</option>
+                                @foreach (var mode in ViewBag.ModesOfStudy)
+                                {
+                                    <option value="@mode.Value">@mode.Text</option>
+                                }
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                                <i class="material-icons text-sm">expand_more</i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Student Year -->
+                    <div>
+                        <label for="bulkStudentYear" class="block text-sm font-medium text-slate-700 mb-1">Student Year</label>
+                        <div class="relative">
+                            <select id="bulkStudentYear" name="StudentYear"
+                                    class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pr-8 sm:text-sm">
+                                <option value="">All Years</option>
+                                <option value="1">Year 1</option>
+                                <option value="2">Year 2</option>
+                                <option value="3">Year 3</option>
+                                <option value="4">Year 4</option>
+                                <option value="5">Year 5</option>
+                                <option value="6">Year 6</option>
+                                <option value="7">Year 7</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                                <i class="material-icons text-sm">expand_more</i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Semester -->
+                    <div>
+                        <label for="bulkSemester" class="block text-sm font-medium text-slate-700 mb-1">Semester</label>
+                        <div class="relative">
+                            <select id="bulkSemester" name="Semester"
+                                    class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pr-8 sm:text-sm">
+                                <option value="">All Semesters</option>
+                                <option value="1">Semester 1</option>
+                                <option value="2">Semester 2</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                                <i class="material-icons text-sm">expand_more</i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Form Actions with improved styling -->
+            <div class="flex justify-end gap-3 mt-6 bg-slate-50 p-4 rounded-lg border-t border-slate-100">
+                <button type="button" onclick="closeBulkCreateModal()"
+                        class="px-4 py-2.5 bg-white text-slate-700 rounded-lg hover:bg-slate-100 transition-colors border border-slate-300 shadow-sm flex items-center">
+                    <i class="material-icons text-sm mr-2">close</i>
+                    <span>Cancel</span>
+                </button>
+                <button type="submit"
+                        class="px-4 py-2.5 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors border border-cyan-600 shadow-sm flex items-center">
+                    <i class="material-icons text-sm mr-2">playlist_add</i>
+                    <span>Create Events</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Generate System Events Modal with Improved Design -->
+<div id="generateSystemEventsModal" class="hidden fixed inset-0 bg-slate-900 bg-opacity-60 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-0 border-0 w-full max-w-md shadow-xl rounded-xl bg-white">
+        <div class="bg-slate-50 rounded-t-xl px-6 py-4 flex justify-between items-center border-b">
+            <h3 class="text-lg font-medium text-slate-900 flex items-center">
+                <i class="material-icons text-amber-600 mr-2">auto_awesome</i>
+                <span>Generate System Events</span>
+            </h3>
+            <button onclick="closeGenerateSystemEventsModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100 transition-colors">
+                <i class="material-icons">close</i>
+            </button>
+        </div>
+        
+        <div class="p-6">
+            <div class="bg-amber-50 border border-amber-200 p-4 rounded-lg mb-5">
+                <p class="text-sm text-amber-800 flex items-start">
+                    <i class="material-icons text-amber-600 mr-2 mt-0.5">info</i>
+                    <span>This will generate system events based on dates defined in the selected academic year. 
+                    Any existing system events for this academic year will be removed and replaced.</span>
+                </p>
+            </div>
+            
+            <div class="mb-6">
+                <label for="generateAcademicYearId" class="block text-sm font-medium text-slate-700 mb-1">Academic Year*</label>
+                <div class="relative">
+                    <select id="generateAcademicYearId" name="AcademicYearId" required
+                            class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pr-8 sm:text-sm">
+                        @foreach (var year in ViewBag.AcademicYears)
+                        {
+                            <option value="@year.Value" selected = "@year.Selected">@year.Text</option>
+                        }
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                        @* <i class="material-icons text-sm">expand_more</i> *@
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex justify-end gap-3">
+                <button type="button" onclick="closeGenerateSystemEventsModal()"
+                        class="px-4 py-2.5 bg-white text-slate-700 rounded-lg hover:bg-slate-100 transition-colors border border-slate-300 shadow-sm flex items-center">
+                    <i class="material-icons text-sm mr-2">close</i>
+                    <span>Cancel</span>
+                </button>
+                <button type="button" onclick="generateSystemEvents()"
+                        class="px-4 py-2.5 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors border border-amber-600 shadow-sm flex items-center">
+                    <i class="material-icons text-sm mr-2">auto_awesome</i>
+                    <span>Generate Events</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal with Improved Design -->
+<div id="confirmationModal" class="hidden fixed inset-0 bg-slate-900 bg-opacity-60 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-0 border-0 w-full max-w-md shadow-xl rounded-xl bg-white">
+        <div class="bg-slate-50 rounded-t-xl px-6 py-4 flex justify-between items-center border-b">
+            <h3 id="confirmationTitle" class="text-lg font-medium text-slate-900 flex items-center">
+                <i class="material-icons text-red-600 mr-2">warning</i>
+                <span>Confirm Delete</span>
+            </h3>
+            <button onclick="closeConfirmationModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100 transition-colors">
+                <i class="material-icons">close</i>
+            </button>
+        </div>
+        
+        <div class="p-6">
+            <div class="bg-red-50 border border-red-200 p-4 rounded-lg mb-5">
+                <p id="confirmationMessage" class="text-sm text-red-800 flex items-start">
+                    <i class="material-icons text-red-600 mr-2 mt-0.5">error_outline</i>
+                    <span>Are you sure you want to delete this event? This action cannot be undone.</span>
+                </p>
+            </div>
+            
+            <div class="flex justify-end gap-3">
+                <button type="button" onclick="closeConfirmationModal()"
+                        class="px-4 py-2.5 bg-white text-slate-700 rounded-lg hover:bg-slate-100 transition-colors border border-slate-300 shadow-sm flex items-center">
+                    <i class="material-icons text-sm mr-2">close</i>
+                    <span>Cancel</span>
+                </button>
+                <button type="button" id="confirmButton"
+                        class="px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors border border-red-600 shadow-sm flex items-center">
+                    <i class="material-icons text-sm mr-2">delete</i>
+                    <span>Delete</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success/Error Toast Notification with Improved Design -->
+<div id="toastNotification" class="hidden fixed bottom-4 right-4 max-w-xs shadow-xl rounded-lg z-50 transform transition-transform duration-300 ease-in-out">
+    <div class="flex items-center p-4 rounded-lg">
+        <i id="toastIcon" class="material-icons mr-3"></i>
+        <p id="toastMessage" class="text-sm font-medium"></p>
+        <button onclick="hideToast()" class="ml-auto text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-white hover:bg-opacity-20 transition-colors">
+            <i class="material-icons text-sm">close</i>
+        </button>
+    </div>
+</div>
+
+<!-- Add this to your Scripts section to support the new UI elements -->
+@section Scripts {
+    <!-- FullCalendar Dependencies -->
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.0/main.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.0/main.min.js"></script>
+    
+    <!-- Additional CSS for the enhanced calendar design -->
+    <style>
+        /* Enhanced calendar styling */
+        .calendar-container {
+            --fc-border-color: #e2e8f0;
+            --fc-button-text-color: #1e293b;
+            --fc-button-bg-color: #f1f5f9;
+            --fc-button-border-color: #cbd5e1;
+            --fc-button-hover-bg-color: #e2e8f0;
+            --fc-button-hover-border-color: #94a3b8;
+            --fc-button-active-bg-color: #0891b2;
+            --fc-button-active-border-color: #0891b2;
+            --fc-button-active-text-color: #ffffff;
+            --fc-event-bg-color: #0ea5e9;
+            --fc-event-border-color: #0ea5e9;
+            --fc-today-bg-color: #ecfeff;
+            --fc-highlight-color: rgba(8, 145, 178, 0.1);
+            --fc-event-selected-overlay-color: rgba(8, 145, 178, 0.25);
+            --fc-page-bg-color: #ffffff;
+        }
+        
+        /* Enhanced calendar event styling */
+        .calendar-container .fc-event {
+            border-radius: 4px;
+            padding: 2px 4px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            border-left-width: 3px;
+        }
+        
+        .calendar-container .fc-daygrid-day-top {
+            justify-content: center;
+            margin-bottom: 4px;
+        }
+        
+        .calendar-container .fc-daygrid-day-number {
+            font-weight: 500;
+            color: #64748b;
+            padding: 4px 8px;
+            border-radius: 50%;
+        }
+        
+        .calendar-container .fc-day-today .fc-daygrid-day-number {
+            background-color: #0891b2;
+            color: white;
+        }
+        
+        .calendar-container .fc-col-header-cell {
+            background-color: #f8fafc;
+            padding: 8px 0;
+        }
+        
+        .calendar-container .fc-col-header-cell-cushion {
+            padding: 6px;
+            font-weight: 600;
+            color: #334155;
+        }
+        
+        .calendar-container .fc-toolbar-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+        
+        .calendar-container .fc-button-primary {
+            border-radius: 0.375rem;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            padding: 0.375rem 0.75rem;
+            text-transform: none;
+            font-weight: 500;
+        }
+        
+        .calendar-container .fc-event-title {
+            font-weight: 500;
+        }
+        
+        .calendar-container .fc-event-time {
+            font-size: 0.75rem;
+        }
+        
+        /* Event status styling */
+        .calendar-container .event-published {
+            border-left-color: #3b82f6; /* blue */
+        }
+        
+        .calendar-container .event-unpublished {
+            border-left-color: #cbd5e1; /* slate */
+            opacity: 0.75;
+        }
+        
+        .calendar-container .event-system {
+            border-left-color: #f59e0b; /* amber */
+        }
+        
+        /* Improved toast styling */
+        #toastNotification.success {
+            background-color: #ecfdf5;
+            border-left: 4px solid #10b981;
+            color: #065f46;
+        }
+        
+        #toastNotification.error {
+            background-color: #fef2f2;
+            border-left: 4px solid #ef4444;
+            color: #b91c1c;
+        }
+        
+        #toastNotification.info {
+            background-color: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            color: #1e40af;
+        }
+    </style>
+    
+    <script>
+        // Global variables
+        let calendar;
+        let currentView = 'dayGridMonth';
+        let currentEvent = null; // Used for editing
+        let currentFilters = {
+            academicYearId: '@ViewBag.CurrentAcademicYearId',
+            eventTypeId: '',
+            includeUnpublished: true,
+            status: 'published'
+        };
+        
+        // Anti-forgery token
+        const csrfToken = document.getElementById('RequestVerificationToken').value;
+        
+        // Initialize the page when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCalendar();
+            setupEventListeners();
+            setupFormHandlers();
+            
+            // Update publish status indicator when checkbox changes
+            document.getElementById('eventIsPublished').addEventListener('change', function() {
+                updatePublishStatusIndicator(this.checked);
+            });
+            
+            document.getElementById('bulkIsPublished').addEventListener('change', function() {
+                updateBulkPublishStatusIndicator(this.checked);
+            });
+        });
+
+        // Initialize FullCalendar with enhanced options
+        function initializeCalendar() {
+            const calendarEl = document.getElementById('calendar');
+            
+            calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: currentView,
+                headerToolbar: {
+                    left: 'prev,next',
+                    center: 'title',
+                    right: ''
+                },
+                height: 'auto',
+                aspectRatio: 1.8,
+                events: fetchEvents,
+                eventTimeFormat: {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    meridiem: 'short'
+                },
+                eventClick: handleEventClick,
+                dateClick: handleDateClick,
+                editable: true, // Enable drag-and-drop
+                eventDrop: handleEventDrop,
+                eventResize: handleEventResize,
+                datesSet: function(info) {
+                    // Update date ranges when calendar dates change
+                },
+                loading: function(isLoading) {
+                    // Add loading indicator
+                    if (isLoading) {
+                        const loadingDiv = document.createElement('div');
+                        loadingDiv.id = 'calendar-loading';
+                        loadingDiv.className = 'fixed inset-0 bg-slate-900 bg-opacity-20 flex justify-center items-center z-40';
+                        loadingDiv.innerHTML = '<div class="bg-white p-4 rounded-lg shadow-lg"><i class="material-icons animate-spin mr-2">refresh</i> Loading calendar...</div>';
+                        document.body.appendChild(loadingDiv);
+                    } else {
+                        const loadingDiv = document.getElementById('calendar-loading');
+                        if (loadingDiv) {
+                            loadingDiv.remove();
+                        }
+                    }
+                },
+                eventClassNames: function(info) {
+                    // Add classes based on event properties
+                    const classes = [];
+                    
+                    if (info.event.extendedProps.isPublished) {
+                        classes.push('event-published');
+                    } else {
+                        classes.push('event-unpublished');
+                    }
+                    
+                    if (info.event.extendedProps.isSystemEvent) {
+                        classes.push('event-system');
+                    }
+                    
+                    return classes;
+                },
+                eventContent: function(info) {
+                    // Custom rendering of events to include icons
+                    let iconName = 'event';
+                    
+                    // Set icon based on event type
+                    if (info.event.extendedProps.isSystemEvent) {
+                        iconName = 'auto_awesome';
+                    } else if (!info.event.extendedProps.isPublished) {
+                        iconName = 'visibility_off';
+                    }
+                    
+                    let title = info.event.title;
+                    
+                    let eventEl = document.createElement('div');
+                    eventEl.className = 'fc-event-main-wrapper';
+                    
+                    if (!info.event.allDay) {
+                        let timeText = info.timeText;
+                        let timeEl = document.createElement('div');
+                        timeEl.className = 'fc-event-time text-xs';
+                        timeEl.innerHTML = timeText;
+                        eventEl.appendChild(timeEl);
+                    }
+                    
+                    let contentWrapper = document.createElement('div');
+                    contentWrapper.className = 'flex items-center';
+                    
+                    let iconEl = document.createElement('i');
+                    iconEl.className = 'material-icons text-xs mr-1';
+                    iconEl.innerHTML = iconName;
+                    contentWrapper.appendChild(iconEl);
+                    
+                    let titleEl = document.createElement('div');
+                    titleEl.className = 'fc-event-title text-xs font-medium truncate';
+                    titleEl.innerHTML = title;
+                    contentWrapper.appendChild(titleEl);
+                    
+                    eventEl.appendChild(contentWrapper);
+                    
+                    return { domNodes: [eventEl] };
+                }
+            });
+            
+            calendar.render();
+        }
+        
+        // Set up event listeners for the UI
+        function setupEventListeners() {
+            // Filters change event listener
+            document.getElementById('academicYearSelect').addEventListener('change', updateFilters);
+            document.getElementById('eventTypeSelect').addEventListener('change', updateFilters);
+            document.getElementById('eventStatusSelect').addEventListener('change', updateFilters);
+            
+            // View toggle buttons
+            document.getElementById('monthViewBtn').addEventListener('click', function() {
+                setCalendarView('dayGridMonth', this);
+            });
+            document.getElementById('weekViewBtn').addEventListener('click', function() {
+                setCalendarView('timeGridWeek', this);
+            });
+            document.getElementById('listViewBtn').addEventListener('click', function() {
+                setCalendarView('listMonth', this);
+            });
+            
+            // Today button
+            document.getElementById('todayBtn').addEventListener('click', function() {
+                calendar.today();
+            });
+            
+            // Filter toggle button
+            document.getElementById('toggleFiltersBtn').addEventListener('click', function() {
+                const filtersContainer = document.getElementById('filtersContainer');
+                if (filtersContainer.classList.contains('hidden')) {
+                    filtersContainer.classList.remove('hidden');
+                    this.innerHTML = '<i class="material-icons text-sm mr-1">tune</i><span>Hide Filters</span>';
+                } else {
+                    filtersContainer.classList.add('hidden');
+                    this.innerHTML = '<i class="material-icons text-sm mr-1">tune</i><span>Show Filters</span>';
+                }
+            });
+            
+            // All day checkbox events
+            document.getElementById('eventIsAllDay').addEventListener('change', toggleTimeFields);
+            document.getElementById('bulkIsAllDay').addEventListener('change', toggleBulkTimeFields);
+            
+            // School dropdown change to load programmes
+            document.getElementById('eventSchoolId').addEventListener('change', function() {
+                loadProgrammes(this.value, 'eventProgrammeId');
+            });
+            
+            document.getElementById('bulkSchoolId').addEventListener('change', function() {
+                loadProgrammes(this.value, 'bulkProgrammeId');
+            });
+            
+            // Color picker sync
+            document.getElementById('eventColor').addEventListener('input', function() {
+                document.getElementById('eventColorHex').value = this.value;
+            });
+            
+            document.getElementById('eventColorHex').addEventListener('input', function() {
+                document.getElementById('eventColor').value = this.value;
+            });
+            
+            document.getElementById('bulkColor').addEventListener('input', function() {
+                document.getElementById('bulkColorHex').value = this.value;
+            });
+            
+            document.getElementById('bulkColorHex').addEventListener('input', function() {
+                document.getElementById('bulkColor').value = this.value;
+            });
+            
+            // Event type change to update default color
+            document.getElementById('eventTypeId').addEventListener('change', updateEventTypeColor);
+            document.getElementById('bulkEventTypeId').addEventListener('change', updateBulkEventTypeColor);
+        }
+        
+        // Set up form handlers
+        function setupFormHandlers() {
+            // Event Form
+            document.getElementById('eventForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveEvent();
+            });
+            
+            // Bulk Create Form
+            document.getElementById('bulkCreateForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                createBulkEvents();
+            });
+        }
+        
+        // Update filters and refresh calendar
+        function updateFilters() {
+            const status = document.getElementById('eventStatusSelect').value;
+            
+            currentFilters = {
+                academicYearId: document.getElementById('academicYearSelect').value,
+                eventTypeId: document.getElementById('eventTypeSelect').value,
+                includeUnpublished: status !== 'published',
+                status: status
+            };
+            
+            // Refresh the calendar with new filters
+            calendar.refetchEvents();
+        }
+        
+        // Load programmes based on selected school
+        function loadProgrammes(schoolId, targetElementId) {
+            const programmeSelect = document.getElementById(targetElementId);
+            
+            // Reset and disable the programmes dropdown
+            programmeSelect.innerHTML = '<option value="">All Programmes</option>';
+            programmeSelect.disabled = true;
+            
+            if (!schoolId) {
+                return;
+            }
+            
+            // Fetch programmes for the selected school
+            fetch(`/AcademicCalendar/GetProgrammes/${schoolId}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Add options for each programme
+                    data.forEach(programme => {
+                        const option = document.createElement('option');
+                        option.value = programme.id;
+                        option.textContent = programme.name;
+                        programmeSelect.appendChild(option);
+                    });
+                    
+                    // Enable the dropdown
+                    programmeSelect.disabled = false;
+                })
+                .catch(error => {
+                    console.error('Error loading programmes:', error);
+                });
+        }
+        
+        // Update event type color when event type is changed
+        function updateEventTypeColor() {
+            fetch(`/AcademicCalendar/GetEventTypes`)
+                .then(response => response.json())
+                .then(data => {
+                    const eventTypeId = document.getElementById('eventTypeId').value;
+                    const eventType = data.find(t => t.id == eventTypeId);
+                    
+                    if (eventType) {
+                        document.getElementById('eventColor').value = eventType.color;
+                        document.getElementById('eventColorHex').value = eventType.color;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading event types:', error);
+                });
+        }
+        
+        // Update bulk event type color when event type is changed
+        function updateBulkEventTypeColor() {
+            fetch(`/AcademicCalendar/GetEventTypes`)
+                .then(response => response.json())
+                .then(data => {
+                    const eventTypeId = document.getElementById('bulkEventTypeId').value;
+                    const eventType = data.find(t => t.id == eventTypeId);
+                    
+                    if (eventType) {
+                        document.getElementById('bulkColor').value = eventType.color;
+                        document.getElementById('bulkColorHex').value = eventType.color;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading event types:', error);
+                });
+        }
+
+        // Update publish status indicator
+        function updatePublishStatusIndicator(isPublished) {
+            const statusElement = document.getElementById('publishStatus');
+            if (isPublished) {
+                statusElement.className = 'inline-block px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800';
+                statusElement.textContent = 'Visible to users';
+            } else {
+                statusElement.className = 'inline-block px-2 py-1 text-xs rounded-full bg-slate-100 text-slate-800';
+                statusElement.textContent = 'Hidden from users';
+            }
+        }
+
+        // Update bulk publish status indicator
+        function updateBulkPublishStatusIndicator(isPublished) {
+            const statusElement = document.getElementById('bulkPublishStatus');
+            if (isPublished) {
+                statusElement.className = 'inline-block px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800';
+                statusElement.textContent = 'Visible to users';
+            } else {
+                statusElement.className = 'inline-block px-2 py-1 text-xs rounded-full bg-slate-100 text-slate-800';
+                statusElement.textContent = 'Hidden from users';
+            }
+        }
+        
+        // Fetch events from the server for FullCalendar
+        function fetchEvents(info, successCallback, failureCallback) {
+            const start = info.startStr;
+            const end = info.endStr;
+            
+            // Construct the URL with query parameters
+            const url = new URL('/AcademicCalendar/GetEvents', window.location.origin);
+            url.searchParams.append('academicYearId', currentFilters.academicYearId);
+            url.searchParams.append('start', start);
+            url.searchParams.append('end', end);
+            url.searchParams.append('includeUnpublished', currentFilters.includeUnpublished);
+            
+            // Add filters if they have values
+            if (currentFilters.eventTypeId) url.searchParams.append('eventTypeId', currentFilters.eventTypeId);
+            if (currentFilters.status && currentFilters.status !== 'all') {
+                if (currentFilters.status === 'published') {
+                    url.searchParams.append('isPublished', true);
+                } else if (currentFilters.status === 'unpublished') {
+                    url.searchParams.append('isPublished', false);
+                } else if (currentFilters.status === 'system') {
+                    url.searchParams.append('isSystemEvent', true);
+                }
+            }
+            
+            // Fetch the events
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    successCallback(data);
+                })
+                .catch(error => {
+                    console.error('Error fetching events:', error);
+                    failureCallback(error);
+                });
+        }
+        
+        // Handle event click to edit
+        function handleEventClick(info) {
+            const event = info.event;
+            console.log("Event object:", event);
+
+            // Try to get ID from various possible locations
+            let eventId = event.id;
+            console.log("Direct event.id:", eventId);
+            
+            // Prevent editing system events
+            if (event.extendedProps.isSystemEvent) {
+                showToast('System events cannot be edited directly. They are generated automatically from academic year dates.', 'info');
+                return;
+            }
+            
+            // Get event details from the server
+            fetch(`/AcademicCalendar/GetEventDetails/${event.id}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.success) {
+                        showToast(data.message || 'Error loading event details', 'error');
+                        return;
+                    }
+                    
+                    // Store the current event
+                    currentEvent = data.eventData;
+                    
+                    // Set form title
+                    document.getElementById('eventFormTitle').innerHTML = '<i class="material-icons text-cyan-600 mr-2">edit</i><span>Edit Event</span>';
+                    
+                    // Fill the form with event data
+                    fillEventForm(currentEvent);
+                    
+                    // Show delete button for existing events
+                    document.getElementById('deleteEventBtn').classList.remove('hidden');
+                    
+                    // Open the modal
+                    document.getElementById('eventFormModal').classList.remove('hidden');
+                })
+                .catch(error => {
+                    console.error('Error fetching event details:', error);
+                    showToast('Error loading event details. Please try again.', 'error');
+                });
+        }
+        
+        // Handle date click to add a new event
+        function handleDateClick(info) {
+            // Reset form
+            document.getElementById('eventForm').reset();
+            
+            // Set form title
+            document.getElementById('eventFormTitle').innerHTML = '<i class="material-icons text-cyan-600 mr-2">add_circle</i><span>Add New Event</span>';
+            
+            // Set the date
+            document.getElementById('eventStartDate').value = info.dateStr;
+            document.getElementById('eventEndDate').value = info.dateStr;
+            
+            // Set default values
+            document.getElementById('eventId').value = '0';
+            document.getElementById('eventSystemEvent').value = 'false';
+            document.getElementById('eventIsPublished').checked = true;
+            document.getElementById('eventColor').value = '#3788d8';
+            document.getElementById('eventColorHex').value = '#3788d8';
+            
+            // Update publish status indicator
+            updatePublishStatusIndicator(true);
+            
+            // Hide delete button for new events
+            document.getElementById('deleteEventBtn').classList.add('hidden');
+            
+            // Set current event to null
+            currentEvent = null;
+            
+            // Update time fields visibility
+            toggleTimeFields();
+            
+            // Update color based on selected event type
+            updateEventTypeColor();
+            
+            // Open the modal
+            document.getElementById('eventFormModal').classList.remove('hidden');
+        }
+        
+        // Handle event drag-and-drop with improved error handling
+        function handleEventDrop(info) {
+            const event = info.event;
+            
+            // Prevent editing system events
+            if (event.extendedProps.isSystemEvent) {
+                info.revert();
+                showToast('System events cannot be moved. They are generated automatically from academic year dates.', 'info');
+                return;
+            }
+            
+            // Make sure we have a valid numeric ID
+            const eventId = parseInt(event.id);
+            if (isNaN(eventId)) {
+                console.error("Invalid event ID:", event.id);
+                info.revert();
+                showToast('Error: Could not identify the event.', 'error');
+                return;
+            }
+            
+            // Confirm the move
+            const delta = info.delta;
+            let message = `Move this event`;
+            
+            if (delta.days !== 0 || delta.milliseconds !== 0) {
+                const days = delta.days;
+                const hours = Math.floor(delta.milliseconds / (1000 * 60 * 60));
+                const minutes = Math.floor((delta.milliseconds / (1000 * 60)) % 60);
+                
+                if (days !== 0) {
+                    message += ` ${days > 0 ? 'forward' : 'backward'} by ${Math.abs(days)} day${Math.abs(days) !== 1 ? 's' : ''}`;
+                }
+                
+                if (hours !== 0 || minutes !== 0) {
+                    message += `${days !== 0 ? ' and' : ''} ${hours !== 0 ? ` ${hours} hour${hours !== 1 ? 's' : ''}` : ''}${minutes !== 0 ? ` ${minutes} minute${minutes !== 1 ? 's' : ''}` : ''}`;
+                }
+                
+                message += '?';
+            }
+            
+            // Confirm before updating
+            if (!confirm(message)) {
+                info.revert();
+                return;
+            }
+            
+            // Update event dates on the server
+            moveEvent(eventId, event.start, event.end, event.allDay);
+        }
+        
+        // Handle event resize
+        function handleEventResize(info) {
+            const event = info.event;
+            
+            // Prevent editing system events
+            if (event.extendedProps.isSystemEvent) {
+                info.revert();
+                showToast('System events cannot be resized. They are generated automatically from academic year dates.', 'info');
+                return;
+            }
+            
+            // Make sure we have a valid numeric ID
+            const eventId = parseInt(event.id);
+            if (isNaN(eventId)) {
+                console.error("Invalid event ID:", event.id);
+                info.revert();
+                showToast('Error: Could not identify the event.', 'error');
+                return;
+            }
+            
+            // Confirm the resize
+            if (!confirm('Resize this event?')) {
+                info.revert();
+                return;
+            }
+            
+            // Update event dates on the server
+            moveEvent(eventId, event.start, event.end, event.allDay);
+        }
+        
+        // Move event on the server with improved data handling
+        function moveEvent(id, start, end, allDay) {
+            console.log("Moving event with ID:", id, "Start:", start, "End:", end, "AllDay:", allDay);
+            
+            // Create a proper data object
+            const data = {
+                id: id,
+                start: start ? start.toISOString() : null,
+                end: end ? end.toISOString() : null,
+                allDay: allDay
+            };
+            
+            fetch('/AcademicCalendar/MoveEvent', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': csrfToken
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok: ' + response.statusText);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    showToast('Event updated successfully', 'success');
+                } else {
+                    console.error("Server returned error:", data.message);
+                    showToast(data.message || 'Error updating event', 'error');
+                    calendar.refetchEvents(); // Revert change in the UI
+                }
+            })
+            .catch(error => {
+                console.error('Error moving event:', error);
+                showToast('Error updating event. Please try again.', 'error');
+                calendar.refetchEvents(); // Revert change in the UI
+            });
+        }
+        
+        // Fill the event form with data
+        function fillEventForm(event) {
+            document.getElementById('eventId').value = event.id;
+            document.getElementById('eventTitle').value = event.title;
+            document.getElementById('eventDescription').value = event.description || '';
+            document.getElementById('eventAcademicYearId').value = event.academicYearId;
+            document.getElementById('eventTypeId').value = event.eventTypeId;
+            document.getElementById('eventSchoolId').value = event.schoolId || '';
+            document.getElementById('eventProgrammeLevelId').value = event.programmeLevelId || '';
+            document.getElementById('eventModeOfStudyId').value = event.modeOfStudyId || '';
+            document.getElementById('eventStudentYear').value = event.studentYear || '';
+            document.getElementById('eventSemester').value = event.semester || '';
+            document.getElementById('eventLocation').value = event.location || '';
+            document.getElementById('eventContactPerson').value = event.contactPerson || '';
+            document.getElementById('eventContactEmail').value = event.contactEmail || '';
+            document.getElementById('eventIsPublished').checked = event.isPublished;
+            document.getElementById('eventSystemEvent').value = event.isSystemEvent;
+            document.getElementById('eventColor').value = event.color || '#3788d8';
+            document.getElementById('eventColorHex').value = event.color || '#3788d8';
+            
+            // Update publish status indicator
+            updatePublishStatusIndicator(event.isPublished);
+            
+            // Set date and time
+            const startDateTime = new Date(event.startDateTime);
+            document.getElementById('eventStartDate').value = formatDate(startDateTime);
+            document.getElementById('eventStartTime').value = formatTime(startDateTime);
+            
+            document.getElementById('eventIsAllDay').checked = event.isAllDay;
+            
+            if (event.endDateTime) {
+                const endDateTime = new Date(event.endDateTime);
+                document.getElementById('eventEndDate').value = formatDate(endDateTime);
+                document.getElementById('eventEndTime').value = formatTime(endDateTime);
+            } else {
+                document.getElementById('eventEndDate').value = formatDate(startDateTime);
+                document.getElementById('eventEndTime').value = '';
+            }
+
+            // Load programmes if school is selected
+            if (event.schoolId) {
+                loadProgrammes(event.schoolId, 'eventProgrammeId');
+
+                // Set programme after loading
+                setTimeout(() => {
+                    if (event.programmeId) {
+                        document.getElementById('eventProgrammeId').value = event.programmeId;
+                    }
+                }, 500);
+            }
+
+            // Update time fields visibility
+            toggleTimeFields();
+        }
+
+        // Toggle time fields based on all day checkbox
+        function toggleTimeFields() {
+            const isAllDay = document.getElementById('eventIsAllDay').checked;
+            const startTimeContainer = document.getElementById('startTimeContainer');
+            const endTimeContainer = document.getElementById('endTimeContainer');
+
+            if (isAllDay) {
+                startTimeContainer.classList.add('hidden');
+                endTimeContainer.classList.add('hidden');
+                document.getElementById('eventStartTime').removeAttribute('required');
+                document.getElementById('eventEndTime').removeAttribute('required');
+            } else {
+                startTimeContainer.classList.remove('hidden');
+                endTimeContainer.classList.remove('hidden');
+                document.getElementById('eventStartTime').setAttribute('required', 'required');
+            }
+        }
+
+        // Toggle bulk time fields based on all day checkbox
+        function toggleBulkTimeFields() {
+            const isAllDay = document.getElementById('bulkIsAllDay').checked;
+            const timeContainer = document.getElementById('bulkTimeContainer');
+
+            if (isAllDay) {
+                timeContainer.classList.add('hidden');
+                document.getElementById('bulkStartTime').removeAttribute('required');
+                document.getElementById('bulkEndTime').removeAttribute('required');
+            } else {
+                timeContainer.classList.remove('hidden');
+                document.getElementById('bulkStartTime').setAttribute('required', 'required');
+                document.getElementById('bulkEndTime').setAttribute('required', 'required');
+            }
+        }
+
+        // Save event to the server
+        function saveEvent() {
+            // Get form data directly
+            const eventData = {
+                Id: parseInt(document.getElementById('eventId').value) || 0,
+                Title: document.getElementById('eventTitle').value,
+                Description: document.getElementById('eventDescription').value,
+                IsAllDay: document.getElementById('eventIsAllDay').checked,
+                AcademicYearId: parseInt(document.getElementById('eventAcademicYearId').value),
+                EventTypeId: parseInt(document.getElementById('eventTypeId').value),
+                Color: document.getElementById('eventColor').value,
+                Location: document.getElementById('eventLocation').value,
+                ContactPerson: document.getElementById('eventContactPerson').value,
+                ContactEmail: document.getElementById('eventContactEmail').value,
+                IsPublished: document.getElementById('eventIsPublished').checked,
+                IsSystemEvent: document.getElementById('eventSystemEvent').value === 'true'
+            };
+
+            // Handle optional select fields
+            const selectFields = ['SchoolId', 'ProgrammeId', 'ProgrammeLevelId', 'ModeOfStudyId', 'StudentYear', 'Semester'];
+            selectFields.forEach(field => {
+                const element = document.getElementById('event' + field);
+                if (element && element.value) {
+                    eventData[field] = parseInt(element.value);
+                } else {
+                    eventData[field] = null;
+                }
+            });
+
+            // Handle date/time fields
+            const startDate = document.getElementById('eventStartDate').value;
+            const startTime = document.getElementById('eventStartTime').value || '00:00';
+            const endDate = document.getElementById('eventEndDate').value;
+            const endTime = document.getElementById('eventEndTime').value || '00:00';
+
+            if (eventData.IsAllDay) {
+                eventData.StartDateTime = startDate + 'T00:00:00';
+                eventData.EndDateTime = endDate ? endDate + 'T23:59:59' : null;
+            } else {
+                eventData.StartDateTime = startDate + 'T' + startTime + ':00';
+                eventData.EndDateTime = (endDate && endTime) ? endDate + 'T' + endTime + ':00' : null;
+            }
+
+            console.log("Event data:", eventData);
+
+            // Determine if create or update
+            const isNew = eventData.Id === 0;
+            const url = isNew ? '/AcademicCalendar/CreateWithDto' : '/AcademicCalendar/UpdateWithDto';
+
+            // Show loading indicator
+            const saveBtn = document.getElementById('saveEventBtn');
+            const originalBtnText = saveBtn.innerHTML;
+            saveBtn.innerHTML = '<i class="material-icons text-sm animate-spin mr-2">refresh</i><span>Saving...</span>';
+            saveBtn.disabled = true;
+
+            // Make the request
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': csrfToken
+                },
+                body: JSON.stringify(eventData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        console.error("Server error:", text);
+                        throw new Error(`Server error: ${response.status}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(result => {
+                console.log("Server response:", result);
+                if (result.success) {
+                    showToast(isNew ? 'Event created successfully' : 'Event updated successfully', 'success');
+                    closeEventFormModal();
+                    calendar.refetchEvents();
+                } else {
+                    showToast(result.message || 'Error saving event', 'error');
+                }
+                // Reset button
+                saveBtn.innerHTML = originalBtnText;
+                saveBtn.disabled = false;
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                showToast('Error saving event. Please try again.', 'error');
+                // Reset button
+                saveBtn.innerHTML = originalBtnText;
+                saveBtn.disabled = false;
+            });
+        }
+
+        // Create bulk events
+        function createBulkEvents() {
+            // Create FormData from the form
+            const form = document.getElementById('bulkCreateForm');
+            const formData = new FormData(form);
+
+            // Convert form data to JSON
+            const data = {};
+            formData.forEach((value, key) => {
+                if (key === 'IsAllDay' || key === 'IsPublished') {
+                    data[key] = value === 'on';
+                } else if (key === 'AcademicYearId' || key === 'EventTypeId') {
+                    data[key] = parseInt(value);
+                } else if (key === 'SchoolId' || key === 'ProgrammeId' || key === 'ProgrammeLevelId' || key === 'ModeOfStudyId' || key === 'StudentYear' || key === 'Semester') {
+                    data[key] = value ? parseInt(value) : null;
+                } else {
+                    data[key] = value;
+                }
+            });
+
+            // Construct date fields
+            data.StartDate = new Date(document.getElementById('bulkStartDate').value);
+            data.EndDate = new Date(document.getElementById('bulkEndDate').value);
+
+            // Add time if not all day
+            if (!data.IsAllDay) {
+                data.StartTime = new Date('1970-01-01T' + document.getElementById('bulkStartTime').value);
+                data.EndTime = new Date('1970-01-01T' + document.getElementById('bulkEndTime').value);
+            }
+
+            // Set the color from the color input
+            data.Color = document.getElementById('bulkColor').value;
+
+            // Show loading indicator
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="material-icons text-sm animate-spin mr-2">refresh</i><span>Creating Events...</span>';
+            submitBtn.disabled = true;
+
+            // Make the request
+            fetch('/AcademicCalendar/BulkCreateEvents', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': csrfToken
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    showToast(result.message || 'Events created successfully', 'success');
+                    closeBulkCreateModal();
+                    calendar.refetchEvents();
+                } else {
+                    showToast(result.message || 'Error creating events', 'error');
+                }
+                // Reset button
+                submitBtn.innerHTML = originalBtnText;
+                submitBtn.disabled = false;
+            })
+            .catch(error => {
+                console.error('Error creating events:', error);
+                showToast('Error creating events. Please try again.', 'error');
+                // Reset button
+                submitBtn.innerHTML = originalBtnText;
+                submitBtn.disabled = false;
+            });
+        }
+
+        // Generate system events
+        function generateSystemEvents() {
+            const academicYearId = document.getElementById('generateAcademicYearId').value;
+
+            // Show loading indicator
+            const generateBtn = document.querySelector('#generateSystemEventsModal button[onclick="generateSystemEvents()"]');
+            const originalBtnText = generateBtn.innerHTML;
+            generateBtn.innerHTML = '<i class="material-icons text-sm animate-spin mr-2">refresh</i><span>Generating...</span>';
+            generateBtn.disabled = true;
+
+            fetch('/AcademicCalendar/GenerateSystemEvents', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': csrfToken
+                },
+                body: JSON.stringify({ academicYearId: academicYearId })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    showToast(result.message || 'System events generated successfully', 'success');
+                    closeGenerateSystemEventsModal();
+                    calendar.refetchEvents();
+                } else {
+                    showToast(result.message || 'Error generating system events', 'error');
+                }
+                // Reset button
+                generateBtn.innerHTML = originalBtnText;
+                generateBtn.disabled = false;
+            })
+            .catch(error => {
+                console.error('Error generating system events:', error);
+                showToast('Error generating system events. Please try again.', 'error');
+                // Reset button
+                generateBtn.innerHTML = originalBtnText;
+                generateBtn.disabled = false;
+            });
+        }
+
+        // Delete event with specific ID
+        function deleteEvent(eventId) {
+            console.log("Deleting event with ID:", eventId);
+
+            // Show loading indicator
+            const deleteBtn = document.getElementById('confirmButton');
+            const originalBtnText = deleteBtn.innerHTML;
+            deleteBtn.innerHTML = '<i class="material-icons text-sm animate-spin mr-2">refresh</i><span>Deleting...</span>';
+            deleteBtn.disabled = true;
+
+            fetch(`/AcademicCalendar/DeleteEvent/${eventId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': csrfToken
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        console.error("Server error:", text);
+                        throw new Error(`Server error: ${response.status}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(result => {
+                console.log("Delete response:", result);
+                if (result.success) {
+                    showToast('Event deleted successfully', 'success');
+                    closeEventFormModal();
+                    calendar.refetchEvents();
+                } else {
+                    showToast(result.message || 'Error deleting event', 'error');
+                }
+                // Reset button
+                deleteBtn.innerHTML = originalBtnText;
+                deleteBtn.disabled = false;
+            })
+            .catch(error => {
+                console.error("Delete error:", error);
+                showToast('Error deleting event. Please try again.', 'error');
+                // Reset button
+                deleteBtn.innerHTML = originalBtnText;
+                deleteBtn.disabled = false;
+            });
+        }
+
+        // Confirm delete event
+        function confirmDeleteEvent() {
+            const eventId = parseInt(document.getElementById('eventId').value);
+
+            if (!eventId) {
+                showToast('Invalid event ID', 'error');
+                return;
+            }
+
+            console.log("Confirming delete for event ID:", eventId);
+
+            // Populate confirmation modal
+            document.getElementById('confirmationTitle').innerHTML = '<i class="material-icons text-red-600 mr-2">warning</i><span>Confirm Delete</span>';
+            document.getElementById('confirmationMessage').innerHTML = '<i class="material-icons text-red-600 mr-2 mt-0.5">error_outline</i><span>Are you sure you want to delete this event? This action cannot be undone.</span>';
+
+            // Set up the confirm button
+            const confirmButton = document.getElementById('confirmButton');
+            confirmButton.innerHTML = '<i class="material-icons text-sm mr-2">delete</i><span>Delete</span>';
+            confirmButton.className = 'px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors border border-red-600 shadow-sm flex items-center';
+            confirmButton.onclick = function() {
+                deleteEvent(eventId);
+                closeConfirmationModal();
+            };
+
+            // Show the modal
+            document.getElementById('confirmationModal').classList.remove('hidden');
+        }
+
+        // Set calendar view and update button styles
+        function setCalendarView(view, button) {
+            // Update current view
+            currentView = view;
+            calendar.changeView(view);
+
+            // Update button styles
+            const buttons = [
+                document.getElementById('monthViewBtn'),
+                document.getElementById('weekViewBtn'),
+                document.getElementById('listViewBtn')
+            ];
+
+            buttons.forEach(btn => {
+                btn.classList.remove('bg-cyan-600', 'text-white');
+                btn.classList.add('bg-slate-100', 'text-slate-700');
+            });
+
+            button.classList.remove('bg-slate-100', 'text-slate-700');
+            button.classList.add('bg-cyan-600', 'text-white');
+        }
+
+        // Helper function to format date as YYYY-MM-DD
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // Helper function to format time as HH:MM
+        function formatTime(date) {
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${hours}:${minutes}`;
+        }
+
+        // Set color for color picker
+        function setColor(color) {
+            document.getElementById('eventColor').value = color;
+            document.getElementById('eventColorHex').value = color;
+        }
+
+        // Show toast notification with improved styling
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toastNotification');
+            const toastMessage = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+
+            // Set message
+            toastMessage.textContent = message;
+
+            // Set colors and icon based on type
+            if (type === 'error') {
+                toast.className = 'fixed bottom-4 right-4 max-w-xs shadow-xl rounded-lg z-50 error transform transition-transform duration-300 ease-in-out scale-100';
+                toastIcon.textContent = 'error';
+                toastIcon.className = 'material-icons text-red-600 mr-3';
+            } else if (type === 'info') {
+                toast.className = 'fixed bottom-4 right-4 max-w-xs shadow-xl rounded-lg z-50 info transform transition-transform duration-300 ease-in-out scale-100';
+                toastIcon.textContent = 'info';
+                toastIcon.className = 'material-icons text-blue-600 mr-3';
+            } else {
+                toast.className = 'fixed bottom-4 right-4 max-w-xs shadow-xl rounded-lg z-50 success transform transition-transform duration-300 ease-in-out scale-100';
+                toastIcon.textContent = 'check_circle';
+                toastIcon.className = 'material-icons text-green-600 mr-3';
+            }
+
+            // Show toast
+            toast.classList.remove('hidden');
+
+            // Animate in
+            setTimeout(() => {
+                toast.classList.add('transform', 'scale-105');
+                setTimeout(() => {
+                    toast.classList.remove('scale-105');
+                    toast.classList.add('scale-100');
+                }, 100);
+            }, 10);
+
+            // Hide after 5 seconds
+            setTimeout(() => {
+                hideToast();
+            }, 5000);
+        }
+
+        // Hide toast with animation
+        function hideToast() {
+            const toast = document.getElementById('toastNotification');
+            toast.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+                toast.classList.remove('scale-95', 'opacity-0');
+            }, 300);
+        }
+
+        // Open add event modal
+        function openAddEventModal() {
+            // Reset form
+            document.getElementById('eventForm').reset();
+
+            // Set form title
+            document.getElementById('eventFormTitle').innerHTML = '<i class="material-icons text-cyan-600 mr-2">add_circle</i><span>Add New Event</span>';
+
+            // Set default values
+            document.getElementById('eventId').value = '0';
+            document.getElementById('eventSystemEvent').value = 'false';
+            document.getElementById('eventIsPublished').checked = true;
+            document.getElementById('eventColor').value = '#3788d8';
+            document.getElementById('eventColorHex').value = '#3788d8';
+
+            // Update publish status indicator
+            updatePublishStatusIndicator(true);
+
+            // Set today's date
+            const today = new Date();
+            document.getElementById('eventStartDate').value = formatDate(today);
+            document.getElementById('eventEndDate').value = formatDate(today);
+
+            // Set default times (9 AM - 10 AM)
+            document.getElementById('eventStartTime').value = '09:00';
+            document.getElementById('eventEndTime').value = '10:00';
+
+            // Hide delete button for new events
+            document.getElementById('deleteEventBtn').classList.add('hidden');
+
+            // Set current event to null
+            currentEvent = null;
+
+            // Update time fields visibility
+            toggleTimeFields();
+
+            // Update color based on selected event type
+            updateEventTypeColor();
+
+            // Open the modal with animation
+            const modal = document.getElementById('eventFormModal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.querySelector('.relative').classList.add('animate-fadeIn');
+            }, 10);
+        }
+
+        function closeEventFormModal() {
+            // Close with animation
+            const modal = document.getElementById('eventFormModal');
+            const modalContent = modal.querySelector('.relative');
+            modalContent.classList.add('animate-fadeOut');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modalContent.classList.remove('animate-fadeOut', 'animate-fadeIn');
+            }, 200);
+        }
+
+        function openBulkCreateModal() {
+            // Reset form
+            document.getElementById('bulkCreateForm').reset();
+
+            // Set default values
+            document.getElementById('bulkIsPublished').checked = true;
+            document.getElementById('bulkColor').value = '#3788d8';
+            document.getElementById('bulkColorHex').value = '#3788d8';
+
+            // Update publish status indicator
+            updateBulkPublishStatusIndicator(true);
+
+            // Set today's date
+            const today = new Date();
+            document.getElementById('bulkStartDate').value = formatDate(today);
+            document.getElementById('bulkEndDate').value = formatDate(today);
+
+            // Update time fields visibility
+            toggleBulkTimeFields();
+
+            // Update color based on selected event type
+            updateBulkEventTypeColor();
+
+            // Open the modal with animation
+            const modal = document.getElementById('bulkCreateModal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.querySelector('.relative').classList.add('animate-fadeIn');
+            }, 10);
+        }
+
+        function closeBulkCreateModal() {
+            // Close with animation
+            const modal = document.getElementById('bulkCreateModal');
+            const modalContent = modal.querySelector('.relative');
+            modalContent.classList.add('animate-fadeOut');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modalContent.classList.remove('animate-fadeOut', 'animate-fadeIn');
+            }, 200);
+        }
+
+        function openGenerateSystemEventsModal() {
+            // Open the modal with animation
+            const modal = document.getElementById('generateSystemEventsModal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.querySelector('.relative').classList.add('animate-fadeIn');
+            }, 10);
+        }
+
+        function closeGenerateSystemEventsModal() {
+            // Close with animation
+            const modal = document.getElementById('generateSystemEventsModal');
+            const modalContent = modal.querySelector('.relative');
+            modalContent.classList.add('animate-fadeOut');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modalContent.classList.remove('animate-fadeOut', 'animate-fadeIn');
+            }, 200);
+        }
+
+        function closeConfirmationModal() {
+            // Close with animation
+            const modal = document.getElementById('confirmationModal');
+            const modalContent = modal.querySelector('.relative');
+            modalContent.classList.add('animate-fadeOut');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modalContent.classList.remove('animate-fadeOut', 'animate-fadeIn');
+            }, 200);
+        }
+
+        // Click outside modal to close it
+        window.addEventListener('click', function(event) {
+            const modals = [
+                { element: document.getElementById('eventFormModal'), close: closeEventFormModal },
+                { element: document.getElementById('bulkCreateModal'), close: closeBulkCreateModal },
+                { element: document.getElementById('generateSystemEventsModal'), close: closeGenerateSystemEventsModal },
+                { element: document.getElementById('confirmationModal'), close: closeConfirmationModal }
+            ];
+
+            modals.forEach(modal => {
+                if (event.target === modal.element) {
+                    modal.close();
+                }
+            });
+        });
+
+        // Add animations
+        document.head.insertAdjacentHTML('beforeend', `
+            <style>
+        @@keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(10px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+
+        @@keyframes fadeOut {
+                    from { opacity: 1; transform: translateY(0); }
+                    to { opacity: 0; transform: translateY(10px); }
+                }
+
+                .animate-fadeIn {
+                    animation: fadeIn 0.2s ease-out forwards;
+                }
+
+                .animate-fadeOut {
+                    animation: fadeOut 0.2s ease-in forwards;
+                }
+
+                .animate-spin {
+                    animation: spin 1s linear infinite;
+                }
+
+        @@keyframes spin {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
+                }
+            </style>
+        `);
+    </script>
+}

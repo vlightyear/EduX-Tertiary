@@ -1,0 +1,666 @@
+﻿@model List<SIS.Models.Registration.AcademicRequest>
+@{
+    ViewData["Title"] = "Manage Academic Requests";
+}
+
+<div class=" mx-auto px-4 ">
+    <!-- Header -->
+    <div class="bg-white rounded-xl shadow-lg mb-6">
+        <div class="bg-white px-6 py-8 rounded-t-xl">
+            <h1 class="text-3xl font-bold text-black">Academic Requests Management</h1>
+            <p class="text-gray-600 mt-2">Review and manage student academic requests</p>
+        </div>
+
+        <!-- Filters -->
+        <div class="p-6 border-b">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Filter by Status</label>
+                    <select id="statusFilter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        <option value="">All Statuses</option>
+                        <option value="Pending">Pending</option>
+                        <option value="InProgress">In Progress</option>
+                        <option value="Approved">Approved</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Rejected">Rejected</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Filter by Type</label>
+                    <select id="typeFilter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        <option value="">All Types</option>
+                        @* <option value="Withdrawal">Withdrawal</option>
+                        <option value="Programme Change">Programme Change</option> *@
+                        <option value="Quota Request">Quota Request</option>
+                        @* <option value="Exemption">Course Exemption</option>
+                        <option value="Supplementary Exam">Supplementary Exam</option>
+                        <option value="Deferred Exam">Deferred Exam</option> *@
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                    <input type="text" id="searchInput" placeholder="Student name or ID..."
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                </div>
+                <div class="flex items-end">
+                    <button id="clearFilters" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors">
+                        Clear Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-yellow-50 p-4 rounded-lg">
+                    <div class="flex items-center">
+                        <div class="p-2 bg-yellow-100 rounded-lg">
+                            <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-yellow-600">Pending</p>
+                            <p class="text-2xl font-bold text-yellow-900" id="pendingCount">@Model.Count(r => r.Status == SIS.Enums.Status.Pending)</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-green-50 p-4 rounded-lg">
+                    <div class="flex items-center">
+                        <div class="p-2 bg-green-100 rounded-lg">
+                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-green-600">Approved</p>
+                            <p class="text-2xl font-bold text-green-900" id="approvedCount">@Model.Count(r => r.Status == SIS.Enums.Status.Approved)</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-blue-50 p-4 rounded-lg">
+                    <div class="flex items-center">
+                        <div class="p-2 bg-blue-100 rounded-lg">
+                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-blue-600">In Progress</p>
+                            <p class="text-2xl font-bold text-blue-900" id="inProgressCount">@Model.Count(r => r.Status == SIS.Enums.Status.InProgress)</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-green-50 p-4 rounded-lg">
+                    <div class="flex items-center">
+                        <div class="p-2 bg-green-100 rounded-lg">
+                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-green-600">Completed</p>
+                            <p class="text-2xl font-bold text-green-900" id="completedCount">@Model.Count(r => r.Status == SIS.Enums.Status.Completed)</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-red-50 p-4 rounded-lg">
+                    <div class="flex items-center">
+                        <div class="p-2 bg-red-100 rounded-lg">
+                            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-red-600">Rejected</p>
+                            <p class="text-2xl font-bold text-red-900" id="rejectedCount">@Model.Count(r => r.Status == SIS.Enums.Status.Rejected)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Requests Table -->
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Request Type</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Request Date</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Documents</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="requestsTable" class="bg-white divide-y divide-gray-200">
+                    @foreach (var request in Model)
+                    {
+                        <tr class="hover:bg-gray-50 request-row"
+                            data-status="@request.Status.ToString()"
+                            data-type="@request.RequestType"
+                            data-student="@request.Student?.FullName @request.Student?.StudentId_Number">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                                        <span class="text-sm font-medium text-indigo-600">
+                                            @(request.Student?.FullName?.Substring(0, 1) ?? "?")
+                                        </span>
+                                    </div>
+                                    <div class="ml-4">
+                                        <a href="/StudentLookup/Index?studentNumber=@request.Student?.StudentId_Number" target="_blank">
+                                            <div class="text-sm font-medium text-gray-900">@request.Student?.FullName</div>
+                                            <div class="text-sm text-gray-500">@request.Student?.StudentId_Number</div>
+                                        </a>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="text-sm text-gray-900">@request.RequestType</span>
+                                <div class="text-xs text-gray-500">
+                                    Current: @request.Student.School?.Name
+                                    <br>→ @request.Student.Programme?.Name
+                                </div>
+                                <br />
+                                <div class="text-xs text-gray-500">
+                                    New: @request.School?.Name
+                                    <br>→ @request.Programme?.Name
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full
+                                    @(request.Status == SIS.Enums.Status.Pending ? "bg-yellow-100 text-yellow-800" :
+                                      request.Status == SIS.Enums.Status.InProgress ? "bg-blue-100 text-blue-800" :
+                                      request.Status == SIS.Enums.Status.Approved ? "bg-green-100 text-green-800" :
+                                      request.Status == SIS.Enums.Status.Completed ? "bg-green-100 text-green-800" :
+                                      request.Status == SIS.Enums.Status.Rejected ? "bg-red-100 text-red-800" : "bg-gray-100 text-gray-800")">
+                                    @request.Status.ToString()
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                @request.RequestDate.ToString("MMM dd, yyyy")
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                @if (request.Documents?.Any() == true)
+                                {
+                                    <button class="text-indigo-600 hover:text-indigo-900" onclick="viewDocuments(@request.Id)">
+                                        @request.Documents.Count document(s)
+                                    </button>
+                                }
+                                else
+                                {
+                                    <span class="text-gray-400">No documents</span>
+                                }
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <div class="flex space-x-2">
+                                    <button onclick="viewRequest(@request.Id)"
+                                            class="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                            title="View Details">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                    </button>
+                                    @if (request.Status == SIS.Enums.Status.Pending)
+                                    {
+                                        <button onclick="updateStatus(@request.Id, 'Approved')"
+                                                class="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                                                title="Approve">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                        </button>
+                                        <button onclick="updateStatus(@request.Id, 'InProgress')"
+                                                class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                title="Start Processing">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        </button>
+                                        <button onclick="updateStatus(@request.Id, 'Rejected')"
+                                                class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                title="Reject">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    }
+                                    @if (request.Status == SIS.Enums.Status.InProgress)
+                                    {
+                                        <button onclick="updateStatus(@request.Id, 'Approved')"
+                                                class="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                                                title="Approve">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                        </button>
+                                        <button onclick="updateStatus(@request.Id, 'Completed')"
+                                                class="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                                                title="Mark Complete">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        </button>
+                                        <button onclick="updateStatus(@request.Id, 'Rejected')"
+                                                class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                title="Reject">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (!Model.Any())
+        {
+            <div class="text-center py-12">
+                <svg class="mx-auto h-24 w-24 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <h3 class="mt-2 text-lg font-medium text-gray-900">No academic requests</h3>
+                <p class="mt-1 text-gray-500">Students haven't submitted any academic requests yet.</p>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- View Request Modal -->
+<div id="requestModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-screen overflow-y-auto">
+        <div id="modalContent">
+            <!-- Content will be loaded here -->
+        </div>
+    </div>
+</div>
+
+<!-- Documents Modal -->
+<div id="documentsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-lg max-w-6xl w-full mx-4 max-h-screen overflow-y-auto">
+        <div class="p-6 border-b">
+            <div class="flex justify-between items-center">
+                <h3 class="text-lg font-semibold">Supporting Documents</h3>
+                <button onclick="closeModal('documentsModal')" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <div id="documentsContent" class="p-6">
+            <!-- Documents will be loaded here -->
+        </div>
+    </div>
+</div>
+
+<!-- Document Viewer Modal -->
+<div id="documentViewerModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-lg max-w-5xl w-full mx-4 max-h-screen overflow-hidden">
+        <div class="p-4 border-b flex justify-between items-center">
+            <h3 id="documentTitle" class="text-lg font-semibold">Document Viewer</h3>
+            <button onclick="closeModal('documentViewerModal')" class="text-gray-400 hover:text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <div id="documentViewer" class="h-96 overflow-auto">
+            <!-- Document content will be loaded here -->
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        $(document).ready(function() {
+            // Filter functionality
+            $('#statusFilter, #typeFilter, #searchInput').on('change keyup', function() {
+                filterRequests();
+            });
+
+            $('#clearFilters').click(function() {
+                $('#statusFilter, #typeFilter, #searchInput').val('');
+                filterRequests();
+            });
+
+            function filterRequests() {
+                const statusFilter = $('#statusFilter').val().toLowerCase();
+                const typeFilter = $('#typeFilter').val().toLowerCase();
+                const searchFilter = $('#searchInput').val().toLowerCase();
+
+                $('.request-row').each(function() {
+                    const row = $(this);
+                    const status = row.data('status').toLowerCase();
+                    const type = row.data('type').toLowerCase();
+                    const student = row.data('student').toLowerCase();
+
+                    const statusMatch = !statusFilter || status === statusFilter;
+                    const typeMatch = !typeFilter || type === typeFilter;
+                    const searchMatch = !searchFilter || student.includes(searchFilter);
+
+                    if (statusMatch && typeMatch && searchMatch) {
+                        row.show();
+                    } else {
+                        row.hide();
+                    }
+                });
+            }
+        });
+
+        function viewRequest(requestId) {
+            const request = @Html.Raw(Json.Serialize(Model));
+            const requestData = request.find(r => r.id === requestId);
+
+            const modalContent = `
+                <div class="p-6 border-b">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-lg font-semibold">Request Details</h3>
+                        <button onclick="closeModal('requestModal')" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="p-6 space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Student</label>
+                            <p class="mt-1 text-sm text-gray-900">${requestData.student?.fullName || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Student Number</label>
+                            <p class="mt-1 text-sm text-gray-900">${requestData.student?.studentNumber || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Request Type</label>
+                            <p class="mt-1 text-sm text-gray-900">${requestData.requestType}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Status</label>
+                            <span class="mt-1 inline-flex px-2 py-1 text-xs font-semibold rounded-full
+                                ${getStatusClass(requestData.status)}">
+                                ${getStatusDisplay(requestData.status)}
+                            </span>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Request Date</label>
+                            <p class="mt-1 text-sm text-gray-900">${new Date(requestData.requestDate).toLocaleDateString()}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Current School</label>
+                            <p class="mt-1 text-sm text-gray-900">${requestData.student.school?.name || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Current Programme</label>
+                            <p class="mt-1 text-sm text-gray-900">${requestData.student.programme?.name || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">New School</label>
+                            <p class="mt-1 text-sm text-gray-900">${requestData.school?.name || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">New Programme</label>
+                            <p class="mt-1 text-sm text-gray-900">${requestData.programme?.name || 'N/A'}</p>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Description</label>
+                        <p class="mt-1 text-sm text-gray-900 bg-gray-50 p-3 rounded-md">${requestData.description}</p>
+                    </div>
+                    ${requestData.adminNotes ? `
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Admin Notes</label>
+                        <p class="mt-1 text-sm text-gray-900 bg-blue-50 p-3 rounded-md">${requestData.adminNotes}</p>
+                    </div>
+                    ` : ''}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Admin Notes</label>
+                        <textarea id="adminNotes" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                  placeholder="Add notes...">${requestData.adminNotes || ''}</textarea>
+                    </div>
+                    <div class="flex justify-end space-x-3 pt-4 border-t">
+                        ${getActionButtons(requestId, requestData.status)}
+                    </div>
+                </div>
+            `;
+
+            $('#modalContent').html(modalContent);
+            $('#requestModal').removeClass('hidden').addClass('flex');
+        }
+
+        function viewDocuments(requestId) {
+            const request = @Html.Raw(Json.Serialize(Model));
+            const requestData = request.find(r => r.id === requestId);
+
+            if (!requestData.documents || requestData.documents.length === 0) {
+                Swal.fire('Info', 'No documents found for this request.', 'info');
+                return;
+            }
+
+            let documentsHtml = '<div class="space-y-3">';
+
+            requestData.documents.forEach(function(doc) {
+                documentsHtml += `
+                    <div class="flex items-center justify-between border rounded-lg p-4">
+                        <div class="flex items-center space-x-3">
+                            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            <div>
+                                <p class="text-sm font-medium text-gray-900">${doc.fileName}</p>
+                                <p class="text-xs text-gray-500">${(doc.fileSize / 1024 / 1024).toFixed(2)} MB • ${new Date(doc.uploadedAt).toLocaleDateString()}</p>
+                            </div>
+                        </div>
+                        <div class="flex space-x-2">
+                            <a href="/AcademicRequest/ViewDocument/${doc.id}" target="_blank"
+                               class="text-indigo-600 hover:text-indigo-900 text-sm font-medium">
+                                View
+                            </a>
+                            <a href="/AcademicRequest/DownloadDocument/${doc.id}"
+                               class="text-green-600 hover:text-green-900 text-sm font-medium">
+                                Download
+                            </a>
+                        </div>
+                    </div>
+                `;
+            });
+
+            documentsHtml += '</div>';
+
+            $('#documentsContent').html(documentsHtml);
+            $('#documentsModal').removeClass('hidden').addClass('flex');
+        }
+
+        function updateStatus(requestId, status) {
+            const adminNotes = $('#adminNotes').val() || '';
+
+            let confirmTitle = 'Confirm Action';
+            let confirmText = `Are you sure you want to mark this request as ${status.toLowerCase()}?`;
+
+            if (status === 'Rejected') {
+                confirmTitle = 'Reject Request';
+                confirmText = 'Are you sure you want to reject this request? This action cannot be undone.';
+            }
+
+            Swal.fire({
+                title: confirmTitle,
+                text: confirmText,
+                icon: 'question',
+                showCancelButton: true,
+                                confirmButtonColor: status === 'Rejected' ? '#ef4444' : '#6366f1',
+                        cancelButtonColor: '#6b7280',
+                        confirmButtonText: 'Yes, proceed'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            $.post('/AcademicRequest/UpdateStatus', {
+                                requestId: requestId,
+                                status: status,
+                                adminNotes: adminNotes,
+                                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                            })
+                            .done(function(response) {
+                                if (response.success) {
+                                    Swal.fire('Success!', response.message, 'success').then(() => {
+                                        location.reload();
+                                    });
+                                } else {
+                                    Swal.fire('Error', response.message, 'error');
+                                }
+                            })
+                            .fail(function() {
+                                Swal.fire('Error', 'An error occurred while updating the request.', 'error');
+                            });
+                        }
+                    });
+                }
+
+                function closeModal(modalId) {
+                    $('#' + modalId).addClass('hidden').removeClass('flex');
+                }
+
+                function getStatusClass(status) {
+                    switch (status) {
+                        case 4: return 'bg-yellow-100 text-yellow-800'; // Pending
+                        case 34: return 'bg-blue-100 text-blue-800'; // InProgress
+                        case 10: return 'bg-green-100 text-green-800'; // Completed
+                        case 6: return 'bg-red-100 text-red-800'; // Rejected
+                        default: return 'bg-gray-100 text-gray-800';
+                    }
+                }
+
+                function getStatusDisplay(status) {
+                    switch (status) {
+                        case 4: return 'PENDING';
+                        case 34: return 'IN PROGRESS';
+                        case 10: return 'COMPLETED';
+                        case 6: return 'REJECTED';
+                        default: return 'UNKNOWN';
+                    }
+                }
+
+                        function getActionButtons(requestId, status) {
+            let buttons = `<button onclick="closeModal('requestModal')" class="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50">Close</button>`;
+
+            if (status === 4) { // Pending
+                buttons += `
+                    <button onclick="updateStatusFromModal(${requestId}, 'Approved')" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                        Approve
+                    </button>
+                    <button onclick="updateStatusFromModal(${requestId}, 'InProgress')" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                        Start Processing
+                    </button>
+                    <button onclick="updateStatusFromModal(${requestId}, 'Rejected')" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">
+                        Reject
+                    </button>
+                `;
+            } else if (status === 34) { // InProgress
+                buttons += `
+                    <button onclick="updateStatusFromModal(${requestId}, 'Approved')" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                        Approve
+                    </button>
+                    <button onclick="updateStatusFromModal(${requestId}, 'Completed')" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                        Complete
+                    </button>
+                    <button onclick="updateStatusFromModal(${requestId}, 'Rejected')" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">
+                        Reject
+                    </button>
+                `;
+            }
+
+            return buttons;
+        }
+
+                function viewDocuments(requestId) {
+            const request = @Html.Raw(Json.Serialize(Model));
+            const requestData = request.find(r => r.id === requestId);
+
+            if (!requestData.documents || requestData.documents.length === 0) {
+                Swal.fire('Info', 'No documents found for this request.', 'info');
+                return;
+            }
+
+            let documentsHtml = '<div class="space-y-3">';
+
+            requestData.documents.forEach(function(doc) {
+                documentsHtml += `
+                    <div class="flex items-center justify-between border rounded-lg p-4">
+                        <div class="flex items-center space-x-3">
+                            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            <div>
+                                <p class="text-sm font-medium text-gray-900">${doc.fileName}</p>
+                                <p class="text-xs text-gray-500">${(doc.fileSize / 1024 / 1024).toFixed(2)} MB • ${new Date(doc.uploadedAt).toLocaleDateString()}</p>
+                            </div>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="viewDocumentInModal(${doc.id}, '${doc.fileName}')"
+                                    class="text-indigo-600 hover:text-indigo-900 text-sm font-medium">
+                                View
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            documentsHtml += '</div>';
+
+            $('#documentsContent').html(documentsHtml);
+            $('#documentsModal').removeClass('hidden').addClass('flex');
+        }
+
+        function viewDocumentInModal(documentId, fileName) {
+            $('#documentTitle').text(fileName);
+            $('#documentViewer').html('<div class="flex items-center justify-center h-full"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div></div>');
+            $('#documentViewerModal').removeClass('hidden').addClass('flex');
+            console.log(documentId);
+            $.get('/AcademicRequest/GetDocumentContent', { documentId: documentId })
+
+                .done(function(response) {
+                    if (response.success) {
+                        let content = '';
+                        if (response.contentType.includes('pdf')) {
+                            content = `<iframe src="data:${response.contentType};base64,${response.content}" class="w-full h-full"></iframe>`;
+                        } else if (response.contentType.includes('image')) {
+                            content = `<img src="data:${response.contentType};base64,${response.content}" class="max-w-full h-auto mx-auto">`;
+                        } else if (response.contentType.includes('text')) {
+                            const textContent = atob(response.content);
+                            content = `<pre class="p-4 text-sm overflow-auto">${textContent}</pre>`;
+                        } else {
+                            content = `<div class="p-4 text-center"><p class="text-gray-500">Preview not available for this file type.</p><a href="/AcademicRequest/DownloadDocument/${documentId}" class="text-indigo-600 hover:text-indigo-800 underline">Download to view</a></div>`;
+                        }
+                        $('#documentViewer').html(content);
+                    } else {
+                        $('#documentViewer').html('<div class="p-4 text-center text-red-600">Error loading document.</div>');
+                    }
+                })
+                .fail(function() {
+                    $('#documentViewer').html('<div class="p-4 text-center text-red-600">Error loading document.</div>');
+                });
+        }
+
+                function updateStatusFromModal(requestId, status) {
+                    closeModal('requestModal');
+                    updateStatus(requestId, status);
+                }
+
+                // Close modal when clicking outside
+                $(document).on('click', '.fixed.inset-0', function(e) {
+                    if (e.target === this) {
+                        $(this).addClass('hidden').removeClass('flex');
+                    }
+                });
+    </script>
+}

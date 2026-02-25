@@ -1,0 +1,597 @@
+﻿@model SIS.Models.StudentApplication.Student
+@{
+    ViewData["Title"] = "Submit Academic Request";
+}
+
+<style>
+    @@keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @@keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: .8; }
+    }
+    
+    .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+    .animate-pulse { animation: pulse 2s infinite; }
+    
+    .form-section {
+        transition: all 0.3s ease;
+        border-radius: 1rem;
+    }
+    
+    .form-section.focus-within {
+        ring: 2px;
+        ring-color: rgb(59 130 246 / 0.2);
+        border-color: rgb(59 130 246);
+    }
+    
+    .file-upload-area {
+        transition: all 0.3s ease;
+    }
+    
+    .file-upload-area:hover {
+        border-color: rgb(59 130 246);
+        background-color: rgb(239 246 255);
+    }
+    
+    .file-upload-area.dragover {
+        border-color: rgb(59 130 246);
+        background-color: rgb(219 234 254);
+        transform: scale(1.02);
+    }
+    
+    .mobile-sticky-header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: rgba(248, 250, 252, 0.95);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    @@media (max-width: 768px) {
+        .mobile-floating-submit {
+            position: fixed;
+            bottom: 1rem;
+            left: 1rem;
+            right: 1rem;
+            z-index: 20;
+        }
+        
+        .mobile-content-padding {
+            padding-bottom: 6rem;
+        }
+    }
+</style>
+
+<div class="min-h-screen bg-slate-50">
+    <!-- Modern Header -->
+    <div class="mobile-sticky-header bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between py-6">
+                <div class="flex items-center space-x-3">
+                    <div class="flex-shrink-0">
+                        <div class="w-10 h-10 bg-gradient-to-br from-slate-500 to-slate-600 rounded-xl flex items-center justify-center">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-900">Submit Academic Request</h1>
+                        <p class="text-sm text-slate-600">Submit various academic-related requests with supporting documents</p>
+                    </div>
+                </div>
+                
+                <div class="hidden sm:flex items-center space-x-3">
+                    <a asp-action="MyRequests" 
+                       class="inline-flex items-center px-4 py-2 text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                        </svg>
+                        My Requests
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mobile-content-padding">
+        <div class="animate-fade-in">
+            <form id="academicRequestForm" enctype="multipart/form-data" class="space-y-8">
+                @Html.AntiForgeryToken()
+
+                <!-- Student Information Card -->
+                <div class="form-section bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center mb-4">
+                        <div class="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center mr-3">
+                            <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                            </svg>
+                        </div>
+                        <h2 class="text-lg font-semibold text-slate-900">Student Information</h2>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm bg-slate-50 rounded-lg p-4">
+                        <div class="flex items-center space-x-2">
+                            <span class="font-medium text-slate-700">Name:</span> 
+                            <span class="text-slate-900">@Model.FullName</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="font-medium text-slate-700">Student ID:</span> 
+                            <span class="text-slate-900">@Model.StudentId_Number</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="font-medium text-slate-700">Email:</span> 
+                            <span class="text-slate-900">@Model.Email</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="font-medium text-slate-700">Programme:</span> 
+                            <span class="text-slate-900">@Model.Programme?.Name</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Request Details Card -->
+                <div class="form-section bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center mb-6">
+                        <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                        </div>
+                        <h2 class="text-lg font-semibold text-slate-900">Request Details</h2>
+                    </div>
+
+                    <!-- Request Type -->
+                    <div class="mb-6">
+                        <label for="requestType" class="block text-sm font-medium text-slate-700 mb-2">
+                            Request Type <span class="text-red-500">*</span>
+                        </label>
+                        <select name="requestType" id="requestType" required
+                                class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white">
+                            <option value="">Select Request Type</option>
+                            <option value="Withdrawal">Withdrawal</option>
+                            <option value="Programme Change">Programme Change</option>
+                            @if (Model.ProgrammeId == 88 || Model.ProgrammeId == 1141)
+                            {
+                                <option value="Quota Request">Quota Request</option>
+                            }
+                            <option value="Exemption">Course Exemption</option>
+                            <option value="Supplementary Exam">Supplementary Exam</option>
+                            <option value="Deferred Exam">Deferred Exam</option>
+                        </select>
+                    </div>
+
+                    <!-- Programme Change Fields -->
+                    <div id="programmeChangeFields" class="mb-6 hidden">
+                        <div class="bg-blue-50 rounded-lg p-4 border border-blue-200 mb-4">
+                            <div class="flex items-center">
+                                <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <span class="text-sm font-medium text-blue-900">Select your new programme details</span>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="schoolId" class="block text-sm font-medium text-slate-700 mb-2">
+                                    School <span class="text-red-500">*</span>
+                                </label>
+                                <select name="schoolId" id="schoolId"
+                                        class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white">
+                                    <option value="">Select School</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="programmeId" class="block text-sm font-medium text-slate-700 mb-2">
+                                    Programme <span class="text-red-500">*</span>
+                                </label>
+                                <select name="programmeId" id="programmeId" disabled
+                                        class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-slate-100">
+                                    <option value="">Select Programme</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="mb-6">
+                        <label for="description" class="block text-sm font-medium text-slate-700 mb-2">
+                            Justification/Description <span class="text-red-500">*</span>
+                        </label>
+                        <textarea name="description" id="description" rows="4" required
+                                  placeholder="Please provide detailed justification for your request..."
+                                  class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"></textarea>
+                        <div class="flex justify-between items-center mt-2">
+                            <p class="text-sm text-slate-500">Minimum 20 characters required</p>
+                            <span id="charCount" class="text-sm text-slate-400">0 characters</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- File Upload Card -->
+                <div class="form-section bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center mb-6">
+                        <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-semibold text-slate-900">Supporting Documents</h2>
+                            <p class="text-sm text-slate-600">Optional - Upload relevant documents to support your request</p>
+                        </div>
+                    </div>
+
+                    <div class="file-upload-area border-2 border-dashed border-slate-300 rounded-xl p-8 text-center">
+                        <input type="file" name="documents" id="documents" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" class="hidden">
+                        <div id="dropZone" class="cursor-pointer">
+                            <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <svg class="w-8 h-8 text-slate-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-medium text-slate-900 mb-2">Upload Documents</h3>
+                            <p class="text-slate-600 mb-2">Click to browse or drag and drop files here</p>
+                            <p class="text-sm text-slate-500">PDF, DOC, DOCX, JPG, PNG • Max 5MB each • Up to 5 files</p>
+                        </div>
+                    </div>
+                    
+                    <div id="fileList" class="mt-6 space-y-3"></div>
+                </div>
+
+                <!-- Desktop Submit Button -->
+                <div class="hidden sm:flex justify-end">
+                    <button type="submit" id="submitBtn"
+                            class="inline-flex items-center px-8 py-3 bg-slate-600 text-white rounded-lg hover:bg-slate-700 focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 transition-all duration-200 font-medium">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                        </svg>
+                        Submit Request
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Mobile Floating Submit Button -->
+    <div class="mobile-floating-submit sm:hidden">
+        <button type="submit" id="mobileSubmitBtn" form="academicRequestForm"
+                class="w-full inline-flex items-center justify-center px-6 py-4 bg-slate-600 text-white rounded-xl hover:bg-slate-700 transition-colors font-medium text-lg shadow-lg">
+            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+            </svg>
+            Submit Request
+        </button>
+    </div>
+
+    <!-- Mobile Navigation -->
+    <div class="sm:hidden fixed bottom-20 right-4 z-10">
+        <a asp-action="MyRequests" 
+           class="inline-flex items-center justify-center w-14 h-14 bg-white text-slate-600 rounded-full shadow-lg border border-slate-200 hover:bg-slate-50 transition-colors">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+            </svg>
+        </a>
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div id="loadingModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-xl p-8 text-center max-w-sm mx-4 animate-fade-in">
+        <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="animate-spin h-8 w-8 text-slate-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+        </div>
+        <h3 class="text-lg font-semibold text-slate-900 mb-2">Submitting Request</h3>
+        <p class="text-slate-600">Please wait while we process your request...</p>
+    </div>
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+$(document).ready(function() {
+    let selectedFiles = [];
+
+    // Character count for description
+    $('#description').on('input', function() {
+        const count = $(this).val().length;
+        $('#charCount').text(`${count} characters`);
+        
+        if (count < 20) {
+            $('#charCount').removeClass('text-green-600').addClass('text-amber-600');
+        } else {
+            $('#charCount').removeClass('text-amber-600').addClass('text-green-600');
+        }
+    });
+
+    // Request type change handler
+    $('#requestType').change(function() {
+        const requestType = $(this).val();
+        const programmeFields = $('#programmeChangeFields');
+
+        if (requestType === 'Programme Change' || requestType === 'Quota Request') {
+            programmeFields.removeClass('hidden').addClass('animate-fade-in');
+            loadSchools();
+        } else {
+            programmeFields.addClass('hidden');
+            $('#schoolId, #programmeId').val('').removeAttr('required');
+        }
+    });
+
+    // School selection handler
+    $('#schoolId').change(function() {
+        const schoolId = $(this).val();
+        const programmeSelect = $('#programmeId');
+
+        if (schoolId) {
+            loadProgrammes(schoolId);
+        } else {
+            programmeSelect.prop('disabled', true).html('<option value="">Select Programme</option>');
+        }
+    });
+
+    // File upload handlers
+    $('#dropZone').click(function() {
+        $('#documents').click();
+    });
+
+    $('#documents').change(function() {
+        handleFiles(this.files);
+    });
+
+    // Enhanced drag and drop
+    $('#dropZone').on('dragover', function(e) {
+        e.preventDefault();
+        $(this).closest('.file-upload-area').addClass('dragover');
+    });
+
+    $('#dropZone').on('dragleave', function(e) {
+        e.preventDefault();
+        $(this).closest('.file-upload-area').removeClass('dragover');
+    });
+
+    $('#dropZone').on('drop', function(e) {
+        e.preventDefault();
+        $(this).closest('.file-upload-area').removeClass('dragover');
+        handleFiles(e.originalEvent.dataTransfer.files);
+    });
+
+    // Form submission
+    $('#academicRequestForm').submit(function(e) {
+        e.preventDefault();
+        if (!validateForm()) return;
+        submitRequest();
+    });
+
+    // Mobile submit button
+    $('#mobileSubmitBtn').click(function(e) {
+        e.preventDefault();
+        if (!validateForm()) return;
+        submitRequest();
+    });
+
+    function loadSchools() {
+        $.get('/AcademicRequest/GetSchools', function(response) {
+            if (response.success) {
+                const schoolSelect = $('#schoolId');
+                schoolSelect.html('<option value="">Select School</option>');
+
+                response.schools.forEach(function(school) {
+                    schoolSelect.append(`<option value="${school.id}">${school.name}</option>`);
+                });
+
+                schoolSelect.attr('required', 'required').prop('disabled', false);
+            }
+        });
+    }
+
+    function loadProgrammes(schoolId) {
+        const programmeSelect = $('#programmeId');
+        programmeSelect.prop('disabled', true).html('<option value="">Loading...</option>');
+
+        $.get('/AcademicRequest/GetProgrammes', { schoolId: schoolId }, function(response) {
+            if (response.success) {
+                programmeSelect.html('<option value="">Select Programme</option>');
+
+                response.programmes.forEach(function(programme) {
+                    programmeSelect.append(`<option value="${programme.id}">${programme.name}</option>`);
+                });
+
+                programmeSelect.prop('disabled', false).attr('required', 'required').removeClass('bg-slate-100').addClass('bg-white');
+            }
+        });
+    }
+
+    function handleFiles(files) {
+        for (let file of files) {
+            if (file.size > 5 * 1024 * 1024) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'File Too Large',
+                    text: `File "${file.name}" is too large. Maximum size is 5MB.`,
+                    confirmButtonColor: '#475569'
+                });
+                continue;
+            }
+
+            if (selectedFiles.length >= 5) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Maximum Files Reached',
+                    text: 'You can upload a maximum of 5 files.',
+                    confirmButtonColor: '#475569'
+                });
+                break;
+            }
+
+            selectedFiles.push(file);
+        }
+
+        updateFileList();
+    }
+
+    function updateFileList() {
+        const fileList = $('#fileList');
+        fileList.empty();
+
+        if (selectedFiles.length > 0) {
+            fileList.append('<h4 class="text-sm font-medium text-slate-900 mb-3">Selected Files</h4>');
+        }
+
+        selectedFiles.forEach(function(file, index) {
+            const fileExtension = file.name.split('.').pop().toLowerCase();
+            let iconColor = 'text-slate-400';
+            let bgColor = 'bg-slate-100';
+
+            if (['pdf'].includes(fileExtension)) {
+                iconColor = 'text-red-500';
+                bgColor = 'bg-red-50';
+            } else if (['doc', 'docx'].includes(fileExtension)) {
+                iconColor = 'text-blue-500';
+                bgColor = 'bg-blue-50';
+            } else if (['jpg', 'jpeg', 'png'].includes(fileExtension)) {
+                iconColor = 'text-green-500';
+                bgColor = 'bg-green-50';
+            }
+
+            const fileItem = $(`
+                <div class="flex items-center justify-between ${bgColor} rounded-lg p-4 border border-slate-200 animate-fade-in">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 ${bgColor} rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 ${iconColor}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-slate-900">${file.name}</p>
+                            <p class="text-xs text-slate-500">${(file.size / 1024 / 1024).toFixed(2)} MB • ${fileExtension.toUpperCase()}</p>
+                        </div>
+                    </div>
+                    <button type="button" class="p-2 text-slate-400 hover:text-red-500 transition-colors" onclick="removeFile(${index})">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            `);
+            fileList.append(fileItem);
+        });
+    }
+
+    window.removeFile = function(index) {
+        selectedFiles.splice(index, 1);
+        updateFileList();
+    }
+
+    function validateForm() {
+        const requestType = $('#requestType').val();
+        const description = $('#description').val();
+
+        if (!requestType) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Request Type Required',
+                text: 'Please select a request type.',
+                confirmButtonColor: '#475569'
+            });
+            return false;
+        }
+
+        if (!description || description.length < 20) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Description Required',
+                text: 'Please provide a detailed description (minimum 20 characters).',
+                confirmButtonColor: '#475569'
+            });
+            return false;
+        }
+
+        if (requestType === 'Programme Change') {
+            const schoolId = $('#schoolId').val();
+            const programmeId = $('#programmeId').val();
+
+            if (!schoolId || !programmeId) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Programme Details Required',
+                    text: 'Please select both school and programme for programme change requests.',
+                    confirmButtonColor: '#475569'
+                });
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    function submitRequest() {
+        const formData = new FormData();
+
+        // Add form fields
+        formData.append('requestType', $('#requestType').val());
+        formData.append('description', $('#description').val());
+        formData.append('schoolId', $('#schoolId').val() || 0);
+        formData.append('programmeId', $('#programmeId').val() || 0);
+
+        // Add files
+        selectedFiles.forEach(function(file) {
+            formData.append('documents', file);
+        });
+
+        // Add antiforgery token
+        formData.append('__RequestVerificationToken', $('input[name="__RequestVerificationToken"]').val());
+
+        $('#loadingModal').removeClass('hidden').addClass('flex');
+
+        $.ajax({
+            url: '/AcademicRequest/Submit',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                $('#loadingModal').addClass('hidden');
+
+                if (response.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Request Submitted!',
+                        text: response.message,
+                        confirmButtonColor: '#475569'
+                    }).then(function() {
+                        window.location.href = '/AcademicRequest/MyRequests';
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Submission Failed',
+                        text: response.message,
+                        confirmButtonColor: '#475569'
+                    });
+                }
+            },
+            error: function() {
+                $('#loadingModal').addClass('hidden');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'An error occurred while submitting your request.',
+                    confirmButtonColor: '#475569'
+                });
+            }
+        });
+    }
+});
+</script>
+}

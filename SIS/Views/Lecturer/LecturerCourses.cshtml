@@ -1,0 +1,103 @@
+﻿@model IEnumerable<SIS.Models.Admin.Course>
+
+<div class="min-h-screen bg-slate-50 p-4">
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row justify-between items-center h-16 mb-4">
+        <div class="flex items-center text-slate-800">
+            <i class="material-icons text-3xl mr-2">school</i>
+            <h1 class="text-2xl font-bold">My Courses</h1>
+        </div>
+        @* <div class="mt-4 md:mt-0"> *@
+        @*     <a asp-controller="Course" asp-action="CourseContent" *@
+        @*        class="inline-flex items-center px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors"> *@
+        @*         <i class="material-icons text-sm mr-1">library_books</i> *@
+        @*         <span>Course Content</span> *@
+        @*     </a> *@
+        @* </div> *@
+    </div>
+
+    <!-- Main Content Card -->
+    <div class="bg-white rounded-xl shadow-sm h-[calc(100vh-12rem)] overflow-auto">
+        <div class="p-6">
+            @if (!Model.Any())
+            {
+                <div class="flex items-center gap-2 p-4 bg-amber-50 text-amber-800 rounded-lg">
+                    <i class="material-icons">info</i>
+                    <p>You are not currently assigned to any courses.</p>
+                </div>
+            }
+            else
+            {
+                <!-- Search Box -->
+                <div class="mb-6">
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                            <i class="material-icons text-slate-400">search</i>
+                        </div>
+                        <input type="text" id="courseSearch"
+                               class="block w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-cyan-500 focus:border-cyan-500"
+                               placeholder="Search courses..."
+                               onkeyup="searchCourses()">
+                    </div>
+                </div>
+
+                <!-- Course Cards Grid -->
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    @foreach (var course in Model)
+                    {
+                        <div class="course-card border border-slate-200 rounded-lg hover:border-cyan-300 hover:shadow-md transition-all">
+                            <div class="p-4">
+                                <div class="flex items-center justify-between mb-3">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-cyan-100 text-cyan-800">
+                                        @course.CourseCode
+                                    </span>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                           @(course.IsMandatory ? "bg-purple-100 text-purple-800" : "bg-amber-100 text-amber-800")">
+                                        @(course.IsMandatory ? "Mandatory" : "Elective")
+                                    </span>
+                                </div>
+
+                                <h3 class="font-semibold text-slate-800 mb-1">@course.CourseName</h3>
+                                <p class="text-sm font-medium text-slate-600 mb-2">@course.CourseCode</p>
+
+                                <p class="text-sm text-slate-600 line-clamp-2 mb-3">@course.CourseDescription</p>
+
+                                <div class="flex items-center text-sm text-slate-500 mb-4">
+                                    <i class="material-icons text-slate-400 text-sm mr-1">account_balance</i>
+                                    <span>@course.Programme.Name</span>
+                                </div>
+
+                                <div class="flex justify-end">
+                                    <a asp-controller="Lecturer" asp-action="CourseContent" asp-route-id="@course.Id"
+                                       class="inline-flex items-center px-3 py-1.5 text-sm text-cyan-600 hover:text-cyan-800 transition-colors">
+                                        <span>Course Content</span>
+                                        <i class="material-icons text-sm ml-1">article</i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function searchCourses() {
+            const searchInput = document.getElementById('courseSearch');
+            const filter = searchInput.value.toUpperCase();
+            const courseCards = document.querySelectorAll('.course-card');
+
+            courseCards.forEach(card => {
+                const courseText = card.textContent || card.innerText;
+                if (courseText.toUpperCase().indexOf(filter) > -1) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+    </script>
+}

@@ -1,0 +1,553 @@
+﻿@model SIS.Models.Lecturer.CourseRatingAnalyticsViewModel
+
+<div class="min-h-screen bg-slate-50 p-6">
+    <!-- Header Section -->
+    <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center">
+            <a asp-controller="Lecturer" asp-action="CourseContent" asp-route-id="@Model.CourseId"
+               class="text-slate-500 hover:text-slate-700 mr-3">
+                <i class="material-icons">arrow_back</i>
+            </a>
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800">Course Rating Analytics</h1>
+                <p class="text-sm text-slate-600">@Model.CourseCode - @Model.CourseName</p>
+            </div>
+        </div>
+        <div class="flex items-center bg-yellow-50 px-4 py-2 rounded-lg">
+            <i class="material-icons text-yellow-500 mr-2">star</i>
+            <span class="text-yellow-800 font-medium">
+                @if (Model.OverallAverageRating > 0)
+                {
+                    @($"{Model.OverallAverageRating:F1}/5 Average Rating")
+                }
+                else
+                {
+                    @:No Ratings Yet
+                }
+            </span>
+        </div>
+    </div>
+
+    <!-- Overall Rating Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <!-- Overall Rating -->
+        <div class="bg-yellow-50 rounded-xl shadow-sm p-6">
+            <div class="flex items-center">
+                <div class="bg-yellow-100 rounded-full p-3 mr-4">
+                    <i class="material-icons text-yellow-600 text-2xl">star</i>
+                </div>
+                <div>
+                    <p class="text-sm text-yellow-700 font-medium">Overall Rating</p>
+                    <h3 class="text-3xl font-bold text-slate-800">
+                        @if (Model.OverallAverageRating > 0)
+                        {
+                            @Model.OverallAverageRating<span class="text-lg text-slate-600">/5</span>
+                        }
+                        else
+                        {
+                            <span class="text-slate-400">N/A</span>
+                        }
+                    </h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Ratings -->
+        <div class="bg-blue-50 rounded-xl shadow-sm p-6">
+            <div class="flex items-center">
+                <div class="bg-blue-100 rounded-full p-3 mr-4">
+                    <i class="material-icons text-blue-600 text-2xl">rate_review</i>
+                </div>
+                <div>
+                    <p class="text-sm text-blue-700 font-medium">Total Ratings</p>
+                    <h3 class="text-3xl font-bold text-slate-800">@Model.TotalRatings</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- Students Participated -->
+        <div class="bg-green-50 rounded-xl shadow-sm p-6">
+            <div class="flex items-center">
+                <div class="bg-green-100 rounded-full p-3 mr-4">
+                    <i class="material-icons text-green-600 text-2xl">people</i>
+                </div>
+                <div>
+                    <p class="text-sm text-green-700 font-medium">Students Rated</p>
+                    <h3 class="text-3xl font-bold text-slate-800">@Model.TotalStudentsRated<span class="text-lg text-slate-600">/@Model.TotalStudents</span></h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- Participation Rate -->
+        <div class="bg-purple-50 rounded-xl shadow-sm p-6">
+            <div class="flex items-center">
+                <div class="bg-purple-100 rounded-full p-3 mr-4">
+                    <i class="material-icons text-purple-600 text-2xl">analytics</i>
+                </div>
+                <div>
+                    <p class="text-sm text-purple-700 font-medium">Participation Rate</p>
+                    <h3 class="text-3xl font-bold text-slate-800">
+                        @{
+                            var participationRate = Model.TotalStudents > 0 ? Math.Round((double)Model.TotalStudentsRated / Model.TotalStudents * 100, 1) : 0;
+                        }
+                        @participationRate<span class="text-lg text-slate-600">%</span>
+                    </h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chapter-wise Rating Overview -->
+    <div class="bg-white rounded-xl shadow-sm mb-6">
+        <div class="p-6">
+            <h2 class="text-lg font-semibold text-slate-800 mb-4">Chapter Rating Overview</h2>
+            @if (Model.ChapterStats.Any())
+            {
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Chapter</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Average Rating</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Ratings</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Completion Rate</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recent Reviews</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            @foreach (var chapter in Model.ChapterStats)
+                            {
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <i class="material-icons text-blue-500 mr-2">menu_book</i>
+                                            <span class="font-medium text-gray-900">@chapter.ChapterTitle</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        @if (chapter.AverageRating > 0)
+                                        {
+                                            <div class="flex items-center">
+                                                @for (int i = 1; i <= 5; i++)
+                                                {
+                                                    <i class="material-icons text-sm @(i <= chapter.AverageRating ? "text-yellow-400" : "text-gray-300")">star</i>
+                                                }
+                                                <span class="ml-2 text-sm font-medium">@chapter.AverageRating.ToString("F1")</span>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-gray-400">No ratings</span>
+                                        }
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        @chapter.TotalRatings ratings
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="w-full bg-gray-200 rounded-full h-2">
+                                            <div class="bg-blue-500 h-2 rounded-full" style="width: @chapter.CompletionRate%"></div>
+                                        </div>
+                                        <span class="text-xs text-gray-500">@chapter.CompletionRate.ToString("F1")% rated</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        @if (chapter.RecentReviews.Any())
+                                        {
+                                            <button type="button" onclick="showChapterReviews(@chapter.ChapterId)" 
+                                                    class="text-blue-600 hover:text-blue-900 text-sm">
+                                                View @chapter.RecentReviews.Count reviews
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-gray-400 text-sm">No reviews</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-8">
+                    <i class="material-icons text-4xl text-gray-300 mb-2">star_border</i>
+                    <p class="text-gray-500">No chapter ratings available yet.</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Student Rating Details by Academic Year/Mode -->
+    <div class="bg-white rounded-xl shadow-sm mb-6">
+        <div class="p-4">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold text-slate-800">Student Rating Details</h2>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                        <i class="material-icons text-slate-400 text-sm">search</i>
+                    </div>
+                    <input type="text" id="studentSearch"
+                           class="block w-60 pl-10 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:ring-cyan-500 focus:border-cyan-500"
+                           placeholder="Search by masked student number..."
+                           onkeyup="filterStudents()">
+                </div>
+            </div>
+        </div>
+
+        @if (Model.StudentGroups.Any())
+        {
+            <!-- Student Rating Tabs -->
+            <div class="border-b border-gray-200">
+                <nav class="flex flex-wrap -mb-px" aria-label="Tabs">
+                    @{
+                        bool isFirstTab = true;
+                    }
+                    @foreach (var group in Model.StudentGroups)
+                    {
+                        <button type="button"
+                                class="rating-tab-button @(isFirstTab ? "active-rating-tab" : "") inline-flex items-center px-4 py-2 border-b-2 @(isFirstTab ? "border-cyan-500 text-cyan-600" : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300")"
+                                data-tab-id="rating-tab-@group.AcademicYearId-@group.SemesterId-@group.ModeOfStudy.Replace(" ", "")">
+                            @group.AcademicYear - @group.ModeOfStudy (@group.Students.Count)
+                        </button>
+                        isFirstTab = false;
+                    }
+                </nav>
+            </div>
+
+            <!-- Student Rating Tab Contents -->
+            isFirstTab = true; 
+            @foreach (var group in Model.StudentGroups)
+            {
+                <div id="rating-tab-@group.AcademicYearId-@group.SemesterId-@group.ModeOfStudy.Replace(" ", "")"
+                     class="rating-tab-content @(isFirstTab ? "block" : "hidden") p-4">
+                    
+                    @if (group.Students.Any())
+                    {
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Enrollment Date</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Average Rating</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Chapters Rated</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rating Progress</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Rating</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    @foreach (var student in group.Students)
+                                    {
+                                        <tr class="student-rating-row hover:bg-gray-50">
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="flex items-center">
+                                                    <div class="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 font-bold">
+                                                        <i class="material-icons">person</i>
+                                                    </div>
+                                                    <div class="ml-4">
+                                                        <div class="text-sm font-medium text-gray-900 student-masked-number">@student.MaskedStudentNumber</div>
+                                                        <div class="text-sm text-gray-500">@student.ModeOfStudy</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                @student.EnrollmentDate.ToString("MMM dd, yyyy")
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                @if (student.AverageRating > 0)
+                                                {
+                                                    <div class="flex items-center">
+                                                        @for (int i = 1; i <= 5; i++)
+                                                        {
+                                                            <i class="material-icons text-sm @(i <= student.AverageRating ? "text-yellow-400" : "text-gray-300")">star</i>
+                                                        }
+                                                        <span class="ml-2 text-sm font-medium">@student.AverageRating.ToString("F1")</span>
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-gray-400 text-sm">No ratings</span>
+                                                }
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                @student.ChaptersRated/@student.TotalChapters chapters
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="relative w-full bg-gray-200 rounded-full h-3">
+                                                    <div class="absolute top-0 left-0 h-3 rounded-full @(student.RatingCompletionPercentage < 50 ? "bg-amber-500" : "bg-green-500")"
+                                                         style="width: @(student.RatingCompletionPercentage)%"></div>
+                                                </div>
+                                                <span class="text-xs text-gray-500 mt-1 block">@student.RatingCompletionPercentage% Complete</span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                @if (student.LastRatingDate.HasValue)
+                                                {
+                                                    @student.LastRatingDate.Value.ToString("MMM dd, yyyy")
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-gray-400">Never</span>
+                                                }
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                <button type="button" onclick="showStudentRatingDetails('@student.StudentHashId')"
+                                                        class="text-cyan-600 hover:text-cyan-900">
+                                                    <i class="material-icons">visibility</i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        
+                                        <!-- Student Rating Details Panel (Hidden by default) -->
+                                        <tr id="student-rating-details-@student.StudentHashId" class="hidden">
+                                            <td colspan="7" class="px-6 py-4 bg-gray-50">
+                                                <h4 class="text-sm font-medium text-gray-700 mb-3">Chapter Rating Details - @student.MaskedStudentNumber</h4>
+                                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                                    @foreach (var chapterRating in student.ChapterRatings)
+                                                    {
+                                                        <div class="bg-white border border-gray-200 rounded-lg p-3">
+                                                            <div class="flex items-center justify-between mb-2">
+                                                                <h5 class="text-sm font-medium text-gray-700">@chapterRating.ChapterTitle</h5>
+                                                                @if (chapterRating.HasRating)
+                                                                {
+                                                                    <div class="flex">
+                                                                        @for (int i = 1; i <= 5; i++)
+                                                                        {
+                                                                            <i class="material-icons text-xs @(i <= chapterRating.Rating ? "text-yellow-400" : "text-gray-300")">star</i>
+                                                                        }
+                                                                    </div>
+                                                                }
+                                                                else
+                                                                {
+                                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                                        Not Rated
+                                                                    </span>
+                                                                }
+                                                            </div>
+                                                            
+                                                            @if (!string.IsNullOrEmpty(chapterRating.ReviewText))
+                                                            {
+                                                                <div class="text-sm text-gray-600 bg-gray-50 p-2 rounded italic mb-2">
+                                                                    <i class="material-icons text-gray-400 text-xs mr-1">format_quote</i>
+                                                                    @chapterRating.ReviewText
+                                                                </div>
+                                                            }
+                                                            
+                                                            @if (chapterRating.RatedDate.HasValue)
+                                                            {
+                                                                <div class="text-xs text-gray-500">
+                                                                    <i class="material-icons text-gray-400 text-xs mr-1">schedule</i>
+                                                                    Rated: @chapterRating.RatedDate.Value.ToString("MMM dd, yyyy HH:mm")
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                    }
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-8">
+                            <i class="material-icons text-4xl text-gray-300 mb-2">people_outline</i>
+                            <p class="text-gray-500">No students in this group have provided ratings yet.</p>
+                        </div>
+                    }
+                </div>
+                isFirstTab = false;
+            }
+        }
+        else
+        {
+            <div class="p-6 text-center">
+                <i class="material-icons text-5xl text-gray-300 mb-4">star_border</i>
+                <h3 class="text-lg font-medium text-gray-700 mb-2">No Student Ratings Yet</h3>
+                <p class="text-sm text-gray-500">Students will appear here once they start rating chapters.</p>
+            </div>
+        }
+    </div>
+
+    <!-- Rating Distribution Chart -->
+    @if (Model.RatingDistribution.Any() && Model.RatingDistribution.Values.Sum() > 0)
+    {
+        <div class="bg-white rounded-xl shadow-sm">
+            <div class="p-6">
+                <h2 class="text-lg font-semibold text-slate-800 mb-4">Rating Distribution</h2>
+                <div class="grid grid-cols-5 gap-4">
+                    @for (int rating = 5; rating >= 1; rating--)
+                    {
+                        var count = Model.RatingDistribution.ContainsKey(rating) ? Model.RatingDistribution[rating] : 0;
+                        var percentage = Model.TotalRatings > 0 ? Math.Round((double)count / Model.TotalRatings * 100, 1) : 0;
+                        
+                        <div class="text-center">
+                            <div class="flex items-center justify-center mb-2">
+                                @for (int i = 1; i <= rating; i++)
+                                {
+                                    <i class="material-icons text-yellow-400 text-sm">star</i>
+                                }
+                                @for (int i = rating + 1; i <= 5; i++)
+                                {
+                                    <i class="material-icons text-gray-300 text-sm">star</i>
+                                }
+                            </div>
+                            <div class="bg-gray-200 rounded-full h-24 w-8 mx-auto mb-2 relative">
+                                <div class="bg-yellow-500 rounded-full absolute bottom-0 w-full transition-all duration-500" 
+                                     style="height: @percentage%"></div>
+                            </div>
+                            <div class="text-sm font-medium text-gray-700">@count</div>
+                            <div class="text-xs text-gray-500">(@percentage%)</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Chapter Reviews Modal -->
+<div id="chapterReviewsModal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-96 overflow-hidden">
+        <div class="flex justify-between items-center p-4 border-b">
+            <h3 class="text-lg font-medium text-gray-900" id="modalChapterTitle">Chapter Reviews</h3>
+            <button type="button" onclick="closeChapterReviewsModal()" class="text-gray-400 hover:text-gray-500">
+                <i class="material-icons">close</i>
+            </button>
+        </div>
+        <div class="p-4 max-h-80 overflow-y-auto" id="modalReviewsContent">
+            <!-- Reviews will be loaded here -->
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Tab navigation for rating tabs
+        document.addEventListener('DOMContentLoaded', function() {
+            const ratingTabButtons = document.querySelectorAll('.rating-tab-button');
+
+            ratingTabButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Hide all tab contents
+                    document.querySelectorAll('.rating-tab-content').forEach(content => {
+                        content.classList.add('hidden');
+                    });
+
+                    // Remove active class from all buttons
+                    ratingTabButtons.forEach(btn => {
+                        btn.classList.remove('active-rating-tab', 'border-cyan-500', 'text-cyan-600');
+                        btn.classList.add('border-transparent', 'text-gray-500');
+                    });
+
+                    // Show the selected tab content
+                    const tabId = this.getAttribute('data-tab-id');
+                    document.getElementById(tabId).classList.remove('hidden');
+
+                    // Add active class to the clicked button
+                    this.classList.add('active-rating-tab', 'border-cyan-500', 'text-cyan-600');
+                    this.classList.remove('border-transparent', 'text-gray-500');
+                });
+            });
+        });
+
+        // Toggle student rating details
+        function showStudentRatingDetails(studentHashId) {
+            const detailsRow = document.getElementById('student-rating-details-' + studentHashId);
+            if (detailsRow.classList.contains('hidden')) {
+                // Hide any other open details
+                document.querySelectorAll('[id^="student-rating-details-"]').forEach(row => {
+                    if (row.id !== 'student-rating-details-' + studentHashId) {
+                        row.classList.add('hidden');
+                    }
+                });
+
+                // Show this student's details
+                detailsRow.classList.remove('hidden');
+            } else {
+                // Hide details if already open
+                detailsRow.classList.add('hidden');
+            }
+        }
+
+        // Search/filter functionality for students
+        function filterStudents() {
+            const searchInput = document.getElementById('studentSearch');
+            const filter = searchInput.value.toLowerCase();
+            const rows = document.querySelectorAll('.student-rating-row');
+
+            rows.forEach(row => {
+                const maskedNumberElement = row.querySelector('.student-masked-number');
+                
+                if (!maskedNumberElement) return;
+
+                const maskedNumber = maskedNumberElement.textContent || maskedNumberElement.innerText;
+
+                if (maskedNumber.toLowerCase().indexOf(filter) > -1) {
+                    row.style.display = '';
+                    // Also show the corresponding details row if it was visible
+                    const nextRow = row.nextElementSibling;
+                    if (nextRow && nextRow.id.startsWith('student-rating-details-') && !nextRow.classList.contains('hidden')) {
+                        nextRow.style.display = '';
+                    }
+                } else {
+                    row.style.display = 'none';
+                    // Hide the corresponding details row
+                    const nextRow = row.nextElementSibling;
+                    if (nextRow && nextRow.id.startsWith('student-rating-details-')) {
+                        nextRow.style.display = 'none';
+                    }
+                }
+            });
+        }
+
+        // Show chapter reviews modal
+        function showChapterReviews(chapterId) {
+            const chapterStats = @Html.Raw(Json.Serialize(Model.ChapterStats));
+            const chapter = chapterStats.find(c => c.chapterId === chapterId);
+            
+            if (!chapter) return;
+
+            document.getElementById('modalChapterTitle').textContent = chapter.chapterTitle + ' - Reviews';
+            
+            const reviewsContent = document.getElementById('modalReviewsContent');
+            if (chapter.recentReviews && chapter.recentReviews.length > 0) {
+                reviewsContent.innerHTML = chapter.recentReviews.map(review => `
+                    <div class="mb-4 p-3 bg-gray-50 rounded-lg">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center">
+                                <div class="flex mr-2">
+                                    ${Array.from({length: 5}, (_, i) => 
+                                        `<i class="material-icons text-xs ${i < review.rating ? 'text-yellow-400' : 'text-gray-300'}">star</i>`
+                                    ).join('')}
+                                </div>
+                                <span class="text-sm font-medium text-gray-700">${review.anonymousIdentifier}</span>
+                            </div>
+                            <span class="text-xs text-gray-500">${new Date(review.reviewDate).toLocaleDateString()}</span>
+                        </div>
+                        <p class="text-sm text-gray-600 italic">"${review.reviewText}"</p>
+                    </div>
+                `).join('');
+            } else {
+                reviewsContent.innerHTML = '<p class="text-gray-500 text-center py-4">No reviews available for this chapter.</p>';
+            }
+
+            document.getElementById('chapterReviewsModal').classList.remove('hidden');
+        }
+
+        // Close chapter reviews modal
+        function closeChapterReviewsModal() {
+            document.getElementById('chapterReviewsModal').classList.add('hidden');
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('chapterReviewsModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeChapterReviewsModal();
+            }
+        });
+    </script>
+}

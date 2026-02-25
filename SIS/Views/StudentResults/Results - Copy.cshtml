@@ -1,0 +1,833 @@
+﻿@model SIS.Models.Admin.StudentResultsViewModel
+
+<div class="p-4">
+    @if (Model.OutstandingFees > 0)
+    {
+        <div class="flex items-center p-4 mb-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-lg" role="alert">
+            <i class="material-icons text-yellow-600 mr-2">warning</i>
+            <div class="flex-1">
+                <strong class="font-medium text-yellow-700">Fee Clearance Required:</strong>
+                <span class="text-yellow-700"> You have outstanding fees of ZMW @Model.OutstandingFees.ToString("N2"). Clear your fees to view complete results and download transcripts.</span>
+            </div>
+            <button type="button" class="text-yellow-600 hover:text-yellow-700" data-bs-dismiss="alert" aria-label="Close">
+                <i class="material-icons">close</i>
+            </button>
+        </div>
+    }
+
+    <!-- Header with Download Button -->
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-800 flex items-center">
+            <i class="material-icons mr-2">school</i>
+            Academic Results
+        </h1>
+        <div class="flex items-center gap-3">
+            <span class="text-gray-600 mr-2">Overall GPA:</span>
+            <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-lg border font-medium">
+                @if (Model.CanViewCompleteResults && Model.AcademicYears.Any(y => y.HasCompleteResults()))
+                {
+                    @Model.OverallGPA.ToString("F2")
+                }
+                else
+                {
+                    <span class="text-gray-500">--</span>
+                }
+            </span>
+            @if (Model.CanViewCompleteResults && Model.AcademicYears.Any())
+            {
+                @* <button onclick="downloadFullTranscript()"
+                        class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    <i class="material-icons mr-2 text-sm">download</i>
+                    Download Full Transcript
+                </button> *@
+            }
+        </div>
+    </div>
+
+    <!-- Academic Year Selector (if multiple years) -->
+    @if (Model.AcademicYears.Count > 1)
+    {
+        <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Select Academic Year:</label>
+            <select id="yearFilter" onchange="filterByYear()" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                <option value="all">All Years</option>
+                @foreach (var year in Model.AcademicYears.OrderByDescending(y => y.YearId))
+                {
+                    <option value="@year.YearId">@year.YearValue</option>
+                }
+            </select>
+        </div>
+    }
+
+    <!-- Info Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <!-- Courses Card -->
+        <div class="bg-white rounded-lg shadow-sm hover:-translate-y-1 transition-transform duration-200">
+            <div class="p-4">
+                <div class="flex items-center">
+                    <div class="p-3 bg-gray-100 rounded-lg mr-3">
+                        <i class="material-icons text-blue-600">library_books</i>
+                    </div>
+                    <div>
+                        <p class="text-gray-500 text-sm">Total Courses Passed</p>
+                        <h5 class="text-lg font-semibold">
+                            @if (Model.CanViewCompleteResults && Model.AcademicYears.Any(y => y.HasCompleteResults()))
+                            {
+                                var totalPassed = Model.AcademicYears.Sum(y => y.GetPassedCourses());
+                                var totalCourses = Model.AcademicYears.Sum(y => y.GetTotalCourses());
+                                @totalPassed <span class="text-gray-400">/</span> @totalCourses
+                            }
+                            else
+                            {
+                                <span class="text-gray-400">-- / @Model.AcademicYears.SelectMany(y => y.Semesters).SelectMany(s => s.Courses).Count()</span>
+                            }
+                        </h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Credits Card -->
+        <div class="bg-white rounded-lg shadow-sm hover:-translate-y-1 transition-transform duration-200">
+            <div class="p-4">
+                <div class="flex items-center">
+                    <div class="p-3 bg-gray-100 rounded-lg mr-3">
+                        <i class="material-icons text-green-600">credit_card</i>
+                    </div>
+                    <div>
+                        <p class="text-gray-500 text-sm">Credits (Earned/Attempted)</p>
+                        <h5 class="text-lg font-semibold">
+                            @if (Model.CanViewCompleteResults && Model.AcademicYears.Any(y => y.HasCompleteResults()))
+                            {
+                                @Model.TotalCreditsEarned <span class="text-gray-400">/</span> @Model.TotalCreditsAttempted
+                            }
+                            else
+                            {
+                                <span class="text-gray-400">-- / --</span>
+                            }
+                        </h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Academic Years Card -->
+        <div class="bg-white rounded-lg shadow-sm hover:-translate-y-1 transition-transform duration-200">
+            <div class="p-4">
+                <div class="flex items-center">
+                    <div class="p-3 bg-gray-100 rounded-lg mr-3">
+                        <i class="material-icons text-purple-600">calendar_today</i>
+                    </div>
+                    <div>
+                        <p class="text-gray-500 text-sm">Academic Years</p>
+                        <h5 class="text-lg font-semibold">
+                            @Model.AcademicYears.Count Year@(Model.AcademicYears.Count != 1 ? "s" : "")
+                        </h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results by Academic Year -->
+    @if (Model?.AcademicYears?.Any() == true)
+    {
+        @foreach (var year in Model.AcademicYears.OrderByDescending(y => y.YearId))
+        {
+            <div class="year-section bg-white rounded-lg shadow-sm mb-6 p-6" data-year-id="@year.YearId">
+                <!-- Year Header -->
+                <div class="flex justify-between items-center mb-4 pb-4 border-b">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800">Academic Year: @year.YearValue</h2>
+                        @if (Model.CanViewCompleteResults && year.HasCompleteResults())
+                        {
+                            <div class="flex gap-4 mt-2 text-sm text-gray-600">
+                                <span>Year GPA: <strong>@year.GPA.ToString("F2")</strong></span>
+                                <span>Credits: <strong>@year.CreditsEarned / @year.CreditsAttempted</strong></span>
+                                <span>Overall Comment: <strong class="text-blue-600">
+                                    Overall Comment: <strong>
+                                        @year.AcademicStanding
+                                        @{
+                                            var failedCodes = string.Join(", ", year.Semesters
+                                                .SelectMany(s => s.Courses)
+                                                .Where(c => !c.IsPassed)
+                                                .Select(c => c.CourseCode));
+                                        }
+                                        @if (!string.IsNullOrEmpty(failedCodes))
+                                        {
+                                            <span>(@failedCodes)</span>
+                                        }
+                                    </strong>
+                                </span>
+                            </div>
+                        }
+                    </div>
+                    <div class="flex gap-2">
+                        @foreach (var semester in year.Semesters)
+                        {
+                            @if (Model.CanViewCompleteResults && semester.Courses.All(c => c.IsPublished))
+                            {
+                                <button onclick="downloadSemesterTranscript(@year.YearId, @semester.SemesterId)"
+                                        class="inline-flex items-center px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                                    <i class="material-icons text-sm mr-1">download</i>
+                                    Semester @semester.SemesterId
+                                </button>
+                            }
+                        }
+                    </div>
+                </div>
+
+                <!-- Results Table -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-gray-600">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-4 text-left w-8"></th>
+                                <th class="px-6 py-4 text-left">Course Code</th>
+                                <th class="px-6 py-4 text-left">Course Name</th>
+                                <th class="px-6 py-4 text-center">Semester</th>
+                                @* <th class="px-6 py-4 text-center">Pass Mark</th>
+                                <th class="px-6 py-4 text-center">Overall Score</th> *@
+                                @if (Model.CanViewCompleteResults)
+                                {
+                                    <th class="px-6 py-4 text-center">Grade</th>
+                                }
+                                <th class="px-6 py-4 text-center">Comment</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            @foreach (var semester in year.Semesters)
+                            {
+                                @foreach (var course in semester.Courses)
+                                {
+                                    var rowId = $"row-{year.YearId}-{course.CourseId}-{semester.SemesterId}";
+                                    var detailId = $"detail-{year.YearId}-{course.CourseId}-{semester.SemesterId}";
+                                    <tr id="@rowId" class="hover:bg-gray-50 cursor-pointer transition-colors"
+                                        onclick="toggleDetails('@detailId', '@rowId')">
+                                        <td class="px-6 py-4">
+                                            <i id="@(rowId)-icon" class="material-icons text-gray-400 text-sm transition-transform">chevron_right</i>
+                                        </td>
+                                        <td class="px-6 py-4 font-medium">@course.CourseCode</td>
+                                        <td class="px-6 py-4">@course.CourseName</td>
+                                        <td class="px-6 py-4 text-center">@semester.SemesterId</td>
+                                        @* <td class="px-6 py-4 text-center">
+                                            @if (Model.CoursePassMarks.ContainsKey(course.CourseId))
+                                            {
+                                                @Model.CoursePassMarks[course.CourseId]
+                                            }
+                                        </td>
+                                        <td class="px-6 py-4 text-center font-semibold">
+                                            @if (course.CanViewComplete && course.TotalScore.HasValue)
+                                            {
+                                                @course.TotalScore.Value.ToString("F2")
+                                            }
+                                            else
+                                            {
+                                                <span class="text-gray-400">--</span>
+                                            }
+                                        </td> *@
+                                        @if (Model.CanViewCompleteResults)
+                                        {
+                                            <td class="px-6 py-4 text-center">
+                                                @if (course.CanViewComplete && !string.IsNullOrEmpty(course.Grade))
+                                                {
+                                                    <span class="px-3 py-1 rounded-full text-xs font-semibold
+                                                        @(course.IsPassed ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800")">
+                                                        @course.Grade
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-gray-400">--</span>
+                                                }
+                                            </td>
+                                        }
+                                        <td class="px-6 py-4 text-center">
+                                            @if (course.IsPublished)
+                                            {
+                                                @if (course.CanViewComplete)
+                                                {
+                                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold
+                                                        @(course.IsPassed ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800")">
+                                                        <i class="material-icons text-xs mr-1">
+                                                            @(course.IsPassed ? "check_circle" : "cancel")
+                                                        </i>
+                                                        @if(course.Grade == "NE")
+                                                        {
+                                                            <span>DEF</span>
+                                                        }
+                                                        else if (course.IsPassed)
+                                                        {
+                                                            <span>Pass</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span>Failed</span>
+                                                        }
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="inline-flex items-center px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold">
+                                                        <i class="material-icons text-xs mr-1">lock</i>
+                                                        Clear Fees
+                                                    </span>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span class="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold">
+                                                    <i class="material-icons text-xs mr-1">schedule</i>
+                                                    NE
+                                                </span>
+                                            }
+                                        </td>
+                                    </tr>
+
+                                    <!-- Assessment Details Row -->
+                                    @* <tr id="@detailId" class="hidden bg-gray-50">
+                                        <td colspan="8" class="px-6 py-4">
+                                            <div class="ml-8">
+                                                <h6 class="font-semibold text-gray-700 mb-3">Assessment Breakdown:</h6>
+                                                @if (course.Scores?.Any() == true)
+                                                {
+                                                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                        @foreach (var score in course.Scores)
+                                                        {
+                                                            bool isExam = IsExamAssessment(score.Key);
+                                                            bool canView = course.CanViewComplete || !isExam;
+
+                                                            <div class="bg-white p-4 rounded-lg border @(isExam ? "border-blue-200" : "border-gray-200")">
+                                                                <div class="flex justify-between items-start mb-2">
+                                                                    <span class="font-medium text-gray-700">@score.Key</span>
+                                                                    @if (isExam)
+                                                                    {
+                                                                        <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Exam</span>
+                                                                    }
+                                                                </div>
+                                                                <div class="text-sm text-gray-600">
+                                                                    <div class="flex justify-between">
+                                                                        <span>Score:</span>
+                                                                        <span class="font-semibold">
+                                                                            @if (canView)
+                                                                            {
+                                                                                @score.Value.Score.ToString("F2")
+                                                                            }
+                                                                            else
+                                                                            {
+                                                                                <span class="text-gray-400">--</span>
+                                                                            }
+                                                                        </span>
+                                                                    </div>
+                                                                    <div class="flex justify-between mt-1">
+                                                                        <span>Weight:</span>
+                                                                        <span class="font-semibold">@score.Value.WeightPercentage.ToString("F1")%</span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <p class="text-gray-500 italic">No assessment scores available</p>
+                                                }
+                                            </div>
+                                        </td>
+                                    </tr> *@
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Year Summary Footer -->
+                @if (Model.CanViewCompleteResults && year.HasCompleteResults())
+                {
+                    <div class="mt-4 pt-4 border-t">
+                        <div class="flex justify-between items-center">
+                            <div class="text-sm text-gray-600">
+                                <span class="font-medium">Overall Comment:</span>
+                                <span class="ml-2 text-blue-600">@GetActionMessage(year.AcademicStanding)</span>
+                            </div>
+                            <div class="flex gap-2">
+                                @if (year.AcademicStanding != "Proceed" &&
+                               year.AcademicStanding != "Exclude" &&
+                               year.AcademicStanding != "Withdraw")
+                                {
+                                    @* <button onclick="openProgressionModal(@year.YearId, '@year.AcademicStanding')"
+                                            class="inline-flex items-center px-4 py-2 text-sm text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
+                                        <i class="material-icons text-sm mr-1">info</i>
+                                        View Details
+                                    </button> *@
+                                }
+
+                                @* Show Confirm Progression button for the most recent academic year only *@
+                                @if (year.YearId == Model.AcademicYears.OrderByDescending(y => y.YearId).First().YearId)
+                                {
+                                    <button @* onclick="confirmProgression(@year.YearId, '@year.AcademicStanding')" *@
+                                            class="inline-flex items-center px-4 py-2 text-sm text-white bg-white-600 hover:bg-green-700 rounded-lg transition-colors shadow-sm">
+                                        <i class="material-icons text-sm mr-1">check_circle</i>
+                                        @if (Model.CanViewCompleteResults && year.HasCompleteResults())
+                                        {
+                                            <div class="flex gap-4 mt-2 text-sm text-gray-600">
+                                                <span>
+                                                    Overall Comment: <strong>
+                                                        @year.AcademicStanding
+                                                        @{
+                                                            var failedCodes = string.Join(", ", year.Semesters
+                                                                .SelectMany(s => s.Courses)
+                                                                .Where(c => !c.IsPassed)
+                                                                .Select(c => c.CourseCode));
+                                                        }
+                                                        @if (!string.IsNullOrEmpty(failedCodes))
+                                                        {
+                                                            <span>(@failedCodes)</span>
+                                                        }
+                                                    </strong>
+                                                </span>
+                                            </div>
+                                        }
+                                    </button>
+                                }
+                            </div>
+                        </div>
+
+                        @* Additional info for different progression statuses *@
+                        @if (year.AcademicStanding == "ProceedWithRepeat" ||
+                       year.AcademicStanding == "RepeatYear" ||
+                       year.AcademicStanding == "RepeatSemester" ||
+                       year.AcademicStanding == "ProceedOnProbation")
+                        {
+                            <div class="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                <div class="flex items-start">
+                                    <i class="material-icons text-yellow-600 text-sm mr-2 mt-0.5">warning</i>
+                                    <div class="text-sm text-yellow-800">
+                                        @if (year.AcademicStanding == "ProceedWithRepeat")
+                                        {
+                                            <p><strong>Note:</strong> You have @year.FailedCourses failed course(s) that will be carried over. You must repeat these courses alongside your new courses.</p>
+                                        }
+                                        else if (year.AcademicStanding == "RepeatYear")
+                                        {
+                                            <p><strong>Note:</strong> You are required to repeat this academic year. You will need to re-register for all courses.</p>
+                                        }
+                                        else if (year.AcademicStanding == "RepeatSemester")
+                                        {
+                                            <p><strong>Note:</strong> You are required to repeat this semester. You will need to re-register for the semester courses.</p>
+                                        }
+                                        else if (year.AcademicStanding == "ProceedOnProbation")
+                                        {
+                                            <p><strong>Note:</strong> You are on academic probation. You must improve your performance or risk academic exclusion.</p>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    }
+    else
+    {
+        <div class="bg-white rounded-lg shadow-sm p-8 text-center">
+            <i class="material-icons text-gray-300" style="font-size: 48px;">assignment</i>
+            <h3 class="text-lg font-semibold text-gray-700 mt-4">No Results Available</h3>
+            <p class="text-gray-500 mt-2">
+                You don't have any published results yet.
+                @if (Model.OutstandingFees > 0)
+                {
+                    <strong>Clear your outstanding fees of ZMW @Model.OutstandingFees.ToString("N2")</strong>
+                    <span>to view your results when published.</span>
+                }
+                else
+                {
+                    <span>Results will appear here once they are published.</span>
+                }
+            </p>
+        </div>
+    }
+</div>
+
+<!-- Progression Confirmation Modal -->
+<div id="progressionModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+
+    <div class="flex min-h-full items-center justify-center p-4">
+        <div class="relative bg-white rounded-lg shadow-xl w-full max-w-md">
+            <!-- Modal Header -->
+            <div class="bg-green-600 text-white px-6 py-4 rounded-t-lg">
+                <h3 class="text-lg font-semibold flex items-center">
+                    <i class="material-icons mr-2">school</i>
+                    Confirm Academic Progression
+                </h3>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-6">
+                <div class="mb-4">
+                    <div class="flex items-start mb-3">
+                        <i class="material-icons text-blue-600 mr-2">info</i>
+                        <div>
+                            <p class="text-gray-700 font-medium mb-2">Your Progression Status:</p>
+                            <p id="progressionStatusText" class="text-gray-600 text-sm"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                    <div class="flex items-start">
+                        <i class="material-icons text-yellow-600 text-sm mr-2">warning</i>
+                        <div class="text-sm text-yellow-800">
+                            <p><strong>Important:</strong> By confirming, you acknowledge your academic performance and agree to proceed according to the progression rules. This action cannot be undone.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="progressionDetails" class="text-sm text-gray-600 mb-4"></div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-end gap-2">
+                <button type="button"
+                        onclick="closeProgressionModal()"
+                        class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                    <i class="material-icons text-sm mr-1">close</i>
+                    Cancel
+                </button>
+                <button type="button"
+                        id="confirmProgressionBtn"
+                        onclick="submitProgression()"
+                        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center">
+                    <i class="material-icons text-sm mr-1">check_circle</i>
+                    Confirm Progression
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Details Modal -->
+<div id="detailsModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+
+    <div class="flex min-h-full items-center justify-center p-4">
+        <div class="relative bg-white rounded-lg shadow-xl w-full max-w-md">
+            <!-- Modal Header -->
+            <div class="bg-blue-600 text-white px-6 py-4 rounded-t-lg flex justify-between items-center">
+                <h3 class="text-lg font-semibold flex items-center">
+                    <i class="material-icons mr-2">info</i>
+                    Progression Details
+                </h3>
+                <button onclick="closeDetailsModal()" class="text-white hover:text-gray-200">
+                    <i class="material-icons">close</i>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-6">
+                <div id="detailsContent" class="text-sm text-gray-600"></div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-end">
+                <button type="button"
+                        onclick="closeDetailsModal()"
+                        class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    private bool IsExamAssessment(string assessmentName)
+    {
+        var examNames = new[] { "Exam", "EXAM", "Final Exam", "Final", "Main Exam", "End of Semester Exam" };
+        return examNames.Contains(assessmentName, StringComparer.OrdinalIgnoreCase);
+    }
+
+    private string GetActionMessage(string standing) => standing switch
+    {
+        "Proceed" => "You can proceed to the next academic year",
+        "ProceedWithRepeat" => "Proceed with repeat units",
+        "RepeatYear" => "You need to repeat this academic year",
+        "ProceedOnProbation" => "Proceed with academic probation",
+        "Exclude" => "Academic exclusion notice",
+        "Withdraw" => "Withdrawal recommended",
+        _ => ""
+    };
+}
+
+<script>
+    let currentYearId = null;
+    let currentAction = null;
+
+    // Expand/Collapse functionality for assessment details
+    function toggleDetails(detailId, rowId) {
+        const detailRow = document.getElementById(detailId);
+        const icon = document.getElementById(rowId + '-icon');
+
+        if (detailRow.classList.contains('hidden')) {
+            detailRow.classList.remove('hidden');
+            icon.textContent = 'expand_more';
+            icon.classList.add('rotate-0');
+        } else {
+            detailRow.classList.add('hidden');
+            icon.textContent = 'chevron_right';
+            icon.classList.remove('rotate-0');
+        }
+    }
+
+    // Filter by academic year
+    function filterByYear() {
+        const selectedYear = document.getElementById('yearFilter').value;
+        const yearSections = document.querySelectorAll('.year-section');
+
+        yearSections.forEach(section => {
+            if (selectedYear === 'all') {
+                section.style.display = 'block';
+            } else {
+                const yearId = section.getAttribute('data-year-id');
+                section.style.display = yearId === selectedYear ? 'block' : 'none';
+            }
+        });
+    }
+
+    // Download semester transcript
+    function downloadSemesterTranscript(academicYearId, semester) {
+        window.location.href = `/StudentResults/DownloadSemesterTranscript?academicYearId=${academicYearId}&semester=${semester}`;
+    }
+
+    // Download full transcript
+    function downloadFullTranscript() {
+        window.location.href = '/StudentResults/DownloadFullTranscript';
+    }
+
+    // Show progression confirmation modal
+    function confirmProgression(yearId, action) {
+        currentYearId = yearId;
+        currentAction = action;
+
+        const modal = document.getElementById('progressionModal');
+        const statusText = document.getElementById('progressionStatusText');
+        const detailsDiv = document.getElementById('progressionDetails');
+
+        // Set status message
+        const statusMessages = {
+            'Proceed': 'You have met all requirements and can proceed to the next academic period.',
+            'ProceedWithRepeat': 'You can proceed to the next period but must repeat failed courses.',
+            'ProceedOnProbation': 'You can proceed but you are on academic probation. You must improve your performance.',
+            'RepeatYear': 'You must repeat the current academic year.',
+            'RepeatSemester': 'You must repeat the current semester.',
+            'Exclude': 'Academic exclusion - please contact the academic office.',
+            'Withdraw': 'Withdrawal recommended - please contact the academic office.'
+        };
+
+        statusText.textContent = statusMessages[action] || 'Please review your progression status.';
+
+        // Show additional details based on action
+        let detailsHtml = '<ul class="list-disc list-inside space-y-1">';
+
+        if (action === 'ProceedWithRepeat') {
+            detailsHtml += '<li>You will progress to the next academic period</li>';
+            detailsHtml += '<li>Failed courses will be added as carryover courses</li>';
+            detailsHtml += '<li>You must register for both new courses and carryover courses</li>';
+        } else if (action === 'RepeatYear' || action === 'RepeatSemester') {
+            detailsHtml += '<li>You will need to re-register for all courses</li>';
+            detailsHtml += '<li>Your previous results will be archived</li>';
+            detailsHtml += '<li>You can improve your performance in the repeat</li>';
+        } else if (action === 'ProceedOnProbation') {
+            detailsHtml += '<li>You are on academic probation</li>';
+            detailsHtml += '<li>You must significantly improve your performance</li>';
+            detailsHtml += '<li>Continued poor performance may lead to exclusion</li>';
+        } else if (action === 'Proceed') {
+            detailsHtml += '<li>You have successfully completed this academic period</li>';
+            detailsHtml += '<li>You will progress to the next period</li>';
+            detailsHtml += '<li>No carryover courses</li>';
+        }
+
+        detailsHtml += '</ul>';
+        detailsDiv.innerHTML = detailsHtml;
+
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    // Close progression modal
+    function closeProgressionModal() {
+        const modal = document.getElementById('progressionModal');
+        modal.classList.add('hidden');
+        document.body.style.overflow = 'auto';
+        currentYearId = null;
+        currentAction = null;
+    }
+
+    // Submit progression
+    async function submitProgression() {
+        if (!currentYearId) {
+            alert('Error: No academic year selected');
+            return;
+        }
+
+        const btn = document.getElementById('confirmProgressionBtn');
+        const originalHtml = btn.innerHTML;
+
+        // Disable button and show loading
+        btn.disabled = true;
+        btn.innerHTML = '<i class="material-icons text-sm mr-1 animate-spin">refresh</i> Processing...';
+
+        try {
+            const formData = new FormData();
+            formData.append('academicYearId', currentYearId);
+
+            const response = await fetch('/StudentResults/ConfirmProgression', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                }
+            });
+
+            if (response.ok) {
+                // Success - redirect will happen from controller
+                window.location.href = '/Home/Student_Dashboard';
+            } else {
+                const result = await response.json();
+                alert(result.message || 'An error occurred while processing your progression.');
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred while processing your progression. Please try again.');
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        }
+    }
+
+    // Open progression details modal
+    function openProgressionModal(yearId, action) {
+        const modal = document.getElementById('detailsModal');
+        const content = document.getElementById('detailsContent');
+
+        const actionDetails = {
+            'Proceed': {
+                title: 'Clear Pass',
+                details: [
+                    'You have successfully met all academic requirements',
+                    'You can proceed to the next academic period without any restrictions',
+                    'No courses need to be repeated'
+                ],
+                icon: 'check_circle',
+                color: 'green'
+            },
+            'ProceedWithRepeat': {
+                title: 'Proceed with Carryover Courses',
+                details: [
+                    'You can progress to the next period',
+                    'You have some failed courses that must be repeated',
+                    'These will be added as carryover courses',
+                    'You must register for both new courses and carryover courses'
+                ],
+                icon: 'warning',
+                color: 'yellow'
+            },
+            'ProceedOnProbation': {
+                title: 'Academic Probation',
+                details: [
+                    'You are on academic probation',
+                    'You can proceed but must significantly improve your performance',
+                    'Failure to improve may result in academic exclusion',
+                    'Consider seeking academic support services'
+                ],
+                icon: 'error',
+                color: 'orange'
+            },
+            'RepeatYear': {
+                title: 'Repeat Academic Year',
+                details: [
+                    'You must repeat the entire academic year',
+                    'All courses for the year must be retaken',
+                    'Previous results will be archived',
+                    'You will need to re-register for the year'
+                ],
+                icon: 'replay',
+                color: 'red'
+            },
+            'RepeatSemester': {
+                title: 'Repeat Semester',
+                details: [
+                    'You must repeat the current semester',
+                    'All courses for this semester must be retaken',
+                    'Previous semester results will be archived',
+                    'You will need to re-register for the semester'
+                ],
+                icon: 'replay',
+                color: 'red'
+            }
+        };
+
+        const info = actionDetails[action] || {
+            title: 'Progression Status',
+            details: ['Please contact the academic office for more information'],
+            icon: 'info',
+            color: 'blue'
+        };
+
+        let html = `
+            <div class="mb-4">
+                <div class="flex items-center mb-3">
+                    <div class="p-2 bg-${info.color}-100 rounded-lg mr-3">
+                        <i class="material-icons text-${info.color}-600">${info.icon}</i>
+                    </div>
+                    <h4 class="font-semibold text-gray-800">${info.title}</h4>
+                </div>
+                <ul class="space-y-2">
+        `;
+
+        info.details.forEach(detail => {
+            html += `
+                <li class="flex items-start">
+                    <i class="material-icons text-${info.color}-600 text-sm mr-2 mt-0.5">arrow_right</i>
+                    <span>${detail}</span>
+                </li>
+            `;
+        });
+
+        html += '</ul></div>';
+        content.innerHTML = html;
+
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    // Close details modal
+    function closeDetailsModal() {
+        const modal = document.getElementById('detailsModal');
+        modal.classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    }
+
+    // Close modals on escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeProgressionModal();
+            closeDetailsModal();
+        }
+    });
+
+    // Close modals when clicking outside
+    document.getElementById('progressionModal')?.addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeProgressionModal();
+        }
+    });
+
+    document.getElementById('detailsModal')?.addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeDetailsModal();
+        }
+    });
+</script>

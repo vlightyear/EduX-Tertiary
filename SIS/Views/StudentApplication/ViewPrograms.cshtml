@@ -1,0 +1,193 @@
+﻿@model SIS.Models.StudentApplication.ProgrammeListViewModel
+
+@{
+    ViewData["Title"] = "Available Programs";
+}
+
+<div class="min-h-screen bg-slate-50 p-6">
+    <!-- Header Section -->
+    <div class="mb-8">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+            <div>
+                <h1 class="text-3xl font-bold text-slate-800 mb-2">Available Programs</h1>
+                <p class="text-slate-600">Explore our diverse range of academic programs</p>
+            </div>
+            <div class="mt-4 sm:mt-0">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-cyan-100 text-cyan-800">
+                    @Model.TotalProgrammes Programs in @Model.TotalSchools Schools
+                </span>
+            </div>
+        </div>
+
+        <!-- Search and Filters -->
+        <div class="bg-white rounded-lg shadow-sm p-6 border border-slate-200">
+            <form method="get" class="flex flex-col sm:flex-row gap-4">
+                <div class="flex-1">
+                    <label for="search" class="block text-sm font-medium text-slate-700 mb-2">Search Programs</label>
+                    <input type="text" 
+                           id="search" 
+                           name="search" 
+                           value="@Model.SearchTerm"
+                           placeholder="Search by program, department, or school name..."
+                           class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500">
+                </div>
+                <div class="sm:w-64">
+                    <label for="schoolId" class="block text-sm font-medium text-slate-700 mb-2">Filter by School</label>
+                    <select name="schoolId"
+                            id="schoolId"
+                            class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500">
+                        <option value="">All Schools</option>
+                        @foreach (var school in Model.Schools)
+                        {
+                            @if (Model.SelectedSchoolId == school.SchoolId)
+                            {
+                                <option value="@school.SchoolId" selected>
+                                    @school.SchoolName
+                                </option>
+                            }
+                            else
+                            {
+                                <option value="@school.SchoolId">
+                                    @school.SchoolName
+                                </option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="sm:w-48 flex items-end">
+                    <button type="submit" 
+                            class="w-full px-6 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors duration-200">
+                        <i class="material-icons inline-block mr-2 text-lg">search</i>
+                        Search
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Programs by School -->
+    <div class="space-y-8">
+        @foreach (var school in Model.Schools)
+        {
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <!-- School Header -->
+                <div class="bg-gradient-to-r from-cyan-50 to-blue-50 p-6 border-b border-slate-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-800 flex items-center">
+                                <i class="material-icons mr-3 text-cyan-600">school</i>
+                                @school.SchoolName
+                            </h2>
+                            @if (!string.IsNullOrEmpty(school.SchoolDescription))
+                            {
+                                <p class="text-slate-600 mt-2">@school.SchoolDescription</p>
+                            }
+                        </div>
+                        <div class="text-right">
+                            <div class="text-2xl font-bold text-cyan-600">@school.TotalProgrammes</div>
+                            <div class="text-sm text-slate-500">Programs</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Departments and Programs -->
+                <div class="p-6">
+                    @foreach (var department in school.Departments)
+                    {
+                        <div class="mb-8 last:mb-0">
+                            <h3 class="text-xl font-semibold text-slate-800 mb-4 flex items-center">
+                                <i class="material-icons mr-2 text-slate-600">business</i>
+                                @department.DepartmentName
+                                <span class="ml-2 text-sm font-normal text-slate-500">(@department.Programmes.Count programs)</span>
+                            </h3>
+                            
+                            <!-- Programs Grid -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                @foreach (var program in department.Programmes)
+                                {
+                                    <div class="bg-slate-50 rounded-lg border border-slate-200 p-6 hover:shadow-md transition-all duration-300 hover:border-cyan-200">
+                                        <div class="flex justify-between items-start mb-4">
+                                            <h4 class="text-lg font-semibold text-slate-800 line-clamp-2">@program.Name</h4>
+                                            <span class="ml-2 px-2 py-1 bg-cyan-100 text-cyan-800 text-xs rounded-full font-medium whitespace-nowrap">
+                                                @program.ProgrammeLevelName
+                                            </span>
+                                        </div>
+                                        
+                                        <p class="text-slate-600 text-sm mb-4 line-clamp-3">@program.Description</p>
+                                        
+                                        <div class="space-y-2 mb-4">
+                                            <div class="flex items-center text-sm text-slate-600">
+                                                <i class="material-icons text-slate-400 mr-2 text-base">schedule</i>
+                                                <span>@program.DurationYears years</span>
+                                            </div>
+                                            <div class="flex items-center text-sm text-slate-600">
+                                                <i class="material-icons text-slate-400 mr-2 text-base">laptop</i>
+                                                <span>@program.ModeOfStudyName</span>
+                                            </div>
+                                            <div class="flex items-center text-sm text-slate-600">
+                                                <i class="material-icons text-slate-400 mr-2 text-base">grade</i>
+                                                <span>Min. Points: @program.MinimumPointsTop5Subjects</span>
+                                            </div>
+                                            <div class="flex items-center text-sm text-slate-600">
+                                                <i class="material-icons text-slate-400 mr-2 text-base">people</i>
+                                                <span>@program.EnrollmentCount students enrolled</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <a href="@Url.Action("ProgrammeDetails", new { id = program.Id })" 
+                                           class="inline-flex items-center justify-center w-full px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors duration-200">
+                                            <i class="material-icons mr-2 text-lg">visibility</i>
+                                            View Details
+                                        </a>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- No Results State -->
+    @if (!Model.Schools.Any())
+    {
+        <div class="text-center py-16">
+            <div class="max-w-md mx-auto">
+                <i class="material-icons text-slate-400 text-6xl mb-4">search_off</i>
+                <h3 class="text-xl font-semibold text-slate-600 mb-2">No Programs Found</h3>
+                <p class="text-slate-500 mb-6">Try adjusting your search criteria or filters.</p>
+                <a href="@Url.Action("ViewPrograms")" 
+                   class="inline-flex items-center px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors">
+                    <i class="material-icons mr-2">refresh</i>
+                    Clear Filters
+                </a>
+            </div>
+        </div>
+    }
+
+    <!-- Back to Dashboard -->
+    <div class="mt-8 text-center">
+        <a href="@Url.Action("Index")" 
+           class="inline-flex items-center px-6 py-3 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors">
+            <i class="material-icons mr-2">dashboard</i>
+            Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<style>
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
+    .line-clamp-3 {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+</style>

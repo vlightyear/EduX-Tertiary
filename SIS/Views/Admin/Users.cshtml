@@ -1,0 +1,599 @@
+﻿@model IEnumerable<SIS.Data.ApplicationUser>
+
+<div class="h-[90vh] p-4">
+    <!-- Header Section -->
+    <div class="flex justify-between items-center mb-4">
+        <h1 class="text-2xl font-bold text-primary-800 flex items-center">
+            <i class="material-icons mr-2 text-primary-600">people</i>
+            User Management
+        </h1>
+        <button type="button"
+                class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center shadow-md hover:shadow-lg"
+                onclick="showCreateUserModal()">
+            <i class="material-icons mr-2">person_add</i>
+            Create User
+        </button>
+    </div>
+
+    <!-- Main Content Layout -->
+    <div class="flex gap-4 h-[calc(90vh-80px)]">
+        <!-- Main Table Section (3/4 width) -->
+        <div class="w-3/4">
+            <div class="bg-white rounded-lg shadow-lg h-full overflow-hidden border border-gray-100">
+                <div class="p-4">
+                    <table id="usersTable" class="w-full text-sm text-gray-600">
+                        <thead>
+                            <tr class="bg-primary-50 border-b border-primary-100">
+                                <th class="px-6 py-4 text-left">
+                                    <span class="flex items-center text-primary-700 font-semibold">
+                                        #
+                                        <svg class="w-4 h-4 ms-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 15 4 4 4-4m0-6-4-4-4 4" />
+                                        </svg>
+                                    </span>
+                                </th>
+                                <th class="px-6 py-4 text-left text-primary-700 font-semibold">Full Name</th>
+                                <th class="px-6 py-4 text-left text-primary-700 font-semibold">Email</th>
+                                <th class="px-6 py-4 text-left text-primary-700 font-semibold">Role</th>
+                                <th class="px-6 py-4 text-left text-primary-700 font-semibold">Status</th>
+                                <th class="px-6 py-4 text-left text-primary-700 font-semibold">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model != null && Model.Any())
+                            {
+                                int index = 1;
+                                foreach (var user in Model)
+                                {
+                                    <tr class="border-b border-gray-100 hover:bg-primary-50 transition-colors">
+                                        <td class="px-6 py-4 text-gray-600">@index</td>
+                                        <td class="px-6 py-4 font-medium text-gray-900">@user.FullName</td>
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center">
+                                                <span class="text-gray-700">@user.Email</span>
+                                                @if (user.EmailConfirmed)
+                                                {
+                                                    <i class="material-icons text-secondary-500 text-sm ml-2">check_circle</i>
+                                                }
+                                                else
+                                                {
+                                                    <i class="material-icons text-amber-500 text-sm ml-2">pending</i>
+                                                }
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            @if (ViewBag.UserRoles != null && ViewBag.UserRoles.ContainsKey(user.Id))
+                                            {
+                                                var roles = ViewBag.UserRoles[user.Id] as List<string>;
+                                                if (roles != null && roles.Any())
+                                                {
+                                                    <div class="flex flex-wrap gap-1">
+                                                        @foreach (var role in roles)
+                                                        {
+                                                            <span class="px-2 py-1 text-xs bg-primary-100 text-primary-700 rounded-full font-medium">
+                                                                @role
+                                                            </span>
+                                                        }
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <span class="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-full font-medium">No Role</span>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span class="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-full font-medium">No Role</span>
+                                            }
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            @if (user.LockoutEnd == null || user.LockoutEnd <= DateTime.Now)
+                                            {
+                                                <span class="px-3 py-1 text-sm bg-secondary-100 text-secondary-700 rounded-full font-medium flex items-center w-fit">
+                                                    <i class="material-icons text-xs mr-1">check_circle</i>
+                                                    Active
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="px-3 py-1 text-sm bg-red-100 text-red-700 rounded-full font-medium flex items-center w-fit">
+                                                    <i class="material-icons text-xs mr-1">lock</i>
+                                                    Locked
+                                                </span>
+                                            }
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="flex space-x-2">
+                                                <button onclick="showUpdateUserModal('@user.Id')"
+                                                        class="inline-flex items-center px-3 py-1.5 text-sm text-primary-700 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors border border-primary-200">
+                                                    <i class="material-icons text-sm mr-1">edit</i> Edit
+                                                </button>
+                                                <button onclick="showDeleteUserModal('@user.Id', '@user.FullName')"
+                                                        class="inline-flex items-center px-3 py-1.5 text-sm text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors border border-red-200">
+                                                    <i class="material-icons text-sm mr-1">delete</i> Delete
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    index++;
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                                        <div class="flex flex-col items-center">
+                                            <i class="material-icons text-4xl text-gray-300 mb-2">people</i>
+                                            <p class="text-lg font-medium">No administrative users found</p>
+                                            <p class="text-sm">Create your first admin user to get started</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Sidebar (1/4 width) -->
+        <div class="w-1/4 space-y-4">
+            <!-- Statistics Cards -->
+            <div class="bg-white rounded-lg shadow-lg p-6 border border-gray-100">
+                <h3 class="text-lg font-bold text-gray-800 mb-6 flex items-center">
+                    <i class="material-icons text-primary-600 mr-2">analytics</i>
+                    User Statistics
+                </h3>
+                <div class="space-y-4">
+                    <!-- Total Users -->
+                    <div class="flex items-center p-3 bg-primary-50 rounded-lg border border-primary-100">
+                        <div class="p-3 bg-primary-100 rounded-lg">
+                            <i class="material-icons text-primary-600 text-xl">people</i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-gray-600 text-sm font-medium">Total Users</p>
+                            <p class="text-2xl font-bold text-primary-700" id="totalUsers">@ViewBag.TotalUsers</p>
+                        </div>
+                    </div>
+
+                    <!-- Active Users -->
+                    <div class="flex items-center p-3 bg-secondary-50 rounded-lg border border-secondary-100">
+                        <div class="p-3 bg-secondary-100 rounded-lg">
+                            <i class="material-icons text-secondary-600 text-xl">check_circle</i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-gray-600 text-sm font-medium">Active Users</p>
+                            <p class="text-2xl font-bold text-secondary-700" id="activeUsers">@ViewBag.ActiveUsers</p>
+                        </div>
+                    </div>
+
+                    <!-- Admin Users -->
+                    <div class="flex items-center p-3 bg-blue-50 rounded-lg border border-blue-100">
+                        <div class="p-3 bg-blue-100 rounded-lg">
+                            <i class="material-icons text-blue-600 text-xl">admin_panel_settings</i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-gray-600 text-sm font-medium">Admin Users</p>
+                            <p class="text-2xl font-bold text-blue-700" id="adminUsers">@ViewBag.AdminUsers</p>
+                        </div>
+                    </div>
+
+                    <!-- Student Users -->
+                    <div class="flex items-center p-3 bg-green-50 rounded-lg border border-green-100">
+                        <div class="p-3 bg-green-100 rounded-lg">
+                            <i class="material-icons text-green-600 text-xl">school</i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-gray-600 text-sm font-medium">Students</p>
+                            <p class="text-2xl font-bold text-green-700" id="studentUsers">@ViewBag.StudentUsers</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Distribution Chart -->
+            <div class="bg-white rounded-lg shadow-lg p-6 border border-gray-100">
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                    <i class="material-icons text-primary-600 mr-2">pie_chart</i>
+                    User Distribution
+                </h3>
+                <div id="userStatsChart" class="min-h-72"></div>
+
+                <!-- Legend -->
+                @* <div class="mt-4 space-y-2"> *@
+                @*     <div class="flex items-center justify-between"> *@
+                @*         <div class="flex items-center"> *@
+                @*             <div class="w-3 h-3 bg-primary-500 rounded-full mr-2"></div> *@
+                @*             <span class="text-sm text-gray-600">Administrators</span> *@
+                @*         </div> *@
+                @*         <span class="text-sm font-medium text-gray-800">@ViewBag.AdminUsers</span> *@
+                @*     </div> *@
+                @*     <div class="flex items-center justify-between"> *@
+                @*         <div class="flex items-center"> *@
+                @*             <div class="w-3 h-3 bg-secondary-500 rounded-full mr-2"></div> *@
+                @*             <span class="text-sm text-gray-600">Students</span> *@
+                @*         </div> *@
+                @*         <span class="text-sm font-medium text-gray-800">@ViewBag.StudentUsers</span> *@
+                @*     </div> *@
+                @*     <div class="flex items-center justify-between"> *@
+                @*         <div class="flex items-center"> *@
+                @*             <div class="w-3 h-3 bg-amber-500 rounded-full mr-2"></div> *@
+                @*             <span class="text-sm text-gray-600">Candidates</span> *@
+                @*         </div> *@
+                @*         <span class="text-sm font-medium text-gray-800">@ViewBag.CandidateUsers</span> *@
+                @*     </div> *@
+                @* </div> *@
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create User Modal -->
+<div id="createUserModal" class="hidden fixed inset-0 z-50">
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity backdrop-blur-sm"></div>
+
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl border border-gray-200">
+                <div class="bg-primary-600 text-white px-6 py-4 rounded-t-xl flex items-center justify-between">
+                    <h3 class="text-lg font-semibold flex items-center">
+                        <i class="material-icons mr-2">person_add</i>
+                        Create New User
+                    </h3>
+                    <button type="button" class="text-white hover:text-primary-200 transition-colors" data-bs-dismiss="modal">
+                        <i class="material-icons">close</i>
+                    </button>
+                </div>
+
+                <div class="p-6">
+                    <form id="createUserForm" method="post" asp-controller="Admin" asp-action="CreateUser">
+                        @Html.AntiForgeryToken()
+
+                        <!-- Basic Information Section -->
+                        <div class="mb-6">
+                            <h4 class="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                                <i class="material-icons text-primary-600 mr-2">person</i>
+                                Basic Information
+                            </h4>
+                            <div class="grid grid-cols-2 gap-4">
+                                <!-- Full Name -->
+                                <div class="relative z-0 w-full group">
+                                    <input type="text" name="FullName" id="fullName"
+                                           class="block py-3 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
+                                           placeholder=" " required />
+                                    <label for="fullName"
+                                           class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                        Full Name *
+                                    </label>
+                                </div>
+
+                                <!-- Email -->
+                                <div class="relative z-0 w-full group">
+                                    <input type="email" name="Email" id="email"
+                                           class="block py-3 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
+                                           placeholder=" " required />
+                                    <label for="email"
+                                           class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                        Email Address *
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Contact Information Section -->
+                        <div class="mb-6">
+                            <h4 class="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                                <i class="material-icons text-primary-600 mr-2">contact_phone</i>
+                                Contact Information
+                            </h4>
+                            <div class="relative z-0 w-full group">
+                                <input type="tel" name="PhoneNumber" id="phoneNumber"
+                                       class="block py-3 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
+                                       placeholder=" " />
+                                <label for="phoneNumber"
+                                       class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                    Phone Number
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Security Section -->
+                        <div class="mb-6">
+                            <h4 class="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                                <i class="material-icons text-primary-600 mr-2">security</i>
+                                Security Settings
+                            </h4>
+                            <div class="relative z-0 w-full group">
+                                <div class="border-b-2 border-gray-300 pb-2">
+                                    <label class="block text-sm text-gray-500 mb-3">Roles *</label>
+                                    <div id="roleCheckboxes" class="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+                                        <!-- Roles will be populated by JavaScript -->
+                                    </div>
+                                </div>
+                                <input type="hidden" name="Roles" id="selectedRoles" required>
+                            </div>
+                        </div>
+
+                        <!-- Password Information -->
+                        <div class="mb-6">
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                <div class="flex items-center text-blue-800 mb-2">
+                                    <i class="material-icons text-blue-600 mr-2">info</i>
+                                    <h5 class="font-medium">Password Generation</h5>
+                                </div>
+                                <p class="text-sm text-blue-700">
+                                    A secure temporary password will be automatically generated and sent to the user's email address.
+                                    The user can change their password after first login.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Additional Settings -->
+                        <div class="mb-6">
+                            <h4 class="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                                <i class="material-icons text-primary-600 mr-2">settings</i>
+                                Additional Settings
+                            </h4>
+                            <div class="space-y-4">
+                                <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                                    <input type="checkbox" id="emailConfirmed" name="EmailConfirmed"
+                                           class="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500">
+                                    <label for="emailConfirmed" class="ml-3 text-sm text-gray-700 font-medium">Email verified</label>
+                                </div>
+                                <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                                    <input type="checkbox" id="twoFactorEnabled" name="TwoFactorEnabled"
+                                           class="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500">
+                                    <label for="twoFactorEnabled" class="ml-3 text-sm text-gray-700 font-medium">Enable two-factor authentication</label>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="bg-gray-50 px-6 py-4 rounded-b-xl flex justify-end space-x-3">
+                    <button type="button" class="px-4 py-2 text-gray-700 bg-white hover:bg-gray-100 rounded-lg transition-colors flex items-center border border-gray-300" data-bs-dismiss="modal">
+                        <i class="material-icons mr-1">close</i>Cancel
+                    </button>
+                    <button type="button" id="confirmCreate" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center shadow-md">
+                        <i class="material-icons mr-1">person_add</i>Create User
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Update User Modal -->
+<div id="updateUserModal" class="hidden fixed inset-0 z-50">
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity backdrop-blur-sm"></div>
+
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl border border-gray-200">
+                <div class="bg-secondary-600 text-white px-6 py-4 rounded-t-xl flex items-center justify-between">
+                    <h3 class="text-lg font-semibold flex items-center">
+                        <i class="material-icons mr-2">edit</i>
+                        Update User
+                    </h3>
+                    <button type="button" class="text-white hover:text-secondary-200 transition-colors" data-bs-dismiss="modal">
+                        <i class="material-icons">close</i>
+                    </button>
+                </div>
+
+                <div class="p-6">
+                    <form id="updateUserForm" method="post" asp-controller="Admin" asp-action="UpdateUser">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" id="updateUserId" name="Id" />
+
+                        <!-- Basic Information Section -->
+                        <div class="mb-6">
+                            <h4 class="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                                <i class="material-icons text-secondary-600 mr-2">person</i>
+                                Basic Information
+                            </h4>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="relative z-0 w-full group">
+                                    <input type="text" name="FullName" id="updateFullName"
+                                           class="block py-3 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-secondary-600 peer"
+                                           placeholder=" " required />
+                                    <label for="updateFullName"
+                                           class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-secondary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                        Full Name *
+                                    </label>
+                                </div>
+
+                                <div class="relative z-0 w-full group">
+                                    <input type="email" name="Email" id="updateEmail"
+                                           class="block py-3 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-secondary-600 peer"
+                                           placeholder=" " required />
+                                    <label for="updateEmail"
+                                           class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-secondary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                        Email Address *
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Contact Information -->
+                        <div class="mb-6">
+                            <h4 class="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                                <i class="material-icons text-secondary-600 mr-2">contact_phone</i>
+                                Contact Information
+                            </h4>
+                            <div class="relative z-0 w-full group">
+                                <input type="tel" name="PhoneNumber" id="updatePhoneNumber"
+                                       class="block py-3 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-secondary-600 peer"
+                                       placeholder=" " />
+                                <label for="updatePhoneNumber"
+                                       class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-secondary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                    Phone Number
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Account Settings -->
+                        <div class="mb-6">
+                            <h4 class="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                                <i class="material-icons text-secondary-600 mr-2">settings</i>
+                                Account Settings
+                            </h4>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="relative z-0 w-full group">
+                                    <div class="border-b-2 border-gray-300 pb-2">
+                                        <label class="block text-sm text-gray-500 mb-3">Roles *</label>
+                                        <div id="updateRoleCheckboxes" class="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+                                            <!-- Roles will be populated by JavaScript -->
+                                        </div>
+                                    </div>
+                                    <input type="hidden" name="Roles" id="updateSelectedRoles" required>
+                                </div>
+
+                                <div class="relative z-0 w-full group">
+                                    <input type="datetime-local" name="LockoutEnd" id="updateLockoutEnd"
+                                           class="block py-3 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-secondary-600 peer"
+                                           placeholder=" " />
+                                    <label for="updateLockoutEnd"
+                                           class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-secondary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                        Lockout End Date (optional)
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Additional Settings -->
+                        <div class="mb-6">
+                            <h4 class="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                                <i class="material-icons text-secondary-600 mr-2">verified_user</i>
+                                Account Status
+                            </h4>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="space-y-3">
+                                    <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                                        <input type="checkbox" id="updateEmailConfirmed" name="EmailConfirmed"
+                                               class="w-4 h-4 text-secondary-600 border-gray-300 rounded focus:ring-secondary-500">
+                                        <label for="updateEmailConfirmed" class="ml-3 text-sm text-gray-700 font-medium">Email verified</label>
+                                    </div>
+                                    <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                                        <input type="checkbox" id="updatePhoneConfirmed" name="PhoneNumberConfirmed"
+                                               class="w-4 h-4 text-secondary-600 border-gray-300 rounded focus:ring-secondary-500">
+                                        <label for="updatePhoneConfirmed" class="ml-3 text-sm text-gray-700 font-medium">Phone verified</label>
+                                    </div>
+                                </div>
+                                <div class="space-y-3">
+                                    <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                                        <input type="checkbox" id="updateTwoFactor" name="TwoFactorEnabled"
+                                               class="w-4 h-4 text-secondary-600 border-gray-300 rounded focus:ring-secondary-500">
+                                        <label for="updateTwoFactor" class="ml-3 text-sm text-gray-700 font-medium">Two-factor authentication</label>
+                                    </div>
+                                    <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                                        <input type="checkbox" id="updateLockoutEnabled" name="LockoutEnabled"
+                                               class="w-4 h-4 text-secondary-600 border-gray-300 rounded focus:ring-secondary-500">
+                                        <label for="updateLockoutEnabled" class="ml-3 text-sm text-gray-700 font-medium">Account lockout enabled</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="bg-gray-50 px-6 py-4 rounded-b-xl flex justify-end space-x-3">
+                    <button type="button" class="px-4 py-2 text-gray-700 bg-white hover:bg-gray-100 rounded-lg transition-colors flex items-center border border-gray-300" data-bs-dismiss="modal">
+                        <i class="material-icons mr-1">close</i>Cancel
+                    </button>
+                    <button type="button" id="confirmUpdate" class="px-4 py-2 bg-secondary-600 text-white rounded-lg hover:bg-secondary-700 transition-colors flex items-center shadow-md">
+                        <i class="material-icons mr-1">save</i>Update User
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete User Modal -->
+<div id="deleteUserModal" class="hidden fixed inset-0 z-50">
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity backdrop-blur-sm"></div>
+
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-lg border border-gray-200">
+                <!-- Modal Header -->
+                <div class="bg-red-600 text-white px-6 py-4 rounded-t-xl flex items-center justify-between">
+                    <h3 class="text-lg font-semibold flex items-center">
+                        <i class="material-icons mr-2">warning</i>
+                        Confirm Delete
+                    </h3>
+                    <button type="button" class="text-white hover:text-red-200 transition-colors" data-bs-dismiss="modal">
+                        <i class="material-icons">close</i>
+                    </button>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="p-6">
+                    <form id="deleteUserForm" method="post" asp-controller="Admin" asp-action="DeleteUser">
+                        <input type="hidden" id="deleteUserId" name="Id" />
+                        @Html.AntiForgeryToken()
+
+                        <div class="space-y-4">
+                            <div class="flex items-center text-red-600 mb-4">
+                                <i class="material-icons mr-3 text-2xl">error_outline</i>
+                                <p class="text-lg font-semibold">Delete User Account</p>
+                            </div>
+
+                            <p class="text-gray-700 text-base">Are you sure you want to delete this user account? This action cannot be undone and will:</p>
+
+                            <ul class="list-disc list-inside text-gray-600 ml-4 space-y-2">
+                                <li>Permanently remove the user's account</li>
+                                <li>Delete all associated data</li>
+                                <li>Revoke all access permissions</li>
+                            </ul>
+
+                            <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                                <p class="text-gray-700 font-semibold mb-2 flex items-center">
+                                    <i class="material-icons text-amber-600 mr-2">info</i>
+                                    User Details:
+                                </p>
+                                <div class="space-y-1 text-gray-600">
+                                    <p><span class="font-medium">Full Name:</span> <span id="deleteUserName" class="ml-2 font-semibold text-gray-800"></span></p>
+                                    <p><span class="font-medium">Email:</span> <span id="deleteUserEmail" class="ml-2 font-semibold text-gray-800"></span></p>
+                                    <p><span class="font-medium">Role:</span> <span id="deleteUserRole" class="ml-2 font-semibold text-gray-800"></span></p>
+                                </div>
+                            </div>
+
+                            <div class="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                                <div class="flex items-center text-red-800">
+                                    <i class="material-icons text-red-600 mr-2 text-lg">warning</i>
+                                    <p class="text-sm font-medium">This action cannot be undone. Please be certain.</p>
+                                </div>
+                            </div>
+
+                            <div class="mt-4">
+                                <label class="inline-flex items-center p-3 bg-gray-50 rounded-lg w-full">
+                                    <input type="checkbox" id="confirmDeleteCheckbox"
+                                           class="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500">
+                                    <span class="ml-3 text-sm text-gray-700 font-medium">I understand that this action cannot be undone</span>
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="bg-gray-50 px-6 py-4 rounded-b-xl flex justify-end space-x-3">
+                    <button type="button"
+                            class="px-4 py-2 text-gray-700 bg-white hover:bg-gray-100 rounded-lg transition-colors flex items-center border border-gray-300"
+                            data-bs-dismiss="modal">
+                        <i class="material-icons mr-1">close</i>Cancel
+                    </button>
+                    <button type="button"
+                            id="confirmDelete"
+                            disabled
+                            class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed shadow-md">
+                        <i class="material-icons mr-1">delete</i>Delete User
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module" src="~/js/users.js"></script>

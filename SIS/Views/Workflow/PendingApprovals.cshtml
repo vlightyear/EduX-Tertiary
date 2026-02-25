@@ -1,0 +1,1123 @@
+﻿@model List<PendingApprovalDto>
+
+@{
+    ViewData["Title"] = "Pending Approvals";
+}
+
+<div class="h-[90vh] p-4">
+    <!-- Header Section -->
+    <div class="flex justify-between items-center mb-4">
+        <h1 class="text-2xl font-bold text-gray-800 flex items-center">
+            <i class="material-icons mr-2">pending_actions</i>
+            Pending Approvals
+        </h1>
+        <div class="flex space-x-2">
+            <button type="button" onclick="refreshApprovals()"
+                    class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center">
+                <i class="material-icons mr-2">refresh</i>
+                Refresh
+            </button>
+            <button type="button" onclick="location.href='@Url.Action("ApprovalHistory", "Workflow")'"
+                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+                <i class="material-icons mr-2">history</i>
+                View History
+            </button>
+            @if (Model.Any(x => x.EntityType == "ResultSubmissionBatch"))
+            {
+                <button onclick="location.href='@Url.Action("PendingBatchesGradingOverview", "Workflow")'"
+                        class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700...">
+                    <i class="material-icons mr-2">assessment</i>
+                    Overall Grading Overview
+                </button>
+            }
+        </div>
+    </div>
+
+    <!-- Alert Section for Overdue Items -->
+    @if (Model.Any(x => x.IsOverdue))
+    {
+        <div class="mb-4 bg-red-50 border border-red-200 rounded-lg p-4">
+            <div class="flex items-center">
+                <i class="material-icons text-red-600 mr-3">warning</i>
+                <div>
+                    <p class="text-red-800 font-semibold">Overdue Approvals</p>
+                    <p class="text-red-700 text-sm">You have @Model.Count(x => x.IsOverdue) overdue approval(s) requiring immediate attention.</p>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Main Content Layout -->
+    <div class="flex gap-4 h-[calc(90vh-140px)]">
+        <!-- Main Approvals Section (70% width) -->
+        <div class="w-[70%]">
+            <div class="bg-white rounded-lg shadow-md h-full overflow-auto">
+                <div class="p-4">
+                    @if (!Model.Any())
+                    {
+                        <div class="flex flex-col items-center justify-center py-12">
+                            <i class="material-icons text-gray-300 text-6xl mb-4">check_circle_outline</i>
+                            <h3 class="text-xl font-semibold text-gray-700 mb-2">All Caught Up!</h3>
+                            <p class="text-gray-500">You have no pending approvals at the moment.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="space-y-3">
+                            @foreach (var approval in Model.OrderByDescending(x => x.IsOverdue).ThenBy(x => x.AssignedAt))
+                            {
+                                <div class="border rounded-lg p-4 hover:shadow-md transition-shadow @(approval.IsOverdue ? "border-red-300 bg-red-50" : "border-gray-200")">
+                                    <div class="flex justify-between items-start">
+                                        <div class="flex-1">
+                                            <!-- Header -->
+                                            <div class="flex items-center mb-2">
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 mr-2">
+                                                    @approval.EntityType
+                                                </span>
+                                                @if (approval.IsOverdue)
+                                                {
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                        <i class="material-icons text-xs mr-1">schedule</i> Overdue
+                                                    </span>
+                                                }
+                                            </div>
+
+                                            <!-- Entity Description -->
+                                            <h3 class="text-lg font-semibold text-gray-900 mb-1">
+                                                @approval.EntityDescription
+                                            </h3>
+
+                                            <!-- Approval Stage -->
+                                            <div class="flex items-center text-sm text-gray-600 mb-2">
+                                                <i class="material-icons text-sm mr-1">layers</i>
+                                                <span class="font-medium">Stage:</span>
+                                                <span class="ml-2 px-2 py-0.5 bg-purple-100 text-purple-700 rounded">@approval.StageName</span>
+                                            </div>
+
+                                            <!-- Metadata -->
+                                            <div class="grid grid-cols-2 gap-4 text-sm text-gray-600 mt-3">
+                                                <div class="flex items-center">
+                                                    <i class="material-icons text-sm mr-2">person</i>
+                                                    <span>Submitted by: <span class="font-medium">@approval.InitiatedByName</span></span>
+                                                </div>
+                                                <div class="flex items-center">
+                                                    <i class="material-icons text-sm mr-2">access_time</i>
+                                                    <span>Waiting: <span class="font-medium">@approval.DaysWaiting day(s)</span></span>
+                                                </div>
+                                                <div class="flex items-center">
+                                                    <i class="material-icons text-sm mr-2">event</i>
+                                                    <span>Assigned: <span class="font-medium">@approval.AssignedAt.ToString("MMM dd, yyyy")</span></span>
+                                                </div>
+                                                <div class="flex items-center">
+                                                    <i class="material-icons text-sm mr-2">tag</i>
+                                                    <span>ID: <span class="font-medium">#@approval.EntityId</span></span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Action Buttons -->
+                                        <div class="ml-4 flex flex-col space-y-2">
+                                            <button onclick="viewDetails(@approval.WorkflowInstanceId)"
+                                                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center text-sm whitespace-nowrap">
+                                                <i class="material-icons text-sm mr-1">visibility</i> View Details
+                                            </button>
+                                            <button onclick="showApproveModal(@approval.WorkflowInstanceId, '@Html.Raw(approval.EntityDescription.Replace("'", "\\'"))')"
+                                                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center text-sm whitespace-nowrap">
+                                                <i class="material-icons text-sm mr-1">check</i> Approve
+                                            </button>
+                                            <button onclick="showRejectModal(@approval.WorkflowInstanceId, '@Html.Raw(approval.EntityDescription.Replace("'", "\\'"))')"
+                                                    class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center text-sm whitespace-nowrap">
+                                                <i class="material-icons text-sm mr-1">close</i> Reject
+                                            </button>
+                                            <button onclick="showReturnModal(@approval.WorkflowInstanceId, '@Html.Raw(approval.EntityDescription.Replace("'", "\\'"))')"
+                                                    class="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors flex items-center text-sm whitespace-nowrap">
+                                                <i class="material-icons text-sm mr-1">undo</i> Return
+                                            </button>
+                                            <button onclick="showDelegateModal(@approval.WorkflowInstanceId)"
+                                                    class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center text-sm whitespace-nowrap">
+                                                <i class="material-icons text-sm mr-1">swap_horiz</i> Delegate
+                                            </button>
+                                            @if (approval.EntityType == "ResultSubmissionBatch")
+                                            {
+                                                <button onclick="showGradingOverviewForApproval(@approval.EntityId, '@Html.Raw(approval.EntityDescription.Replace("'", "\\'"))', @approval.AcademicYearId, @approval.Semester)"
+                                                        class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center text-sm whitespace-nowrap">
+                                                    <i class="material-icons text-sm mr-1">assessment</i> View Grading
+                                                </button>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Sidebar (30% width) -->
+        <div class="w-[30%] space-y-4">
+            <!-- Quick Stats -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Approval Summary</h3>
+                <div class="space-y-4">
+                    <!-- Total Pending -->
+                    <div class="flex items-center">
+                        <div class="p-3 bg-blue-100 rounded-lg">
+                            <i class="material-icons text-blue-600 text-xl">pending</i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-gray-500 text-sm">Total Pending</p>
+                            <p class="text-2xl font-semibold">@Model.Count()</p>
+                        </div>
+                    </div>
+
+                    <!-- Overdue -->
+                    <div class="flex items-center">
+                        <div class="p-3 bg-red-100 rounded-lg">
+                            <i class="material-icons text-red-600 text-xl">warning</i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-gray-500 text-sm">Overdue</p>
+                            <p class="text-2xl font-semibold text-red-600">@Model.Count(x => x.IsOverdue)</p>
+                        </div>
+                    </div>
+
+                    <!-- Average Wait Time -->
+                    <div class="flex items-center">
+                        <div class="p-3 bg-yellow-100 rounded-lg">
+                            <i class="material-icons text-yellow-600 text-xl">schedule</i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-gray-500 text-sm">Avg. Wait Time</p>
+                            <p class="text-2xl font-semibold text-yellow-600">
+                                @(Model.Any() ? Model.Average(x => x.DaysWaiting).ToString("0.0") : "0") days
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Entity Type Breakdown -->
+            @if (Model.Any())
+            {
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">By Entity Type</h3>
+                    <div class="space-y-3">
+                        @foreach (var group in Model.GroupBy(x => x.EntityType))
+                        {
+                            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                <span class="text-sm font-medium text-gray-700">@group.Key</span>
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                                    @group.Count()
+                                </span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- Stage Breakdown -->
+            @if (Model.Any())
+            {
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">By Stage</h3>
+                    <div id="stageChart" class="min-h-48"></div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Approve Modal -->
+<div id="approveModal" class="hidden fixed inset-0 z-50">
+    <div class="fixed inset-0 bg-black bg-opacity-50"></div>
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-lg shadow-xl w-full max-w-2xl">
+                <div class="bg-green-600 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
+                    <h3 class="text-lg font-semibold flex items-center">
+                        <i class="material-icons mr-2">check_circle</i>
+                        Approve Submission
+                    </h3>
+                    <button type="button" class="text-white hover:text-gray-200" onclick="hideApproveModal()">
+                        <i class="material-icons">close</i>
+                    </button>
+                </div>
+                <div class="p-6">
+                    <form id="approveForm" method="post" asp-controller="Workflow" asp-action="Approve">
+                        <input type="hidden" id="approveWorkflowId" name="workflowInstanceId" />
+                        @Html.AntiForgeryToken()
+                        <div class="space-y-4">
+                            <!-- Entity Name Display -->
+                            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                                <p class="text-green-800 font-medium mb-1">You are about to approve:</p>
+                                <p class="text-green-900 font-semibold text-lg" id="approveEntityName"></p>
+                            </div>
+
+                            <!-- Comments -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Comments (Optional)
+                                    <span class="text-gray-500 font-normal">- Add any notes or observations</span>
+                                </label>
+                                <textarea name="comments" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="Add any comments or notes about this approval..."></textarea>
+                                <p class="text-xs text-gray-500 mt-1">Your comments will be visible in the approval timeline</p>
+                            </div>
+
+                            <!-- Attachments (Optional Enhancement) -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Attachments (Optional)
+                                </label>
+                                <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                                    <i class="material-icons text-gray-400 text-3xl mb-2">attach_file</i>
+                                    <p class="text-sm text-gray-600">Drag and drop files or click to upload</p>
+                                    <p class="text-xs text-gray-500 mt-1">Supporting documents for your approval decision</p>
+                                </div>
+                            </div>
+
+                            <!-- Confirmation Checkbox -->
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <label class="flex items-start cursor-pointer">
+                                    <input type="checkbox" id="approveConfirm" required class="mt-1 w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500">
+                                    <span class="ml-3 text-sm text-gray-700">
+                                        I confirm that I have reviewed the submission and approve it for progression to the next stage or completion.
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-end space-x-2">
+                    <button type="button" class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center" onclick="hideApproveModal()">
+                        <i class="material-icons text-sm mr-1">close</i>Cancel
+                    </button>
+                    <button type="button" onclick="submitApprove()" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center">
+                        <i class="material-icons text-sm mr-1">check</i>Approve
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reject Modal -->
+<div id="rejectModal" class="hidden fixed inset-0 z-50">
+    <div class="fixed inset-0 bg-black bg-opacity-50"></div>
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-lg shadow-xl w-full max-w-2xl">
+                <div class="bg-red-600 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
+                    <h3 class="text-lg font-semibold flex items-center">
+                        <i class="material-icons mr-2">cancel</i>
+                        Reject Submission
+                    </h3>
+                    <button type="button" class="text-white hover:text-gray-200" onclick="hideRejectModal()">
+                        <i class="material-icons">close</i>
+                    </button>
+                </div>
+                <div class="p-6">
+                    <form id="rejectForm" method="post" asp-controller="Workflow" asp-action="Reject">
+                        <input type="hidden" id="rejectWorkflowId" name="workflowInstanceId" />
+                        @Html.AntiForgeryToken()
+                        <div class="space-y-4">
+                            <!-- Warning Banner -->
+                            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                                <div class="flex items-start">
+                                    <i class="material-icons text-red-600 mr-3 mt-0.5">warning</i>
+                                    <div>
+                                        <p class="text-red-800 font-semibold mb-1">Important: Rejection is Final</p>
+                                        <p class="text-red-700 text-sm">This action will terminate the workflow. The submitter will need to resubmit if changes are made.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Entity Name -->
+                            <p class="text-gray-700">
+                                You are about to reject: <strong id="rejectEntityName" class="text-red-600"></strong>
+                            </p>
+
+                            <!-- Rejection Reason (Required) -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Reason for Rejection <span class="text-red-600">*</span>
+                                </label>
+                                <textarea name="comments" id="rejectComments" required rows="6" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" placeholder="Provide detailed reason for rejection. Be specific about what needs to be corrected. (Minimum 20 characters)"></textarea>
+                                <div class="flex justify-between mt-1">
+                                    <p class="text-xs text-gray-500">Please be specific and constructive in your feedback</p>
+                                    <p class="text-xs text-gray-500"><span id="rejectCharCount">0</span>/20 min</p>
+                                </div>
+                            </div>
+
+                            <!-- Common Rejection Reasons (Helper) -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Common Issues (Click to add)</label>
+                                <div class="flex flex-wrap gap-2">
+                                    <button type="button" onclick="addRejectionReason('Incomplete information provided')" class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs hover:bg-gray-200">Incomplete information</button>
+                                    <button type="button" onclick="addRejectionReason('Errors in calculations')" class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs hover:bg-gray-200">Calculation errors</button>
+                                    <button type="button" onclick="addRejectionReason('Missing required documentation')" class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs hover:bg-gray-200">Missing documents</button>
+                                    <button type="button" onclick="addRejectionReason('Does not meet policy requirements')" class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs hover:bg-gray-200">Policy violation</button>
+                                    <button type="button" onclick="addRejectionReason('Incorrect student information')" class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs hover:bg-gray-200">Student info errors</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-end space-x-2">
+                    <button type="button" class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center" onclick="hideRejectModal()">
+                        <i class="material-icons text-sm mr-1">close</i>Cancel
+                    </button>
+                    <button type="button" onclick="submitReject()" class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center">
+                        <i class="material-icons text-sm mr-1">close</i>Reject
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Return for Revision Modal -->
+<div id="returnModal" class="hidden fixed inset-0 z-50">
+    <div class="fixed inset-0 bg-black bg-opacity-50"></div>
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-lg shadow-xl w-full max-w-2xl">
+                <div class="bg-amber-600 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
+                    <h3 class="text-lg font-semibold flex items-center">
+                        <i class="material-icons mr-2">undo</i>
+                        Return for Revision
+                    </h3>
+                    <button type="button" class="text-white hover:text-gray-200" onclick="hideReturnModal()">
+                        <i class="material-icons">close</i>
+                    </button>
+                </div>
+                <div class="p-6">
+                    <form id="returnForm" method="post" asp-controller="Workflow" asp-action="ReturnForRevision">
+                        <input type="hidden" id="returnWorkflowId" name="workflowInstanceId" />
+                        @Html.AntiForgeryToken()
+                        <div class="space-y-4">
+                            <!-- Info Banner -->
+                            <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                                <div class="flex items-start">
+                                    <i class="material-icons text-amber-600 mr-3 mt-0.5">info</i>
+                                    <div>
+                                        <p class="text-amber-800 font-semibold mb-1">Return for Corrections</p>
+                                        <p class="text-amber-700 text-sm">The submission will be sent back to the initiator for corrections. They can resubmit after making changes.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <p class="text-gray-700">
+                                Returning for revision: <strong id="returnEntityName" class="text-amber-600"></strong>
+                            </p>
+
+                            <!-- Required Changes -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Required Changes <span class="text-red-600">*</span>
+                                </label>
+                                <textarea name="comments" required rows="5" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent" placeholder="Clearly specify what needs to be corrected or revised..."></textarea>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-end space-x-2">
+                    <button type="button" class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors" onclick="hideReturnModal()">Cancel</button>
+                    <button type="button" onclick="submitReturn()" class="px-6 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors flex items-center">
+                        <i class="material-icons text-sm mr-1">undo</i>Return
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delegate Modal -->
+<div id="delegateModal" class="hidden fixed inset-0 z-50">
+    <div class="fixed inset-0 bg-black bg-opacity-50"></div>
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-lg shadow-xl w-full max-w-lg">
+                <div class="bg-gray-600 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
+                    <h3 class="text-lg font-semibold flex items-center">
+                        <i class="material-icons mr-2">swap_horiz</i>
+                        Delegate Approval
+                    </h3>
+                    <button type="button" class="text-white hover:text-gray-200" onclick="hideDelegateModal()">
+                        <i class="material-icons">close</i>
+                    </button>
+                </div>
+                <div class="p-6">
+                    <form id="delegateForm" method="post" asp-controller="Workflow" asp-action="Delegate">
+                        <input type="hidden" id="delegateWorkflowId" name="workflowInstanceId" />
+                        @Html.AntiForgeryToken()
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Delegate To <span class="text-red-600">*</span></label>
+                                <select name="toUserId" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent">
+                                    <option value="">Select a user...</option>
+                                    @if (ViewBag.AvailableUsers != null)
+                                    {
+                                        foreach (var user in ViewBag.AvailableUsers)
+                                        {
+                                            <option value="@user.Id">@user.UserName (@user.Email)</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Reason <span class="text-red-600">*</span></label>
+                                <textarea name="reason" required rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent" placeholder="Why are you delegating this approval?"></textarea>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-end space-x-2">
+                    <button type="button" class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors" onclick="hideDelegateModal()">Cancel</button>
+                    <button type="button" onclick="submitDelegate()" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center">
+                        <i class="material-icons text-sm mr-1">swap_horiz</i>Delegate
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Grading Overview Modal -->
+<div id="gradingOverviewModal" class="hidden fixed inset-0 z-[60]">
+    <div class="fixed inset-0 bg-black bg-opacity-50"></div>
+    <div class="flex min-h-full items-center justify-center p-4">
+        <div class="relative bg-white rounded-lg shadow-xl w-full max-w-7xl max-h-[90vh] flex flex-col">
+            <!-- Modal Header -->
+            <div class="bg-blue-600 text-white px-6 py-4 rounded-t-lg flex justify-between items-center">
+                <div>
+                    <h3 class="text-xl font-semibold mb-1">Grading Overview</h3>
+                    <p id="gradingOverviewSubtitle" class="text-sm text-blue-100"></p>
+                </div>
+                <button onclick="hideGradingOverviewModal()" class="text-white hover:text-gray-200">
+                    <i class="material-icons">close</i>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="flex-1 overflow-y-auto p-6">
+                <!-- Loading State -->
+                <div id="gradingOverviewLoading" class="flex justify-center items-center py-12">
+                    <div class="text-center">
+                        <i class="material-icons animate-spin text-4xl text-blue-600 mb-2">refresh</i>
+                        <p class="text-gray-600">Loading grading overview...</p>
+                    </div>
+                </div>
+
+                <!-- Content -->
+                <div id="gradingOverviewContent" class="hidden">
+                    <!-- Summary Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                            <div class="text-sm text-blue-600 mb-1">Total Courses</div>
+                            <div id="summaryTotalCourses" class="text-2xl font-bold text-blue-900">0</div>
+                        </div>
+                        <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+                            <div class="text-sm text-green-600 mb-1">Total Passed</div>
+                            <div id="summaryTotalPassed" class="text-2xl font-bold text-green-900">0</div>
+                        </div>
+                        <div class="bg-red-50 p-4 rounded-lg border border-red-200">
+                            <div class="text-sm text-red-600 mb-1">Total Failed</div>
+                            <div id="summaryTotalFailed" class="text-2xl font-bold text-red-900">0</div>
+                        </div>
+                        <div class="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                            <div class="text-sm text-purple-600 mb-1">Overall Pass Rate</div>
+                            <div id="summaryPassRate" class="text-2xl font-bold text-purple-900">0%</div>
+                        </div>
+                    </div>
+
+                    <!-- Grading Table -->
+                    <div class="overflow-x-auto border rounded-lg">
+                        <table class="w-full text-sm border-collapse">
+                            <thead class="bg-gray-50 sticky top-0">
+                                <tr>
+                                    <th class="px-4 py-3 text-left font-semibold text-gray-700 border-b">CourseNo</th>
+                                    <th class="px-4 py-3 text-left font-semibold text-gray-700 border-b">Course Name</th>
+                                    <th class="px-3 py-3 text-center font-semibold text-gray-700 border-b border-l bg-purple-50">A+</th>
+                                    <th class="px-3 py-3 text-center font-semibold text-gray-700 border-b bg-purple-50">A</th>
+                                    <th class="px-3 py-3 text-center font-semibold text-gray-700 border-b bg-blue-50">B+</th>
+                                    <th class="px-3 py-3 text-center font-semibold text-gray-700 border-b bg-blue-50">B</th>
+                                    <th class="px-3 py-3 text-center font-semibold text-gray-700 border-b bg-green-50">C+</th>
+                                    <th class="px-3 py-3 text-center font-semibold text-gray-700 border-b bg-green-50">C</th>
+                                    <th class="px-3 py-3 text-center font-semibold text-gray-700 border-b bg-yellow-50">D+</th>
+                                    <th class="px-3 py-3 text-center font-semibold text-gray-700 border-b bg-yellow-50">D</th>
+                                    <th class="px-3 py-3 text-center font-semibold text-gray-700 border-b bg-orange-50">EXP</th>
+                                    <th class="px-3 py-3 text-center font-semibold text-gray-700 border-b bg-gray-50">NE/INC</th>
+                                    <th class="px-3 py-3 text-center font-semibold text-gray-700 border-b bg-gray-50">DEF</th>
+                                    <th class="px-3 py-3 text-center font-semibold text-gray-700 border-b bg-teal-50">P</th>
+                                    <th class="px-3 py-3 text-center font-semibold text-gray-700 border-b bg-red-50">F</th>
+                                    <th class="px-4 py-3 text-center font-semibold text-gray-700 border-b border-l bg-red-100">Total<br>Failed</th>
+                                    <th class="px-4 py-3 text-center font-semibold text-gray-700 border-b bg-green-100">Total<br>Passed</th>
+                                    <th class="px-4 py-3 text-center font-semibold text-gray-700 border-b bg-blue-100">Pass<br>Rate</th>
+                                </tr>
+                            </thead>
+                            <tbody id="gradingOverviewTableBody" class="divide-y divide-gray-200">
+                                <!-- Populated by JavaScript -->
+                            </tbody>
+                            <tfoot class="bg-gray-100 font-semibold">
+                                <tr id="gradingOverviewTotals">
+                                    <!-- Populated by JavaScript -->
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div id="gradingOverviewEmpty" class="hidden text-center py-12">
+                        <i class="material-icons text-gray-300 text-6xl mb-4">assessment</i>
+                        <p class="text-gray-500 text-lg">No grading data available</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-between items-center border-t">
+                <button onclick="exportGradingOverview()"
+                        class="inline-flex items-center px-4 py-2 text-sm text-green-600 bg-green-50 hover:bg-green-100 rounded-lg transition-colors">
+                    <i class="material-icons text-sm mr-1">download</i>
+                    Export to Excel
+                </button>
+                <button onclick="hideGradingOverviewModal()"
+                        class="inline-flex items-center px-4 py-2 text-sm text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors">
+                    <i class="material-icons text-sm mr-1">close</i>
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Approve Modal Functions
+        function showApproveModal(workflowId, entityName) {
+            document.getElementById('approveWorkflowId').value = workflowId;
+            document.getElementById('approveEntityName').textContent = entityName;
+            document.getElementById('approveConfirm').checked = false;
+            document.getElementById('approveModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function hideApproveModal() {
+            document.getElementById('approveModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        function submitApprove() {
+            const checkbox = document.getElementById('approveConfirm');
+            if (!checkbox.checked) {
+                alert('Please confirm that you have reviewed the submission before approving.');
+                return;
+            }
+            document.getElementById('approveForm').submit();
+        }
+
+        // Reject Modal Functions
+        function showRejectModal(workflowId, entityName) {
+            document.getElementById('rejectWorkflowId').value = workflowId;
+            document.getElementById('rejectEntityName').textContent = entityName;
+            document.getElementById('rejectComments').value = '';
+            document.getElementById('rejectCharCount').textContent = '0';
+            document.getElementById('rejectModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function hideRejectModal() {
+            document.getElementById('rejectModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        function submitReject() {
+            const form = document.getElementById('rejectForm');
+            const comments = form.querySelector('[name="comments"]').value;
+
+            if (comments.length < 20) {
+                alert('Please provide a detailed reason for rejection (at least 20 characters)');
+                return;
+            }
+
+            if (confirm('Are you sure you want to reject this submission? This action cannot be undone.')) {
+                form.submit();
+            }
+        }
+
+        function addRejectionReason(reason) {
+            const textarea = document.getElementById('rejectComments');
+            if (textarea.value) {
+                textarea.value += '\n• ' + reason;
+            } else {
+                textarea.value = '• ' + reason;
+            }
+            updateCharCount();
+        }
+
+        // Character counter for rejection comments
+        document.addEventListener('DOMContentLoaded', function() {
+            const rejectComments = document.getElementById('rejectComments');
+            if (rejectComments) {
+                rejectComments.addEventListener('input', updateCharCount);
+            }
+        });
+
+        function updateCharCount() {
+            const textarea = document.getElementById('rejectComments');
+            const counter = document.getElementById('rejectCharCount');
+            if (textarea && counter) {
+                counter.textContent = textarea.value.length;
+                if (textarea.value.length >= 20) {
+                    counter.classList.remove('text-red-500');
+                    counter.classList.add('text-green-500');
+                } else {
+                    counter.classList.remove('text-green-500');
+                    counter.classList.add('text-red-500');
+                }
+            }
+        }
+
+        // Return for Revision Modal Functions
+        function showReturnModal(workflowId, entityName) {
+            document.getElementById('returnWorkflowId').value = workflowId;
+            document.getElementById('returnEntityName').textContent = entityName;
+            document.getElementById('returnModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function hideReturnModal() {
+            document.getElementById('returnModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        function submitReturn() {
+            const form = document.getElementById('returnForm');
+            const comments = form.querySelector('[name="comments"]').value;
+
+            if (comments.length < 10) {
+                alert('Please provide detailed information about required changes (at least 10 characters)');
+                return;
+            }
+
+            form.submit();
+        }
+
+        // Delegate Modal Functions
+        function showDelegateModal(workflowId) {
+            document.getElementById('delegateWorkflowId').value = workflowId;
+            document.getElementById('delegateModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function hideDelegateModal() {
+            document.getElementById('delegateModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        function submitDelegate() {
+            const form = document.getElementById('delegateForm');
+            if (form.checkValidity()) {
+                form.submit();
+            } else {
+                alert('Please fill in all required fields');
+            }
+        }
+
+        // View Details Function
+        function viewDetails(workflowId) {
+            location.href = '@Url.Action("WorkflowDetails", "Workflow")?id=' + workflowId;
+        }
+
+        // Refresh Approvals
+        function refreshApprovals() {
+            location.reload();
+        }
+
+        // Close modals when clicking outside
+        ['approveModal', 'rejectModal', 'returnModal', 'delegateModal'].forEach(modalId => {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        this.classList.add('hidden');
+                        document.body.style.overflow = 'auto';
+                    }
+                });
+            }
+        });
+
+        // Handle Escape key to close modals
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                ['approveModal', 'rejectModal', 'returnModal', 'delegateModal'].forEach(modalId => {
+                    const modal = document.getElementById(modalId);
+                    if (modal && !modal.classList.contains('hidden')) {
+                        modal.classList.add('hidden');
+                        document.body.style.overflow = 'auto';
+                    }
+                });
+            }
+        });
+
+        // Stage breakdown chart
+        document.addEventListener('DOMContentLoaded', function() {
+            @if (Model.Any())
+            {
+                    <text>
+                    var stageData = @Html.Raw(Json.Serialize(Model.GroupBy(x => x.StageName).Select(g => new { stage = g.Key, count = g.Count() })));
+
+                    if (stageData && stageData.length > 0) {
+                        var chart = new ApexCharts(document.querySelector("#stageChart"), {
+                            series: stageData.map(d => d.count),
+                            chart: {
+                                type: 'pie',
+                                height: 200,
+                                toolbar: {
+                                    show: false
+                                }
+                            },
+                            labels: stageData.map(d => d.stage),
+                            colors: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'],
+                            legend: {
+                                position: 'bottom',
+                                fontSize: '12px',
+                                fontFamily: 'inherit'
+                            },
+                            dataLabels: {
+                                enabled: true,
+                                formatter: function(val, opts) {
+                                    return opts.w.globals.series[opts.seriesIndex];
+                                },
+                                style: {
+                                    fontSize: '12px',
+                                    fontFamily: 'inherit',
+                                    fontWeight: 600
+                                }
+                            },
+                            plotOptions: {
+                                pie: {
+                                    expandOnClick: true
+                                }
+                            },
+                            tooltip: {
+                                y: {
+                                    formatter: function(val) {
+                                        return val + " approval(s)";
+                                    }
+                                }
+                            }
+                        });
+                        chart.render();
+                    }
+                    </text>
+            }
+        });
+
+        // Auto-refresh pending approvals every 5 minutes
+        let autoRefreshInterval = setInterval(function() {
+            console.log('Auto-refreshing pending approvals...');
+            location.reload();
+        }, 300000); // 5 minutes
+
+        // Clear interval when page is hidden/closed
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                clearInterval(autoRefreshInterval);
+            } else {
+                autoRefreshInterval = setInterval(function() {
+                    location.reload();
+                }, 300000);
+            }
+        });
+
+        // ===================================================================
+        // GRADING OVERVIEW FUNCTIONS
+        // ===================================================================
+
+        let currentGradingOverviewData = null;
+
+        function showGradingOverviewForApproval(rsbId, programmeName, academicYearId, semester) {
+            // Store data needed for API call
+            currentGradingOverviewData = {
+                rsbId: rsbId,
+                programmeName: programmeName,
+                academicYearId: academicYearId,
+                semester: semester
+            };
+
+            const modal = document.getElementById('gradingOverviewModal');
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+
+            loadGradingOverviewForCourse();
+        }
+
+        async function loadGradingOverviewForCourse() {
+            const loadingDiv = document.getElementById('gradingOverviewLoading');
+            const contentDiv = document.getElementById('gradingOverviewContent');
+            const emptyDiv = document.getElementById('gradingOverviewEmpty');
+
+            loadingDiv.classList.remove('hidden');
+            contentDiv.classList.add('hidden');
+            emptyDiv.classList.add('hidden');
+
+            try {
+                const response = await fetch(
+                    `/SenateReport/GetCourseGradingOverview?rsbId=${currentGradingOverviewData.rsbId}&academicYearId=${currentGradingOverviewData.academicYearId}&semester=${currentGradingOverviewData.semester}`
+                );
+
+                const result = await response.json();
+
+                if (result.success && result.data) {
+                    const subtitle = `Grade distribution for ${currentGradingOverviewData.programmeName} - ${result.data.courseName} (${result.data.courseCode}) - Academic Year ${result.data.academicYear}, Semester ${result.data.semester}`;
+                    document.getElementById('gradingOverviewSubtitle').textContent = subtitle;
+
+                    if (result.data.gradeDistribution) {
+                        renderSingleCourseGrading(result.data);
+                        contentDiv.classList.remove('hidden');
+                    } else {
+                        emptyDiv.classList.remove('hidden');
+                    }
+                } else {
+                    throw new Error(result.message || 'Failed to load grading overview');
+                }
+            } catch (error) {
+                console.error('Error loading grading overview:', error);
+                alert('Failed to load grading overview. Please try again.');
+                hideGradingOverviewModal();
+            } finally {
+                loadingDiv.classList.add('hidden');
+            }
+        }
+
+        function renderSingleCourseGrading(data) {
+            const tbody = document.getElementById('gradingOverviewTableBody');
+            tbody.innerHTML = '';
+
+            const gradeOrder = ['A+', 'A', 'B+', 'B', 'C+', 'C', 'D+', 'D', 'EXP', 'NE/INC', 'DEF', 'P', 'F'];
+            const gradeColors = {
+                'A+': 'bg-purple-50', 'A': 'bg-purple-50',
+                'B+': 'bg-blue-50', 'B': 'bg-blue-50',
+                'C+': 'bg-green-50', 'C': 'bg-green-50',
+                'D+': 'bg-yellow-50', 'D': 'bg-yellow-50',
+                'EXP': 'bg-orange-50',
+                'NE/INC': 'bg-gray-50', 'DEF': 'bg-gray-50',
+                'P': 'bg-teal-50',
+                'F': 'bg-red-50'
+            };
+
+            const row = document.createElement('tr');
+            row.className = 'hover:bg-gray-50';
+
+            let rowHTML = `
+                <td class="px-4 py-3 font-medium text-gray-900">${escapeHtml(data.courseCode)}</td>
+                <td class="px-4 py-3 text-gray-900">${escapeHtml(data.courseName)}</td>
+            `;
+
+            gradeOrder.forEach((grade, index) => {
+                const count = data.gradeDistribution[grade] || 0;
+                const borderClass = (index === 0 || index === 9 || index === 15) ? 'border-l' : '';
+                const bgColor = gradeColors[grade] || '';
+
+                rowHTML += `<td class="px-3 py-3 text-center ${borderClass} ${bgColor}">${count}</td>`;
+            });
+
+            rowHTML += `
+                <td class="px-4 py-3 text-center font-semibold border-l bg-red-50">${data.totalFailed}</td>
+                <td class="px-4 py-3 text-center font-semibold bg-green-50">${data.totalPassed}</td>
+                <td class="px-4 py-3 text-center font-semibold bg-blue-50">${data.passRate}%</td>
+            `;
+
+            row.innerHTML = rowHTML;
+            tbody.appendChild(row);
+
+            // Update summary cards
+            document.getElementById('summaryTotalCourses').textContent = '1';
+            document.getElementById('summaryTotalPassed').textContent = data.totalPassed;
+            document.getElementById('summaryTotalFailed').textContent = data.totalFailed;
+            document.getElementById('summaryPassRate').textContent = data.passRate + '%';
+
+            // Render totals row
+            renderSingleCourseTotals(data.gradeDistribution);
+        }
+
+        function renderSingleCourseTotals(gradeDistribution) {
+            const totalsRow = document.getElementById('gradingOverviewTotals');
+            const gradeOrder = ['A+', 'A', 'B+', 'B', 'C+', 'C', 'D+', 'D', 'EXP', 'NE/INC', 'DEF', 'P', 'F'];
+
+            let totalsHTML = `
+                <td class="px-4 py-3 text-left">TOTALS</td>
+                <td class="px-4 py-3"></td>
+            `;
+
+            gradeOrder.forEach((grade, index) => {
+                const borderClass = (index === 0 || index === 9 || index === 15) ? 'border-l' : '';
+                totalsHTML += `<td class="px-3 py-3 text-center ${borderClass}">${gradeDistribution[grade] || 0}</td>`;
+            });
+
+            totalsHTML += `
+                <td class="px-4 py-3 text-center border-l"></td>
+                <td class="px-4 py-3 text-center"></td>
+                <td class="px-4 py-3 text-center"></td>
+            `;
+
+            totalsRow.innerHTML = totalsHTML;
+        }
+
+        function hideGradingOverviewModal() {
+            const modal = document.getElementById('gradingOverviewModal');
+            modal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+            currentGradingOverviewData = null;
+        }
+
+        function exportGradingOverview() {
+            if (!currentGradingOverviewData) {
+                alert('No data to export');
+                return;
+            }
+
+            const table = document.querySelector('#gradingOverviewContent table');
+            if (!table) {
+                alert('No data to export');
+                return;
+            }
+
+            let csv = [];
+            const subtitle = document.getElementById('gradingOverviewSubtitle').textContent;
+            csv.push(['Grading Overview']);
+            csv.push([subtitle]);
+            csv.push([]);
+
+            const headers = [];
+            table.querySelectorAll('thead th').forEach(th => {
+                headers.push(th.textContent.replace(/\n/g, ' ').trim());
+            });
+            csv.push(headers);
+
+            table.querySelectorAll('tbody tr').forEach(tr => {
+                const row = [];
+                tr.querySelectorAll('td').forEach(td => {
+                    row.push(td.textContent.trim());
+                });
+                csv.push(row);
+            });
+
+            const totalsRow = [];
+            table.querySelectorAll('tfoot tr td').forEach(td => {
+                totalsRow.push(td.textContent.trim());
+            });
+            csv.push(totalsRow);
+
+            const csvContent = csv.map(row => row.join(',')).join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+
+            link.setAttribute('href', url);
+            link.setAttribute('download', `Grading_Overview_${Date.now()}.csv`);
+            link.style.visibility = 'hidden';
+
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        // Close modal on escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('gradingOverviewModal');
+                if (modal && !modal.classList.contains('hidden')) {
+                    hideGradingOverviewModal();
+                }
+            }
+        });
+
+        // Close modal when clicking backdrop
+        document.getElementById('gradingOverviewModal')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideGradingOverviewModal();
+            }
+        });
+    </script>
+}
+
+@section Styles {
+    <style>
+        /* Custom animations */
+        @@keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .stage-item {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        /* Modal backdrop animation */
+        .fixed.inset-0:not(.hidden) {
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        @@keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* Smooth scrolling */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Loading state for buttons */
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Hover effect for approval cards */
+        .border-gray-200:hover {
+            border-color: #3B82F6;
+        }
+
+        /* Pulse animation for overdue items */
+        .border-red-300 {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @@keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: .8;
+            }
+        }
+    </style>
+}

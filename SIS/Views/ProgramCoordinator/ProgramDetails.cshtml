@@ -1,0 +1,952 @@
+﻿@model SIS.Models.ProgramCoordinator.ProgramDetailsViewModel
+@{
+    ViewData["Title"] = "Program Details";
+}
+
+<div class="min-h-[88vh] bg-slate-50">
+    <!-- Program Header Banner -->
+    <div class="bg-primary-700 text-white">
+        <div class="container mx-auto px-6 py-8">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-bold">@Model.Programme.Name</h1>
+                    <div class="flex items-center mt-2 text-primary-100">
+                        <span class="flex items-center mr-4">
+                            <i class="material-icons text-sm mr-1">school</i>
+                            @Model.Programme.ProgrammeLevel?.Name
+                        </span>
+                        <span class="flex items-center mr-4">
+                            <i class="material-icons text-sm mr-1">access_time</i>
+                            @Model.Programme.DurationYears Years
+                        </span>
+                        <span class="flex items-center">
+                            <i class="material-icons text-sm mr-1">apartment</i>
+                            @Model.Programme.Department?.Name
+                        </span>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <a href="@Url.Action("EditProgram", new { id = Model.Programme.Id })" 
+                       class="bg-white bg-opacity-20 hover:bg-opacity-30 transition-colors px-4 py-2 rounded-lg text-sm flex items-center">
+                        <i class="material-icons text-sm mr-1">edit</i>
+                        Edit Program
+                    </a>
+                    <a href="@Url.Action("ManageProgramCourses", new { id = Model.Programme.Id })" 
+                       class="bg-white bg-opacity-20 hover:bg-opacity-30 transition-colors px-4 py-2 rounded-lg text-sm flex items-center">
+                        <i class="material-icons text-sm mr-1">view_module</i>
+                        Manage Courses
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Program Navigation Tabs -->
+    <div class="bg-white border-b border-slate-200 sticky top-0 z-10">
+        <div class="container mx-auto px-6">
+            <div class="flex overflow-x-auto hide-scrollbar" id="programTabs">
+                <button class="px-6 py-4 text-primary-600 border-b-2 border-primary-600 font-medium tab-button" data-tab="overview">
+                    Overview
+                </button>
+                <button class="px-6 py-4 text-slate-600 hover:text-slate-800 transition-colors tab-button" data-tab="metrics">
+                    Performance Metrics
+                </button>
+                <button class="px-6 py-4 text-slate-600 hover:text-slate-800 transition-colors tab-button" data-tab="structure">
+                    Course Structure
+                </button>
+                <button class="px-6 py-4 text-slate-600 hover:text-slate-800 transition-colors tab-button" data-tab="requirements">
+                    Entry Requirements
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container mx-auto px-6 py-8">
+        <!-- Overview Tab Content (Default Active) -->
+        <div class="tab-content active" id="overview-content">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Program Description -->
+                <div class="md:col-span-2 bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div class="px-6 py-4 border-b border-slate-200">
+                        <h2 class="text-lg font-semibold text-slate-800">Program Description</h2>
+                    </div>
+                    <div class="p-6">
+                        <p class="text-slate-700 leading-relaxed mb-6">@Model.Programme.Description</p>
+                        
+                        <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-100 pt-6">
+                            <div>
+                                <h3 class="text-sm font-medium text-slate-500 mb-2">Program Details</h3>
+                                <ul class="space-y-3">
+                                    <li class="flex justify-between">
+                                        <span class="text-slate-600">Level:</span>
+                                        <span class="font-medium text-slate-800">@Model.Programme.ProgrammeLevel?.Name</span>
+                                    </li>
+                                    <li class="flex justify-between">
+                                        <span class="text-slate-600">Duration:</span>
+                                        <span class="font-medium text-slate-800">@Model.Programme.DurationYears Years</span>
+                                    </li>
+                                    <li class="flex justify-between">
+                                        <span class="text-slate-600">Mode of Study:</span>
+                                        <span class="font-medium text-slate-800">@Model.Programme.ModeOfStudy?.ModeName</span>
+                                    </li>
+                                    <li class="flex justify-between">
+                                        <span class="text-slate-600">Department:</span>
+                                        <span class="font-medium text-slate-800">@Model.Programme.Department?.Name</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-medium text-slate-500 mb-2">Admission Requirements</h3>
+                                <ul class="space-y-3">
+                                    <li class="flex justify-between">
+                                        <span class="text-slate-600">Minimum Points (Top 5):</span>
+                                        <span class="font-medium text-slate-800">@Model.Programme.MinimumPointsTop5Subjects</span>
+                                    </li>
+                                    <li class="flex justify-between">
+                                        <span class="text-slate-600">Entry Requirements:</span>
+                                        <span class="font-medium text-slate-800">See Requirements Tab</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Program Stats -->
+                <div class="space-y-6">
+                    <!-- Quick Stats Card -->
+                    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                        <div class="px-6 py-4 border-b border-slate-200">
+                            <h2 class="text-lg font-semibold text-slate-800">Quick Statistics</h2>
+                        </div>
+                        <div class="p-6">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="bg-slate-50 p-4 rounded-lg">
+                                    <span class="block text-2xl font-bold text-primary-600 text-center">
+                                        @Model.Metrics.EnrollmentByYear.Values.Sum()
+                                    </span>
+                                    <span class="block text-xs text-slate-500 text-center">Total Students</span>
+                                </div>
+                                <div class="bg-slate-50 p-4 rounded-lg">
+                                    <span class="block text-2xl font-bold text-secondary-600 text-center">
+                                        @Model.Programme.EnrollmentCount
+                                    </span>
+                                    <span class="block text-xs text-slate-500 text-center">Total Enrollment</span>
+                                </div>
+                                
+                                <!-- More stats -->
+                                <div class="bg-slate-50 p-4 rounded-lg">
+                                    <span class="block text-2xl font-bold text-teal-600 text-center">
+                                        @(Model.Metrics.EnrollmentByYear.GetValueOrDefault(1, 0))
+                                    </span>
+                                    <span class="block text-xs text-slate-500 text-center">First Year Students</span>
+                                </div>
+                                
+                                <div class="bg-slate-50 p-4 rounded-lg">
+                                    <span class="block text-2xl font-bold text-purple-600 text-center">
+                                        @Model.CourseStructure.Values.SelectMany(c => c).Count()
+                                    </span>
+                                    <span class="block text-xs text-slate-500 text-center">Total Courses</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Gender Distribution -->
+                    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                        <div class="px-6 py-4 border-b border-slate-200">
+                            <h2 class="text-lg font-semibold text-slate-800">Gender Distribution</h2>
+                        </div>
+                        <div class="p-6">
+                            <div id="genderDistributionChart" class="h-[200px]"></div>
+                            <div class="grid grid-cols-2 gap-4 mt-4">
+                                @{
+                                    int maleCount = Model.Metrics.GenderDistribution.GetValueOrDefault("Male", 0);
+                                    int femaleCount = Model.Metrics.GenderDistribution.GetValueOrDefault("Female", 0);
+                                    int totalCount = maleCount + femaleCount;
+                                    double malePercentage = totalCount > 0 ? Math.Round((double)maleCount / totalCount * 100, 1) : 0;
+                                    double femalePercentage = totalCount > 0 ? Math.Round((double)femaleCount / totalCount * 100, 1) : 0;
+                                }
+                                <div class="text-center">
+                                    <span class="text-sm font-medium text-indigo-600">Male</span>
+                                    <div class="text-2xl font-bold text-slate-800">@malePercentage%</div>
+                                    <span class="text-xs text-slate-500">@maleCount students</span>
+                                </div>
+                                <div class="text-center">
+                                    <span class="text-sm font-medium text-pink-600">Female</span>
+                                    <div class="text-2xl font-bold text-slate-800">@femalePercentage%</div>
+                                    <span class="text-xs text-slate-500">@femaleCount students</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Enrollment Trends -->
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden mt-6">
+                <div class="px-6 py-4 border-b border-slate-200">
+                    <h2 class="text-lg font-semibold text-slate-800">Enrollment Trends</h2>
+                </div>
+                <div class="p-6">
+                    <div id="enrollmentTrendsChart" class="h-[300px]"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Performance Metrics Tab Content -->
+        <div class="tab-content hidden" id="metrics-content">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Enrollment by Year -->
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div class="px-6 py-4 border-b border-slate-200">
+                        <h2 class="text-lg font-semibold text-slate-800">Enrollment by Year</h2>
+                    </div>
+                    <div class="p-6">
+                        <div id="enrollmentByYearChart" class="h-[300px]"></div>
+                    </div>
+                </div>
+                
+                <!-- Gender Distribution (Expanded) -->
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div class="px-6 py-4 border-b border-slate-200">
+                        <h2 class="text-lg font-semibold text-slate-800">Gender Distribution</h2>
+                    </div>
+                    <div class="p-6">
+                        <div id="genderDistributionDetailedChart" class="h-[300px]"></div>
+                    </div>
+                </div>
+                
+                <!-- Completion Rates -->
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div class="px-6 py-4 border-b border-slate-200">
+                        <h2 class="text-lg font-semibold text-slate-800">Completion Rates</h2>
+                    </div>
+                    <div class="p-6">
+                        <div id="completionRatesChart" class="h-[300px]"></div>
+                    </div>
+                </div>
+                
+                <!-- Performance Metrics Table -->
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div class="px-6 py-4 border-b border-slate-200">
+                        <h2 class="text-lg font-semibold text-slate-800">Performance Metrics</h2>
+                    </div>
+                    <div class="p-6">
+                        <table class="min-w-full">
+                            <thead>
+                                <tr class="border-b border-slate-200">
+                                    <th class="py-3 px-4 text-left text-sm font-medium text-slate-500">Metric</th>
+                                    <th class="py-3 px-4 text-right text-sm font-medium text-slate-500">Value</th>
+                                    <th class="py-3 px-4 text-right text-sm font-medium text-slate-500">Trend</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b border-slate-100">
+                                    <td class="py-3 px-4 text-sm text-slate-700">Average Completion Rate</td>
+                                    <td class="py-3 px-4 text-sm text-slate-700 text-right">86.5%</td>
+                                    <td class="py-3 px-4 text-sm text-green-600 text-right flex items-center justify-end">
+                                        <i class="material-icons text-xs mr-1">trending_up</i> 2.3%
+                                    </td>
+                                </tr>
+                                <tr class="border-b border-slate-100">
+                                    <td class="py-3 px-4 text-sm text-slate-700">Retention Rate</td>
+                                    <td class="py-3 px-4 text-sm text-slate-700 text-right">92.1%</td>
+                                    <td class="py-3 px-4 text-sm text-green-600 text-right flex items-center justify-end">
+                                        <i class="material-icons text-xs mr-1">trending_up</i> 1.5%
+                                    </td>
+                                </tr>
+                                <tr class="border-b border-slate-100">
+                                    <td class="py-3 px-4 text-sm text-slate-700">Average GPA</td>
+                                    <td class="py-3 px-4 text-sm text-slate-700 text-right">3.4</td>
+                                    <td class="py-3 px-4 text-sm text-amber-600 text-right flex items-center justify-end">
+                                        <i class="material-icons text-xs mr-1">trending_flat</i> 0.0
+                                    </td>
+                                </tr>
+                                <tr class="border-b border-slate-100">
+                                    <td class="py-3 px-4 text-sm text-slate-700">Application Success Rate</td>
+                                    <td class="py-3 px-4 text-sm text-slate-700 text-right">68.2%</td>
+                                    <td class="py-3 px-4 text-sm text-red-600 text-right flex items-center justify-end">
+                                        <i class="material-icons text-xs mr-1">trending_down</i> 3.4%
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 px-4 text-sm text-slate-700">Student-Faculty Ratio</td>
+                                    <td class="py-3 px-4 text-sm text-slate-700 text-right">16:1</td>
+                                    <td class="py-3 px-4 text-sm text-amber-600 text-right flex items-center justify-end">
+                                        <i class="material-icons text-xs mr-1">trending_flat</i> 0.0
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Course Structure Tab Content -->
+        <div class="tab-content hidden" id="structure-content">
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-200">
+                    <h2 class="text-lg font-semibold text-slate-800">Course Structure</h2>
+                </div>
+                <div class="p-6">
+                    <!-- Year Tabs -->
+                    <div class="mb-6 border-b border-slate-200">
+                        <div class="flex flex-wrap -mb-px" id="yearTabs">
+                            @foreach (var year in Model.CourseStructure.Keys.OrderBy(y => y))
+                            {
+                                <button class="mr-2 py-2 px-4 text-sm font-medium inline-block @(year == 1 ? "text-primary-600 border-b-2 border-primary-600" : "text-slate-500 hover:text-slate-700 border-b-2 border-transparent hover:border-slate-300") year-tab" 
+                                        data-year="@year">
+                                    Year @year
+                                </button>
+                            }
+                        </div>
+                    </div>
+                    
+                    <!-- Year Content -->
+                    @foreach (var yearGroup in Model.CourseStructure)
+                    {
+                        <div class="year-content @(yearGroup.Key == 1 ? "" : "hidden")" id="year-@yearGroup.Key-content">
+                            <!-- Semester Tabs -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                @for (int semester = 1; semester <= 2; semester++)
+                                {
+                                    var semesterCourses = yearGroup.Value.Where(c => c.Semester == semester).ToList();
+                                    
+                                    <div class="bg-slate-50 p-4 rounded-lg">
+                                        <h3 class="text-md font-medium text-slate-800 mb-4">Semester @semester</h3>
+                                        
+                                        @if (semesterCourses.Any())
+                                        {
+                                            <div class="space-y-3">
+                                                @foreach (var course in semesterCourses)
+                                                {
+                                                    <div class="bg-white border border-slate-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
+                                                        <div class="flex justify-between items-start">
+                                                            <div>
+                                                                <h4 class="font-medium text-slate-800">@course.Course.CourseName</h4>
+                                                                <p class="text-xs text-slate-500 mt-1">
+                                                                    <span class="bg-slate-100 px-2 py-0.5 rounded">@course.Course.CourseCode</span>
+                                                                    <span class="ml-2">@course.Course.CourseType</span>
+                                                                </p>
+                                                            </div>
+                                                            <div>
+                                                                @if (course.IsMandatory)
+                                                                {
+                                                                    <span class="bg-secondary-100 text-secondary-800 text-xs px-2 py-0.5 rounded">Mandatory</span>
+                                                                }
+                                                                else
+                                                                {
+                                                                    <span class="bg-slate-100 text-slate-800 text-xs px-2 py-0.5 rounded">Elective</span>
+                                                                }
+                                                            </div>
+                                                        </div>
+                                                        <p class="text-xs text-slate-600 mt-2 line-clamp-2">@course.Course.CourseDescription</p>
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="text-center py-6 text-slate-500">
+                                                <i class="material-icons text-xl mb-2">info</i>
+                                                <p>No courses assigned for this semester</p>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                    
+                    <!-- If no years are defined -->
+                    @if (!Model.CourseStructure.Any())
+                    {
+                        <div class="text-center py-12 text-slate-500">
+                            <i class="material-icons text-3xl mb-3">school</i>
+                            <p class="text-lg mb-1">No course structure defined</p>
+                            <p class="text-sm">Use the Manage Courses button to add courses to this program</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        
+        <!-- Entry Requirements Tab Content -->
+        <div class="tab-content hidden" id="requirements-content">
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-200">
+                    <h2 class="text-lg font-semibold text-slate-800">Entry Requirements</h2>
+                </div>
+                <div class="p-6">
+                    <!-- Basic Requirements -->
+                    <div class="mb-6">
+                        <h3 class="text-md font-medium text-slate-800 mb-4">Basic Requirements</h3>
+                        <div class="space-y-4">
+                            <div class="flex gap-4 items-start">
+                                <div class="bg-primary-50 p-2 rounded-lg">
+                                    <i class="material-icons text-primary-600">school</i>
+                                </div>
+                                <div>
+                                    <h4 class="font-medium text-slate-800">Minimum Points</h4>
+                                    <p class="text-slate-600 text-sm">Minimum of @Model.Programme.MinimumPointsTop5Subjects points from top 5 subjects required for admission.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex gap-4 items-start">
+                                <div class="bg-secondary-50 p-2 rounded-lg">
+                                    <i class="material-icons text-secondary-600">description</i>
+                                </div>
+                                <div>
+                                    <h4 class="font-medium text-slate-800">Required Documents</h4>
+                                    <p class="text-slate-600 text-sm">Secondary school certificate, national ID or passport, and passport-sized photographs must be submitted with application.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex gap-4 items-start">
+                                <div class="bg-amber-50 p-2 rounded-lg">
+                                    <i class="material-icons text-amber-600">add_task</i>
+                                </div>
+                                <div>
+                                    <h4 class="font-medium text-slate-800">Prerequisite Subjects</h4>
+                                    <p class="text-slate-600 text-sm">Minimum of credit pass in Mathematics and English, plus three other relevant subjects dependent on program.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Yearly Requirements (from JSON) -->
+                    <div>
+                        <h3 class="text-md font-medium text-slate-800 mb-4">Program Structure Requirements</h3>
+                        <div id="yearlyRequirements">
+                            <!-- Will be filled by JavaScript -->
+                            <div class="text-center py-8 text-slate-400 bg-slate-50 rounded-lg" id="yearlyRequirementsLoading">
+                                <i class="material-icons text-3xl mb-2">hourglass_empty</i>
+                                <p>Loading yearly requirements...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize tabs
+            initializeTabs();
+            
+            // Initialize year tabs for course structure
+            initializeYearTabs();
+            
+            // Parse and display yearly requirements
+            initializeYearlyRequirements();
+            
+            // Initialize charts
+            initializeCharts();
+        });
+        
+        // Tab functionality
+        function initializeTabs() {
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const tabName = button.getAttribute('data-tab');
+                    
+                    // Update active tab button
+                    tabButtons.forEach(btn => {
+                        btn.classList.remove('text-primary-600', 'border-b-2', 'border-primary-600', 'font-medium');
+                        btn.classList.add('text-slate-600', 'hover:text-slate-800');
+                    });
+                    
+                    button.classList.remove('text-slate-600', 'hover:text-slate-800');
+                    button.classList.add('text-primary-600', 'border-b-2', 'border-primary-600', 'font-medium');
+                    
+                    // Update active tab content
+                    tabContents.forEach(content => {
+                        content.classList.add('hidden');
+                    });
+                    
+                    document.getElementById(`${tabName}-content`).classList.remove('hidden');
+                });
+            });
+        }
+        
+        // Year tabs for course structure
+        function initializeYearTabs() {
+            const yearTabs = document.querySelectorAll('.year-tab');
+            const yearContents = document.querySelectorAll('.year-content');
+            
+            yearTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const year = tab.getAttribute('data-year');
+                    
+                    // Update active year tab
+                    yearTabs.forEach(t => {
+                        t.classList.remove('text-primary-600', 'border-primary-600');
+                        t.classList.add('text-slate-500', 'border-transparent', 'hover:text-slate-700', 'hover:border-slate-300');
+                    });
+                    
+                    tab.classList.remove('text-slate-500', 'border-transparent', 'hover:text-slate-700', 'hover:border-slate-300');
+                    tab.classList.add('text-primary-600', 'border-primary-600');
+                    
+                    // Update active year content
+                    yearContents.forEach(content => {
+                        content.classList.add('hidden');
+                    });
+                    
+                    document.getElementById(`year-${year}-content`).classList.remove('hidden');
+                });
+            });
+        }
+        
+        // Parse and display yearly requirements
+        function initializeYearlyRequirements() {
+            try {
+                const yearlyRequirementsData = @Html.Raw(Model.Programme.YearlyRequirements ?? "{}");
+                const yearlyRequirementsContainer = document.getElementById('yearlyRequirements');
+                const loadingElement = document.getElementById('yearlyRequirementsLoading');
+                
+                if (loadingElement) {
+                    loadingElement.remove();
+                }
+                
+                // Check if we have yearly requirements data
+                if (Object.keys(yearlyRequirementsData).length === 0) {
+                    yearlyRequirementsContainer.innerHTML = `
+                        <div class="text-center py-8 text-slate-500 bg-slate-50 rounded-lg">
+                            <i class="material-icons text-3xl mb-2">info</i>
+                            <p>No yearly requirements defined</p>
+                            <p class="text-sm mt-1">Edit program to add yearly requirements</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Create content for yearly requirements
+                let yearlyRequirementsHTML = '<div class="space-y-6">';
+                
+                Object.keys(yearlyRequirementsData).sort().forEach(year => {
+                    const requirements = yearlyRequirementsData[year];
+                    
+                    yearlyRequirementsHTML += `
+                        <div class="bg-slate-50 p-4 rounded-lg">
+                            <h4 class="font-medium text-slate-800 mb-3">${year}</h4>
+                            <div class="space-y-3">
+                    `;
+                    
+                    // Add requirements for this year
+                    if (requirements.TotalRequired) {
+                        yearlyRequirementsHTML += `
+                            <div class="bg-white border border-slate-200 rounded-lg p-4">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium text-slate-700">Total Required Courses</span>
+                                    <span class="text-primary-600 font-bold">${requirements.TotalRequired}</span>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    // Add any other requirements in the JSON
+                    Object.keys(requirements).forEach(req => {
+                        if (req !== 'TotalRequired') {
+                            yearlyRequirementsHTML += `
+                                <div class="bg-white border border-slate-200 rounded-lg p-4">
+                                    <div class="flex justify-between items-center">
+                                        <span class="font-medium text-slate-700">${req}</span>
+                                        <span class="text-primary-600 font-bold">${requirements[req]}</span>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    });
+
+                    yearlyRequirementsHTML += `
+                        </div>
+                    </div>
+                    `;
+                });
+
+                yearlyRequirementsHTML += '</div>';
+                yearlyRequirementsContainer.innerHTML = yearlyRequirementsHTML;
+
+            } catch (error) {
+                console.error('Error parsing yearly requirements:', error);
+                document.getElementById('yearlyRequirements').innerHTML = `
+                    <div class="text-center py-8 text-red-500 bg-red-50 rounded-lg">
+                        <i class="material-icons text-3xl mb-2">error</i>
+                        <p>Error loading yearly requirements</p>
+                        <p class="text-sm mt-1">${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Initialize all charts
+        function initializeCharts() {
+            // Get metrics data
+            const enrollmentByYearData = @Html.Raw(Json.Serialize(Model.Metrics.EnrollmentByYear));
+            const genderDistributionData = @Html.Raw(Json.Serialize(Model.Metrics.GenderDistribution));
+            const enrollmentTrendsData = @Html.Raw(Json.Serialize(Model.Metrics.EnrollmentTrends));
+            const completionRatesData = @Html.Raw(Json.Serialize(Model.Metrics.CompletionRates));
+
+            // Initialize gender distribution chart (donut chart)
+            initGenderDistributionChart(genderDistributionData);
+
+            // Initialize enrollment trends chart (line chart)
+            initEnrollmentTrendsChart(enrollmentTrendsData);
+
+            // Initialize more detailed charts for metrics tab
+            initEnrollmentByYearChart(enrollmentByYearData);
+            initGenderDistributionDetailedChart(genderDistributionData);
+            initCompletionRatesChart(completionRatesData);
+        }
+
+        // Gender Distribution Chart (Overview)
+        function initGenderDistributionChart(genderData) {
+            const element = document.getElementById('genderDistributionChart');
+            if (!element) return;
+
+            // Transform data for ApexCharts
+            const labels = Object.keys(genderData);
+            const series = Object.values(genderData);
+
+            const options = {
+                chart: {
+                    type: 'donut',
+                    fontFamily: 'Inter, sans-serif',
+                },
+                colors: ['#4f46e5', '#ec4899'], // Indigo for Male, Pink for Female
+                labels: labels,
+                series: series,
+                legend: {
+                    position: 'bottom',
+                    horizontalAlign: 'center',
+                },
+                plotOptions: {
+                    pie: {
+                        donut: {
+                            size: '70%'
+                        }
+                    }
+                },
+                dataLabels: {
+                    enabled: false
+                },
+                responsive: [{
+                    breakpoint: 480,
+                    options: {
+                        chart: {
+                            height: 200
+                        },
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }]
+            };
+
+            const chart = new ApexCharts(element, options);
+            chart.render();
+        }
+
+        // Enrollment Trends Chart (Overview)
+        function initEnrollmentTrendsChart(trendsData) {
+            const element = document.getElementById('enrollmentTrendsChart');
+            if (!element) return;
+
+            // Transform data for ApexCharts
+            const categories = trendsData.map(item => item.year);
+            const series = [{
+                name: 'Enrollment',
+                data: trendsData.map(item => item.count)
+            }];
+
+            const options = {
+                chart: {
+                    type: 'area',
+                    fontFamily: 'Inter, sans-serif',
+                    toolbar: {
+                        show: false
+                    }
+                },
+                colors: ['#4f46e5'],
+                series: series,
+                xaxis: {
+                    categories: categories,
+                    labels: {
+                        style: {
+                            colors: '#64748b',
+                            fontSize: '12px'
+                        }
+                    }
+                },
+                yaxis: {
+                    labels: {
+                        style: {
+                            colors: '#64748b',
+                            fontSize: '12px'
+                        }
+                    }
+                },
+                dataLabels: {
+                    enabled: false
+                },
+                stroke: {
+                    curve: 'smooth',
+                    width: 3
+                },
+                fill: {
+                    type: 'gradient',
+                    gradient: {
+                        shade: 'light',
+                        type: 'vertical',
+                        shadeIntensity: 0.5,
+                        opacityFrom: 0.7,
+                        opacityTo: 0.2,
+                        stops: [0, 100]
+                    }
+                },
+                grid: {
+                    borderColor: '#e2e8f0',
+                    strokeDashArray: 4,
+                    xaxis: {
+                        lines: {
+                            show: true
+                        }
+                    },
+                    yaxis: {
+                        lines: {
+                            show: true
+                        }
+                    }
+                },
+                markers: {
+                    size: 5,
+                    colors: ['#fff'],
+                    strokeColors: '#4f46e5',
+                    strokeWidth: 3,
+                    hover: {
+                        size: 7
+                    }
+                },
+                tooltip: {
+                    theme: 'light',
+                    y: {
+                        formatter: function(value) {
+                            return value + ' students';
+                        }
+                    }
+                }
+            };
+
+            const chart = new ApexCharts(element, options);
+            chart.render();
+        }
+
+        // Enrollment By Year Chart (Metrics Tab)
+        function initEnrollmentByYearChart(yearData) {
+            const element = document.getElementById('enrollmentByYearChart');
+            if (!element) return;
+
+            // Transform data for ApexCharts
+            const categories = Object.keys(yearData).map(year => `Year ${year}`);
+            const series = [{
+                name: 'Students',
+                data: Object.values(yearData)
+            }];
+
+            const options = {
+                chart: {
+                    type: 'bar',
+                    fontFamily: 'Inter, sans-serif',
+                    toolbar: {
+                        show: false
+                    }
+                },
+                colors: ['#3b82f6'],
+                series: series,
+                xaxis: {
+                    categories: categories,
+                    labels: {
+                        style: {
+                            colors: '#64748b',
+                            fontSize: '12px'
+                        }
+                    }
+                },
+                yaxis: {
+                    labels: {
+                        style: {
+                            colors: '#64748b',
+                            fontSize: '12px'
+                        }
+                    }
+                },
+                dataLabels: {
+                    enabled: false
+                },
+                plotOptions: {
+                    bar: {
+                        borderRadius: 4,
+                        columnWidth: '60%',
+                    }
+                },
+                grid: {
+                    borderColor: '#e2e8f0',
+                    strokeDashArray: 4,
+                },
+                tooltip: {
+                    theme: 'light',
+                    y: {
+                        formatter: function(value) {
+                            return value + ' students';
+                        }
+                    }
+                }
+            };
+
+            const chart = new ApexCharts(element, options);
+            chart.render();
+        }
+
+        // Gender Distribution Detailed Chart (Metrics Tab)
+        function initGenderDistributionDetailedChart(genderData) {
+            const element = document.getElementById('genderDistributionDetailedChart');
+            if (!element) return;
+
+            // Transform data for ApexCharts
+            const labels = Object.keys(genderData);
+            const series = Object.values(genderData);
+
+            const options = {
+                chart: {
+                    type: 'pie',
+                    fontFamily: 'Inter, sans-serif',
+                },
+                colors: ['#4f46e5', '#ec4899'], // Indigo for Male, Pink for Female
+                labels: labels,
+                series: series,
+                legend: {
+                    position: 'bottom',
+                    horizontalAlign: 'center',
+                },
+                dataLabels: {
+                    enabled: true,
+                    formatter: function(val) {
+                        return Math.round(val) + '%';
+                    },
+                    style: {
+                        fontSize: '14px',
+                        fontFamily: 'Inter, sans-serif',
+                        fontWeight: 'bold'
+                    },
+                    dropShadow: {
+                        enabled: false
+                    }
+                },
+                responsive: [{
+                    breakpoint: 480,
+                    options: {
+                        chart: {
+                            height: 200
+                        },
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }]
+            };
+
+            const chart = new ApexCharts(element, options);
+            chart.render();
+        }
+
+        // Completion Rates Chart (Metrics Tab)
+        function initCompletionRatesChart(completionData) {
+            const element = document.getElementById('completionRatesChart');
+            if (!element) return;
+
+            // Transform data for ApexCharts
+            const categories = completionData.map(item => item.year);
+            const series = [{
+                name: 'Completion Rate',
+                data: completionData.map(item => item.rate)
+            }];
+
+            const options = {
+                chart: {
+                    type: 'line',
+                    fontFamily: 'Inter, sans-serif',
+                    toolbar: {
+                        show: false
+                    }
+                },
+                colors: ['#10b981'], // Green
+                series: series,
+                xaxis: {
+                    categories: categories,
+                    labels: {
+                        style: {
+                            colors: '#64748b',
+                            fontSize: '12px'
+                        }
+                    }
+                },
+                yaxis: {
+                    labels: {
+                        style: {
+                            colors: '#64748b',
+                            fontSize: '12px'
+                        },
+                        formatter: function(value) {
+                            return value.toFixed(1) + '%';
+                        }
+                    },
+                    min: 0,
+                    max: 100
+                },
+                dataLabels: {
+                    enabled: true,
+                    formatter: function(val) {
+                        return val.toFixed(1) + '%';
+                    }
+                },
+                stroke: {
+                    curve: 'smooth',
+                    width: 3
+                },
+                markers: {
+                    size: 6,
+                    colors: ['#fff'],
+                    strokeColors: '#10b981',
+                    strokeWidth: 3,
+                    hover: {
+                        size: 8
+                    }
+                },
+                grid: {
+                    borderColor: '#e2e8f0',
+                    strokeDashArray: 4,
+                },
+                tooltip: {
+                    theme: 'light',
+                    y: {
+                        formatter: function(value) {
+                            return value.toFixed(1) + '%';
+                        }
+                    }
+                }
+            };
+
+            const chart = new ApexCharts(element, options);
+            chart.render();
+        }
+    </script>
+}

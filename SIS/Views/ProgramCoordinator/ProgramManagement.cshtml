@@ -1,0 +1,411 @@
+﻿@model IEnumerable<SIS.Models.ProgramCoordinator.ProgramViewModel>
+@{
+    ViewData["Title"] = "Program Management";
+}
+
+<div class="min-h-[88vh] p-6 bg-slate-50">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center gap-2">
+            <i class="material-icons text-3xl text-primary-600">school</i>
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800">Program Management</h1>
+                <p class="text-sm text-slate-600">Manage the programs you coordinate</p>
+            </div>
+        </div>
+
+        <!-- Help button (optional) -->
+        <button class="px-4 py-2 text-sm text-primary-600 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors flex items-center">
+            <i class="material-icons text-sm mr-1">help_outline</i>
+            Help
+        </button>
+    </div>
+
+    <!-- Program Summary Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <div class="flex items-center text-center">
+                <div class="bg-primary-50 p-3 rounded-lg mr-4">
+                    <i class="material-icons text-primary-600 text-3xl">school</i>
+                </div>
+                <div class="text-left">
+                    <h3 class="text-slate-600 font-medium mb-1">Total Programs</h3>
+                    <span class="text-3xl font-bold text-slate-800">@Model.Count()</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <div class="flex items-center text-center">
+                <div class="bg-secondary-50 p-3 rounded-lg mr-4">
+                    <i class="material-icons text-secondary-600 text-3xl">people</i>
+                </div>
+                <div class="text-left">
+                    <h3 class="text-slate-600 font-medium mb-1">Active Students</h3>
+                    <span class="text-3xl font-bold text-slate-800">@Model.Sum(p => p.ActiveStudentCount)</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <div class="flex items-center text-center">
+                <div class="bg-amber-50 p-3 rounded-lg mr-4">
+                    <i class="material-icons text-amber-600 text-3xl">person_add</i>
+                </div>
+                <div class="text-left">
+                    <h3 class="text-slate-600 font-medium mb-1">Pending Applications</h3>
+                    <span class="text-3xl font-bold text-slate-800">@Model.Sum(p => p.PendingApplicationsCount)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Programs List -->
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
+        <div class="px-6 py-4 border-b border-slate-200">
+            <h2 class="text-lg font-semibold text-slate-800">Your Programs</h2>
+        </div>
+
+        <!-- Programs Cards -->
+        <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            @foreach (var program in Model)
+            {
+                <div class="bg-white border border-slate-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow">
+                    <!-- Program Header -->
+                    <div class="bg-primary-600 text-white px-6 py-3">
+                        <h3 class="font-semibold">@program.Programme.Name</h3>
+                    </div>
+
+                    <!-- Program Details -->
+                    <div class="p-6 space-y-4">
+                        <p class="text-slate-600 line-clamp-2">@program.Programme.Description</p>
+
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-slate-500">Duration:</span>
+                                <span class="font-medium text-slate-800">@program.Programme.DurationYears years</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-slate-500">Department:</span>
+                                <span class="font-medium text-slate-800">@program.Programme.Department?.Name</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-slate-500">Level:</span>
+                                <span class="font-medium text-slate-800">@program.Programme.ProgrammeLevel?.Name</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-slate-500">Minimum Points:</span>
+                                <span class="font-medium text-slate-800">@program.Programme.MinimumPointsTop5Subjects</span>
+                            </div>
+                        </div>
+
+                        <!-- Stats -->
+                        <div class="grid grid-cols-2 gap-4 pt-4 border-t mt-4">
+                            <div class="text-center">
+                                <span class="block text-2xl font-bold text-primary-600">@program.ActiveStudentCount</span>
+                                <span class="text-xs text-slate-500">Active Students</span>
+                            </div>
+                            <div class="text-center">
+                                <span class="block text-2xl font-bold text-secondary-600">@program.EnrollmentCount</span>
+                                <span class="text-xs text-slate-500">Total Enrollment</span>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex space-x-2 pt-4 border-t mt-4">
+                            <a href="@Url.Action("ProgramDetails", new { id = program.Programme.Id })"
+                               class="flex-1 py-2 px-4 bg-primary-50 hover:bg-primary-100 text-primary-600 text-center rounded-lg text-sm transition-colors">
+                                <i class="material-icons text-xs align-middle mr-1">visibility</i>
+                                View
+                            </a>
+                            <a href="@Url.Action("EditProgram", new { id = program.Programme.Id })"
+                               class="flex-1 py-2 px-4 bg-secondary-50 hover:bg-secondary-100 text-secondary-600 text-center rounded-lg text-sm transition-colors">
+                                <i class="material-icons text-xs align-middle mr-1">edit</i>
+                                Edit
+                            </a>
+                            <a href="@Url.Action("ManageProgramCourses", new { id = program.Programme.Id })"
+                               class="flex-1 py-2 px-4 bg-amber-50 hover:bg-amber-100 text-amber-600 text-center rounded-lg text-sm transition-colors">
+                                <i class="material-icons text-xs align-middle mr-1">view_module</i>
+                                Courses
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Quick Tips/Information Section -->
+    <div class="bg-white rounded-xl shadow-sm p-6">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="bg-blue-50 p-2 rounded-lg">
+                <i class="material-icons text-blue-600">tips_and_updates</i>
+            </div>
+            <h2 class="text-lg font-semibold text-slate-800">Program Coordinator Tips</h2>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="flex items-start gap-3">
+                <div class="bg-green-50 p-2 rounded-lg">
+                    <i class="material-icons text-green-600 text-sm">check_circle</i>
+                </div>
+                <div>
+                    <h3 class="font-medium text-slate-800 mb-1">Update Program Details</h3>
+                    <p class="text-sm text-slate-600">Keep your program information up-to-date to ensure prospective students have accurate information about academic requirements.</p>
+                </div>
+            </div>
+
+            <div class="flex items-start gap-3">
+                <div class="bg-amber-50 p-2 rounded-lg">
+                    <i class="material-icons text-amber-600 text-sm">school</i>
+                </div>
+                <div>
+                    <h3 class="font-medium text-slate-800 mb-1">Review Course Structure</h3>
+                    <p class="text-sm text-slate-600">Regularly review and update the program's course structure to ensure it aligns with industry standards and academic requirements.</p>
+                </div>
+            </div>
+
+            <div class="flex items-start gap-3">
+                <div class="bg-purple-50 p-2 rounded-lg">
+                    <i class="material-icons text-purple-600 text-sm">analytics</i>
+                </div>
+                <div>
+                    <h3 class="font-medium text-slate-800 mb-1">Monitor Student Progress</h3>
+                    <p class="text-sm text-slate-600">Regularly check program metrics to identify trends and areas for improvement in student performance and retention.</p>
+                </div>
+            </div>
+
+            <div class="flex items-start gap-3">
+                <div class="bg-blue-50 p-2 rounded-lg">
+                    <i class="material-icons text-blue-600 text-sm">campaign</i>
+                </div>
+                <div>
+                    <h3 class="font-medium text-slate-800 mb-1">Communicate with Lecturers</h3>
+                    <p class="text-sm text-slate-600">Use the announcement feature to share important information with lecturers teaching in your programs.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize any interactive elements
+            initProgramFilter();
+            initSortingOptions();
+
+            // Set up "Help" button functionality
+            document.querySelector('button[aria-label="Help"]')?.addEventListener('click', function() {
+                showHelpOverlay();
+            });
+        });
+
+        function initProgramFilter() {
+            // Add filtering functionality for program cards (if needed)
+            const searchInput = document.getElementById('programSearch');
+            if (!searchInput) return;
+
+            const programCards = document.querySelectorAll('.program-card');
+
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase().trim();
+
+                programCards.forEach(card => {
+                    const programName = card.querySelector('.program-name').textContent.toLowerCase();
+                    const programDescription = card.querySelector('.program-description').textContent.toLowerCase();
+                    const departmentName = card.querySelector('.department-name').textContent.toLowerCase();
+
+                    // Show/hide cards based on search term match
+                    if (searchTerm === '' ||
+                        programName.includes(searchTerm) ||
+                        programDescription.includes(searchTerm) ||
+                        departmentName.includes(searchTerm)) {
+                        card.classList.remove('hidden');
+                    } else {
+                        card.classList.add('hidden');
+                    }
+                });
+
+                // Show/hide "no results" message
+                const noResultsMessage = document.getElementById('noResultsMessage');
+                if (noResultsMessage) {
+                    const visibleCards = document.querySelectorAll('.program-card:not(.hidden)').length;
+                    noResultsMessage.classList.toggle('hidden', visibleCards > 0);
+                }
+            });
+        }
+
+        function initSortingOptions() {
+            // Add sorting functionality for program cards (if needed)
+            const sortSelect = document.getElementById('sortPrograms');
+            if (!sortSelect) return;
+
+            const programsContainer = document.querySelector('.programs-container');
+            if (!programsContainer) return;
+
+            sortSelect.addEventListener('change', function() {
+                const sortOption = this.value;
+                const programCards = Array.from(document.querySelectorAll('.program-card'));
+
+                // Sort cards based on selected option
+                programCards.sort((a, b) => {
+                    switch(sortOption) {
+                        case 'name-asc':
+                            return a.querySelector('.program-name').textContent.localeCompare(
+                                b.querySelector('.program-name').textContent
+                            );
+                        case 'name-desc':
+                            return b.querySelector('.program-name').textContent.localeCompare(
+                                a.querySelector('.program-name').textContent
+                            );
+                        case 'students-asc':
+                            return parseInt(a.getAttribute('data-students')) -
+                                   parseInt(b.getAttribute('data-students'));
+                        case 'students-desc':
+                            return parseInt(b.getAttribute('data-students')) -
+                                   parseInt(a.getAttribute('data-students'));
+                        case 'enrollment-asc':
+                            return parseInt(a.getAttribute('data-enrollment')) -
+                                   parseInt(b.getAttribute('data-enrollment'));
+                        case 'enrollment-desc':
+                            return parseInt(b.getAttribute('data-enrollment')) -
+                                   parseInt(a.getAttribute('data-enrollment'));
+                        default:
+                            return 0;
+                    }
+                });
+
+                // Reattach sorted cards to container
+                programCards.forEach(card => {
+                    programsContainer.appendChild(card);
+                });
+            });
+        }
+
+        function showHelpOverlay() {
+            // Create help overlay with program management tips
+            const overlay = document.createElement('div');
+            overlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            overlay.innerHTML = `
+                <div class="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+                    <div class="px-6 py-4 border-b flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-slate-800 flex items-center">
+                            <i class="material-icons mr-2 text-primary-600">help_outline</i>
+                            Program Coordinator Help
+                        </h3>
+                        <button class="text-slate-500 hover:text-slate-700" id="closeHelpBtn">
+                            <i class="material-icons">close</i>
+                        </button>
+                    </div>
+
+                    <div class="p-6">
+                        <div class="mb-4">
+                            <h4 class="font-medium text-slate-800 mb-2">Program Management Overview</h4>
+                            <p class="text-slate-600 text-sm">As a Program Coordinator, you can manage the program details, course structure, and monitor student metrics for all programs assigned to you.</p>
+                        </div>
+
+                        <div class="mb-4">
+                            <h4 class="font-medium text-slate-800 mb-2">Key Actions</h4>
+                            <ul class="list-disc ml-5 text-sm text-slate-600 space-y-2">
+                                <li><span class="font-medium">View Program Details</span>: Access comprehensive information about the program, including metrics and course structure.</li>
+                                <li><span class="font-medium">Edit Program</span>: Update program information such as description, entry requirements, and duration.</li>
+                                <li><span class="font-medium">Manage Courses</span>: View and manage the courses associated with the program.</li>
+                            </ul>
+                        </div>
+
+                        <div class="mb-4">
+                            <h4 class="font-medium text-slate-800 mb-2">Program Metrics</h4>
+                            <p class="text-slate-600 text-sm">Monitor important metrics like active student count, total enrollment, and pending applications to track program performance and popularity.</p>
+                        </div>
+
+                        <div class="mb-4">
+                            <h4 class="font-medium text-slate-800 mb-2">Tips for Effective Program Management</h4>
+                            <ul class="list-disc ml-5 text-sm text-slate-600 space-y-2">
+                                <li>Regularly review and update program descriptions and requirements</li>
+                                <li>Monitor student enrollment trends to identify patterns</li>
+                                <li>Maintain consistent course structure aligned with program objectives</li>
+                                <li>Communicate important updates to lecturers teaching in your programs</li>
+                            </ul>
+                        </div>
+
+                        <div class="mt-6 pt-4 border-t">
+                            <button class="w-full py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors" id="gotItBtn">
+                                Got it!
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(overlay);
+
+            // Add close functionality
+            overlay.querySelector('#closeHelpBtn').addEventListener('click', () => {
+                overlay.remove();
+            });
+
+            overlay.querySelector('#gotItBtn').addEventListener('click', () => {
+                overlay.remove();
+            });
+
+            // Close on outside click
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    overlay.remove();
+                }
+            });
+
+            // Close on escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    overlay.remove();
+                }
+            }, { once: true });
+        }
+
+        // Helper function to show success/error notifications
+        function showNotification(message, type = 'success') {
+            // Check if existing notification exists and remove it
+            const existingNotification = document.querySelector('.notification-toast');
+            if (existingNotification) {
+                existingNotification.remove();
+            }
+
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `notification-toast fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg flex items-center z-50 ${
+                type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
+            }`;
+
+            // Add icon based on type
+            const icon = type === 'success' ? 'check_circle' : 'error';
+
+            notification.innerHTML = `
+                <i class="material-icons mr-2">${icon}</i>
+                <span>${message}</span>
+            `;
+
+            // Add to DOM
+            document.body.appendChild(notification);
+
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.classList.add('opacity-0');
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // Check for notification message from TempData (requires addition to view)
+        const tempDataSuccess = '@TempData["Success"]';
+        const tempDataError = '@TempData["Error"]';
+
+        if (tempDataSuccess && tempDataSuccess !== '@TempData["Success"]') {
+            showNotification(tempDataSuccess, 'success');
+        }
+
+        if (tempDataError && tempDataError !== '@TempData["Error"]') {
+            showNotification(tempDataError, 'error');
+        }
+    </script>
+}

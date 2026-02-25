@@ -1,0 +1,270 @@
+﻿@model SIS.Models.Lecturer.GradeAttemptViewModel
+
+<div class="min-h-screen bg-slate-50 p-6">
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row justify-between items-center h-24 mb-4">
+        <div class="flex items-center text-slate-800">
+            <i class="material-icons text-3xl mr-2">assignment_turned_in</i>
+            <div>
+                <h1 class="text-2xl font-bold">Grade Student Attempt</h1>
+                <p class="text-sm text-slate-600">
+                    @Model.StudentName (@Model.StudentNumber) - 
+                    @Model.StudentAttempt.AssessmentConfiguration.Assessment.Name
+                </p>
+            </div>
+        </div>
+        <div class="mt-4 md:mt-0 flex space-x-2">
+            <a asp-controller="Lecturer" asp-action="AssessmentDetails" 
+               asp-route-id="@Model.StudentAttempt.AssessmentConfigurationId"
+               class="inline-flex items-center px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors">
+                <i class="material-icons text-sm mr-1">arrow_back</i>
+                <span>Back to Assessment Details</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Student Attempt Info Card -->
+    <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+                <h2 class="text-lg font-semibold text-slate-800 mb-3">Student Information</h2>
+                <div class="space-y-2">
+                    <div class="flex justify-between">
+                        <span class="text-slate-600">Name:</span>
+                        <span class="font-medium">@Model.StudentName</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-600">Student Number:</span>
+                        <span class="font-medium">@Model.StudentNumber</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <h2 class="text-lg font-semibold text-slate-800 mb-3">Attempt Information</h2>
+                <div class="space-y-2">
+                    <div class="flex justify-between">
+                        <span class="text-slate-600">Status:</span>
+                        @if (Model.StudentAttempt.Status == "Submitted")
+                        {
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Submitted</span>
+                        }
+                        else if (Model.StudentAttempt.Status == "TimedOut")
+                        {
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-100 text-amber-800">Timed Out</span>
+                        }
+                        else
+                        {
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">In Progress</span>
+                        }
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-600">Started:</span>
+                        <span class="font-medium">@Model.StudentAttempt.StartTime.ToString("MMM dd, yyyy HH:mm")</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-600">Ended:</span>
+                        <span class="font-medium">
+                            @(Model.StudentAttempt.EndTime.HasValue ? Model.StudentAttempt.EndTime.Value.ToString("MMM dd, yyyy HH:mm") : "Not completed")
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <h2 class="text-lg font-semibold text-slate-800 mb-3">Score Information</h2>
+                <div class="space-y-2">
+                    <div class="flex justify-between">
+                        <span class="text-slate-600">Current Score:</span>
+                        <span class="font-medium">
+                            @(Model.StudentAttempt.Percentage.HasValue ? $"{Model.StudentAttempt.Percentage.Value:F1}%" : "Not scored")
+                        </span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-600">Result:</span>
+                        @if (!Model.StudentAttempt.Percentage.HasValue)
+                        {
+                            <span class="text-slate-400">Not determined</span>
+                        }
+                        else if (!Model.StudentAttempt.Passed.HasValue)
+                        {
+                            <span class="text-slate-500">Pending review</span>
+                        }
+                        else if (Model.StudentAttempt.Passed.Value)
+                        {
+                            <span class="text-green-600 font-medium">Pass</span>
+                        }
+                        else
+                        {
+                            <span class="text-red-600 font-medium">Fail</span>
+                        }
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-600">Questions Answered:</span>
+                        <span class="font-medium">
+                            @Model.Responses.Count(r => !string.IsNullOrEmpty(r.ResponseText)) / @Model.Responses.Count
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form to submit grades -->
+    <form asp-controller="Lecturer" asp-action="SaveGrades" method="post">
+        <input type="hidden" name="attemptId" value="@Model.StudentAttempt.Id" />
+        
+        <!-- Student Responses -->
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <h2 class="text-lg font-semibold text-slate-800 mb-4">Student Responses</h2>
+            
+            @if (!Model.Responses.Any())
+            {
+                <div class="flex items-center gap-2 p-4 bg-amber-50 text-amber-800 rounded-lg">
+                    <i class="material-icons">info</i>
+                    <p>No responses found for this attempt.</p>
+                </div>
+            }
+            else
+            {
+                @foreach (var response in Model.Responses)
+                {
+                    <div class="border border-slate-200 rounded-lg p-4 mb-6">
+                        <div class="flex justify-between mb-2">
+                            <h3 class="font-medium text-slate-800">Question @(Model.Responses.IndexOf(response) + 1)</h3>
+                            <span class="text-sm text-slate-500">@response.Question.QuestionType</span>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <p class="text-slate-700 mb-2">@response.Question.QuestionText</p>
+                            @if (!string.IsNullOrEmpty(response.Question.AdditionalInfo))
+                            {
+                                <p class="text-sm text-slate-500 italic">@response.Question.AdditionalInfo</p>
+                            }
+                        </div>
+                        
+                        <!-- Question Options (for multiple choice) -->
+                        @if (response.Question.QuestionType == "MultipleChoice" || response.Question.QuestionType == "TrueFalse")
+                        {
+                            <div class="ml-4 mb-4">
+                                @foreach (var option in response.Question.Options)
+                                {
+                                    <div class="flex items-center space-x-2 mb-2">
+                                        @if (response.ResponseText == option.Id.ToString())
+                                        {
+                                            <i class="material-icons text-cyan-600">radio_button_checked</i>
+                                        }
+                                        else
+                                        {
+                                            <i class="material-icons text-slate-300">radio_button_unchecked</i>
+                                        }
+                                        <span class="@(option.IsCorrect ? "font-medium text-green-600" : "")">
+                                            @option.OptionText
+                                            @if (option.IsCorrect)
+                                            {
+                                                <span class="ml-2 text-sm text-green-600">(Correct Answer)</span>
+                                            }
+                                        </span>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        
+                        <!-- Student Response -->
+                        <div class="p-3 bg-slate-50 rounded-lg mb-4">
+                            <p class="text-sm text-slate-600 mb-1">Student Response:</p>
+                            @if (string.IsNullOrEmpty(response.ResponseText))
+                            {
+                                <p class="text-sm italic text-slate-500">No response provided</p>
+                            }
+                            else if (response.Question.QuestionType == "MultipleChoice" || response.Question.QuestionType == "TrueFalse")
+                            {
+                                @if (int.TryParse(response.ResponseText, out int optionId))
+                                {
+                                    var selectedOption = response.Question.Options.FirstOrDefault(o => o.Id == optionId);
+                                    if (selectedOption != null)
+                                    {
+                                        <p class="font-medium">@selectedOption.OptionText</p>
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                <p class="font-medium">@response.ResponseText</p>
+                            }
+                        </div>
+                        
+                        <!-- Grading Section -->
+                        <div class="border-t border-slate-200 pt-4">
+                            <div class="flex items-center mb-2">
+                                <span class="text-sm font-medium text-slate-700 mr-4">Grading:</span>
+                                
+                                <!-- Auto-graded indicator for multiple choice -->
+                                @if (response.IsGraded && (response.Question.QuestionType == "MultipleChoice" || response.Question.QuestionType == "TrueFalse"))
+                                {
+                                    <span class="px-2 py-1 text-xs rounded bg-slate-100 text-slate-700">Auto-graded</span>
+                                }
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label for="isCorrect_@response.Id" class="block text-sm font-medium text-slate-700 mb-1">Correct?</label>
+                                    <select id="isCorrect_@response.Id" name="responses[@response.Id].IsCorrect" class="w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500">
+                                        @if (response.IsCorrect == null)
+                                        {
+                                            <option value="" selected>Not Graded</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="">Not Graded</option>
+                                        }
+
+                                        @if (response.IsCorrect == true)
+                                        {
+                                            <option value="true" selected>Correct</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="true">Correct</option>
+                                        }
+
+                                        @if (response.IsCorrect == false)
+                                        {
+                                            <option value="false" selected>Incorrect</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="false">Incorrect</option>
+                                        }
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label for="score_@response.Id" class="block text-sm font-medium text-slate-700 mb-1">Score</label>
+                                    <input type="number" id="score_@response.Id" name="responses[@response.Id].Score" 
+                                           value="@response.Score" min="0" max="@response.Question.Points" step="0.1"
+                                           class="w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500" />
+                                    <span class="text-xs text-slate-500">Max: @response.Question.Points points</span>
+                                </div>
+                                
+                                <div>
+                                    <label for="feedback_@response.Id" class="block text-sm font-medium text-slate-700 mb-1">Feedback</label>
+                                    <textarea id="feedback_@response.Id" name="responses[@response.Id].Feedback" rows="2"
+                                            class="w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500">@response.FeedbackFromInstructor</textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+                
+                <!-- Submit Grading Button -->
+                <div class="flex justify-end mt-6">
+                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                        <i class="material-icons text-sm mr-1">save</i>
+                        <span>Save Grades</span>
+                    </button>
+                </div>
+            }
+        </div>
+    </form>
+</div>

@@ -1,0 +1,466 @@
+﻿@inject SIS.Services.IInstitutionConfigService InstitutionConfig
+
+@{
+    ViewData["Title"] = "Forgot Password";
+    Layout = null;
+    var institution = InstitutionConfig.GetCurrentInstitution();
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Password Recovery - AcademiX</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                fontFamily: {
+                    sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
+                },
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#ecfeff',
+                            100: '#cffafe',
+                            200: '#a5f3fc',
+                            300: '#67e8f9',
+                            400: '#22d3ee',
+                            500: '#06b6d4',
+                            600: '#0891b2',
+                            700: '#0e7490',
+                            800: '#155e75',
+                            900: '#164e63',
+                            950: '#083344'
+                        },
+                        secondary: {
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            200: '#a7f3d0',
+                            300: '#6ee7b7',
+                            400: '#34d399',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                            800: '#065f46',
+                            900: '#064e3b',
+                            950: '#022c22'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @@keyframes float {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-20px) rotate(5deg);
+            }
+        }
+
+        .floating {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .loader {
+            border: 3px solid rgba(14, 116, 144, 0.2);
+            border-top: 3px solid #0e7490;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            animation: spin 1s linear infinite;
+        }
+
+        @@keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .bg-gradient {
+            background: linear-gradient(135deg, rgba(14, 116, 144, 0.75) 0%, rgba(8, 51, 68, 0.65) 100%);
+        }
+
+        .form-input {
+            transition: all 0.2s ease-in-out;
+        }
+
+        .form-input:focus {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(14, 116, 144, 0.1);
+        }
+
+        .btn-primary {
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(14, 116, 144, 0.2);
+        }
+
+        .btn-primary:active {
+            transform: translateY(1px);
+        }
+
+        .text-shadow {
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+<body class="font-sans bg-slate-50">
+    @Html.AntiForgeryToken()
+    
+    <!-- Loader -->
+    <div id="loader" class="fixed inset-0 flex items-center justify-center bg-white z-50">
+        <div class="flex flex-col items-center">
+            <div class="loader mb-3"></div>
+            <p class="text-sm text-slate-500">Loading AcademiX...</p>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="min-h-screen flex flex-col items-center justify-center bg-cover bg-center relative" style="background-image: url('/images/campus.jpg');">
+        <div class="absolute inset-0 bg-gradient"></div>
+
+        <!-- Decorative Elements -->
+        <div class="floating absolute w-16 h-16 bg-white/10 rounded-full top-1/4 left-1/4 backdrop-blur-sm"></div>
+        <div class="floating absolute w-20 h-20 bg-white/10 rounded-full top-1/3 right-1/4 backdrop-blur-sm" style="animation-delay: -2s;"></div>
+        <div class="floating absolute w-12 h-12 bg-white/10 rounded-full bottom-1/4 left-1/3 backdrop-blur-sm" style="animation-delay: -4s;"></div>
+        <div class="floating absolute w-24 h-24 bg-white/5 rounded-full bottom-1/3 right-1/3 backdrop-blur-sm" style="animation-delay: -3s;"></div>
+
+        <!-- System Branding Outside Card -->
+        <div class="relative z-10 mb-2 flex flex-col items-center -translate-y-8">
+            <div class="w-16 h-16 rounded-lg bg-primary-800 text-white flex items-center justify-center mb-3 shadow-lg">
+                <i class="material-icons text-3xl">lock_reset</i>
+            </div>
+            <h2 class="text-2xl font-bold text-white text-shadow">Password Recovery</h2>
+            <p class="text-white/90 text-sm mt-1">Reset your account password securely</p>
+        </div>
+
+        <!-- Password Recovery Card -->
+        <div class="relative z-10 w-full max-w-lg mx-4 bg-white rounded-2xl shadow-2xl overflow-hidden -translate-y-8">
+            <!-- Card Header with Institution Logo -->
+            <div class="bg-primary-900 py-4 px-6">
+                <div class="flex items-center justify-center">
+                    <img src="@($"{institution.ContactInfo?.Website?.TrimEnd('/')}{institution.LogoPath}")" alt="@institution.Name Logo" class="h-12 mr-4">
+                    <div>
+                        <h1 class="text-white text-xl font-semibold">@institution.Name</h1>
+                        <p class="text-primary-200 text-sm">Password Recovery</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Section -->
+            <div class="px-6 py-6">
+                <!-- Security Notice -->
+                <div class="bg-primary-50 border border-primary-100 rounded-lg p-4 mb-6">
+                    <div class="flex items-center mb-2">
+                        <div class="p-1 bg-primary-100 rounded mr-3">
+                            <i class="material-icons text-primary-600 text-lg">security</i>
+                        </div>
+                        <h3 class="text-sm font-semibold text-primary-800">Security Notice</h3>
+                    </div>
+                    <div class="text-xs text-primary-700 space-y-1">
+                        <p>• A secure password will be generated and sent to your email</p>
+                        <p>• All existing sessions will be logged out for security</p>
+                        <p>• Change the temporary password after logging in</p>
+                    </div>
+                </div>
+
+                <!-- Reset Password Form -->
+                <form id="forgotPasswordForm" class="space-y-4">
+                    <div class="text-center mb-4">
+                        <h2 class="text-lg font-semibold text-gray-900 mb-1">Reset Your Password</h2>
+                        <p class="text-sm text-gray-600">Enter your email to receive a new password</p>
+                    </div>
+
+                    <!-- Email Input -->
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Email Address</label>
+                        <div class="relative rounded-md">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="material-icons text-slate-400 text-sm">email</i>
+                            </div>
+                            <input type="email" 
+                                   id="email" 
+                                   name="Email" 
+                                   required 
+                                   autocomplete="email"
+                                   class="form-input block w-full pl-10 pr-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 text-slate-700 text-sm transition-colors"
+                                   placeholder="Enter your email address" />
+                        </div>
+                        <span class="mt-1 text-xs text-red-500" id="emailError"></span>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" 
+                            id="submitBtn"
+                            class="btn-primary w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-lg text-sm font-medium text-white bg-primary-700 hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500/30 transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i class="material-icons text-sm mr-2 hidden animate-spin" id="loadingIcon">refresh</i>
+                        <span id="submitText">Reset Password</span>
+                        <i class="material-icons ml-2 text-sm">send</i>
+                    </button>
+                    
+                    <!-- Back to Login -->
+                    <div class="text-center">
+                        <p class="text-xs text-slate-600 mt-4">
+                            Remember your password? 
+                            <a href="/Account/Login" class="text-primary-700 hover:text-primary-800 transition-colors font-medium">
+                                Back to Login
+                            </a>
+                        </p>
+                    </div>
+                </form>
+
+                <!-- Help Section -->
+                <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+                    <h4 class="text-xs font-semibold text-gray-800 mb-2 flex items-center">
+                        <i class="material-icons text-blue-600 text-sm mr-1">help_outline</i>
+                        Need Help?
+                    </h4>
+                    <p class="text-xs text-gray-600 mb-2">Contact support if you don't receive the email:</p>
+                    <div class="text-xs text-gray-700">
+                        <p>📧 @institution.EmailSettings.SenderEmail</p>
+                        <p>📞 @(institution.ContactInfo?.Phone ?? "+260-XXX-XXXX") (Mon-Fri, 8AM-5PM)</p>
+                    </div>
+                </div>
+            </div>
+
+            @* <!-- Footer --> *@
+            @* <div class="p-3 bg-slate-50 border-t border-slate-100 flex justify-center items-center"> *@
+            @*     <p class="text-xs text-slate-500 flex items-center"> *@
+            @*         Powered by *@
+            @*         <a href="https://www.lloydsfinancials.com/" target="_blank" rel="noopener" class="flex items-center ml-1 hover:text-primary-700 transition-colors"> *@
+            @*             <img src="/images/lloyds-logo.png" alt="Lloyds Financials Limited" class="h-10 mr-1 brightness-110 contrast-125"> *@
+            @*             <span class="font-medium">Lloyds Financials</span> *@
+            @*         </a> *@
+            @*     </p> *@
+            @* </div> *@
+        </div>
+    </div>
+
+    <!-- Success/Error Modal -->
+    <div id="resultModal" class="hidden fixed inset-0 z-50">
+        <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity backdrop-blur-sm"></div>
+
+        <div class="fixed inset-0 z-10 overflow-y-auto">
+            <div class="flex min-h-full items-center justify-center p-4">
+                <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-md border border-gray-200">
+                    <!-- Modal Header -->
+                    <div class="px-6 py-4 border-b border-gray-200" id="modalHeader">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-semibold flex items-center" id="modalTitle">
+                                <i class="material-icons mr-2" id="modalIcon"></i>
+                                <span id="modalTitleText"></span>
+                            </h3>
+                            <button type="button" onclick="closeResultModal()" class="text-gray-400 hover:text-gray-500 transition-colors">
+                                <i class="material-icons">close</i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Modal Body -->
+                    <div class="p-6">
+                        <p class="text-gray-700" id="modalMessage"></p>
+                    </div>
+
+                    <!-- Modal Footer -->
+                    <div class="bg-gray-50 px-6 py-4 rounded-b-xl flex justify-end space-x-3">
+                        <button type="button" 
+                                onclick="closeResultModal()" 
+                                class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors">
+                            Close
+                        </button>
+                        <a href="/Account/Login" 
+                           class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                           id="loginLink"
+                           style="display: none;">
+                            Go to Login
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('forgotPasswordForm');
+            const submitBtn = document.getElementById('submitBtn');
+            const loadingIcon = document.getElementById('loadingIcon');
+            const submitText = document.getElementById('submitText');
+            const emailInput = document.getElementById('email');
+
+            // Hide Loader When Page is Fully Loaded
+            window.addEventListener('load', function() {
+                const loader = document.getElementById('loader');
+                loader.style.opacity = '0';
+                loader.style.transition = 'opacity 0.5s ease';
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                }, 500);
+            });
+
+            // Add subtle animation to the card on page load
+            const card = document.querySelector('.max-w-lg');
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+
+            setTimeout(() => {
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, 200);
+
+            // Focus on email input
+            emailInput.focus();
+
+            // Form submission
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                const email = emailInput.value.trim();
+
+                // Basic validation
+                if (!email) {
+                    showResultModal('error', 'Error', 'Please enter your email address.');
+                    return;
+                }
+
+                if (!isValidEmail(email)) {
+                    showResultModal('error', 'Error', 'Please enter a valid email address.');
+                    return;
+                }
+
+                // Show loading state
+                setLoadingState(true);
+
+                try {
+                    const response = await fetch('/ForgotPassword/ResetPassword', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                        },
+                        body: JSON.stringify({ Email: email })
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        showResultModal('success', 'Password Reset Successful!', result.message, true);
+                        form.reset();
+                    } else {
+                        showResultModal('error', 'Password Reset Failed', result.message);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showResultModal('error', 'Connection Error', 'Unable to connect to the server. Please check your internet connection and try again.');
+                } finally {
+                    setLoadingState(false);
+                }
+            });
+
+            // Email validation
+            function isValidEmail(email) {
+                const emailRegex = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/;
+                return emailRegex.test(email);
+            }
+
+            // Loading state management
+            function setLoadingState(loading) {
+                if (loading) {
+                    submitBtn.disabled = true;
+                    loadingIcon.classList.remove('hidden');
+                    submitText.textContent = 'Resetting Password...';
+                } else {
+                    submitBtn.disabled = false;
+                    loadingIcon.classList.add('hidden');
+                    submitText.textContent = 'Reset Password';
+                }
+            }
+
+            // Show result modal
+            function showResultModal(type, title, message, showLoginLink = false) {
+                const modal = document.getElementById('resultModal');
+                const modalHeader = document.getElementById('modalHeader');
+                const modalIcon = document.getElementById('modalIcon');
+                const modalTitleText = document.getElementById('modalTitleText');
+                const modalMessage = document.getElementById('modalMessage');
+                const loginLink = document.getElementById('loginLink');
+
+                if (type === 'success') {
+                    modalHeader.className = 'px-6 py-4 border-b border-green-200 bg-green-50';
+                    modalIcon.className = 'material-icons mr-2 text-green-600';
+                    modalIcon.textContent = 'check_circle';
+                    modalTitleText.className = 'text-green-800';
+                } else {
+                    modalHeader.className = 'px-6 py-4 border-b border-red-200 bg-red-50';
+                    modalIcon.className = 'material-icons mr-2 text-red-600';
+                    modalIcon.textContent = 'error';
+                    modalTitleText.className = 'text-red-800';
+                }
+
+                modalTitleText.textContent = title;
+                modalMessage.textContent = message;
+                
+                if (showLoginLink) {
+                    loginLink.style.display = 'inline-block';
+                } else {
+                    loginLink.style.display = 'none';
+                }
+
+                modal.classList.remove('hidden');
+            }
+
+            // Close modal function (global)
+            window.showResultModal = showResultModal;
+            window.closeResultModal = function() {
+                document.getElementById('resultModal').classList.add('hidden');
+            };
+
+            // Close modal on outside click
+            document.getElementById('resultModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeResultModal();
+                }
+            });
+
+            // Close modal on Escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeResultModal();
+                }
+            });
+
+            // Real-time email validation
+            emailInput.addEventListener('input', function() {
+                const email = this.value.trim();
+                const errorSpan = document.getElementById('emailError');
+                
+                if (email && !isValidEmail(email)) {
+                    this.classList.add('border-red-300', 'focus:border-red-500');
+                    this.classList.remove('border-slate-200', 'focus:border-primary-500');
+                    errorSpan.textContent = 'Please enter a valid email address';
+                } else {
+                    this.classList.remove('border-red-300', 'focus:border-red-500');
+                    this.classList.add('border-slate-200', 'focus:border-primary-500');
+                    errorSpan.textContent = '';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

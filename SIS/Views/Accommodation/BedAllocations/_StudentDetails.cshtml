@@ -1,0 +1,486 @@
+﻿@model SIS.Controllers.AccomodationControllers.BedAllocationStudentDetailsViewModel
+@{
+    var student = Model.Student;
+    var bed = student.BedSpace;
+
+    // Fix image path
+    var imageUrl = "";
+    if (!string.IsNullOrEmpty(student.PassportPhotoPath))
+    {
+        if (student.PassportPhotoPath.StartsWith("http") || student.PassportPhotoPath.StartsWith("/"))
+        {
+            imageUrl = student.PassportPhotoPath;
+        }
+        else
+        {
+            imageUrl = "/" + student.PassportPhotoPath.TrimStart('/');
+        }
+    }
+}
+
+<style>
+    .details-scroll {
+        height: 100%;
+        max-height: 100%;
+        overflow-y: auto !important;
+        overflow-x: hidden;
+        background: white;
+        position: relative;
+    }
+
+    .details-header {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        color: white;
+        padding: 15px 20px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .student-photo {
+        width: 60px;
+        height: 60px;
+        min-width: 60px;
+        border-radius: 50%;
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        color: #17a2b8;
+        border: 3px solid white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+
+        .student-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .student-photo i {
+            display: block;
+        }
+
+    .header-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .details-header h2 {
+        margin: 0 0 2px 0;
+        font-size: 18px;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .details-header .student-id {
+        font-size: 13px;
+        opacity: 0.9;
+        margin-bottom: 5px;
+    }
+
+    .status-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+        .status-indicator.accommodated {
+            background: rgba(255,255,255,0.9);
+            color: #17a2b8;
+        }
+
+        .status-indicator.not-accommodated {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+    .details-body {
+        padding: 12px;
+    }
+
+    .info-section {
+        background: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+
+    .section-title {
+        font-size: 12px;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 8px;
+        padding-bottom: 5px;
+        border-bottom: 2px solid #17a2b8;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+        .section-title i {
+            color: #17a2b8;
+            font-size: 12px;
+        }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+
+    .info-item {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+
+    .info-label {
+        font-size: 9px;
+        color: #666;
+        text-transform: uppercase;
+        font-weight: 600;
+        margin-bottom: 2px;
+    }
+
+    .info-value {
+        font-size: 11px;
+        color: #2c3e50;
+        font-weight: 500;
+        word-break: break-word;
+        overflow-wrap: break-word;
+    }
+
+    .accommodation-card {
+        background: #f8f9fa;
+        border-left: 3px solid #17a2b8;
+        padding: 8px;
+        border-radius: 3px;
+        margin-bottom: 8px;
+    }
+
+        .accommodation-card h4 {
+            margin: 0 0 6px 0;
+            color: #17a2b8;
+            font-size: 11px;
+        }
+
+    .accommodation-details {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 5px;
+    }
+
+    .detail-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 10px;
+        min-width: 0;
+    }
+
+        .detail-item i {
+            color: #17a2b8;
+            width: 12px;
+            font-size: 10px;
+            flex-shrink: 0;
+        }
+
+        .detail-item span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+    .alert-box {
+        padding: 8px 10px;
+        border-radius: 3px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 11px;
+    }
+
+        .alert-box.info {
+            background: #d1ecf1;
+            border-left: 3px solid #17a2b8;
+            color: #0c5460;
+        }
+
+        .alert-box.warning {
+            background: #fff3cd;
+            border-left: 3px solid #ffc107;
+            color: #856404;
+        }
+
+        .alert-box i {
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+    .btn {
+        padding: 8px 14px;
+        border: none;
+        border-radius: 4px;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        font-size: 11px;
+        transition: all 0.3s;
+        width: 100%;
+    }
+
+    .btn-success {
+        background: #17a2b8;
+        color: white;
+    }
+
+        .btn-success:hover {
+            background: #138496;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(23, 162, 184, 0.3);
+        }
+
+    .btn-danger {
+        background: #dc3545;
+        color: white;
+    }
+
+        .btn-danger:hover {
+            background: #c82333;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(220, 53, 69, 0.3);
+        }
+
+    .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .details-scroll::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .details-scroll::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+
+    .details-scroll::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 4px;
+    }
+
+        .details-scroll::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+</style>
+
+<div class="details-scroll" data-student-data='@Html.Raw(Json.Serialize(new
+    {
+        studentId = student.Id,
+        gender = student.Gender,
+        isAdmin = Model.IsAdmin,
+        isHostelManager = Model.IsHostelManager,
+        campuses = Model.Campuses.Select(c => new { campusId = c.CampusId, campusName = c.CampusName })
+    }))'>
+    <!-- Header with Photo -->
+    <div class="details-header">
+        <div class="student-photo">
+            @if (!string.IsNullOrEmpty(imageUrl))
+            {
+                    <img src="@imageUrl"
+                         alt="@student.FullName"
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+                    <i class="fas fa-user" style="display: none;"></i>
+            }
+            else
+            {
+                    <i class="fas fa-user"></i>
+            }
+        </div>
+        <div class="header-info">
+            <h2 title="@student.FullName">@student.FullName</h2>
+            <div class="student-id">@student.StudentId_Number</div>
+            <div class="status-indicator @(Model.IsAccommodated ? "accommodated" : "not-accommodated")">
+                @if (Model.IsAccommodated)
+                {
+                        <i class="fas fa-check-circle"></i>
+                        <span>Accommodated</span>
+                }
+                else
+                {
+                        <i class="fas fa-clock"></i>
+                        <span>Not Accommodated</span>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Body -->
+    <div class="details-body">
+        <!-- Status Alert -->
+        @if (Model.IsAccommodated)
+        {
+                <div class="alert-box info">
+                    <i class="fas fa-check-circle"></i>
+                    <div>
+                        <strong>Currently Accommodated</strong>
+                    </div>
+                </div>
+        }
+        else
+        {
+                <div class="alert-box warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <div>
+                        <strong>Not Accommodated</strong>
+                    </div>
+                </div>
+        }
+
+        <!-- Personal Information -->
+        <div class="info-section">
+            <div class="section-title">
+                <i class="fas fa-user"></i>
+                <span>Student Information</span>
+            </div>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Email</div>
+                    <div class="info-value" title="@student.Email">@student.Email</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Phone</div>
+                    <div class="info-value">@student.Phone</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Gender</div>
+                    <div class="info-value">@student.Gender</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Programme Level</div>
+                    <div class="info-value">@student.ProgrammeLevel?.Name</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Academic Information -->
+        <div class="info-section">
+            <div class="section-title">
+                <i class="fas fa-graduation-cap"></i>
+                <span>Academic Information</span>
+            </div>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">School</div>
+                    <div class="info-value" title="@student.Programme?.Department?.School?.Name">@student.Programme?.Department?.School?.Name</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Programme</div>
+                    <div class="info-value" title="@student.Programme?.Name">@student.Programme?.Name</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Mode of Study</div>
+                    <div class="info-value">@student.ModeOfStudy?.ModeName</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Academic Year</div>
+                    <div class="info-value">@student.AcademicYear?.YearValue</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current Accommodation (if accommodated) -->
+        @if (Model.IsAccommodated && bed != null)
+        {
+                <div class="info-section">
+                    <div class="section-title">
+                        <i class="fas fa-bed"></i>
+                        <span>Current Accommodation</span>
+                    </div>
+
+                    <div class="accommodation-card">
+                        <h4>Allocated Bed Space</h4>
+                        <div class="accommodation-details">
+                            <div class="detail-item">
+                                <i class="fas fa-building"></i>
+                                <span title="@bed.Room.Hostel.Campus.CampusName">@bed.Room.Hostel.Campus.CampusName</span>
+                            </div>
+                            <div class="detail-item">
+                                <i class="fas fa-hotel"></i>
+                                <span title="@bed.Room.Hostel.HostelName">@bed.Room.Hostel.HostelName</span>
+                            </div>
+                            <div class="detail-item">
+                                <i class="fas fa-door-closed"></i>
+                                <span>Room @bed.Room.RoomNumber</span>
+                            </div>
+                            <div class="detail-item">
+                                <i class="fas fa-layer-group"></i>
+                                <span>Floor @bed.Room.Floor</span>
+                            </div>
+                            <div class="detail-item">
+                                <i class="fas fa-bed"></i>
+                                <span>Bed @bed.BedIdentifier</span>
+                            </div>
+                            <div class="detail-item">
+                                <i class="fas fa-shapes"></i>
+                                <span>@bed.Room.RoomType</span>
+                            </div>
+                        </div>
+                    </div>
+
+                @if (student.BedAllocationEndDate.HasValue)
+                {
+                            <div class="info-grid" style="margin-top: 8px;">
+                                <div class="info-item">
+                                    <div class="info-label">Allocation End Date</div>
+                                    <div class="info-value">@student.BedAllocationEndDate.Value.ToString("MMM dd, yyyy")</div>
+                                </div>
+                            </div>
+                }
+                </div>
+        }
+
+        <!-- Action Buttons -->
+        <div style="margin-top: 20px;">
+            @if (Model.CanAllocate)
+            {
+                    <button type="button"
+                            class="btn btn-success btn-allocate"
+                            data-student-id="@student.Id"
+                            data-gender="@student.Gender">
+                        <i class="fas fa-bed"></i>
+                        Allocate Bed Space
+                    </button>
+            }
+
+            @if (Model.CanDeallocate)
+            {
+                    <button type="button"
+                            class="btn btn-danger btn-deallocate"
+                            data-student-id="@student.Id"
+                            style="margin-top: 10px;">
+                        <i class="fas fa-times-circle"></i>
+                        Deallocate Bed Space
+                    </button>
+            }
+        </div>
+    </div>
+</div>

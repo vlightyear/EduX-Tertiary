@@ -1,0 +1,604 @@
+﻿@using SIS.Enums
+@model SIS.Models.StudentApplication.ApplicantDashboardViewModel
+@inject SIS.Services.IInstitutionConfigService InstitutionConfig
+
+@{
+    var institution = InstitutionConfig.GetCurrentInstitution();
+}
+
+<div class="min-h-[88vh] flex flex-col lg:flex-row gap-6 p-6 bg-slate-50">
+    <!-- Main Content Column -->
+    <div class="flex-1 space-y-6">
+        <!-- Header with Welcome and Quick Actions -->
+        <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+            <div class="flex items-center gap-2 text-slate-800">
+                <i class="material-icons text-3xl text-cyan-950">dashboard</i>
+                <h1 class="text-2xl font-bold">Welcome to @institution.Name, @(string.IsNullOrEmpty(Model.Applications.FirstOrDefault()?.FullName) ? "Applicant" : Model.Applications.FirstOrDefault()?.FullName.Split(' ')[0])</h1>
+            </div>
+            <div class="flex gap-3">
+                @if (Model.HasIncompleteApplications)
+                {
+                    @* <a href="@Url.Action("Resume", "Application")" class="flex items-center gap-2 px-4 py-2 bg-amber-100 text-amber-800 rounded-lg hover:bg-amber-200 transition-colors"> *@
+                    @*     <i class="material-icons text-amber-600">restore</i> *@
+                    @*     <span>Resume Application</span> *@
+                    @* </a> *@
+                }
+                <a href="@Url.Action("PersonalDetails", "StudentApplication")" class="flex items-center gap-2 px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors">
+                    <i class="material-icons">add</i>
+                    <span>New Application</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Application Status Banner (if applicable) -->
+        @if (Model.Applications.Any(a => a.Status == Status.Pending))
+        {
+            <div class="bg-blue-50 border-l-4 border-blue-600 p-4 rounded-lg">
+                <div class="flex items-start gap-3">
+                    <i class="material-icons text-blue-600 mt-1">info</i>
+                    <div>
+                        <h3 class="font-semibold text-blue-800">Application Under Review</h3>
+                        <p class="text-blue-700">You have @Model.Applications.Count(a => a.Status == Status.Pending) pending application(s). We'll notify you when there's an update.</p>
+                    </div>
+                </div>
+            </div>
+        }
+        @if (Model.Applications.Any(a => a.Status == Status.Admitted))
+        {
+            <div class="bg-green-50 border-l-4 border-green-600 p-4 rounded-lg">
+                <div class="flex items-start gap-3">
+                    <i class="material-icons text-green-600 mt-1">check_circle</i>
+                    <div>
+                        <h3 class="font-semibold text-green-800">Application Accepted</h3>
+                        <p class="text-green-700">Congratulations! You've been accepted. Please check your email for further instructions.</p>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Statistics Cards -->
+        <div class="grid md:grid-cols-4 gap-6">
+            <!-- Total Schools Card -->
+            <a href="@Url.Action("ViewPrograms", "StudentApplication")" class="block group">
+                <div class="bg-white rounded-xl shadow-sm p-6 transition-all duration-300 hover:shadow-md hover:shadow-blue-100 border border-transparent hover:border-blue-200 cursor-pointer">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="text-slate-500 text-sm mb-1 group-hover:text-blue-600 transition-colors">Total Schools</p>
+                            <h3 class="text-2xl font-bold text-slate-800 group-hover:text-blue-600 transition-colors">@Model.Schools.Count()</h3>
+                            <p class="text-xs text-slate-400 mt-1 group-hover:text-blue-500 transition-colors">
+                                View All
+                            </p>
+                        </div>
+                        <div class="bg-blue-50 p-3 rounded-lg group-hover:bg-blue-100 transition-colors group-hover:scale-105 transform duration-200">
+                            <i class="material-icons text-blue-600 text-3xl">school</i>
+                        </div>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Available Programs Card -->
+            <a href="@Url.Action("ViewPrograms", "StudentApplication")" class="block group">
+                <div class="bg-white rounded-xl shadow-sm p-6 transition-all duration-300 hover:shadow-md hover:shadow-green-100 border border-transparent hover:border-green-200 cursor-pointer">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="text-slate-500 text-sm mb-1 group-hover:text-green-600 transition-colors">Available Programs</p>
+                            <h3 class="text-2xl font-bold text-slate-800 group-hover:text-green-600 transition-colors">
+                                @Model.Schools.SelectMany(s => s.Departments).SelectMany(d => d.Programmes).Count()
+                            </h3>
+                            <p class="text-xs text-slate-400 mt-1 group-hover:text-green-500 transition-colors">
+                                View All
+                            </p>
+                        </div>
+                        <div class="bg-green-50 p-3 rounded-lg group-hover:bg-green-100 transition-colors group-hover:scale-105 transform duration-200">
+                            <i class="material-icons text-green-600 text-3xl">auto_stories</i>
+                        </div>
+                    </div>
+                </div>
+            </a>
+
+            <!-- My Applications Card -->
+            <a href="@Url.Action("ViewAll", "StudentApplication")" class="block group">
+                <div class="bg-white rounded-xl shadow-sm p-6 transition-all duration-300 hover:shadow-md hover:shadow-cyan-100 border border-transparent hover:border-cyan-200 cursor-pointer">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="text-slate-500 text-sm mb-1 group-hover:text-cyan-600 transition-colors">My Applications</p>
+                            <h3 class="text-2xl font-bold text-slate-800 group-hover:text-cyan-600 transition-colors">@Model.Applications.Count()</h3>
+                            <p class="text-xs text-slate-400 mt-1 group-hover:text-cyan-500 transition-colors">
+                                View All
+                            </p>
+                        </div>
+                        <div class="bg-cyan-50 p-3 rounded-lg group-hover:bg-cyan-100 transition-colors group-hover:scale-105 transform duration-200">
+                            <i class="material-icons text-cyan-600 text-3xl">folder_shared</i>
+                        </div>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Application Status Card -->
+            <div class="bg-white rounded-xl shadow-sm p-6 transition-all duration-300 hover:shadow-md">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="text-slate-500 text-sm mb-1">Application Status</p>
+                        <div class="flex items-center gap-2">
+                            @if (Model.Applications.Any(a => a.Status == Status.Admitted))
+                            {
+                                <div class="h-3 w-3 rounded-full bg-green-500"></div>
+                                <h3 class="text-lg font-bold text-green-600">Accepted</h3>
+                            }
+                            else if (Model.Applications.Any(a => a.Status == Status.Pending))
+                            {
+                                <div class="h-3 w-3 rounded-full bg-amber-500"></div>
+                                <h3 class="text-lg font-bold text-amber-600">Pending</h3>
+                            }
+                            else if (Model.Applications.Any(a => a.Status == Status.Rejected))
+                            {
+                                <div class="h-3 w-3 rounded-full bg-red-500"></div>
+                                <h3 class="text-lg font-bold text-red-600">Rejected</h3>
+                            }
+                            else
+                            {
+                                <div class="h-3 w-3 rounded-full bg-gray-500"></div>
+                                <h3 class="text-lg font-bold text-gray-600">None</h3>
+                            }
+                        </div>
+                    </div>
+                    <div class="bg-purple-50 p-3 rounded-lg">
+                        <i class="material-icons text-purple-600 text-3xl">pending_actions</i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Two Charts Row -->
+        <div class="grid md:grid-cols-2 gap-6">
+            <!-- Program Distribution Chart -->
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <div class="flex items-center gap-2 mb-6">
+                    <i class="material-icons text-cyan-950">insert_chart</i>
+                    <h2 class="text-lg font-semibold text-slate-800">Program Distribution by School</h2>
+                </div>
+                <div id="programDistributionChart" class="h-[320px]"></div>
+            </div>
+
+            <!-- Application Status Chart -->
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <div class="flex items-center gap-2 mb-6">
+                    <i class="material-icons text-cyan-950">pie_chart</i>
+                    <h2 class="text-lg font-semibold text-slate-800">My Application Status</h2>
+                </div>
+                @if (Model.Applications.Any())
+                {
+                    <div id="applicationStatusChart" class="h-[320px]"></div>
+                }
+                else
+                {
+                    <div class="flex flex-col items-center justify-center h-[320px] text-center">
+                        <i class="material-icons text-slate-400 text-5xl mb-3">hourglass_empty</i>
+                        <p class="text-slate-500">You haven't submitted any applications yet</p>
+                        <a href="@Url.Action("PersonalDetails", "StudentApplication")" class="mt-4 px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors">
+                            Start Application
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Recent Applications Table -->
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-2">
+                    <i class="material-icons text-cyan-950">history</i>
+                    <h2 class="text-lg font-semibold text-slate-800">Recent Applications</h2>
+                </div>
+                <a href="@Url.Action("ViewAll", "StudentApplication")" class="text-sm text-cyan-600 hover:text-cyan-800 hover:underline transition-colors">
+                    View All
+                </a>
+            </div>
+
+            @if (Model.RecentApplications.Any())
+            {
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead>
+                            <tr class="border-b border-slate-200">
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-slate-600">Reference</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-slate-600">Program</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-slate-600">School</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-slate-600">Date</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-slate-600">Status</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-slate-600"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var application in Model.RecentApplications)
+                            {
+                                <tr class="border-b border-slate-100 hover:bg-slate-50">
+                                    <td class="px-4 py-4 text-sm text-slate-800">@application.ReferenceNumber</td>
+                                    <td class="px-4 py-4 text-sm text-slate-800">@application.Programme.Name</td>
+                                    <td class="px-4 py-4 text-sm text-slate-800">@application.School.Name</td>
+                                    <td class="px-4 py-4 text-sm text-slate-500">@application.DateSubmitted.ToString("MMM dd, yyyy")</td>
+                                    <td class="px-4 py-4">
+                                        @if (application.PaymentStatus == Status.Pending)
+                                        {
+                                            @* <span class="px-2 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-medium">Unpaid</span> *@
+                                            <a href="@Url.Action("PaymentSelection", "Payments", new { referenceNumber = application.ReferenceNumber })"
+                                               class="ml-2 px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 text-xs">
+                                                Pay
+                                            </a>
+                                        }
+                                        else if (application.PaymentStatus == Status.Paid)
+                                        {
+                                            <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">Paid</span>
+                                        }
+                                    </td>
+                                    <td class="px-4 py-4 text-right">
+                                        <a href="@Url.Action("Details", "StudentApplication", new { id = application.ApplicantId })"
+                                           class="text-cyan-600 hover:text-cyan-800 hover:underline transition-colors">
+                                            View
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="bg-slate-50 rounded-lg p-8 text-center">
+                    <i class="material-icons text-slate-400 text-5xl mb-3">folder_open</i>
+                    <p class="text-slate-500 mb-4">No applications found</p>
+                    <a href="@Url.Action("PersonalDetails", "StudentApplication")" class="inline-block px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors">
+                        Create Your First Application
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Right Sidebar -->
+    <div class="lg:w-1/3 space-y-6">
+        <!-- Academic Calendar Card -->
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <div class="flex items-center gap-2 mb-6">
+                <i class="material-icons text-cyan-950">calendar_month</i>
+                <h2 class="text-lg font-semibold text-slate-800">Academic Calendar</h2>
+            </div>
+
+            @if (Model.CurrentAcademicYear != null)
+            {
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center gap-2">
+                            <div class="h-3 w-3 rounded-full bg-green-500"></div>
+                            <span class="text-slate-800 font-medium">Current Academic Year</span>
+                        </div>
+                        <span class="text-slate-700">@Model.CurrentAcademicYear.YearValue</span>
+                    </div>
+
+                    <!-- Key Dates -->
+                    <div class="space-y-3 mt-4">
+                        <div class="bg-slate-50 rounded-lg p-3">
+                            <p class="text-slate-500 text-xs">Application Deadline</p>
+                            <p class="text-slate-800 font-medium">March 30, 2024</p>
+                        </div>
+
+                        <div class="bg-slate-50 rounded-lg p-3">
+                            <p class="text-slate-500 text-xs">Results Announcement</p>
+                            <p class="text-slate-800 font-medium">April 15, 2024</p>
+                        </div>
+
+                        <div class="bg-slate-50 rounded-lg p-3">
+                            <p class="text-slate-500 text-xs">Semester Start Date</p>
+                            <p class="text-slate-800 font-medium">May 2, 2024</p>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <p class="text-slate-500">No academic calendar information available</p>
+            }
+        </div>
+
+        <!-- Important Notices Card -->
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <div class="flex items-center gap-2 mb-6">
+                <i class="material-icons text-amber-500">campaign</i>
+                <h2 class="text-lg font-semibold text-slate-800">Important Notices</h2>
+            </div>
+
+            <div class="space-y-4">
+                @if (Model.Notifications != null && Model.Notifications.Any())
+                {
+                    @foreach (var notification in Model.Notifications)
+                    {
+                        <div class="bg-slate-50 rounded-lg p-4 transform transition-all duration-300 hover:-translate-y-1 hover:shadow-md border-l-4
+                             @(notification.Type == NotificationType.Deadline ? "border-amber-500" :
+                               notification.Type == NotificationType.Event ? "border-green-500" :
+                               notification.Type == NotificationType.Alert ? "border-red-500" : "border-blue-500")">
+                            <div class="flex items-center gap-2 mb-2">
+                                <i class="material-icons
+                                   @(notification.Type == NotificationType.Deadline ? "text-amber-600" :
+                                     notification.Type == NotificationType.Event ? "text-green-600" :
+                                     notification.Type == NotificationType.Alert ? "text-red-600" : "text-blue-600")">
+                                    @(notification.Type == NotificationType.Deadline ? "event" :
+                                        notification.Type == NotificationType.Event ? "event_available" :
+                                        notification.Type == NotificationType.Alert ? "warning" : "info")
+                                </i>
+                                <h3 class="font-semibold text-slate-800">@notification.Title</h3>
+                            </div>
+                            <p class="text-slate-600 text-sm">@notification.Message</p>
+                            @if (!string.IsNullOrEmpty(notification.Link))
+                            {
+                                <a href="@notification.Link" class="text-cyan-600 text-sm hover:underline mt-2 inline-block">Learn more</a>
+                            }
+                        </div>
+                    }
+                }
+                else
+                {
+                    <!-- Fallback notices when no notifications in database -->
+                    <div class="bg-slate-50 rounded-lg p-4 transform transition-all duration-300 hover:-translate-y-1 hover:shadow-md border-l-4 border-amber-500">
+                        <div class="flex items-center gap-2 mb-2">
+                            <i class="material-icons text-amber-600">event</i>
+                            <h3 class="font-semibold text-slate-800">Application Deadline</h3>
+                        </div>
+                        <p class="text-slate-600 text-sm">Applications for 2024 academic year close on March 30th</p>
+                    </div>
+
+                    <div class="bg-slate-50 rounded-lg p-4 transform transition-all duration-300 hover:-translate-y-1 hover:shadow-md border-l-4 border-blue-500">
+                        <div class="flex items-center gap-2 mb-2">
+                            <i class="material-icons text-blue-600">school</i>
+                            <h3 class="font-semibold text-slate-800">New Programs Added</h3>
+                        </div>
+                        <p class="text-slate-600 text-sm">Check out our new Engineering programs for 2024</p>
+                    </div>
+
+                    <div class="bg-slate-50 rounded-lg p-4 transform transition-all duration-300 hover:-translate-y-1 hover:shadow-md border-l-4 border-green-500">
+                        <div class="flex items-center gap-2 mb-2">
+                            <i class="material-icons text-green-600">event_available</i>
+                            <h3 class="font-semibold text-slate-800">Virtual Open Day</h3>
+                        </div>
+                        <p class="text-slate-600 text-sm">Join us online on February 15th for a virtual campus tour</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Application Progress Card -->
+        @if (Model.Applications.Any(a => a.Status == Status.Pending))
+        {
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <div class="flex items-center gap-2 mb-6">
+                    <i class="material-icons text-cyan-950">checklist</i>
+                    <h2 class="text-lg font-semibold text-slate-800">Application Progress</h2>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="flex items-center gap-4">
+                        <div class="bg-green-100 text-green-700 h-8 w-8 rounded-full flex items-center justify-center">
+                            <i class="material-icons text-sm">check</i>
+                        </div>
+                        <div>
+                            <p class="text-slate-800 font-medium">Application Submitted</p>
+                            <p class="text-xs text-slate-500">Completed on @Model.Applications.First(a => a.Status == Status.Pending).DateSubmitted.ToString("MMM dd, yyyy")</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-4">
+                        <div class="bg-amber-100 text-amber-700 h-8 w-8 rounded-full flex items-center justify-center">
+                            <i class="material-icons text-sm">hourglass_top</i>
+                        </div>
+                        <div>
+                            <p class="text-slate-800 font-medium">Under Review</p>
+                            <p class="text-xs text-slate-500">Your application is being reviewed</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-4">
+                        <div class="bg-slate-100 text-slate-400 h-8 w-8 rounded-full flex items-center justify-center">
+                            <span class="text-xs">3</span>
+                        </div>
+                        <div>
+                            <p class="text-slate-400 font-medium">Decision</p>
+                            <p class="text-xs text-slate-400">Pending review completion</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-4">
+                        <div class="bg-slate-100 text-slate-400 h-8 w-8 rounded-full flex items-center justify-center">
+                            <span class="text-xs">4</span>
+                        </div>
+                        <div>
+                            <p class="text-slate-400 font-medium">Enrollment</p>
+                            <p class="text-xs text-slate-400">Pending acceptance</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Program Distribution Chart
+            const programDistOptions = {
+                series: [{
+                    name: 'Programs',
+                    data: [
+        @foreach (var school in Model.SchoolProgramData)
+        {
+            <text>@school.ProgramCount,</text>
+        }
+                    ]
+                }],
+                chart: {
+                    type: 'bar',
+                    height: '100%',
+                    fontFamily: 'Inter, sans-serif',
+                    toolbar: {
+                        show: false
+                    }
+                },
+                colors: ['#0e7490'],
+                plotOptions: {
+                    bar: {
+                        borderRadius: 6,
+                        horizontal: false,
+                        columnWidth: '55%',
+                    },
+                },
+                dataLabels: {
+                    enabled: false
+                },
+                xaxis: {
+                    categories: [
+        @foreach (var school in Model.SchoolProgramData)
+        {
+            <text>'@school.SchoolName',</text>
+        }
+                    ],
+                    labels: {
+                        style: {
+                            colors: '#475569'
+                        }
+                    }
+                },
+                yaxis: {
+                    title: {
+                        text: 'Number of Programs',
+                        style: {
+                            color: '#475569'
+                        }
+                    },
+                    labels: {
+                        style: {
+                            colors: '#475569'
+                        }
+                    }
+                },
+                grid: {
+                    borderColor: '#e2e8f0',
+                    strokeDashArray: 4
+                },
+                fill: {
+                    opacity: 0.9
+                },
+                tooltip: {
+                    theme: 'light',
+                    y: {
+                        formatter: function (val) {
+                            return val + " programs"
+                        }
+                    }
+                }
+            };
+
+            // Initialize program distribution chart if the element exists
+            const programDistChartElement = document.querySelector("#programDistributionChart");
+            if (programDistChartElement) {
+                const programDistChart = new ApexCharts(programDistChartElement, programDistOptions);
+                programDistChart.render();
+            }
+
+            // Application Status Chart
+        @if (Model.Applications.Any())
+        {
+            <text>
+                    // Count different statuses
+                    const pendingCount = @Model.Applications.Count(a => a.Status == Status.Pending);
+                    const acceptedCount = @Model.Applications.Count(a => a.Status == Status.Admitted);
+                    const rejectedCount = @Model.Applications.Count(a => a.Status == Status.Rejected);
+
+                    const appStatusOptions = {
+                        series: [pendingCount, acceptedCount, rejectedCount],
+                        chart: {
+                            type: 'donut',
+                            height: '90%',
+                            fontFamily: 'Inter, sans-serif',
+                        },
+                        colors: ['#64748b', '#059669', '#dc2626'], // Updated to subtle system colors
+                        labels: ['Pending', 'Accepted', 'Rejected'],
+                        plotOptions: {
+                            pie: {
+                                donut: {
+                                    size: '60%',
+                                    labels: {
+                                        show: true,
+                                        name: {
+                                            show: true,
+                                            fontFamily: 'Inter, sans-serif',
+                                            color: '#475569', // slate-600 for text
+                                            fontSize: '14px'
+                                        },
+                                        value: {
+                                            show: true,
+                                            fontFamily: 'Inter, sans-serif',
+                                            color: '#1e293b', // slate-800 for values
+                                            fontSize: '18px',
+                                            fontWeight: 'bold',
+                                            formatter: function (val) {
+                                                return val
+                                            }
+                                        },
+                                        total: {
+                                            show: true,
+                                            label: 'Total',
+                                            color: '#475569', // slate-600
+                                            fontSize: '14px',
+                                            fontFamily: 'Inter, sans-serif',
+                                            formatter: function (w) {
+                                                return w.globals.seriesTotals.reduce((a, b) => a + b, 0)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        dataLabels: {
+                            enabled: false
+                        },
+                        legend: {
+                            position: 'bottom',
+                            fontFamily: 'Inter, sans-serif',
+                            fontSize: '14px',
+                            labels: {
+                                colors: '#475569', // slate-600 for legend text
+                            },
+                            markers: {
+                                size: 12,
+                                strokeColor: '#ffffff',
+                                strokeWidth: 2
+                            }
+                        },
+                        stroke: {
+                            show: false
+                        },
+                        responsive: [{
+                            breakpoint: 480,
+                            options: {
+                                chart: {
+                                    height: '300px'
+                                },
+                                legend: {
+                                    position: 'bottom'
+                                }
+                            }
+                        }]
+                    };
+
+                    // Initialize application status chart if the element exists
+                    const appStatusChartElement = document.querySelector("#applicationStatusChart");
+                    if (appStatusChartElement) {
+                        const appStatusChart = new ApexCharts(appStatusChartElement, appStatusOptions);
+                        appStatusChart.render();
+                    }
+            </text>
+        }
+        });
+    </script>
+}

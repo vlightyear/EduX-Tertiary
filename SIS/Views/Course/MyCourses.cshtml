@@ -1,0 +1,145 @@
+﻿@model IEnumerable<SIS.Models.Registration.StudentCoursesViewModel>
+
+@{
+    ViewData["Title"] = "My Courses";
+}
+
+<div class="min-h-screen bg-slate-50 p-6">
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row justify-between items-center h-24 mb-4">
+        <div class="flex items-center text-slate-800">
+            <i class="material-icons text-3xl mr-2">school</i>
+            <h1 class="text-2xl font-bold">My Courses</h1>
+        </div>
+        <div class="mt-4 md:mt-0">
+            <div class="flex items-center gap-3">
+                <span class="inline-flex items-center px-3 py-1.5 rounded-lg bg-blue-100 text-blue-800">
+                    <i class="material-icons text-sm mr-1">calendar_today</i>
+                    <span>Academic Year: @ViewBag.AcademicYear</span>
+                </span>
+                <span class="inline-flex items-center px-3 py-1.5 rounded-lg bg-purple-100 text-purple-800">
+                    <i class="material-icons text-sm mr-1">event</i>
+                    <span>Semester: @ViewBag.Semester</span>
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div class="p-6">
+            @if (ViewBag.RegistrationStatus == SIS.Enums.Status.Pending)
+            {
+                <div class="flex flex-col items-center justify-center py-12 px-4">
+                    <div class="bg-amber-50 rounded-full p-4 mb-4">
+                        <i class="material-icons text-3xl text-amber-500">pending_actions</i>
+                    </div>
+                    <h2 class="text-xl font-semibold text-slate-800 mb-2">Registration Pending</h2>
+                    <p class="text-slate-600 text-center max-w-md mb-6">
+                        Your course registration is currently pending approval. You will be able to view your courses once the registration process is complete.
+                    </p>
+
+                    <a href="@Url.Action("RegisterCourses", "CourseRegistration")" class="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
+                        <i class="material-icons text-sm mr-2">arrow_back</i>
+                        Return to Registration
+                    </a>
+                </div>
+            }
+            else if (!Model.Any())
+            {
+                <div class="flex items-center gap-2 p-4 bg-amber-50 text-amber-800 rounded-lg">
+                    <i class="material-icons">warning</i>
+                    <p>You are not registered for any courses at this time.</p>
+                </div>
+            }
+            else
+            {
+                <!-- Course Categories -->
+                <div class="mb-8">
+                    <div class="flex items-center mb-6">
+                        <i class="material-icons mr-2 text-blue-600">star</i>
+                        <h2 class="text-xl font-semibold text-slate-800">Mandatory Courses</h2>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        @foreach (var course in Model.Where(c => c.IsMandatory))
+                        {
+                            <a href="@Url.Action("ViewCourseContent", "Course", new { id = course.Id })"
+                               class="block group">
+                                <div class="bg-white border border-blue-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition-all duration-300 h-full flex flex-col">
+                                    <div class="flex justify-between mb-3">
+                                        <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+                                            @course.CourseCode
+                                        </span>
+                                        <span class="text-slate-400 group-hover:text-blue-500 transition-colors">
+                                            <i class="material-icons">arrow_forward</i>
+                                        </span>
+                                    </div>
+                                    <h3 class="text-lg font-semibold text-slate-800 mb-2 group-hover:text-blue-600 transition-colors">
+                                        @course.CourseName
+                                    </h3>
+                                    <p class="text-slate-600 text-sm flex-grow mb-4">
+                                        @course.CourseDescription
+                                    </p>
+                                    <div class="mt-auto">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-xs font-medium text-slate-500">
+                                                Semester @course.Semester
+                                            </span>
+                                            <span class="inline-flex items-center px-2 py-1 rounded bg-blue-50 text-blue-700 text-xs">
+                                                <i class="material-icons text-xs mr-1">star</i>
+                                                Mandatory
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        }
+                    </div>
+                </div>
+
+                <!-- Elective Courses -->
+                <div>
+                    <div class="flex items-center mb-6">
+                        <i class="material-icons mr-2 text-green-600">library_books</i>
+                        <h2 class="text-xl font-semibold text-slate-800">Elective Courses</h2>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        @foreach (var course in Model.Where(c => !c.IsMandatory))
+                        {
+                            <a href="@Url.Action("ViewCourseContent", "Course", new { id = course.Id })"
+                               class="block group">
+                                <div class="bg-white border border-green-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-green-300 transition-all duration-300 h-full flex flex-col">
+                                    <div class="flex justify-between mb-3">
+                                        <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                                            @course.CourseCode
+                                        </span>
+                                        <span class="text-slate-400 group-hover:text-green-500 transition-colors">
+                                            <i class="material-icons">arrow_forward</i>
+                                        </span>
+                                    </div>
+                                    <h3 class="text-lg font-semibold text-slate-800 mb-2 group-hover:text-green-600 transition-colors">
+                                        @course.CourseName
+                                    </h3>
+                                    <p class="text-slate-600 text-sm flex-grow mb-4">
+                                        @course.CourseDescription
+                                    </p>
+                                    <div class="mt-auto">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-xs font-medium text-slate-500">
+                                                Semester @course.Semester
+                                            </span>
+                                            <span class="inline-flex items-center px-2 py-1 rounded bg-green-50 text-green-700 text-xs">
+                                                <i class="material-icons text-xs mr-1">bookmark</i>
+                                                Elective
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>

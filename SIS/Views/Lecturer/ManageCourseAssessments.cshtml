@@ -1,0 +1,861 @@
+﻿@model SIS.Models.Lecturer.ManageCourseAssessmentsViewModel
+
+@{
+    ViewData["Title"] = "Manage Course Assessments";
+}
+
+<div class="min-h-screen bg-gray-50 p-6">
+    <!-- Header Section -->
+    <div class="mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <div class="flex items-center mb-2">
+                    <a href="@Url.Action("CourseContent", new { id = Model.CourseId })" 
+                       class="text-gray-600 hover:text-gray-800 mr-2">
+                        <i class="material-icons">arrow_back</i>
+                    </a>
+                    <h1 class="text-3xl font-bold text-gray-800">Manage Course Assessments</h1>
+                </div>
+                <div class="text-gray-600">
+                    <span class="font-semibold">@Model.CourseCode</span> - @Model.CourseName
+                </div>
+                <div class="text-sm text-gray-500">
+                    @Model.DepartmentName | @Model.ProgrammeName
+                </div>
+            </div>
+            <div>
+                <a href="/Admin/Assessments" 
+                   class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                   target="_blank">
+                    <i class="material-icons mr-2 text-sm">settings</i>
+                    Manage Global Assessments
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Weight Status Card -->
+    <div class="mb-6">
+        @{
+            var statusColor = Model.WeightStatus == "perfect" ? "green" : 
+                            Model.WeightStatus == "under" ? "yellow" : "red";
+            var statusIcon = Model.WeightStatus == "perfect" ? "check_circle" : 
+                           Model.WeightStatus == "under" ? "warning" : "error";
+            var statusText = Model.WeightStatus == "perfect" ? "Perfect! Total weight is 100%" : 
+                           Model.WeightStatus == "under" ? $"Under weighted: {Model.TotalWeightPercentage}% (Need {100 - Model.TotalWeightPercentage}% more)" : 
+                           $"Over weighted: {Model.TotalWeightPercentage}% (Reduce by {Model.TotalWeightPercentage - 100}%)";
+        }
+        
+        <div class="bg-@(statusColor)-50 border-l-4 border-@(statusColor)-500 p-4 rounded-lg">
+            <div class="flex items-center">
+                <i class="material-icons text-@(statusColor)-600 mr-3 text-2xl">@statusIcon</i>
+                <div class="flex-1">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="font-semibold text-@(statusColor)-800">Total Assessment Weight</h3>
+                            <p class="text-@(statusColor)-700">@statusText</p>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-3xl font-bold text-@(statusColor)-800" id="totalWeightDisplay">
+                                @Model.TotalWeightPercentage<span class="text-xl">%</span>
+                            </div>
+                            <div class="text-sm text-@(statusColor)-600">of 100%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Current Assessments Section -->
+        <div class="bg-white rounded-lg shadow-sm">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+                        <i class="material-icons mr-2 text-blue-600">assignment_turned_in</i>
+                        Current Assessments
+                        <span class="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
+                            @Model.CurrentAssessments.Count
+                        </span>
+                    </h2>
+                </div>
+            </div>
+            
+            <div class="p-6" id="currentAssessmentsContainer">
+                @if (Model.CurrentAssessments.Any())
+                {
+                    <div class="space-y-3">
+                        @foreach (var assessment in Model.CurrentAssessments)
+                        {
+                            <div class="assessment-card border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow" 
+                                 data-assessment-id="@assessment.Id">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <div class="flex items-center mb-2">
+                                            <h3 class="font-semibold text-gray-800 text-lg">@assessment.Name</h3>
+                                            <span class="ml-3 px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
+                                                @assessment.Type
+                                            </span>
+                                        </div>
+                                        @if (!string.IsNullOrEmpty(assessment.Description))
+                                        {
+                                            <p class="text-sm text-gray-600 mb-2">@assessment.Description</p>
+                                        }
+                                        <div class="flex items-center text-sm text-gray-500 space-x-4">
+                                            <span class="flex items-center">
+                                                <i class="material-icons text-xs mr-1">percent</i>
+                                                Weight: <strong class="ml-1">@assessment.WeightPercentage%</strong>
+                                            </span>
+                                            <span class="flex items-center">
+                                                <i class="material-icons text-xs mr-1">grade</i>
+                                                Pass Mark: <strong class="ml-1">@assessment.PassMark%</strong>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <button type="button" 
+                                            onclick="removeAssessment(@assessment.Id, '@assessment.Name')"
+                                            class="ml-4 p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                            title="Remove from course">
+                                        <i class="material-icons">delete_outline</i>
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-12" id="noCurrentAssessments">
+                        <i class="material-icons text-gray-400 text-5xl mb-3">assignment</i>
+                        <p class="text-gray-500">No assessments linked to this course yet.</p>
+                        <p class="text-sm text-gray-400 mt-1">Add assessments from the available list →</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Available Assessments Section -->
+        <div class="bg-white rounded-lg shadow-sm">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+                        <i class="material-icons mr-2 text-green-600">add_circle_outline</i>
+                        Available Assessments
+                        <span class="ml-2 px-2 py-1 bg-green-100 text-green-800 text-sm rounded-full" id="availableCount">
+                            @Model.AvailableAssessments.Count
+                        </span>
+                    </h2>
+                </div>
+                
+                <!-- Search and Create -->
+                <div class="flex gap-2">
+                    <div class="flex-1 relative">
+                        <input type="text" 
+                               id="searchAvailable" 
+                               placeholder="Search assessments..."
+                               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <i class="material-icons absolute left-3 top-2.5 text-gray-400 text-sm">search</i>
+                    </div>
+                    <button type="button" 
+                            onclick="openCreateModal()"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+                        <i class="material-icons mr-1 text-sm">add</i>
+                        Create New
+                    </button>
+                </div>
+            </div>
+            
+            <div class="p-6 max-h-[600px] overflow-y-auto" id="availableAssessmentsContainer">
+                @if (Model.AvailableAssessments.Any())
+                {
+                    <div class="space-y-3" id="availableAssessmentsList">
+                        @foreach (var assessment in Model.AvailableAssessments)
+                        {
+                            <div class="assessment-card border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow searchable-assessment" 
+                                 data-assessment-id="@assessment.Id"
+                                 data-name="@assessment.Name.ToLower()"
+                                 data-type="@assessment.Type.ToLower()">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <div class="flex items-center mb-2">
+                                            <h3 class="font-semibold text-gray-800">@assessment.Name</h3>
+                                            <span class="ml-3 px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
+                                                @assessment.Type
+                                            </span>
+                                        </div>
+                                        @if (!string.IsNullOrEmpty(assessment.Description))
+                                        {
+                                            <p class="text-sm text-gray-600 mb-2">@assessment.Description</p>
+                                        }
+                                        <div class="flex items-center text-sm text-gray-500 space-x-4">
+                                            <span class="flex items-center">
+                                                <i class="material-icons text-xs mr-1">percent</i>
+                                                Weight: <strong class="ml-1">@assessment.WeightPercentage%</strong>
+                                            </span>
+                                            <span class="flex items-center">
+                                                <i class="material-icons text-xs mr-1">grade</i>
+                                                Pass Mark: <strong class="ml-1">@assessment.PassMark%</strong>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <button type="button" 
+                                            onclick="addAssessment(@assessment.Id, '@assessment.Name', @assessment.WeightPercentage)"
+                                            class="ml-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center">
+                                        <i class="material-icons mr-1 text-sm">add</i>
+                                        Add
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-12">
+                        <i class="material-icons text-gray-400 text-5xl mb-3">check_circle</i>
+                        <p class="text-gray-500">All available assessments have been added to this course.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Assessment Modal -->
+<div id="createAssessmentModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+    
+    <div class="flex min-h-full items-center justify-center p-4">
+        <div class="relative bg-white rounded-lg shadow-xl w-full max-w-2xl">
+            <!-- Modal Header -->
+            <div class="px-6 py-4 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xl font-semibold text-gray-900">Create New Assessment</h3>
+                    <button type="button" 
+                            onclick="closeCreateModal()" 
+                            class="text-gray-400 hover:text-gray-500">
+                        <i class="material-icons">close</i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal Body -->
+            <form id="createAssessmentForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="CourseId" value="@Model.CourseId" />
+                
+                <div class="px-6 py-4 space-y-4">
+                    <!-- Name -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Assessment Name <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" 
+                               name="Name" 
+                               required
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                               placeholder="e.g., Final Exam, Assignment 1">
+                    </div>
+
+                    <!-- Type and Weight -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Type <span class="text-red-500">*</span>
+                            </label>
+                            <select name="Type" 
+                                    required
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">Select Type</option>
+                                <option value="Exam">Exam</option>
+                                <option value="Test">Test</option>
+                                <option value="Assignment">Assignment</option>
+                                <option value="Project">Project</option>
+                                <option value="Quiz">Quiz</option>
+                                <option value="Practical">Practical</option>
+                                <option value="Presentation">Presentation</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Weight (%) <span class="text-red-500">*</span>
+                            </label>
+                            <input type="number" 
+                                   name="WeightPercentage" 
+                                   required
+                                   min="0" 
+                                   max="100" 
+                                   step="1"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="e.g., 50">
+                        </div>
+                    </div>
+
+                    <!-- Pass Mark -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Pass Mark (%)
+                        </label>
+                        <input type="number" 
+                               name="PassMark" 
+                               min="0" 
+                               max="100" 
+                               step="1"
+                               value="50"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <!-- Description -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Description
+                        </label>
+                        <textarea name="Description" 
+                                  rows="3"
+                                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  placeholder="Optional description or instructions"></textarea>
+                    </div>
+
+                    <!-- Additional Options -->
+                    <div class="space-y-2">
+                        <label class="flex items-center">
+                            <input type="checkbox" 
+                                   name="RequiresSubmission" 
+                                   class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                            <span class="ml-2 text-sm text-gray-700">Requires Submission</span>
+                        </label>
+
+                        <label class="flex items-center">
+                            <input type="checkbox" 
+                                   name="AllowResit" 
+                                   class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                            <span class="ml-2 text-sm text-gray-700">Allow Resit/Retake</span>
+                        </label>
+                    </div>
+
+                    <!-- Maximum Resit Mark (conditional) -->
+                    <div id="resitMarkContainer" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Maximum Resit Mark (%)
+                        </label>
+                        <input type="number" 
+                               name="MaximumResitMark" 
+                               min="0" 
+                               max="100" 
+                               step="1"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                               placeholder="e.g., 50">
+                    </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-end space-x-2">
+                    <button type="button"
+                            onclick="closeCreateModal()"
+                            class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+                        <i class="material-icons mr-1 text-sm">add</i>
+                        Create and Add to Course
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+
+
+   
+</div>
+
+<!-- Confirmation Modal -->
+<div id="confirmationModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+
+    <div class="flex min-h-full items-center justify-center p-4">
+        <div class="relative bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div class="p-6">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <i class="material-icons text-red-600 text-3xl">warning</i>
+                    </div>
+                    <div class="ml-4 flex-1">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Confirm Removal</h3>
+                        <p class="text-gray-600" id="confirmationMessage"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-end space-x-2">
+                <button type="button"
+                        onclick="closeConfirmationModal()"
+                        class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                    Cancel
+                </button>
+                <button type="button"
+                        id="confirmButton"
+                        class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center">
+                    <i class="material-icons mr-1 text-sm">delete</i>
+                    Remove
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Global variables
+        const courseId = @Model.CourseId;
+        let totalWeight = @Model.TotalWeightPercentage;
+
+        // ========================================================================
+        // SEARCH FUNCTIONALITY
+        // ========================================================================
+        document.getElementById('searchAvailable').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase().trim();
+            const assessmentCards = document.querySelectorAll('.searchable-assessment');
+            let visibleCount = 0;
+
+            assessmentCards.forEach(card => {
+                const name = card.dataset.name;
+                const type = card.dataset.type;
+
+                if (name.includes(searchTerm) || type.includes(searchTerm)) {
+                    card.style.display = '';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            // Update available count
+            document.getElementById('availableCount').textContent = visibleCount;
+        });
+
+        // ========================================================================
+        // ADD ASSESSMENT TO COURSE
+        // ========================================================================
+        async function addAssessment(assessmentId, assessmentName, weightPercentage) {
+            try {
+                // Get anti-forgery token
+                const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+                // Show loading state
+                const button = event.target.closest('button');
+                const originalContent = button.innerHTML;
+                button.innerHTML = '<i class="material-icons animate-spin text-sm">hourglass_empty</i> Adding...';
+                button.disabled = true;
+
+                const response = await fetch('/Lecturer/AddAssessmentToCourse', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    },
+                    body: JSON.stringify({
+                        courseId: courseId,
+                        assessmentId: assessmentId
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Update total weight
+                    totalWeight = result.totalWeight;
+                    updateWeightDisplay(result.totalWeight, result.weightStatus);
+
+                    // Move assessment card to current assessments
+                    const assessmentCard = document.querySelector(`[data-assessment-id="${assessmentId}"]`);
+                    if (assessmentCard) {
+                        // Remove from available
+                        assessmentCard.remove();
+
+                        // Add to current
+                        addToCurrentAssessments(result.assessment);
+
+                        // Update counts
+                        updateCounts();
+                    }
+
+                    showNotification('success', result.message);
+                } else {
+                    showNotification('error', result.message);
+                    button.innerHTML = originalContent;
+                    button.disabled = false;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification('error', 'An error occurred while adding the assessment');
+                button.innerHTML = originalContent;
+                button.disabled = false;
+            }
+        }
+
+        // ========================================================================
+        // REMOVE ASSESSMENT FROM COURSE
+        // ========================================================================
+               async function removeAssessment(assessmentId, assessmentName) {
+            return new Promise((resolve) => {
+                // Show confirmation modal
+                const modal = document.getElementById('confirmationModal');
+                const message = document.getElementById('confirmationMessage');
+                const confirmButton = document.getElementById('confirmButton');
+
+                message.textContent = `Are you sure you want to remove "${assessmentName}" from this course?`;
+                modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+
+                // Handle confirmation
+                const handleConfirm = async () => {
+                    closeConfirmationModal();
+                    confirmButton.removeEventListener('click', handleConfirm);
+
+                    try {
+                        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+                        const response = await fetch('/Lecturer/RemoveAssessmentFromCourse', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'RequestVerificationToken': token
+                            },
+                            body: JSON.stringify({
+                                courseId: courseId,
+                                assessmentId: assessmentId
+                            })
+                        });
+
+                        const result = await response.json();
+
+                        if (result.success) {
+                            totalWeight = result.totalWeight;
+                            updateWeightDisplay(result.totalWeight, result.weightStatus);
+
+                            const assessmentCard = document.querySelector(`#currentAssessmentsContainer [data-assessment-id="${assessmentId}"]`);
+                            if (assessmentCard) {
+                                assessmentCard.remove();
+                            }
+
+                            const currentContainer = document.getElementById('currentAssessmentsContainer');
+                            if (currentContainer.querySelectorAll('.assessment-card').length === 0) {
+                                currentContainer.innerHTML = `
+                                    <div class="text-center py-12" id="noCurrentAssessments">
+                                        <i class="material-icons text-gray-400 text-5xl mb-3">assignment</i>
+                                        <p class="text-gray-500">No assessments linked to this course yet.</p>
+                                        <p class="text-sm text-gray-400 mt-1">Add assessments from the available list →</p>
+                                    </div>
+                                `;
+                            }
+
+                            showNotification('success', result.message + ' - Refreshing page...');
+                            setTimeout(() => location.reload(), 1500);
+                        } else {
+                            showNotification('error', result.message);
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        showNotification('error', 'An error occurred while removing the assessment');
+                    }
+                };
+
+                confirmButton.addEventListener('click', handleConfirm);
+            });
+        }
+
+        function closeConfirmationModal() {
+            const modal = document.getElementById('confirmationModal');
+            modal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        // ========================================================================
+        // CREATE ASSESSMENT MODAL
+        // ========================================================================
+        function openCreateModal() {
+            document.getElementById('createAssessmentModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeCreateModal() {
+            document.getElementById('createAssessmentModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+            document.getElementById('createAssessmentForm').reset();
+        }
+
+        // Toggle resit mark field
+        document.querySelector('input[name="AllowResit"]').addEventListener('change', function() {
+            const resitMarkContainer = document.getElementById('resitMarkContainer');
+            if (this.checked) {
+                resitMarkContainer.classList.remove('hidden');
+            } else {
+                resitMarkContainer.classList.add('hidden');
+            }
+        });
+
+        // Handle form submission
+        document.getElementById('createAssessmentForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            try {
+                // Get form data
+                const formData = new FormData(this);
+                const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+                // Convert to JSON
+                const data = {
+                    courseId: parseInt(formData.get('CourseId')),
+                    name: formData.get('Name'),
+                    type: formData.get('Type'),
+                    weightPercentage: parseFloat(formData.get('WeightPercentage')),
+                    passMark: formData.get('PassMark') ? parseFloat(formData.get('PassMark')) : 50,
+                    description: formData.get('Description') || '',
+                    requiresSubmission: formData.get('RequiresSubmission') === 'on',
+                    allowResit: formData.get('AllowResit') === 'on',
+                    maximumResitMark: formData.get('MaximumResitMark') ? parseFloat(formData.get('MaximumResitMark')) : null
+                };
+
+                // Show loading state
+                const submitButton = this.querySelector('button[type="submit"]');
+                const originalContent = submitButton.innerHTML;
+                submitButton.innerHTML = '<i class="material-icons animate-spin text-sm mr-1">hourglass_empty</i> Creating...';
+                submitButton.disabled = true;
+
+                const response = await fetch('/Lecturer/CreateAndLinkAssessment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Update total weight
+                    totalWeight = result.totalWeight;
+                    updateWeightDisplay(result.totalWeight, result.weightStatus);
+
+                    // Add to current assessments
+                    addToCurrentAssessments(result.assessment);
+
+                    // Update counts
+                    updateCounts();
+
+                    // Close modal and reset form
+                    closeCreateModal();
+                    showNotification('success', result.message);
+                } else {
+                    showNotification('error', result.message);
+                    submitButton.innerHTML = originalContent;
+                    submitButton.disabled = false;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification('error', 'An error occurred while creating the assessment');
+                submitButton.innerHTML = originalContent;
+                submitButton.disabled = false;
+            }
+        });
+
+        // ========================================================================
+        // HELPER FUNCTIONS
+        // ========================================================================
+        function addToCurrentAssessments(assessment) {
+            const currentContainer = document.getElementById('currentAssessmentsContainer');
+
+            // Remove "no assessments" message if exists
+            const noAssessmentsMsg = document.getElementById('noCurrentAssessments');
+            if (noAssessmentsMsg) {
+                noAssessmentsMsg.remove();
+            }
+
+            // Create or get the assessments list
+            let assessmentsList = currentContainer.querySelector('.space-y-3');
+            if (!assessmentsList) {
+                assessmentsList = document.createElement('div');
+                assessmentsList.className = 'space-y-3';
+                currentContainer.appendChild(assessmentsList);
+            }
+
+            // Create new assessment card
+            const card = document.createElement('div');
+            card.className = 'assessment-card border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow';
+            card.setAttribute('data-assessment-id', assessment.id);
+            card.innerHTML = `
+                <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                        <div class="flex items-center mb-2">
+                            <h3 class="font-semibold text-gray-800 text-lg">${assessment.name}</h3>
+                            <span class="ml-3 px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
+                                ${assessment.type}
+                            </span>
+                        </div>
+                        <div class="flex items-center text-sm text-gray-500 space-x-4">
+                            <span class="flex items-center">
+                                <i class="material-icons text-xs mr-1">percent</i>
+                                Weight: <strong class="ml-1">${assessment.weightPercentage}%</strong>
+                            </span>
+                            <span class="flex items-center">
+                                <i class="material-icons text-xs mr-1">grade</i>
+                                Pass Mark: <strong class="ml-1">${assessment.passMark}%</strong>
+                            </span>
+                        </div>
+                    </div>
+                    <button type="button"
+                            onclick="removeAssessment(${assessment.id}, '${assessment.name}')"
+                            class="ml-4 p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Remove from course">
+                        <i class="material-icons">delete_outline</i>
+                    </button>
+                </div>
+            `;
+
+            assessmentsList.appendChild(card);
+        }
+
+        function updateWeightDisplay(weight, status) {
+            const weightDisplay = document.getElementById('totalWeightDisplay');
+            const weightCard = weightDisplay.closest('.bg-green-50, .bg-yellow-50, .bg-red-50');
+
+            // Update weight value
+            weightDisplay.innerHTML = `${weight.toFixed(1)}<span class="text-xl">%</span>`;
+
+            // Determine status colors and messages
+            let statusColor, statusIcon, statusText;
+
+            if (status === 'perfect') {
+                statusColor = 'green';
+                statusIcon = 'check_circle';
+                statusText = 'Perfect! Total weight is 100%';
+            } else if (status === 'under') {
+                statusColor = 'yellow';
+                statusIcon = 'warning';
+                const needed = (100 - weight).toFixed(1);
+                statusText = `Under weighted: ${weight.toFixed(1)}% (Need ${needed}% more)`;
+            } else {
+                statusColor = 'red';
+                statusIcon = 'error';
+                const excess = (weight - 100).toFixed(1);
+                statusText = `Over weighted: ${weight.toFixed(1)}% (Reduce by ${excess}%)`;
+            }
+
+            // Update the entire weight status card
+            const parentCard = weightDisplay.closest('.bg-green-50, .bg-yellow-50, .bg-red-50').parentElement;
+            parentCard.innerHTML = `
+                <div class="bg-${statusColor}-50 border-l-4 border-${statusColor}-500 p-4 rounded-lg">
+                    <div class="flex items-center">
+                        <i class="material-icons text-${statusColor}-600 mr-3 text-2xl">${statusIcon}</i>
+                        <div class="flex-1">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="font-semibold text-${statusColor}-800">Total Assessment Weight</h3>
+                                    <p class="text-${statusColor}-700">${statusText}</p>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-3xl font-bold text-${statusColor}-800" id="totalWeightDisplay">
+                                        ${weight.toFixed(1)}<span class="text-xl">%</span>
+                                    </div>
+                                    <div class="text-sm text-${statusColor}-600">of 100%</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function updateCounts() {
+            // Update current assessments count
+            const currentCount = document.querySelectorAll('#currentAssessmentsContainer .assessment-card').length;
+            const currentBadge = document.querySelector('#currentAssessmentsContainer').closest('.bg-white').querySelector('.bg-blue-100');
+            if (currentBadge) {
+                currentBadge.textContent = currentCount;
+            }
+
+            // Update available assessments count
+            const availableCount = document.querySelectorAll('#availableAssessmentsContainer .assessment-card').length;
+            const availableBadge = document.getElementById('availableCount');
+            if (availableBadge) {
+                availableBadge.textContent = availableCount;
+            }
+        }
+
+        function showNotification(type, message) {
+            const iconMap = {
+                'success': 'check_circle',
+                'error': 'error',
+                'warning': 'warning',
+                'info': 'info'
+            };
+
+            const colorMap = {
+                'success': 'bg-green-100 border-green-500 text-green-700',
+                'error': 'bg-red-100 border-red-500 text-red-700',
+                'warning': 'bg-yellow-100 border-yellow-500 text-yellow-700',
+                'info': 'bg-blue-100 border-blue-500 text-blue-700'
+            };
+
+            const notification = document.createElement('div');
+            notification.className = `fixed bottom-4 right-4 ${colorMap[type]} border-l-4 p-4 rounded-lg shadow-xl z-50 max-w-md`;
+            notification.innerHTML = `
+                <div class="flex items-center">
+                    <i class="material-icons mr-2">${iconMap[type]}</i>
+                    <p class="font-medium">${message}</p>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-current hover:opacity-70">
+                        <i class="material-icons text-sm">close</i>
+                    </button>
+                </div>
+            `;
+
+            document.body.appendChild(notification);
+
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 5000);
+        }
+
+        // ========================================================================
+        // CLOSE MODAL ON BACKGROUND CLICK
+        // ========================================================================
+        document.getElementById('createAssessmentModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeCreateModal();
+            }
+        });
+
+        // ========================================================================
+        // KEYBOARD SHORTCUTS
+        // ========================================================================
+        document.addEventListener('keydown', function(e) {
+                    // ESC to close modal
+        if (e.key === 'Escape') {
+            const createModal = document.getElementById('createAssessmentModal');
+            const confirmModal = document.getElementById('confirmationModal');
+
+            if (!createModal.classList.contains('hidden')) {
+                closeCreateModal();
+            } else if (!confirmModal.classList.contains('hidden')) {
+                closeConfirmationModal();
+            }
+        }
+
+            // Ctrl/Cmd + K to focus search
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                document.getElementById('searchAvailable').focus();
+            }
+        });
+    </script>
+}

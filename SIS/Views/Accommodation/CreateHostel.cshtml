@@ -1,0 +1,157 @@
+﻿@model SIS.Models.StudentAccommodation.Hostel
+@using SIS.Enums
+@{
+    ViewData["Title"] = "Create New Hostel";
+}
+
+@section Styles {
+    <!-- (optional) any page-specific css -->
+}
+
+<div class="container-fluid">
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Create New Hostel</h6>
+        </div>
+        <div class="card-body">
+            <form asp-action="CreateHostel" method="post" class="needs-validation" novalidate>
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                <!-- Hostel name -->
+                <div class="form-group row">
+                    <label asp-for="HostelName" class="col-sm-3 col-form-label"></label>
+                    <div class="col-sm-9">
+                        <input asp-for="HostelName" class="form-control" required />
+                        <span asp-validation-for="HostelName" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <!-- Gender -->
+                <div class="form-group row">
+                    <label asp-for="Gender" class="col-sm-3 col-form-label"></label>
+                    <div class="col-sm-9">
+                        <select asp-for="Gender" class="form-control" required>
+                            <option value="">Select Gender Type</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Mixed">Mixed</option>
+                        </select>
+                        <span asp-validation-for="Gender" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <!-- Campus -->
+                <div class="form-group row">
+                    <label asp-for="CampusId" class="col-sm-3 col-form-label"></label>
+                    <div class="col-sm-9">
+                        <select asp-for="CampusId" class="form-control" asp-items="ViewBag.Campuses" required>
+                            <option value="">-- Select Campus --</option>
+                        </select>
+                        <span asp-validation-for="CampusId" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <!-- Warden -->
+                <div class="form-group row">
+                    <label asp-for="WardenId" class="col-sm-3 col-form-label"></label>
+                    <div class="col-sm-9">
+                        <select asp-for="WardenId" class="form-control" asp-items="ViewBag.Wardens">
+                            <option value="">-- Select Warden (optional) --</option>
+                        </select>
+                        <span asp-validation-for="WardenId" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <!-- Total Rooms -->
+                <div class="form-group row">
+                    <label asp-for="TotalRooms" class="col-sm-3 col-form-label"></label>
+                    <div class="col-sm-9">
+                        <input asp-for="TotalRooms" class="form-control" min="1" required />
+                        <span asp-validation-for="TotalRooms" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <!-- Default Room Type -->
+                <div class="form-group row">
+                    <label asp-for="DefaultRoomType" class="col-sm-3 col-form-label"></label>
+                    <div class="col-sm-9">
+                        <input asp-for="DefaultRoomType" class="form-control" placeholder="e.g. Single" />
+                        <span asp-validation-for="DefaultRoomType" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <!-- Default Capacity per room -->
+                <div class="form-group row">
+                    <label asp-for="DefaultCapacity" class="col-sm-3 col-form-label"></label>
+                    <div class="col-sm-9">
+                        <input asp-for="DefaultCapacity" class="form-control" min="1" />
+                        <span asp-validation-for="DefaultCapacity" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <!-- Rooms Per Floor -->
+                <div class="form-group row">
+                    <label asp-for="RoomsPerFloor" class="col-sm-3 col-form-label"></label>
+                    <div class="col-sm-9">
+                        <input asp-for="RoomsPerFloor" class="form-control" min="1" />
+                        <span asp-validation-for="RoomsPerFloor" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <!-- Room Numbering Pattern -->
+                <div class="form-group row">
+                    <label asp-for="RoomNumberingPattern" class="col-sm-3 col-form-label"></label>
+                    <div class="col-sm-9">
+                        <input asp-for="RoomNumberingPattern" class="form-control" placeholder="F{0}R{1}" />
+                        <small class="form-text text-muted">{0} = floor number, {1} = room index</small>
+                        <span asp-validation-for="RoomNumberingPattern" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <!-- Auto Generate Beds -->
+                <div class="form-group row">
+                    <label class="col-sm-3 col-form-label">Auto Generate Beds?</label>
+                    <div class="col-sm-9">
+                        <div class="form-check">
+                            <input asp-for="AutoGenerateBeds" class="form-check-input" />
+                            <label asp-for="AutoGenerateBeds" class="form-check-label"></label>
+                        </div>
+                        <span asp-validation-for="AutoGenerateBeds" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <!-- Status -->
+                <div class="form-group row">
+                    <label asp-for="Status" class="col-sm-3 col-form-label"></label>
+                    <div class="col-sm-9">
+                        <select asp-for="Status" class="form-control" asp-items="Html.GetEnumSelectList<SIS.Enums.Status>()" required>
+                            <option value="">-- Select Status --</option>
+                        </select>
+                        <span asp-validation-for="Status" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div class="form-group row">
+                    <label asp-for="Description" class="col-sm-3 col-form-label"></label>
+                    <div class="col-sm-9">
+                        <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                        <span asp-validation-for="Description" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <!-- Buttons -->
+                <div class="form-group row">
+                    <div class="col-sm-9 offset-sm-3">
+                        <button type="submit" class="btn btn-primary">Create</button>
+                        <a asp-action="Hostels" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

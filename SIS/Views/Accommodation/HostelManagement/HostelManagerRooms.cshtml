@@ -1,0 +1,1427 @@
+@{
+    ViewData["Title"] = "Room Management";
+    var hostel = ViewBag.Hostel as SIS.Models.StudentAccommodation.Hostel;
+    var resourceTypes = ViewBag.ResourceTypes as List<SIS.Models.StudentAccommodation.ResourceType> ?? new List<SIS.Models.StudentAccommodation.ResourceType>();
+}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+    :root {
+        --teal-primary: #0d9488;
+        --teal-hover: #0f766e;
+    }
+
+    .room-card {
+        transition: all 0.3s ease;
+        cursor: pointer;
+        border-left: 4px solid transparent;
+    }
+
+        .room-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(13, 148, 136, 0.2);
+            border-left-color: var(--teal-primary);
+        }
+
+        .room-card.active {
+            border-left-color: #10b981;
+        }
+
+        .room-card.inactive {
+            border-left-color: #6b7280;
+        }
+
+        .room-card.maintenance {
+            border-left-color: #f59e0b;
+        }
+
+    .bed-card {
+        border: 2px solid #e5e7eb;
+        border-radius: 0.75rem;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        transition: all 0.3s;
+        background: white;
+    }
+
+        .bed-card:hover {
+            border-color: var(--teal-primary);
+            box-shadow: 0 4px 12px rgba(13, 148, 136, 0.15);
+        }
+
+        .bed-card.occupied {
+            border-left: 4px solid #10b981;
+            background: rgba(16, 185, 129, 0.02);
+        }
+
+        .bed-card.available, .bed-card.active {
+            border-left: 4px solid #0ea5e9;
+            background: rgba(14, 165, 233, 0.02);
+        }
+
+    .modal-overlay {
+        position: fixed !important;
+        inset: 0 !important;
+        z-index: 9998 !important;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+    }
+
+        .modal-overlay.hidden {
+            display: none !important;
+        }
+
+    .student-info-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-top: 0.5rem;
+    }
+
+    .tab-button {
+        padding: 1rem 1.5rem;
+        border-bottom: 2px solid transparent;
+        font-weight: 500;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+
+        .tab-button.active {
+            border-bottom-color: var(--teal-primary);
+            color: var(--teal-primary);
+        }
+
+        .tab-button:not(.active) {
+            color: #6b7280;
+        }
+
+            .tab-button:not(.active):hover {
+                color: #374151;
+                background: #f9fafb;
+            }
+
+    .resource-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1rem;
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+        .resource-item:hover {
+            background: #f9fafb;
+            border-color: var(--teal-primary);
+        }
+
+        .resource-item button {
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            transition: all 0.2s;
+            min-width: 36px;
+            min-height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid currentColor;
+            background: white;
+        }
+
+            .resource-item button:hover {
+                background: rgba(0, 0, 0, 0.05);
+                transform: scale(1.1);
+            }
+
+    .bed-card button {
+        padding: 0.5rem;
+        border-radius: 0.375rem;
+        transition: all 0.2s;
+        min-width: 36px;
+        min-height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid currentColor;
+        background: white;
+    }
+
+        .bed-card button:hover {
+            background: rgba(0, 0, 0, 0.05);
+            transform: scale(1.1);
+        }
+
+    .bulk-resource-item {
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .resource-type-info {
+        display: inline-block;
+        padding: 0.375rem 0.75rem;
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        color: #1e40af;
+    }
+
+    .maintenance-card {
+        border: 2px solid #e5e7eb;
+        border-radius: 0.75rem;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        transition: all 0.3s;
+    }
+
+        .maintenance-card:hover {
+            border-color: var(--teal-primary);
+            box-shadow: 0 4px 12px rgba(13, 148, 136, 0.15);
+        }
+
+        .maintenance-card.low-priority {
+            border-left: 4px solid #10b981;
+        }
+
+        .maintenance-card.medium-priority {
+            border-left: 4px solid #f59e0b;
+        }
+
+        .maintenance-card.high-priority {
+            border-left: 4px solid #ef4444;
+        }
+</style>
+
+<div class="container mx-auto px-4 py-6">
+    @Html.AntiForgeryToken()
+
+    <!-- Header -->
+    <div class="mb-6">
+        <div class="bg-gradient-to-r from-teal-600 to-cyan-600 rounded-xl shadow-lg p-6 text-white">
+            <div class="flex justify-between items-center flex-wrap gap-4">
+                <div>
+                    <h4 class="text-2xl font-bold mb-2">
+                        <i class="fas fa-door-open me-2"></i>Room Management
+                    </h4>
+                    <p class="text-teal-100">@hostel.HostelName - @hostel.Campus.CampusName</p>
+                </div>
+                <div>
+                    <a href="@Url.Action("Index", "HostelManagement")" class="bg-white text-teal-700 hover:bg-teal-50 px-6 py-3 rounded-lg font-semibold shadow-md transition">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rooms Grid -->
+    <div id="roomsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+
+    <!-- Room Details Modal -->
+    <div id="roomDetailsModal" class="modal-overlay hidden">
+        <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <div class="bg-gradient-to-r from-teal-600 to-cyan-600 px-6 py-4 flex justify-between items-center">
+                <h5 class="text-xl font-bold text-white">
+                    <i class="fas fa-door-open me-2"></i>Room Details
+                </h5>
+                <button onclick="closeRoomDetailsModal()" class="text-white hover:text-gray-200 transition">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+                <!-- Tabs -->
+                <div class="border-b mb-6">
+                    <div class="flex space-x-1">
+                        <button class="tab-button active" onclick="switchTab('info')">
+                            <i class="fas fa-info-circle me-2"></i>Room Info
+                        </button>
+                        <button class="tab-button" onclick="switchTab('beds')">
+                            <i class="fas fa-bed me-2"></i>Bed Spaces
+                        </button>
+                        <button class="tab-button" onclick="switchTab('resources')">
+                            <i class="fas fa-couch me-2"></i>Resources
+                        </button>
+                        <button class="tab-button" onclick="switchTab('maintenance')">
+                            <i class="fas fa-tools me-2"></i>Maintenance
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tab Content -->
+                <div id="infoTab" class="tab-content">
+                    <div id="roomInfoContent"></div>
+                </div>
+
+                <div id="bedsTab" class="tab-content hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h6 class="text-lg font-semibold">Bed Spaces</h6>
+                        <button class="bg-teal-600 text-white hover:bg-teal-700 px-4 py-2 rounded-lg transition" onclick="showAddBedModal()">
+                            <i class="fas fa-plus me-2"></i>Add Bed
+                        </button>
+                    </div>
+                    <div id="bedSpacesContent"></div>
+                </div>
+
+                <div id="resourcesTab" class="tab-content hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h6 class="text-lg font-semibold">Room Resources</h6>
+                        <div class="flex gap-2">
+                            <button class="bg-purple-600 text-white hover:bg-purple-700 px-4 py-2 rounded-lg transition" onclick="showBulkResourceModal()">
+                                <i class="fas fa-layer-group me-2"></i>Bulk Add
+                            </button>
+                            <button class="bg-teal-600 text-white hover:bg-teal-700 px-4 py-2 rounded-lg transition" onclick="showAddResourceModal()">
+                                <i class="fas fa-plus me-2"></i>Add Resource
+                            </button>
+                        </div>
+                    </div>
+                    <div id="resourcesContent"></div>
+                </div>
+
+                <div id="maintenanceTab" class="tab-content hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h6 class="text-lg font-semibold">Maintenance Requests</h6>
+                        <button class="bg-teal-600 text-white hover:bg-teal-700 px-4 py-2 rounded-lg transition" onclick="showAddMaintenanceModal()">
+                            <i class="fas fa-plus me-2"></i>Add Request
+                        </button>
+                    </div>
+                    <div id="maintenanceContent"></div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-6 py-4 flex justify-end">
+                <button onclick="closeRoomDetailsModal()" class="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">
+                    <i class="fas fa-times me-2"></i>Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Bed Modal -->
+    <div id="addBedModal" class="modal-overlay hidden">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full">
+            <div class="bg-gradient-to-r from-teal-600 to-cyan-600 px-6 py-4 flex justify-between items-center">
+                <h5 class="text-xl font-bold text-white">Add Bed Space</h5>
+                <button onclick="hideAddBedModal()" class="text-white hover:text-gray-200 transition">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <form id="addBedForm">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Bed Identifier *</label>
+                            <input type="text" id="bedIdentifier" name="BedIdentifier" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500" placeholder="e.g., A, B, 1, 2" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Status *</label>
+                            <select id="bedStatus" name="Status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500" required>
+                                @if (ViewBag.StatusOptions != null)
+                                {
+                                    foreach (var status in ViewBag.StatusOptions)
+                                    {
+                                        <option value="@status.Value">@status.Text</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex justify-end space-x-3">
+                        <button type="button" onclick="hideAddBedModal()" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition">
+                            <i class="fas fa-plus me-2"></i>Add Bed
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Bed Modal -->
+    <div id="editBedModal" class="modal-overlay hidden">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full">
+            <div class="bg-gradient-to-r from-teal-600 to-cyan-600 px-6 py-4 flex justify-between items-center">
+                <h5 class="text-xl font-bold text-white">Edit Bed Space</h5>
+                <button onclick="hideEditBedModal()" class="text-white hover:text-gray-200 transition">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <form id="editBedForm">
+                    <input type="hidden" id="editBedId" name="BedId">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Bed Identifier *</label>
+                            <input type="text" id="editBedIdentifier" name="BedIdentifier" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Status *</label>
+                            <select id="editBedStatus" name="Status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500" required>
+                                @if (ViewBag.StatusOptions != null)
+                                {
+                                    foreach (var status in ViewBag.StatusOptions)
+                                    {
+                                        <option value="@status.Value">@status.Text</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex justify-end space-x-3">
+                        <button type="button" onclick="hideEditBedModal()" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition">
+                            <i class="fas fa-save me-2"></i>Update Bed
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Resource Modal -->
+    <div id="addResourceModal" class="modal-overlay hidden">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full">
+            <div class="bg-gradient-to-r from-teal-600 to-cyan-600 px-6 py-4 flex justify-between items-center">
+                <h5 id="resourceModalTitle" class="text-xl font-bold text-white">Add Resource</h5>
+                <button onclick="hideAddResourceModal()" class="text-white hover:text-gray-200 transition">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <form id="addResourceForm">
+                    <input type="hidden" id="resourceId" name="ResourceId" value="0">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Resource Type *</label>
+                            <select id="resourceTypeId" name="ResourceTypeId" onchange="showResourceTypeInfo(this)" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500" required>
+                                <option value="">Select Resource Type</option>
+                                @foreach (var rt in resourceTypes)
+                                {
+                                    <option value="@rt.ResourceTypeId" data-description="@rt.Description">@rt.Name</option>
+                                }
+                            </select>
+                            <div id="resourceTypeDescription" class="mt-2 hidden">
+                                <span class="resource-type-info"></span>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Quantity *</label>
+                            <input type="number" id="resourceQuantity" name="Quantity" min="1" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Status *</label>
+                            <select id="resourceStatus" name="Status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500" required>
+                                @if (ViewBag.StatusOptions != null)
+                                {
+                                    foreach (var status in ViewBag.StatusOptions)
+                                    {
+                                        <option value="@status.Value">@status.Text</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex justify-end space-x-3">
+                        <button type="button" onclick="hideAddResourceModal()" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition">
+                            <i class="fas fa-save me-2"></i>Save Resource
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Resource Modal -->
+    <div id="bulkResourceModal" class="modal-overlay hidden">
+        <div class="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden">
+            <div class="bg-gradient-to-r from-purple-600 to-purple-500 px-6 py-4 flex justify-between items-center">
+                <h5 class="text-xl font-bold text-white">
+                    <i class="fas fa-layer-group me-2"></i>Bulk Add Resources
+                </h5>
+                <button onclick="hideBulkResourceModal()" class="text-white hover:text-gray-200 transition">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+                <div class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p class="text-sm text-blue-800">
+                        <i class="fas fa-info-circle me-2"></i>Add multiple resources at once to the current room.
+                    </p>
+                </div>
+                <div id="bulkResourcesList"></div>
+                <button type="button" onclick="addBulkResourceRow()" class="w-full mt-4 px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-purple-500 hover:text-purple-600 transition">
+                    <i class="fas fa-plus-circle me-2"></i>Add Another Resource
+                </button>
+            </div>
+            <div class="bg-gray-50 px-6 py-4 flex justify-end space-x-3">
+                <button onclick="hideBulkResourceModal()" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+                    Cancel
+                </button>
+                <button onclick="handleBulkResourceSubmit()" class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
+                    <i class="fas fa-save me-2"></i>Save All Resources
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Maintenance Modal -->
+    <div id="maintenanceModal" class="modal-overlay hidden">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
+            <div class="bg-gradient-to-r from-teal-600 to-cyan-600 px-6 py-4 flex justify-between items-center">
+                <h5 id="maintenanceModalTitle" class="text-xl font-bold text-white">Add Maintenance Request</h5>
+                <button onclick="hideMaintenanceModal()" class="text-white hover:text-gray-200 transition">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+                <form id="maintenanceForm">
+                    <input type="hidden" id="maintenanceRequestId" name="RequestId" value="0">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Requested By *</label>
+                            <input type="text" id="maintenanceRequestedBy" name="RequestedBy" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500" placeholder="Student ID or Staff ID" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Requester Type *</label>
+                            <select id="maintenanceRequesterType" name="RequesterType" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500" required>
+                                <option value="">Select Type</option>
+                                <option value="Student">Student</option>
+                                <option value="Staff">Staff</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Description *</label>
+                            <textarea id="maintenanceDescription" name="Description" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500" placeholder="Describe the maintenance issue..." required></textarea>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Priority *</label>
+                                <select id="maintenancePriority" name="Priority" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500" required>
+                                    <option value="">Select Priority</option>
+                                    <option value="Low">Low</option>
+                                    <option value="Medium">Medium</option>
+                                    <option value="High">High</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Status *</label>
+                                <select id="maintenanceStatus" name="Status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500" required>
+                                    @if (ViewBag.StatusOptions != null)
+                                    {
+                                        foreach (var status in ViewBag.StatusOptions)
+                                        {
+                                            <option value="@status.Value">@status.Text</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <div id="resolutionNotesContainer" class="hidden">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Resolution Notes</label>
+                            <textarea id="maintenanceResolutionNotes" name="ResolutionNotes" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500" placeholder="Add resolution notes..."></textarea>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex justify-end space-x-3">
+                        <button type="button" onclick="hideMaintenanceModal()" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition">
+                            <i class="fas fa-save me-2"></i>Save Request
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal-overlay hidden">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full">
+            <div class="bg-gradient-to-r from-red-600 to-red-500 px-6 py-4">
+                <h5 class="text-xl font-bold text-white">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Confirm Delete
+                </h5>
+            </div>
+            <div class="p-6">
+                <p id="deleteMessage" class="text-gray-700 mb-6"></p>
+                <div class="flex justify-end space-x-3">
+                    <button onclick="hideDeleteModal()" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+                        Cancel
+                    </button>
+                    <button id="confirmDeleteBtn" class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+                        <i class="fas fa-trash me-2"></i>Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Global variables
+        let currentRoomId = null;
+        let currentActiveTab = 'info';
+        let bulkResourceCounter = 0;
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('addBedForm').addEventListener('submit', handleAddBed);
+            document.getElementById('editBedForm').addEventListener('submit', handleEditBed);
+            document.getElementById('addResourceForm').addEventListener('submit', handleAddResource);
+            document.getElementById('maintenanceForm').addEventListener('submit', handleMaintenanceSubmit);
+
+            loadRooms();
+        });
+
+        function getAntiForgeryToken() {
+            return document.querySelector('input[name="__RequestVerificationToken"]').value;
+        }
+
+        function showResourceTypeInfo(selectElement) {
+            const selectedOption = selectElement.options[selectElement.selectedIndex];
+            const description = selectedOption.getAttribute('data-description');
+            const descriptionDiv = document.getElementById('resourceTypeDescription');
+
+            if (description && description.trim() !== '') {
+                descriptionDiv.querySelector('.resource-type-info').textContent = description;
+                descriptionDiv.classList.remove('hidden');
+            } else {
+                descriptionDiv.classList.add('hidden');
+            }
+        }
+
+        async function loadRooms() {
+            try {
+                const response = await fetch('/HostelManagement/GetRooms');
+                const rooms = await response.json();
+
+                const container = document.getElementById('roomsContainer');
+
+                if (rooms.length === 0) {
+                    container.innerHTML = `
+                        <div class="col-span-full text-center py-12 text-gray-500">
+                            <i class="fas fa-inbox text-5xl mb-4 opacity-50"></i>
+                            <p class="text-lg">No rooms found</p>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = rooms.map(room => `
+                        <div class="room-card bg-white rounded-lg shadow-md p-6 ${room.status.toLowerCase()}" onclick="showRoomDetails(${room.id})">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <h5 class="text-xl font-bold text-gray-800">Room ${room.roomNumber}</h5>
+                                    <p class="text-sm text-gray-500">Floor ${room.floor} • ${room.roomType}</p>
+                                </div>
+                                <span class="px-3 py-1 rounded-full text-sm font-semibold ${
+                                    room.status === 'Active' ? 'bg-green-100 text-green-700' :
+                                    room.status === 'Inactive' ? 'bg-gray-100 text-gray-700' :
+                                    'bg-yellow-100 text-yellow-700'
+                                }">
+                                    ${room.status}
+                                </span>
+                            </div>
+                            <div class="space-y-2">
+                                <div class="flex items-center text-gray-600">
+                                    <i class="fas fa-users w-5"></i>
+                                    <span class="ml-2">${room.gender}</span>
+                                </div>
+                                <div class="flex items-center text-gray-600">
+                                    <i class="fas fa-bed w-5"></i>
+                                    <span class="ml-2">${room.occupiedBeds}/${room.bedCount} beds occupied</span>
+                                </div>
+                                <div class="flex items-center text-gray-600">
+                                    <i class="fas fa-chair w-5"></i>
+                                    <span class="ml-2">${room.resourceCount} resources</span>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error loading rooms:', error);
+                showNotification('Error loading rooms', 'error');
+            }
+        }
+
+        async function showRoomDetails(roomId) {
+            currentRoomId = roomId;
+
+            try {
+                const response = await fetch(`/HostelManagement/GetRoomDetails?id=${roomId}`);
+                const room = await response.json();
+
+                // Room Info Tab
+                document.getElementById('roomInfoContent').innerHTML = `
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <p class="text-sm text-gray-600 mb-1">Room Number</p>
+                            <p class="text-lg font-semibold">${room.roomNumber}</p>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <p class="text-sm text-gray-600 mb-1">Floor</p>
+                            <p class="text-lg font-semibold">${room.floor}</p>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <p class="text-sm text-gray-600 mb-1">Type</p>
+                            <p class="text-lg font-semibold">${room.roomType}</p>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <p class="text-sm text-gray-600 mb-1">Capacity</p>
+                            <p class="text-lg font-semibold">${room.capacity}</p>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <p class="text-sm text-gray-600 mb-1">Gender</p>
+                            <p class="text-lg font-semibold">${room.gender}</p>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <p class="text-sm text-gray-600 mb-1">Status</p>
+                            <p class="text-lg font-semibold">${room.status}</p>
+                        </div>
+                        <div class="col-span-2 p-4 bg-gray-50 rounded-lg">
+                            <p class="text-sm text-gray-600 mb-1">Hostel</p>
+                            <p class="text-lg font-semibold">${room.hostelName} (${room.campusName})</p>
+                        </div>
+                        ${room.isSpecialReservation ? `
+                            <div class="col-span-2 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                                <p class="text-sm font-medium text-yellow-800">
+                                    <i class="fas fa-star me-2"></i>Special Reservation Room
+                                </p>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+
+                // Beds Tab
+                if (room.beds && room.beds.length > 0) {
+                    document.getElementById('bedSpacesContent').innerHTML = room.beds.map(bed => `
+                        <div class="bed-card ${bed.status.toLowerCase()}">
+                            <div class="flex justify-between items-start">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <i class="fas fa-bed text-2xl ${
+                                            bed.status === 'Occupied' ? 'text-green-600' :
+                                            bed.status === 'Active' ? 'text-blue-600' :
+                                            'text-yellow-600'
+                                        }"></i>
+                                        <div>
+                                            <h6 class="font-semibold text-gray-800">Bed ${bed.bedIdentifier}</h6>
+                                            <p class="text-xs text-gray-500">
+                                                Status: <span class="font-medium ${
+                                                    bed.status === 'Occupied' ? 'text-green-600' :
+                                                    bed.status === 'Active' ? 'text-blue-600' :
+                                                    'text-yellow-600'
+                                                }">${bed.status}</span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                    ${bed.studentName ? `
+                                        <div class="student-info-card">
+                                            <div class="flex items-center gap-3">
+                                                <i class="fas fa-user-circle text-3xl opacity-90"></i>
+                                                <div class="flex-1">
+                                                    <p class="font-semibold text-white">${bed.studentName}</p>
+                                                    <p class="text-sm opacity-90">ID: ${bed.studentNumber}</p>
+                                                    <p class="text-xs opacity-80 mt-1">
+                                                        <i class="fas fa-phone mr-1"></i>${bed.studentPhone || 'N/A'} •
+                                                        <i class="fas fa-envelope mr-1"></i>${bed.studentEmail || 'N/A'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ` : `
+                                        <div class="mt-2 p-3 bg-blue-50 rounded border border-blue-200">
+                                            <p class="text-sm text-blue-700 flex items-center">
+                                                <i class="fas fa-info-circle me-2"></i>
+                                                This bed is available for allocation
+                                            </p>
+                                        </div>
+                                    `}
+                                </div>
+                                <div class="flex gap-2 items-center ml-3">
+                                    <button type="button" class="text-teal-600 hover:text-teal-800 transition" onclick="editBed(${bed.bedId}, '${bed.bedIdentifier}', '${bed.status}')" title="Edit bed">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button type="button" class="text-red-600 hover:text-red-800 transition" onclick="deleteBed(${bed.bedId}, '${bed.bedIdentifier}')" title="Delete bed">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    document.getElementById('bedSpacesContent').innerHTML = `
+                        <div class="text-center py-12 text-gray-500">
+                            <i class="fas fa-bed text-5xl mb-4 opacity-50"></i>
+                            <p class="text-lg mb-2">No bed spaces added yet</p>
+                            <p class="text-sm">Click "Add Bed" above to create bed spaces</p>
+                        </div>
+                    `;
+                }
+
+                // Resources Tab
+                if (room.resources && room.resources.length > 0) {
+                    document.getElementById('resourcesContent').innerHTML = room.resources.map(resource => {
+                        const escapedName = (resource.name || '').replace(/'/g, "\\'");
+                        return `
+                        <div class="resource-item">
+                            <i class="fas fa-couch text-teal-600 text-xl"></i>
+                            <div class="flex-1">
+                                <h6 class="font-semibold text-gray-800">${resource.name}</h6>
+                                <p class="text-sm text-gray-600">${resource.description || 'No description'}</p>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    <span class="font-medium">Quantity:</span> ${resource.quantity} •
+                                    <span class="font-medium">Status:</span> ${resource.status}
+                                </p>
+                            </div>
+                            <div class="flex gap-2 items-center">
+                                <button type="button" class="text-teal-600 hover:text-teal-800 transition" onclick="editResource(${resource.resourceId})" title="Edit resource">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" class="text-red-600 hover:text-red-800 transition" onclick="deleteResource(${resource.resourceId}, '${escapedName}')" title="Delete resource">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    }).join('');
+                } else {
+                    document.getElementById('resourcesContent').innerHTML = `
+                        <div class="text-center py-12 text-gray-500">
+                            <i class="fas fa-couch text-5xl mb-4 opacity-50"></i>
+                            <p class="text-lg mb-2">No resources added yet</p>
+                            <p class="text-sm">Click "Add Resource" or "Bulk Add" above</p>
+                        </div>
+                    `;
+                }
+
+                document.getElementById('roomDetailsModal').classList.remove('hidden');
+                switchTabProgrammatically(currentActiveTab);
+
+            } catch (error) {
+                console.error('Error loading room details:', error);
+                showNotification('Error loading room details', 'error');
+            }
+        }
+
+        function closeRoomDetailsModal() {
+            document.getElementById('roomDetailsModal').classList.add('hidden');
+        }
+
+        function switchTab(tabName) {
+            currentActiveTab = tabName;
+            switchTabProgrammatically(tabName);
+        }
+
+        function switchTabProgrammatically(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.add('hidden');
+            });
+
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            document.getElementById(tabName + 'Tab').classList.remove('hidden');
+
+            const buttons = document.querySelectorAll('.tab-button');
+            if (tabName === 'info') buttons[0].classList.add('active');
+            if (tabName === 'beds') buttons[1].classList.add('active');
+            if (tabName === 'resources') buttons[2].classList.add('active');
+            if (tabName === 'maintenance') {
+                buttons[3].classList.add('active');
+                loadMaintenanceRequests(currentRoomId);
+            }
+        }
+
+        // Bed Management
+        function showAddBedModal() {
+            document.getElementById('addBedForm').reset();
+            document.getElementById('addBedModal').classList.remove('hidden');
+        }
+
+        function hideAddBedModal() {
+            document.getElementById('addBedModal').classList.add('hidden');
+        }
+
+        async function handleAddBed(e) {
+            e.preventDefault();
+            try {
+                const formData = new FormData(e.target);
+                formData.append('RoomId', currentRoomId);
+
+                const response = await fetch('/HostelManagement/AddBedSpace', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'RequestVerificationToken': getAntiForgeryToken()
+                    },
+                    body: new URLSearchParams(formData)
+                });
+
+                if (response.ok) {
+                    showNotification('Bed space added successfully!', 'success');
+                    hideAddBedModal();
+                    currentActiveTab = 'beds';
+                    await showRoomDetails(currentRoomId);
+                } else {
+                    const error = await response.text();
+                    showNotification(error || 'Error adding bed space', 'error');
+                }
+            } catch (error) {
+                console.error('Error adding bed:', error);
+                showNotification('Error adding bed space', 'error');
+            }
+        }
+
+        function editBed(bedId, bedIdentifier, status) {
+            document.getElementById('editBedId').value = bedId;
+            document.getElementById('editBedIdentifier').value = bedIdentifier;
+
+            const statusMap = {
+                'Active': '1',
+                'Inactive': '0',
+                'Occupied': '3',
+                'Maintenance': '2'
+            };
+            document.getElementById('editBedStatus').value = statusMap[status] || '1';
+
+            document.getElementById('editBedModal').classList.remove('hidden');
+        }
+
+        function hideEditBedModal() {
+            document.getElementById('editBedModal').classList.add('hidden');
+        }
+
+        async function handleEditBed(e) {
+            e.preventDefault();
+            try {
+                const formData = new FormData(e.target);
+
+                const response = await fetch('/HostelManagement/EditBedSpace', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'RequestVerificationToken': getAntiForgeryToken()
+                    },
+                    body: new URLSearchParams(formData)
+                });
+
+                if (response.ok) {
+                    showNotification('Bed space updated successfully!', 'success');
+                    hideEditBedModal();
+                    currentActiveTab = 'beds';
+                    await showRoomDetails(currentRoomId);
+                } else {
+                    const error = await response.text();
+                    showNotification(error || 'Error updating bed space', 'error');
+                }
+            } catch (error) {
+                console.error('Error updating bed:', error);
+                showNotification('Error updating bed space', 'error');
+            }
+        }
+
+        function deleteBed(bedId, bedIdentifier) {
+            showDeleteConfirmation(
+                `Are you sure you want to delete bed ${bedIdentifier}?`,
+                async function() {
+                    await performDelete(`/HostelManagement/DeleteBedSpace/${bedId}`, 'bed space');
+                    currentActiveTab = 'beds';
+                    await showRoomDetails(currentRoomId);
+                }
+            );
+        }
+
+        // Resource Management
+        function showAddResourceModal() {
+            document.getElementById('resourceModalTitle').textContent = 'Add Resource';
+            document.getElementById('addResourceForm').reset();
+            document.getElementById('resourceId').value = '0';
+            document.getElementById('resourceTypeDescription').classList.add('hidden');
+            document.getElementById('addResourceModal').classList.remove('hidden');
+        }
+
+        function hideAddResourceModal() {
+            document.getElementById('addResourceModal').classList.add('hidden');
+        }
+
+        async function editResource(resourceId) {
+            try {
+                const response = await fetch(`/HostelManagement/GetRoomDetails?id=${currentRoomId}`);
+                const room = await response.json();
+
+                const resource = room.resources.find(r => r.resourceId === resourceId);
+
+                if (resource) {
+                    document.getElementById('resourceModalTitle').textContent = 'Edit Resource';
+                    document.getElementById('resourceId').value = resource.resourceId;
+                    document.getElementById('resourceTypeId').value = resource.resourceTypeId;
+                    document.getElementById('resourceQuantity').value = resource.quantity;
+
+                    const statusMap = {
+                        'Active': '1',
+                        'Inactive': '0',
+                        'Maintenance': '2'
+                    };
+                    document.getElementById('resourceStatus').value = statusMap[resource.status] || '1';
+
+                    const selectElement = document.getElementById('resourceTypeId');
+                    showResourceTypeInfo(selectElement);
+
+                    document.getElementById('addResourceModal').classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Error loading resource:', error);
+                showNotification('Error loading resource details', 'error');
+            }
+        }
+
+        async function handleAddResource(e) {
+            e.preventDefault();
+            try {
+                const formData = new FormData(e.target);
+                const resourceId = parseInt(formData.get('ResourceId'));
+                formData.append('RoomId', currentRoomId);
+
+                const url = resourceId > 0 ? '/HostelManagement/UpdateRoomResource' : '/HostelManagement/AddRoomResource';
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'RequestVerificationToken': getAntiForgeryToken()
+                    },
+                    body: new URLSearchParams(formData)
+                });
+
+                if (response.ok) {
+                    showNotification(resourceId > 0 ? 'Resource updated successfully!' : 'Resource added successfully!', 'success');
+                    hideAddResourceModal();
+                    currentActiveTab = 'resources';
+                    await showRoomDetails(currentRoomId);
+                } else {
+                    const error = await response.text();
+                    showNotification(error || 'Error saving resource', 'error');
+                }
+            } catch (error) {
+                console.error('Error saving resource:', error);
+                showNotification('Error saving resource', 'error');
+            }
+        }
+
+        function deleteResource(resourceId, resourceName) {
+            showDeleteConfirmation(
+                `Are you sure you want to delete resource "${resourceName}"?`,
+                async function() {
+                    await performDelete(`/HostelManagement/DeleteRoomResource/${resourceId}`, 'resource');
+                    currentActiveTab = 'resources';
+                    await showRoomDetails(currentRoomId);
+                }
+            );
+        }
+
+        // Bulk Resource Management
+        function showBulkResourceModal() {
+            bulkResourceCounter = 0;
+            document.getElementById('bulkResourcesList').innerHTML = '';
+            addBulkResourceRow();
+            addBulkResourceRow();
+            document.getElementById('bulkResourceModal').classList.remove('hidden');
+        }
+
+        function hideBulkResourceModal() {
+            document.getElementById('bulkResourceModal').classList.add('hidden');
+        }
+
+        function addBulkResourceRow() {
+            const container = document.getElementById('bulkResourcesList');
+            const id = bulkResourceCounter++;
+
+            const row = document.createElement('div');
+            row.className = 'bulk-resource-item';
+            row.id = `bulkResource_${id}`;
+            row.innerHTML = `
+                <div class="flex justify-between items-start mb-3">
+                    <h6 class="font-semibold text-gray-700">Resource #${id + 1}</h6>
+                    <button type="button" onclick="removeBulkResourceRow(${id})" class="text-red-600 hover:text-red-800">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Resource Type *</label>
+                        <select class="bulk-resource-type-id w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-purple-500" required>
+                            <option value="">Select Type</option>
+        @foreach (var rt in resourceTypes)
+        {
+                                    <option value="@rt.ResourceTypeId">@rt.Name</option>
+        }
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Quantity *</label>
+                        <input type="number" min="1" value="1" class="bulk-resource-quantity w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-purple-500" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Status *</label>
+                        <select class="bulk-resource-status w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-purple-500" required>
+        @if (ViewBag.StatusOptions != null)
+        {
+            foreach (var status in ViewBag.StatusOptions)
+            {
+                                            <option value="@status.Value">@status.Text</option>
+            }
+        }
+                        </select>
+                    </div>
+                </div>
+            `;
+
+            container.appendChild(row);
+        }
+
+        function removeBulkResourceRow(id) {
+            const row = document.getElementById(`bulkResource_${id}`);
+            if (row) row.remove();
+        }
+
+        async function handleBulkResourceSubmit() {
+            try {
+                const container = document.getElementById('bulkResourcesList');
+                const resourceItems = container.querySelectorAll('.bulk-resource-item');
+
+                if (resourceItems.length === 0) {
+                    showNotification('Please add at least one resource', 'error');
+                    return;
+                }
+
+                const resources = [];
+                let isValid = true;
+
+                resourceItems.forEach(item => {
+                    const resourceTypeId = item.querySelector('.bulk-resource-type-id').value;
+                    const quantity = item.querySelector('.bulk-resource-quantity').value;
+                    const status = item.querySelector('.bulk-resource-status').value;
+
+                    if (!resourceTypeId || !quantity) {
+                        isValid = false;
+                        return;
+                    }
+
+                    resources.push({
+                        ResourceTypeId: parseInt(resourceTypeId),
+                        Quantity: parseInt(quantity),
+                        Status: parseInt(status)
+                    });
+                });
+
+                if (!isValid) {
+                    showNotification('Please fill in all required fields', 'error');
+                    return;
+                }
+
+                const payload = {
+                    RoomId: currentRoomId,
+                    Resources: resources
+                };
+
+                const response = await fetch('/HostelManagement/AddBulkResources', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': getAntiForgeryToken()
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    showNotification(`Successfully added ${result.resourcesAdded} resources!`, 'success');
+                    hideBulkResourceModal();
+                    currentActiveTab = 'resources';
+                    await showRoomDetails(currentRoomId);
+                } else {
+                    const error = await response.text();
+                    showNotification(error || 'Error adding bulk resources', 'error');
+                }
+            } catch (error) {
+                console.error('Error adding bulk resources:', error);
+                showNotification('Error adding bulk resources', 'error');
+            }
+        }
+
+        // Maintenance Management
+        async function loadMaintenanceRequests(roomId) {
+            try {
+                const response = await fetch(`/HostelManagement/GetRoomMaintenanceRequests?roomId=${roomId}`);
+                const requests = await response.json();
+
+                const container = document.getElementById('maintenanceContent');
+
+                if (requests.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-12 text-gray-500">
+                            <i class="fas fa-tools text-5xl mb-4 opacity-50"></i>
+                            <p class="text-lg mb-2">No maintenance requests</p>
+                            <p class="text-sm">Click "Add Request" above to create one</p>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = requests.map(request => {
+                        const priorityClass = request.priority.toLowerCase();
+                        const requestDate = new Date(request.requestDate).toLocaleDateString();
+                        const resolutionDate = request.resolutionDate ? new Date(request.resolutionDate).toLocaleDateString() : null;
+
+                        return `
+                            <div class="maintenance-card ${priorityClass}-priority">
+                                <div class="flex justify-between items-start">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-3 mb-2">
+                                            <i class="fas fa-tools text-2xl text-teal-600"></i>
+                                            <div class="flex-1">
+                                                <div class="flex items-center gap-2 mb-1">
+                                                    <span class="px-3 py-1 rounded-full text-xs font-semibold uppercase ${
+                                                        priorityClass === 'low' ? 'bg-green-100 text-green-700' :
+                                                        priorityClass === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                                                        'bg-red-100 text-red-700'
+                                                    }">
+                                                        ${request.priority}
+                                                    </span>
+                                                    <span class="px-2 py-1 rounded text-xs font-semibold ${
+                                                        request.status === 'Active' ? 'bg-green-100 text-green-700' :
+                                                        request.status === 'Inactive' ? 'bg-gray-100 text-gray-700' :
+                                                        'bg-yellow-100 text-yellow-700'
+                                                    }">
+                                                        ${request.status}
+                                                    </span>
+                                                </div>
+                                                <p class="text-xs text-gray-500">
+                                                    Requested on ${requestDate} by ${request.requestedBy} (${request.requesterType})
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div class="mt-2 p-3 bg-gray-50 rounded border border-gray-200">
+                                            <p class="text-sm text-gray-700 font-medium mb-1">Issue Description:</p>
+                                            <p class="text-sm text-gray-600">${request.description || 'No description provided'}</p>
+                                        </div>
+                                        ${request.resolutionNotes && request.resolutionNotes.trim() !== '' ? `
+                                            <div class="mt-2 p-3 bg-green-50 rounded border border-green-200">
+                                                <p class="text-xs font-semibold text-green-800 mb-1">
+                                                    <i class="fas fa-check-circle me-1"></i>Resolution Notes
+                                                    ${resolutionDate ? `<span class="font-normal">(Resolved: ${resolutionDate})</span>` : ''}
+                                                </p>
+                                                <p class="text-sm text-green-700">${request.resolutionNotes}</p>
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                    <div class="flex gap-2 items-center ml-3">
+                                        <button type="button" class="text-teal-600 hover:text-teal-800 transition"
+                                                onclick="editMaintenanceRequest(${request.requestId})" title="Edit request">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button type="button" class="text-red-600 hover:text-red-800 transition"
+                                                onclick="deleteMaintenanceRequest(${request.requestId})" title="Delete request">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            } catch (error) {
+                console.error('Error loading maintenance requests:', error);
+                showNotification('Error loading maintenance requests', 'error');
+            }
+        }
+
+        function showAddMaintenanceModal() {
+            document.getElementById('maintenanceModalTitle').textContent = 'Add Maintenance Request';
+            document.getElementById('maintenanceForm').reset();
+            document.getElementById('maintenanceRequestId').value = '0';
+            document.getElementById('resolutionNotesContainer').classList.add('hidden');
+            document.getElementById('maintenanceModal').classList.remove('hidden');
+        }
+
+        function hideMaintenanceModal() {
+            document.getElementById('maintenanceModal').classList.add('hidden');
+        }
+
+        async function editMaintenanceRequest(requestId) {
+            try {
+                const response = await fetch(`/HostelManagement/GetRoomMaintenanceRequests?roomId=${currentRoomId}`);
+                const requests = await response.json();
+
+                const request = requests.find(r => r.requestId === requestId);
+
+                if (request) {
+                    document.getElementById('maintenanceModalTitle').textContent = 'Edit Maintenance Request';
+                    document.getElementById('maintenanceRequestId').value = request.requestId;
+                    document.getElementById('maintenanceRequestedBy').value = request.requestedBy || '';
+                    document.getElementById('maintenanceRequesterType').value = request.requesterType || '';
+                    document.getElementById('maintenanceDescription').value = request.description || '';
+                    document.getElementById('maintenancePriority').value = request.priority || '';
+
+                    const statusMap = {
+                        'Active': '1',
+                        'Inactive': '0',
+                        'Maintenance': '2'
+                    };
+                    document.getElementById('maintenanceStatus').value = statusMap[request.status] || '0';
+
+                    document.getElementById('resolutionNotesContainer').classList.remove('hidden');
+                    document.getElementById('maintenanceResolutionNotes').value = request.resolutionNotes || '';
+
+                    document.getElementById('maintenanceModal').classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Error loading maintenance request:', error);
+                showNotification('Error loading maintenance request', 'error');
+            }
+        }
+
+        async function handleMaintenanceSubmit(e) {
+            e.preventDefault();
+            try {
+                const formData = new FormData(e.target);
+                const requestId = parseInt(formData.get('RequestId'));
+                formData.append('RoomId', currentRoomId);
+
+                const url = requestId > 0 ? '/HostelManagement/UpdateRoomMaintenanceRequest' : '/HostelManagement/AddMaintenanceRequest';
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'RequestVerificationToken': getAntiForgeryToken()
+                    },
+                    body: new URLSearchParams(formData)
+                });
+
+                if (response.ok) {
+                    showNotification(requestId > 0 ? 'Request updated successfully!' : 'Request created successfully!', 'success');
+                    hideMaintenanceModal();
+                    currentActiveTab = 'maintenance';
+                    await showRoomDetails(currentRoomId);
+                } else {
+                    const error = await response.text();
+                    showNotification(error || 'Error saving request', 'error');
+                }
+            } catch (error) {
+                console.error('Error saving maintenance request:', error);
+                showNotification('Error saving maintenance request', 'error');
+            }
+        }
+
+        function deleteMaintenanceRequest(requestId) {
+            showDeleteConfirmation(
+                'Are you sure you want to delete this maintenance request?',
+                async function() {
+                    await performDelete(`/HostelManagement/DeleteMaintenanceRequest/${requestId}`, 'maintenance request');
+                    currentActiveTab = 'maintenance';
+                    await showRoomDetails(currentRoomId);
+                }
+            );
+        }
+
+        // Delete Modal
+        function showDeleteConfirmation(message, onConfirm) {
+            document.getElementById('deleteMessage').textContent = message;
+            document.getElementById('deleteModal').classList.remove('hidden');
+
+            const confirmBtn = document.getElementById('confirmDeleteBtn');
+            confirmBtn.onclick = async function() {
+                await onConfirm();
+                hideDeleteModal();
+            };
+        }
+
+        function hideDeleteModal() {
+            document.getElementById('deleteModal').classList.add('hidden');
+        }
+
+        async function performDelete(url, itemType) {
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'RequestVerificationToken': getAntiForgeryToken()
+                    }
+                });
+
+                if (response.ok) {
+                    showNotification(`${itemType} deleted successfully!`, 'success');
+                } else {
+                    const error = await response.text();
+                    showNotification(error || `Error deleting ${itemType}`, 'error');
+                }
+            } catch (error) {
+                console.error(`Error deleting ${itemType}:`, error);
+                showNotification(`Error deleting ${itemType}`, 'error');
+            }
+        }
+
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg transition-all transform ${
+                type === 'success' ? 'bg-green-500 text-white' :
+                type === 'error' ? 'bg-red-500 text-white' :
+                'bg-yellow-500 text-white'
+            }`;
+            notification.innerHTML = `
+                <div class="flex items-center space-x-2">
+                    <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.style.transform = 'translateX(400px)';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // Global functions
+        window.showRoomDetails = showRoomDetails;
+        window.closeRoomDetailsModal = closeRoomDetailsModal;
+        window.switchTab = switchTab;
+        window.showAddBedModal = showAddBedModal;
+        window.hideAddBedModal = hideAddBedModal;
+        window.editBed = editBed;
+        window.hideEditBedModal = hideEditBedModal;
+        window.deleteBed = deleteBed;
+        window.showAddResourceModal = showAddResourceModal;
+        window.hideAddResourceModal = hideAddResourceModal;
+        window.editResource = editResource;
+        window.deleteResource = deleteResource;
+        window.showBulkResourceModal = showBulkResourceModal;
+        window.hideBulkResourceModal = hideBulkResourceModal;
+        window.addBulkResourceRow = addBulkResourceRow;
+        window.removeBulkResourceRow = removeBulkResourceRow;
+        window.handleBulkResourceSubmit = handleBulkResourceSubmit;
+        window.showAddMaintenanceModal = showAddMaintenanceModal;
+        window.hideMaintenanceModal = hideMaintenanceModal;
+        window.editMaintenanceRequest = editMaintenanceRequest;
+        window.deleteMaintenanceRequest = deleteMaintenanceRequest;
+        window.loadMaintenanceRequests = loadMaintenanceRequests;
+        window.hideDeleteModal = hideDeleteModal;
+        window.showResourceTypeInfo = showResourceTypeInfo;
+    </script>
+}

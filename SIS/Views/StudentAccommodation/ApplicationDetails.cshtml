@@ -1,0 +1,601 @@
+﻿@model SIS.Models.StudentAccommodation.AccommodationApplication
+@{
+    // Calculate fee based on payment type
+    var period = Model.Period;
+    decimal accommodationFee = 0;
+    string feeDisplay = "";
+    string feeBreakdown = "";
+    if (period != null)
+    {
+        if (period.TypeOfPayment == "PerDay")
+        {
+            var numberOfDays = Model.NumberOfDays ?? 1;
+            accommodationFee = period.TypeOfPaymentAmount * numberOfDays;
+            feeDisplay = $"K{accommodationFee:N2}";
+            feeBreakdown = $"K{period.TypeOfPaymentAmount:N2}/day × {numberOfDays} days";
+        }
+        else
+        {
+            accommodationFee = period.TypeOfPaymentAmount;
+            feeDisplay = $"K{accommodationFee:N2}";
+            feeBreakdown = period.TypeOfPayment;
+        }
+    }
+}
+
+<style>
+    .payment-type-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 12px;
+        border-radius: 16px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+        .payment-type-badge.semester {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+
+        .payment-type-badge.year {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .payment-type-badge.perday {
+            background: #fff3e0;
+            color: #e65100;
+        }
+
+        .payment-type-badge.fixed {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+</style>
+
+<div class="min-h-[88vh] p-6 bg-slate-50">
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+        <div class="flex items-center gap-2">
+            <i class="material-icons text-3xl text-slate-800">description</i>
+            <h1 class="text-2xl font-bold text-slate-800">Application Details</h1>
+        </div>
+        <div class="mt-4 md:mt-0 flex gap-3">
+            <a href="@Url.Action("MyApplications", "StudentAccommodation")" class="flex items-center gap-2 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors">
+                <i class="material-icons">arrow_back</i>
+                <span>Back to Applications</span>
+            </a>
+            @if (Model.Status == SIS.Enums.Status.Pending)
+            {
+                <form asp-action="CancelApplication" asp-route-id="@Model.ApplicationId" method="post" onsubmit="return confirm('Are you sure you want to cancel this application?');">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="flex items-center gap-2 px-4 py-2 border border-red-600 text-red-600 rounded-lg hover:bg-red-50 transition-colors">
+                        <i class="material-icons">cancel</i>
+                        <span>Cancel Application</span>
+                    </button>
+                </form>
+            }
+        </div>
+    </div>
+
+    <!-- Application Status Card -->
+    <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div class="flex items-center gap-4">
+                @{
+                    string statusClass = "";
+                    string statusIcon = "";
+                    string statusBg = "";
+
+                    switch (Model.Status)
+                    {
+                        case SIS.Enums.Status.Pending:
+                            statusClass = "text-amber-600";
+                            statusIcon = "hourglass_empty";
+                            statusBg = "bg-amber-100";
+                            break;
+                        case SIS.Enums.Status.Approved:
+                            statusClass = "text-green-600";
+                            statusIcon = "check_circle";
+                            statusBg = "bg-green-100";
+                            break;
+                        case SIS.Enums.Status.Rejected:
+                            statusClass = "text-red-600";
+                            statusIcon = "cancel";
+                            statusBg = "bg-red-100";
+                            break;
+                        case SIS.Enums.Status.Canceled:
+                            statusClass = "text-slate-600";
+                            statusIcon = "highlight_off";
+                            statusBg = "bg-slate-100";
+                            break;
+                        default:
+                            statusClass = "text-blue-600";
+                            statusIcon = "info";
+                            statusBg = "bg-blue-100";
+                            break;
+                    }
+                }
+
+                <div class="w-12 h-12 @statusBg rounded-full flex items-center justify-center">
+                    <i class="material-icons @statusClass text-2xl">@statusIcon</i>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800">Application @Model.ApplicationId</h2>
+                    <p class="text-slate-600">Submitted on @Model.ApplicationDate.ToString("MMMM d, yyyy")</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 py-1.5 px-3 rounded-lg @statusBg @statusClass">
+                <i class="material-icons">@statusIcon</i>
+                <span class="font-medium">@Model.Status</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Details -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <!-- Period Details -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="p-4 bg-cyan-950 text-white">
+                <h3 class="font-semibold">Period Details</h3>
+            </div>
+            <div class="p-6 space-y-4">
+                <div class="flex items-start gap-3">
+                    <div class="bg-blue-50 p-2 rounded-lg">
+                        <i class="material-icons text-blue-600">category</i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-slate-500">Period Type</p>
+                        <p class="font-semibold text-slate-800">@(Model.Period.Type ?? "Regular Accommodation")</p>
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-3">
+                    <div class="bg-green-50 p-2 rounded-lg">
+                        <i class="material-icons text-green-600">payment</i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-slate-500">Payment Type</p>
+                        <p class="font-semibold text-slate-800">
+                            <span class="payment-type-badge @Model.Period.TypeOfPayment?.ToLower()">
+                                @(Model.Period.TypeOfPayment ?? "N/A")
+                            </span>
+                        </p>
+                    </div>
+                </div>
+
+                @if (Model.Period.TypeOfPayment == "PerDay" && Model.NumberOfDays.HasValue)
+                {
+                    <div class="flex items-start gap-3">
+                        <div class="bg-orange-50 p-2 rounded-lg">
+                            <i class="material-icons text-orange-600">today</i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-slate-500">Number of Days</p>
+                            <p class="font-semibold text-slate-800">@Model.NumberOfDays days</p>
+                        </div>
+                    </div>
+                }
+
+                <div class="flex items-start gap-3">
+                    <div class="bg-amber-50 p-2 rounded-lg">
+                        <i class="material-icons text-amber-600">date_range</i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-slate-500">Start Date</p>
+                        <p class="font-semibold text-slate-800">@Model.Period.StartDate.ToString("MMMM d, yyyy")</p>
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-3">
+                    <div class="bg-red-50 p-2 rounded-lg">
+                        <i class="material-icons text-red-600">event_busy</i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-slate-500">End Date</p>
+                        <p class="font-semibold text-slate-800">
+                            @if (Model.Period.IsPermanentUntilGraduation)
+                            {
+                                <span>Until Graduation</span>
+                            }
+                            else if (Model.Period.EndDate.HasValue)
+                            {
+                                @Model.Period.EndDate.Value.ToString("MMMM d, yyyy")
+                            }
+                            else
+                            {
+                                <span>No end date specified</span>
+                            }
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fee Information -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="p-4 bg-cyan-950 text-white">
+                <h3 class="font-semibold">Fee Information</h3>
+            </div>
+            <div class="p-6 space-y-4">
+                <!-- Total Fee -->
+                <div class="bg-gradient-to-br from-amber-50 to-yellow-50 p-4 rounded-xl border-2 border-amber-200">
+                    <p class="text-sm text-amber-700 font-medium mb-1">Total Accommodation Fee</p>
+                    <p class="text-3xl font-bold text-amber-800">@feeDisplay</p>
+                    <p class="text-sm text-amber-600 mt-1">@feeBreakdown</p>
+                </div>
+
+                <div class="flex items-start gap-3">
+                    <div class="bg-blue-50 p-2 rounded-lg">
+                        <i class="material-icons text-blue-600">payments</i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-slate-500">Payment Type</p>
+                        <p class="font-semibold text-slate-800">
+                            <span class="payment-type-badge @Model.Period.TypeOfPayment?.ToLower()">
+                                @(Model.Period.TypeOfPayment ?? "N/A")
+                            </span>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-3">
+                    <div class="bg-green-50 p-2 rounded-lg">
+                        <i class="material-icons text-green-600">attach_money</i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-slate-500">Rate</p>
+                        <p class="font-semibold text-slate-800">
+                            @if (Model.Period.TypeOfPayment == "PerDay")
+                            {
+                                <span>K @Model.Period.TypeOfPaymentAmount.ToString("N2") per day</span>
+                            }
+                            else
+                            {
+                                <span>K @Model.Period.TypeOfPaymentAmount.ToString("N2") (@Model.Period.TypeOfPayment)</span>
+                            }
+                        </p>
+                    </div>
+                </div>
+
+                @if (Model.Period.TypeOfPayment == "PerDay" && Model.NumberOfDays.HasValue)
+                {
+                    <div class="flex items-start gap-3">
+                        <div class="bg-orange-50 p-2 rounded-lg">
+                            <i class="material-icons text-orange-600">calculate</i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-slate-500">Calculation</p>
+                            <p class="font-semibold text-slate-800">
+                                K @Model.Period.TypeOfPaymentAmount.ToString("N2") × @Model.NumberOfDays days = K @accommodationFee.ToString("N2")
+                            </p>
+                        </div>
+                    </div>
+                }
+
+                <div class="flex items-start gap-3">
+                    <div class="bg-purple-50 p-2 rounded-lg">
+                        <i class="material-icons text-purple-600">info</i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-slate-500">Payment Status</p>
+                        <p class="font-semibold text-slate-800">
+                            @if (Model.Status == SIS.Enums.Status.Approved || Model.Allocation != null)
+                            {
+                                <span class="text-green-600">✓ Paid</span>
+                            }
+                            else if (Model.Status == SIS.Enums.Status.Pending)
+                            {
+                                <span class="text-amber-600">⏳ Pending Payment</span>
+                            }
+                            else
+                            {
+                                <span class="text-slate-500">N/A</span>
+                            }
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Allocation Information -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="p-4 bg-cyan-950 text-white">
+                <h3 class="font-semibold">Allocation Information</h3>
+            </div>
+            <div class="p-6">
+                @if (Model.Allocation != null)
+                {
+                    <div class="space-y-4">
+                        <div class="flex items-start gap-3">
+                            <div class="bg-blue-50 p-2 rounded-lg">
+                                <i class="material-icons text-blue-600">apartment</i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-slate-500">Hostel</p>
+                                <p class="font-semibold text-slate-800">@Model.Allocation.Bed.Room.Hostel.HostelName</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-3">
+                            <div class="bg-green-50 p-2 rounded-lg">
+                                <i class="material-icons text-green-600">meeting_room</i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-slate-500">Room</p>
+                                <p class="font-semibold text-slate-800">
+                                    @Model.Allocation.Bed.Room.RoomNumber
+                                    (@Model.Allocation.Bed.Room.RoomType)
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-3">
+                            <div class="bg-amber-50 p-2 rounded-lg">
+                                <i class="material-icons text-amber-600">hotel</i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-slate-500">Bed</p>
+                                <p class="font-semibold text-slate-800">@Model.Allocation.Bed.BedIdentifier</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-3">
+                            <div class="bg-purple-50 p-2 rounded-lg">
+                                <i class="material-icons text-purple-600">event_available</i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-slate-500">Allocation Date</p>
+                                <p class="font-semibold text-slate-800">@Model.Allocation.AllocationDate.ToString("MMMM d, yyyy")</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-3">
+                            <div class="bg-red-50 p-2 rounded-lg">
+                                <i class="material-icons text-red-600">verified</i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-slate-500">Allocation Status</p>
+                                <p class="font-semibold text-slate-800">@Model.Allocation.Status</p>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="flex flex-col items-center justify-center h-40 text-center">
+                        <i class="material-icons text-slate-400 text-3xl mb-2">home_work</i>
+                        <p class="text-slate-500 mb-1">No allocation yet</p>
+                        <p class="text-sm text-slate-400">You'll be notified when your accommodation is allocated</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Check-in/Check-out Information -->
+    @if (Model.Allocation != null && ViewBag.CheckInOutInfo != null)
+    {
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
+            <div class="p-4 bg-cyan-950 text-white">
+                <h3 class="font-semibold">Check-in/Check-out Information</h3>
+            </div>
+            <div class="p-6 grid md:grid-cols-2 gap-6">
+                <!-- Check-in Details -->
+                <div>
+                    <h4 class="font-medium text-slate-800 mb-3 flex items-center gap-2">
+                        <i class="material-icons text-green-600">login</i>
+                        <span>Check-in Details</span>
+                    </h4>
+
+                    @if (ViewBag.CheckInOutInfo.CheckInDate.HasValue)
+                    {
+                        <div class="space-y-3">
+                            <div class="flex items-start gap-3">
+                                <div class="bg-green-50 p-2 rounded-lg">
+                                    <i class="material-icons text-green-600">calendar_today</i>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-slate-500">Date</p>
+                                    <p class="font-semibold text-slate-800">@ViewBag.CheckInOutInfo.CheckInDate.Value.ToString("MMMM d, yyyy")</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start gap-3">
+                                <div class="bg-cyan-50 p-2 rounded-lg">
+                                    <i class="material-icons text-cyan-600">person</i>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-slate-500">Checked In By</p>
+                                    <p class="font-semibold text-slate-800">Staff ID: @ViewBag.CheckInOutInfo.CheckInStaffID</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start gap-3">
+                                <div class="bg-blue-50 p-2 rounded-lg">
+                                    <i class="material-icons text-blue-600">description</i>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-slate-500">Condition</p>
+                                    <p class="font-semibold text-slate-800">@(ViewBag.CheckInOutInfo.CheckInCondition ?? "No condition notes")</p>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="flex flex-col items-center justify-center h-32 text-center">
+                            <i class="material-icons text-slate-400 text-3xl mb-2">schedule</i>
+                            <p class="text-slate-500">Not checked in yet</p>
+                        </div>
+                    }
+                </div>
+
+                <!-- Check-out Details -->
+                <div>
+                    <h4 class="font-medium text-slate-800 mb-3 flex items-center gap-2">
+                        <i class="material-icons text-red-600">logout</i>
+                        <span>Check-out Details</span>
+                    </h4>
+
+                    @if (ViewBag.CheckInOutInfo.CheckOutDate.HasValue)
+                    {
+                        <div class="space-y-3">
+                            <div class="flex items-start gap-3">
+                                <div class="bg-red-50 p-2 rounded-lg">
+                                    <i class="material-icons text-red-600">calendar_today</i>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-slate-500">Date</p>
+                                    <p class="font-semibold text-slate-800">@ViewBag.CheckInOutInfo.CheckOutDate.Value.ToString("MMMM d, yyyy")</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start gap-3">
+                                <div class="bg-purple-50 p-2 rounded-lg">
+                                    <i class="material-icons text-purple-600">person</i>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-slate-500">Checked Out By</p>
+                                    <p class="font-semibold text-slate-800">Staff ID: @ViewBag.CheckInOutInfo.CheckOutStaffID</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start gap-3">
+                                <div class="bg-amber-50 p-2 rounded-lg">
+                                    <i class="material-icons text-amber-600">description</i>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-slate-500">Condition</p>
+                                    <p class="font-semibold text-slate-800">@(ViewBag.CheckInOutInfo.CheckOutCondition ?? "No condition notes")</p>
+                                </div>
+                            </div>
+
+                            @if (ViewBag.CheckInOutInfo.DamageCharges > 0)
+                            {
+                                <div class="flex items-start gap-3">
+                                    <div class="bg-red-50 p-2 rounded-lg">
+                                        <i class="material-icons text-red-600">warning</i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-slate-500">Damage Charges</p>
+                                        <p class="font-semibold text-red-600">K @ViewBag.CheckInOutInfo.DamageCharges.ToString("N2")</p>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="flex flex-col items-center justify-center h-32 text-center">
+                            <i class="material-icons text-slate-400 text-3xl mb-2">event_busy</i>
+                            <p class="text-slate-500">Not checked out yet</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Application Notes -->
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
+        <div class="p-4 bg-cyan-950 text-white">
+            <h3 class="font-semibold">Application Notes</h3>
+        </div>
+        <div class="p-6">
+            @if (!string.IsNullOrEmpty(Model.Notes))
+            {
+                <div class="bg-slate-50 p-4 rounded-lg text-slate-700">
+                    @Model.Notes
+                </div>
+            }
+            else
+            {
+                <div class="flex items-center justify-center p-6 text-slate-500">
+                    <span>No notes available for this application</span>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div class="p-4 bg-cyan-950 text-white">
+            <h3 class="font-semibold">Application Timeline</h3>
+        </div>
+        <div class="p-6">
+            <div class="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:-translate-x-px before:h-full before:w-0.5 before:bg-slate-200 before:z-0">
+                <!-- Application Submitted -->
+                <div class="relative flex items-center z-10">
+                    <div class="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 text-blue-600 shrink-0 mr-4">
+                        <i class="material-icons">assignment_turned_in</i>
+                    </div>
+                    <div>
+                        <p class="font-medium text-slate-800">Application Submitted</p>
+                        <p class="text-sm text-slate-500">@Model.ApplicationDate.ToString("MMMM d, yyyy 'at' h:mm tt")</p>
+                    </div>
+                </div>
+
+                <!-- Application Status -->
+                <div class="relative flex items-center z-10">
+                    <div class="flex items-center justify-center w-10 h-10 rounded-full @statusBg @statusClass shrink-0 mr-4">
+                        <i class="material-icons">@statusIcon</i>
+                    </div>
+                    <div>
+                        <p class="font-medium text-slate-800">Application @Model.Status</p>
+                        <p class="text-sm text-slate-500">@(Model.UpdatedAt?.ToString("MMMM d, yyyy 'at' h:mm tt") ?? "Status pending")</p>
+                    </div>
+                </div>
+
+                <!-- Allocation (if exists) -->
+                @if (Model.Allocation != null)
+                {
+                    <div class="relative flex items-center z-10">
+                        <div class="flex items-center justify-center w-10 h-10 rounded-full bg-green-100 text-green-600 shrink-0 mr-4">
+                            <i class="material-icons">home</i>
+                        </div>
+                        <div>
+                            <p class="font-medium text-slate-800">Accommodation Allocated</p>
+                            <p class="text-sm text-slate-500">@Model.Allocation.AllocationDate.ToString("MMMM d, yyyy 'at' h:mm tt")</p>
+                            <p class="mt-1 text-sm text-slate-600">
+                                @Model.Allocation.Bed.Room.Hostel.HostelName, Room @Model.Allocation.Bed.Room.RoomNumber
+                            </p>
+                        </div>
+                    </div>
+                }
+
+                <!-- Check-in (if exists) -->
+                @if (ViewBag.CheckInOutInfo != null && ViewBag.CheckInOutInfo.CheckInDate.HasValue)
+                {
+                    <div class="relative flex items-center z-10">
+                        <div class="flex items-center justify-center w-10 h-10 rounded-full bg-cyan-100 text-cyan-600 shrink-0 mr-4">
+                            <i class="material-icons">login</i>
+                        </div>
+                        <div>
+                            <p class="font-medium text-slate-800">Checked In</p>
+                            <p class="text-sm text-slate-500">@ViewBag.CheckInOutInfo.CheckInDate.Value.ToString("MMMM d, yyyy 'at' h:mm tt")</p>
+                        </div>
+                    </div>
+                }
+
+                <!-- Check-out (if exists) -->
+                @if (ViewBag.CheckInOutInfo != null && ViewBag.CheckInOutInfo.CheckOutDate.HasValue)
+                {
+                    <div class="relative flex items-center z-10">
+                        <div class="flex items-center justify-center w-10 h-10 rounded-full bg-red-100 text-red-600 shrink-0 mr-4">
+                            <i class="material-icons">logout</i>
+                        </div>
+                        <div>
+                            <p class="font-medium text-slate-800">Checked Out</p>
+                            <p class="text-sm text-slate-500">@ViewBag.CheckInOutInfo.CheckOutDate.Value.ToString("MMMM d, yyyy 'at' h:mm tt")</p>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,1308 @@
+﻿@model SIS.Controllers.AccomodationControllers.BedAllocationIndexViewModel
+@{
+    ViewData["Title"] = "Bed Allocation Management";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    console.log('=== Bed Allocation Scripts Loading ===');
+
+    // Store current student data
+    let currentStudentData = null;
+
+    // ===================================
+    // ALLOCATION MODAL
+    // ===================================
+
+    window.openAllocationModal = function(studentId, gender) {
+        console.log('Opening allocation modal for student:', studentId, 'gender:', gender);
+
+        // Get student data from the details panel
+        const detailsScroll = document.querySelector('.details-scroll');
+        if (detailsScroll && detailsScroll.dataset.studentData) {
+            currentStudentData = JSON.parse(detailsScroll.dataset.studentData);
+        }
+
+        const isAdmin = currentStudentData?.isAdmin || false;
+        const isHostelManager = currentStudentData?.isHostelManager || false;
+        const campusesJson = currentStudentData?.campuses || [];
+
+        Swal.fire({
+            title: 'Allocate Bed Space',
+            html: `
+                <div style="text-align: left;">
+                    ${!isHostelManager ? `
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Campus *</label>
+                        <select id="campusSelect" class="swal2-input" style="width: 100%;" onchange="loadHostelsByCampus(${studentId}, '${gender}')">
+                            <option value="">Select Campus</option>
+                        </select>
+                    </div>
+                    ` : ''}
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Hostel *</label>
+                        <select id="hostelSelect" class="swal2-input" style="width: 100%;" onchange="loadRoomsByHostel(${studentId}, '${gender}')" ${isHostelManager ? 'disabled' : ''}>
+                            <option value="">Select Hostel</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Room *</label>
+                        <select id="roomSelect" class="swal2-input" style="width: 100%;" onchange="loadBedsByRoom()">
+                            <option value="">Select Room</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Bed *</label>
+                        <select id="bedSelect" class="swal2-input" style="width: 100%;">
+                            <option value="">Select Bed</option>
+                        </select>
+                    </div>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: '<i class="fas fa-check mr-2"></i>Allocate',
+            cancelButtonText: '<i class="fas fa-times mr-2"></i>Cancel',
+            confirmButtonColor: '#17a2b8',
+            cancelButtonColor: '#6c757d',
+            width: '500px',
+            didOpen: () => {
+                // Populate campus dropdown for admins
+                if (!isHostelManager && campusesJson.length > 0) {
+                    const campusSelect = document.getElementById('campusSelect');
+                    campusesJson.forEach(campus => {
+                        const option = document.createElement('option');
+                        option.value = campus.campusId;
+                        option.textContent = campus.campusName;
+                        campusSelect.appendChild(option);
+                    });
+                }
+
+                if (isHostelManager) {
+                    window.loadHostelsForManager(studentId, gender);
+                }
+            },
+            preConfirm: () => {
+                const bedId = document.getElementById('bedSelect').value;
+                if (!bedId) {
+                    Swal.showValidationMessage('Please select a bed');
+                    return false;
+                }
+                return { studentId: studentId, bedId: parseInt(bedId) };
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.allocateBed(result.value.studentId, result.value.bedId);
+            }
+        });
+    };
+
+    // ===================================
+    // DEALLOCATION MODAL
+    // ===================================
+
+    window.openDeallocationModal = function(studentId) {
+        console.log('Opening deallocation modal for student:', studentId);
+
+        Swal.fire({
+            title: 'Deallocate Bed Space',
+            html: `
+                <div style="text-align: left;">
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Reason for Deallocation *</label>
+                        <textarea id="deallocationReason" class="swal2-textarea" style="width: 100%; height: 100px;" placeholder="Enter reason for deallocating this student..."></textarea>
+                    </div>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: '<i class="fas fa-times-circle mr-2"></i>Deallocate',
+            cancelButtonText: '<i class="fas fa-times mr-2"></i>Cancel',
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            width: '500px',
+            preConfirm: () => {
+                const reason = document.getElementById('deallocationReason').value.trim();
+                if (!reason) {
+                    Swal.showValidationMessage('Please provide a reason for deallocation');
+                    return false;
+                }
+                return { studentId: studentId, reason: reason };
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.deallocateBed(result.value.studentId, result.value.reason);
+            }
+        });
+    };
+
+    // ===================================
+    // LOAD FUNCTIONS
+    // ===================================
+
+    window.loadHostelsByCampus = function(studentId, gender) {
+        const campusId = document.getElementById('campusSelect')?.value;
+        const hostelSelect = document.getElementById('hostelSelect');
+        const roomSelect = document.getElementById('roomSelect');
+        const bedSelect = document.getElementById('bedSelect');
+
+        if (!hostelSelect) return;
+
+        hostelSelect.innerHTML = '<option value="">Loading...</option>';
+        if (roomSelect) roomSelect.innerHTML = '<option value="">Select Room</option>';
+        if (bedSelect) bedSelect.innerHTML = '<option value="">Select Bed</option>';
+
+        if (!campusId) {
+            hostelSelect.innerHTML = '<option value="">Select Campus first</option>';
+            return;
+        }
+
+        // Get selected hostel ID from URL if available (for hostel managers)
+        const urlParams = new URLSearchParams(window.location.search);
+        const selectedHostelId = urlParams.get('selectedHostelId');
+
+        let url = `@Url.Action("GetHostelsByCampus", "BedAllocation")?campusId=${campusId}&gender=${gender}`;
+        if (selectedHostelId) {
+            url += `&selectedHostelId=${selectedHostelId}`;
+        }
+
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                hostelSelect.innerHTML = '<option value="">Select Hostel</option>';
+                if (data.success && data.hostels.length > 0) {
+                    data.hostels.forEach(hostel => {
+                        const option = document.createElement('option');
+                        option.value = hostel.hostelId;
+                        option.textContent = `${hostel.hostelName} (${hostel.availableBeds} beds available)`;
+                        hostelSelect.appendChild(option);
+                    });
+                } else {
+                    hostelSelect.innerHTML = '<option value="">No hostels available</option>';
+                    Swal.showValidationMessage('No hostels available for this campus and gender');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                hostelSelect.innerHTML = '<option value="">Error loading</option>';
+                Swal.showValidationMessage('Error loading hostels');
+            });
+    };
+
+    window.loadHostelsForManager = function(studentId, gender) {
+        const hostelSelect = document.getElementById('hostelSelect');
+        if (!hostelSelect) return;
+
+        hostelSelect.innerHTML = '<option value="">Loading...</option>';
+
+        // Get selected hostel ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const selectedHostelId = urlParams.get('selectedHostelId');
+
+        let url = `@Url.Action("GetHostelsByCampus", "BedAllocation")?campusId=0&gender=${gender}`;
+        if (selectedHostelId) {
+            url += `&selectedHostelId=${selectedHostelId}`;
+        }
+
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.hostels.length > 0) {
+                    const hostel = data.hostels[0];
+                    hostelSelect.innerHTML = `<option value="${hostel.hostelId}">${hostel.hostelName} (${hostel.availableBeds} beds available)</option>`;
+                    hostelSelect.value = hostel.hostelId;
+                    window.loadRoomsByHostel(studentId, gender);
+                } else {
+                    hostelSelect.innerHTML = '<option value="">No hostel assigned</option>';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                hostelSelect.innerHTML = '<option value="">Error loading</option>';
+            });
+    };
+
+    window.loadRoomsByHostel = function(studentId, gender) {
+        const hostelId = document.getElementById('hostelSelect')?.value;
+        const roomSelect = document.getElementById('roomSelect');
+        const bedSelect = document.getElementById('bedSelect');
+
+        if (!roomSelect) return;
+
+        roomSelect.innerHTML = '<option value="">Loading...</option>';
+        if (bedSelect) bedSelect.innerHTML = '<option value="">Select Bed</option>';
+
+        if (!hostelId) {
+            roomSelect.innerHTML = '<option value="">Select Hostel first</option>';
+            return;
+        }
+
+        fetch(`@Url.Action("GetRoomsByHostel", "BedAllocation")?hostelId=${hostelId}&gender=${gender}`)
+            .then(response => response.json())
+            .then(data => {
+                roomSelect.innerHTML = '<option value="">Select Room</option>';
+                if (data.success && data.rooms.length > 0) {
+                    data.rooms.forEach(room => {
+                        const option = document.createElement('option');
+                        option.value = room.roomId;
+                        option.textContent = `Room ${room.roomNumber} - Floor ${room.floor} (${room.availableBeds}/${room.totalBeds} available)`;
+                        roomSelect.appendChild(option);
+                    });
+                } else {
+                    roomSelect.innerHTML = '<option value="">No rooms available</option>';
+                    Swal.showValidationMessage('No rooms available in this hostel');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                roomSelect.innerHTML = '<option value="">Error loading</option>';
+                Swal.showValidationMessage('Error loading rooms');
+            });
+    };
+
+    window.loadBedsByRoom = function() {
+        const roomId = document.getElementById('roomSelect')?.value;
+        const bedSelect = document.getElementById('bedSelect');
+
+        if (!bedSelect) return;
+
+        bedSelect.innerHTML = '<option value="">Loading...</option>';
+
+        if (!roomId) {
+            bedSelect.innerHTML = '<option value="">Select Room first</option>';
+            return;
+        }
+
+        fetch(`@Url.Action("GetBedsByRoom", "BedAllocation")?roomId=${roomId}`)
+            .then(response => response.json())
+            .then(data => {
+                bedSelect.innerHTML = '<option value="">Select Bed</option>';
+                if (data.success && data.beds.length > 0) {
+                    data.beds.forEach(bed => {
+                        const option = document.createElement('option');
+                        option.value = bed.bedId;
+                        option.textContent = `Bed ${bed.bedIdentifier}`;
+                        bedSelect.appendChild(option);
+                    });
+                } else {
+                    bedSelect.innerHTML = '<option value="">No beds available</option>';
+                    Swal.showValidationMessage('No beds available in this room');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                bedSelect.innerHTML = '<option value="">Error loading</option>';
+                Swal.showValidationMessage('Error loading beds');
+            });
+    };
+
+    // ===================================
+    // ALLOCATION ACTIONS
+    // ===================================
+
+    window.allocateBed = function(studentId, bedId) {
+        console.log('Allocating bed:', bedId, 'to student:', studentId);
+
+        Swal.fire({
+            title: 'Processing...',
+            text: 'Allocating bed space',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        const token = document.querySelector('input[name="__RequestVerificationToken"]');
+
+        fetch('@Url.Action("AllocateBed", "BedAllocation")', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': token ? token.value : ''
+            },
+            body: JSON.stringify({ studentId: studentId, bedId: bedId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    html: `<p>${data.message}</p><p style="margin-top: 10px;"><strong>${data.data.bedLocation}</strong></p>`,
+                    confirmButtonColor: '#28a745'
+                }).then(() => {
+                    window.location.reload();
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: data.message,
+                    confirmButtonColor: '#dc3545'
+                });
+            }
+        })
+        .catch(error => {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Error: ' + error.message,
+                confirmButtonColor: '#dc3545'
+            });
+            console.error('Error:', error);
+        });
+    };
+
+    window.deallocateBed = function(studentId, reason) {
+        console.log('Deallocating bed for student:', studentId, 'reason:', reason);
+
+        Swal.fire({
+            title: 'Processing...',
+            text: 'Deallocating bed space',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        const token = document.querySelector('input[name="__RequestVerificationToken"]');
+
+        fetch('@Url.Action("DeallocateBed", "BedAllocation")', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': token ? token.value : ''
+            },
+            body: JSON.stringify({ studentId: studentId, reason: reason })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: data.message,
+                    confirmButtonColor: '#28a745'
+                }).then(() => {
+                    window.location.reload();
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: data.message,
+                    confirmButtonColor: '#dc3545'
+                });
+            }
+        })
+        .catch(error => {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Error: ' + error.message,
+                confirmButtonColor: '#dc3545'
+            });
+            console.error('Error:', error);
+        });
+    };
+
+    // ===================================
+    // STUDENT DETAILS LOADER
+    // ===================================
+
+    window.loadStudentDetails = function(studentId) {
+        console.log('Loading details for student:', studentId);
+
+        document.querySelectorAll('.student-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+
+        const clickedCard = document.querySelector(`[data-student-id="${studentId}"]`);
+        if (clickedCard) {
+            clickedCard.classList.add('selected');
+        }
+
+        fetch('@Url.Action("GetStudentDetails", "BedAllocation")?studentId=' + studentId)
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('studentDetailsContainer').innerHTML = html;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('studentDetailsContainer').innerHTML =
+                    '<div class="no-selection"><i class="fas fa-exclamation-triangle"></i><h3>Error</h3><p>Please try again</p></div>';
+            });
+    };
+
+    console.log('=== All functions defined successfully ===');
+</script>
+
+<style>
+    /* Container with fixed height */
+    .allocation-container {
+        display: flex;
+        height: calc(100vh - 300px);
+        gap: 0;
+        background: #f5f5f5;
+        overflow: hidden;
+    }
+
+    .allocation-header {
+        background: white;
+        padding: 20px 30px;
+        border-bottom: 1px solid #e0e0e0;
+        margin-bottom: 0;
+    }
+
+    .header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .header-title {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+        .header-title i {
+            font-size: 32px;
+            color: #17a2b8;
+        }
+
+        .header-title h2 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+    .header-subtitle {
+        color: #7f8c8d;
+        font-size: 14px;
+        margin: 0;
+    }
+
+    .role-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: #d1ecf1;
+        color: #0c5460;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    /* Multi-Hostel Selector */
+    .hostel-selector-bar {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        padding: 15px 30px;
+        border-bottom: 1px solid #138496;
+        display: flex;
+        align-items: center;
+    }
+
+    .hostel-selector-content {
+        display: flex;
+        align-items: center;
+        color: white;
+        font-weight: 500;
+        width: 100%;
+    }
+
+        .hostel-selector-content i {
+            font-size: 20px;
+            margin-right: 12px;
+        }
+
+    .hostel-select {
+        padding: 8px 15px;
+        border: 2px solid white;
+        border-radius: 6px;
+        background: white;
+        color: #17a2b8;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        min-width: 300px;
+        transition: all 0.3s;
+    }
+
+        .hostel-select:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .hostel-select:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(255,255,255,0.3);
+        }
+
+    .hostel-count-badge {
+        background: rgba(255,255,255,0.2);
+        padding: 6px 12px;
+        border-radius: 15px;
+        font-size: 12px;
+        margin-left: 15px;
+        border: 1px solid rgba(255,255,255,0.3);
+    }
+
+    /* Hostel Manager Notice */
+    .hostel-notice {
+        background: #d1ecf1;
+        border-left: 4px solid #17a2b8;
+        padding: 15px 30px;
+        border-bottom: 1px solid #0c5460;
+    }
+
+        .hostel-notice i {
+            color: #0c5460;
+            margin-right: 10px;
+        }
+
+        .hostel-notice span {
+            color: #0c5460;
+            font-weight: 500;
+        }
+
+    /* Statistics Bar */
+    .statistics-bar {
+        background: white;
+        padding: 15px 30px;
+        border-bottom: 1px solid #e0e0e0;
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .stat-card {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 20px;
+        border-radius: 8px;
+        border: 1px solid #e0e0e0;
+    }
+
+        .stat-card.blue {
+            background: #e3f2fd;
+            border-color: #2196f3;
+        }
+
+        .stat-card.green {
+            background: #e8f5e9;
+            border-color: #4caf50;
+        }
+
+        .stat-card.orange {
+            background: #fff3e0;
+            border-color: #ff9800;
+        }
+
+        .stat-card.cyan {
+            background: #e0f7fa;
+            border-color: #00bcd4;
+        }
+
+        .stat-card i {
+            font-size: 24px;
+        }
+
+        .stat-card.blue i {
+            color: #2196f3;
+        }
+
+        .stat-card.green i {
+            color: #4caf50;
+        }
+
+        .stat-card.orange i {
+            color: #ff9800;
+        }
+
+        .stat-card.cyan i {
+            color: #00bcd4;
+        }
+
+    .stat-info h6 {
+        margin: 0;
+        font-size: 12px;
+        color: #666;
+        font-weight: 500;
+    }
+
+    .stat-info p {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 700;
+        color: #2c3e50;
+    }
+
+    /* Search Section */
+    .search-section {
+        background: white;
+        padding: 20px 30px;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .search-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 15px;
+        color: #17a2b8;
+        font-weight: 600;
+    }
+
+    .search-form {
+        display: grid;
+        grid-template-columns: 1fr 200px 100px 100px;
+        gap: 15px;
+        align-items: end;
+    }
+
+    .form-group {
+        margin-bottom: 0;
+    }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #555;
+            font-weight: 500;
+        }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 15px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 14px;
+    }
+
+    .search-btn, .clear-btn {
+        height: 42px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 0 20px;
+    }
+
+    .search-btn {
+        background: #17a2b8;
+        color: white;
+    }
+
+        .search-btn:hover {
+            background: #138496;
+        }
+
+    .clear-btn {
+        background: #6c757d;
+        color: white;
+    }
+
+        .clear-btn:hover {
+            background: #5a6268;
+        }
+
+    /* Filter Tabs */
+    .filter-tabs {
+        display: flex;
+        gap: 10px;
+        padding: 15px 30px;
+        background: white;
+        border-bottom: 1px solid #e0e0e0;
+        overflow-x: auto;
+    }
+
+    .filter-tab {
+        padding: 8px 20px;
+        border: 2px solid #e0e0e0;
+        border-radius: 20px;
+        background: white;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 14px;
+        color: #666;
+        white-space: nowrap;
+        transition: all 0.3s;
+        text-decoration: none;
+    }
+
+        .filter-tab:hover {
+            border-color: #17a2b8;
+            color: #17a2b8;
+        }
+
+        .filter-tab.active {
+            background: #17a2b8;
+            border-color: #17a2b8;
+            color: white;
+        }
+
+        .filter-tab .count {
+            display: inline-block;
+            background: rgba(0,0,0,0.1);
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-left: 8px;
+            font-size: 12px;
+        }
+
+        .filter-tab.active .count {
+            background: rgba(255,255,255,0.3);
+        }
+
+    /* Students Panel */
+    .students-panel {
+        flex: 0 0 450px;
+        background: white;
+        border-right: 1px solid #e0e0e0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        height: 100%;
+    }
+
+    .students-header {
+        padding: 20px;
+        border-bottom: 1px solid #e0e0e0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+    }
+
+        .students-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+    .students-count {
+        background: #17a2b8;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .students-list {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 10px;
+    }
+
+    .student-card {
+        background: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+        .student-card:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-color: #17a2b8;
+        }
+
+        .student-card.selected {
+            border-color: #17a2b8;
+            background: #f8fbfc;
+        }
+
+    .student-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 10px;
+    }
+
+    .student-name {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 3px;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+        .status-badge.accommodated {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .status-badge.not-accommodated {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+    .card-info {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 13px;
+        color: #666;
+        margin-top: 5px;
+    }
+
+        .card-info i {
+            font-size: 14px;
+            color: #999;
+            width: 16px;
+        }
+
+    /* Details Panel */
+    .details-panel {
+        flex: 1;
+        background: #fafafa;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        height: 100%;
+    }
+
+    .no-selection {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #999;
+    }
+
+        .no-selection i {
+            font-size: 80px;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+
+        .no-selection h3 {
+            color: #666;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+
+        .no-selection p {
+            color: #999;
+            font-size: 14px;
+        }
+
+    .details-content {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 0;
+        height: 100%;
+    }
+
+        /* Scrollbar styling */
+        .students-list::-webkit-scrollbar,
+        .details-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .students-list::-webkit-scrollbar-track,
+        .details-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .students-list::-webkit-scrollbar-thumb,
+        .details-content::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+            .students-list::-webkit-scrollbar-thumb:hover,
+            .details-content::-webkit-scrollbar-thumb:hover {
+                background: #555;
+            }
+
+    /* Responsive */
+    @@media (max-width: 1200px) {
+        .search-form {
+            grid-template-columns: 1fr;
+        }
+
+        .students-panel {
+            flex: 0 0 350px;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .allocation-container {
+            flex-direction: column;
+            height: auto;
+        }
+
+        .students-panel {
+            flex: 0 0 auto;
+            max-height: 400px;
+        }
+
+        .statistics-bar {
+            flex-direction: column;
+        }
+    }
+</style>
+
+<!-- Header -->
+<div class="allocation-header">
+    <div class="header-top">
+        <div class="header-title">
+            <i class="fas fa-bed"></i>
+            <div>
+                <h2>Bed Allocation Management</h2>
+                <p class="header-subtitle">Allocate and manage student accommodation</p>
+            </div>
+        </div>
+        <div>
+            <span class="role-badge">
+                <i class="fas fa-user-shield"></i>
+                Role: @(Model.IsAdmin ? "Admin" : Model.IsHostelManager ? "Hostel Manager" : "Staff")
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Hostel Manager Notice/Selector -->
+@if (Model.IsHostelManager)
+{
+    @if (Model.AssignedHostels != null && Model.AssignedHostels.Count > 1)
+    {
+        <!-- Multiple Hostels - Show Selector -->
+        <div class="hostel-selector-bar">
+            <div class="hostel-selector-content">
+                <i class="fas fa-hotel"></i>
+                <span style="margin-right: 15px;">Managing Multiple Hostels:</span>
+                <select id="hostelSelector" class="hostel-select" onchange="switchHostel(this.value)">
+                    @foreach (var hostel in Model.AssignedHostels)
+                    {
+                        <option value="@hostel.HostelId" selected="@(hostel.HostelId == Model.AssignedHostel.HostelId)">
+                            @hostel.HostelName - @hostel.Campus.CampusName
+                        </option>
+                    }
+                </select>
+                <span class="hostel-count-badge">@Model.AssignedHostels.Count hostels</span>
+            </div>
+        </div>
+    }
+    else if (Model.AssignedHostel != null)
+    {
+        <!-- Single Hostel - Show Info -->
+        <div class="hostel-notice">
+            <i class="fas fa-info-circle"></i>
+            <span>You are managing: <strong>@Model.AssignedHostel.HostelName</strong> at <strong>@Model.AssignedHostel.Campus.CampusName Campus</strong></span>
+        </div>
+    }
+}
+
+<!-- Statistics Bar -->
+<div class="statistics-bar">
+    <div class="stat-card blue">
+        <i class="fas fa-users"></i>
+        <div class="stat-info">
+            <h6>Total Students</h6>
+            <p>@Model.TotalStudents</p>
+        </div>
+    </div>
+    <div class="stat-card green">
+        <i class="fas fa-user-check"></i>
+        <div class="stat-info">
+            <h6>Accommodated</h6>
+            <p>@Model.AccommodatedCount</p>
+        </div>
+    </div>
+    <div class="stat-card orange">
+        <i class="fas fa-user-clock"></i>
+        <div class="stat-info">
+            <h6>Not Accommodated</h6>
+            <p>@Model.NotAccommodatedCount</p>
+        </div>
+    </div>
+    <div class="stat-card cyan">
+        <i class="fas fa-bed"></i>
+        <div class="stat-info">
+            <h6>Available Beds</h6>
+            <p>@Model.AvailableBeds / @Model.TotalBeds</p>
+        </div>
+    </div>
+</div>
+
+<!-- Search Section -->
+<div class="search-section">
+    <div class="search-title">
+        <i class="fas fa-search"></i>
+        <span>Search Students</span>
+    </div>
+    <form asp-action="Index" method="get" class="search-form">
+        <div class="form-group">
+            <label for="searchTerm">Search Term</label>
+            <input type="text"
+                   class="form-control"
+                   id="searchTerm"
+                   name="searchTerm"
+                   placeholder="Search by student name, number, or email..."
+                   value="@Model.SearchTerm" />
+        </div>
+        <div class="form-group">
+            <label for="searchBy">Search By</label>
+            <select class="form-control" id="searchBy" name="searchBy">
+                <option value="AllFields" selected="@(Model.SearchBy == "AllFields")">All Fields</option>
+                <option value="StudentNumber" selected="@(Model.SearchBy == "StudentNumber")">Student Number</option>
+                <option value="StudentName" selected="@(Model.SearchBy == "StudentName")">Student Name</option>
+                <option value="Email" selected="@(Model.SearchBy == "Email")">Email</option>
+            </select>
+        </div>
+        <input type="hidden" name="filterStatus" value="@Model.FilterStatus" />
+        @if (Model.AssignedHostel != null)
+        {
+            <input type="hidden" name="selectedHostelId" value="@Model.AssignedHostel.HostelId" />
+        }
+        <button type="submit" class="search-btn">
+            <i class="fas fa-search"></i>
+            Search
+        </button>
+        <a asp-action="Index" class="clear-btn">
+            <i class="fas fa-times"></i>
+        </a>
+    </form>
+</div>
+
+<!-- Filter Tabs -->
+<div class="filter-tabs">
+    <a href="@Url.Action("Index", new { searchTerm = Model.SearchTerm, searchBy = Model.SearchBy, filterStatus = "NotAccommodated", selectedHostelId = Model.AssignedHostel?.HostelId })"
+       class="filter-tab @(Model.FilterStatus == "NotAccommodated" ? "active" : "")">
+        <i class="fas fa-user-clock"></i>
+        Not Accommodated
+        <span class="count">@Model.NotAccommodatedCount</span>
+    </a>
+    <a href="@Url.Action("Index", new { searchTerm = Model.SearchTerm, searchBy = Model.SearchBy, filterStatus = "Accommodated", selectedHostelId = Model.AssignedHostel?.HostelId })"
+       class="filter-tab @(Model.FilterStatus == "Accommodated" ? "active" : "")">
+        <i class="fas fa-user-check"></i>
+        Accommodated
+        <span class="count">@Model.AccommodatedCount</span>
+    </a>
+</div>
+
+<!-- Main Container -->
+<div class="allocation-container">
+    <!-- Students Panel -->
+    <div class="students-panel">
+        <div class="students-header">
+            <h3>Students</h3>
+            <span class="students-count">@Model.Students.Count results</span>
+        </div>
+        <div class="students-list">
+            @if (Model.Students.Any())
+            {
+                foreach (var student in Model.Students)
+                {
+                    var statusClass = student.BedId.HasValue ? "accommodated" : "not-accommodated";
+                    var statusText = student.BedId.HasValue ? "Accommodated" : "Not Accommodated";
+
+                    <div class="student-card"
+                         data-student-id="@student.Id">
+                        <div class="student-header">
+                            <div>
+                                <div class="student-name">@student.FullName</div>
+                                <div class="card-info">
+                                    <i class="fas fa-id-card"></i>
+                                    <span>@student.StudentId_Number</span>
+                                </div>
+                            </div>
+                            <span class="status-badge @statusClass">@statusText</span>
+                        </div>
+
+                        <div class="card-info">
+                            <i class="fas fa-graduation-cap"></i>
+                            <span>@student.Programme?.Name</span>
+                        </div>
+
+                        <div class="card-info">
+                            <i class="fas fa-school"></i>
+                            <span>@student.Programme?.Department?.School?.Name</span>
+                        </div>
+
+                        @if (student.BedSpace != null)
+                        {
+                            <div class="card-info" style="margin-top: 8px; color: #17a2b8;">
+                                <i class="fas fa-bed"></i>
+                                <span>@student.BedSpace.Room.Hostel.HostelName - Room @student.BedSpace.Room.RoomNumber</span>
+                            </div>
+                        }
+                    </div>
+                }
+            }
+            else
+            {
+                <div style="text-align: center; padding: 40px; color: #999;">
+                    <i class="fas fa-inbox" style="font-size: 48px; margin-bottom: 15px;"></i>
+                    <p>No students found</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Details Panel -->
+    <div class="details-panel">
+        <div id="studentDetailsContainer" class="details-content">
+            <div class="no-selection">
+                <i class="fas fa-user-circle"></i>
+                <h3>No Student Selected</h3>
+                <p>Select a student from the list to view details and manage allocation</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
+<script>
+    // ===================================
+    // MULTI-HOSTEL MANAGEMENT WITH LOCALSTORAGE
+    // ===================================
+
+    // LocalStorage key for selected hostel
+    const HOSTEL_STORAGE_KEY = 'bedAllocation_selectedHostelId';
+
+    // Switch hostel and reload
+    window.switchHostel = function(hostelId) {
+        console.log('Switching to hostel:', hostelId);
+
+        // Save to localStorage
+        localStorage.setItem(HOSTEL_STORAGE_KEY, hostelId);
+
+        // Build URL with all current parameters plus new hostel
+        const url = new URL(window.location);
+        url.searchParams.set('selectedHostelId', hostelId);
+
+        // Keep existing search parameters
+        const searchTerm = url.searchParams.get('searchTerm');
+        const searchBy = url.searchParams.get('searchBy');
+        const filterStatus = url.searchParams.get('filterStatus');
+
+        if (searchTerm) url.searchParams.set('searchTerm', searchTerm);
+        if (searchBy) url.searchParams.set('searchBy', searchBy);
+        if (filterStatus) url.searchParams.set('filterStatus', filterStatus);
+
+        window.location.href = url.toString();
+    };
+
+    // Clear hostel preference (optional - for logout)
+    window.clearHostelPreference = function() {
+        localStorage.removeItem(HOSTEL_STORAGE_KEY);
+    };
+
+    // ===================================
+    // EVENT DELEGATION FOR ALL CLICKS
+    // ===================================
+
+    document.addEventListener('click', function(e) {
+        // Handle Student Card clicks
+        const studentCard = e.target.closest('.student-card');
+        if (studentCard && !e.target.closest('.btn-allocate') && !e.target.closest('.btn-deallocate')) {
+            const studentId = parseInt(studentCard.dataset.studentId);
+            if (typeof window.loadStudentDetails === 'function') {
+                window.loadStudentDetails(studentId);
+            }
+            return;
+        }
+
+        // Handle Allocate button clicks
+        const allocateBtn = e.target.closest('.btn-allocate');
+        if (allocateBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            const studentId = parseInt(allocateBtn.dataset.studentId);
+            const gender = allocateBtn.dataset.gender;
+            if (typeof window.openAllocationModal === 'function') {
+                window.openAllocationModal(studentId, gender);
+            }
+            return;
+        }
+
+        // Handle Deallocate button clicks
+        const deallocateBtn = e.target.closest('.btn-deallocate');
+        if (deallocateBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            const studentId = parseInt(deallocateBtn.dataset.studentId);
+            if (typeof window.openDeallocationModal === 'function') {
+                window.openDeallocationModal(studentId);
+            }
+            return;
+        }
+    }, true);
+
+    // ===================================
+    // PAGE INITIALIZATION
+    // ===================================
+
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('=== DOM Content Loaded ===');
+
+        // Handle hostel selector localStorage persistence
+        const hostelSelector = document.getElementById('hostelSelector');
+        if (hostelSelector) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlHostelId = urlParams.get('selectedHostelId');
+            const storedHostelId = localStorage.getItem(HOSTEL_STORAGE_KEY);
+
+            // If no URL parameter but we have stored preference
+            if (!urlHostelId && storedHostelId) {
+                // Check if stored hostel is in the dropdown
+                const options = Array.from(hostelSelector.options);
+                const matchingOption = options.find(opt => opt.value === storedHostelId);
+
+                if (matchingOption) {
+                    // Redirect with stored hostel
+                    const url = new URL(window.location);
+                    url.searchParams.set('selectedHostelId', storedHostelId);
+                    window.location.href = url.toString();
+                    return; // Stop execution
+                }
+            }
+
+            // Update localStorage with current selection
+            if (hostelSelector.value) {
+                localStorage.setItem(HOSTEL_STORAGE_KEY, hostelSelector.value);
+            }
+        }
+
+        // Load first student after a brief delay
+        setTimeout(function() {
+            const firstCard = document.querySelector('.student-card');
+            if (firstCard) {
+                const studentId = firstCard.getAttribute('data-student-id');
+                if (studentId && typeof window.loadStudentDetails === 'function') {
+                    window.loadStudentDetails(parseInt(studentId));
+                }
+            }
+        }, 200);
+    });
+
+    console.log('=== All initialization complete ===');
+</script>

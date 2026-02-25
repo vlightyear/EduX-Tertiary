@@ -1,0 +1,229 @@
+﻿@model SIS.Models.Assessments.AssessmentDetailsViewModel
+
+<div class="min-h-screen bg-slate-50 p-6">
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+        <div class="flex items-center text-slate-800">
+            <i class="material-icons text-3xl mr-2">assignment</i>
+            <div>
+                <h1 class="text-2xl font-bold">Assessment Details</h1>
+                <p class="text-sm text-slate-600">@Model.Assessment.Course.CourseCode - @Model.Assessment.Course.CourseName</p>
+            </div>
+        </div>
+        <div class="mt-4 md:mt-0">
+            <a href="@Url.Action("ViewCourseContent", "Course", new { id = Model.Assessment.CourseId })"
+               class="inline-flex items-center px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-100 transition-colors">
+                <i class="material-icons text-sm mr-1">arrow_back</i>
+                <span>Back to Course</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Assessment Information Card -->
+    <div class="bg-white rounded-xl shadow-sm mb-6">
+        <div class="p-6">
+            <h2 class="text-xl font-semibold text-slate-800 mb-4">Assessment Information</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <p class="text-sm text-slate-600 mb-1">Assessment Name</p>
+                    <p class="font-medium">@Model.Assessment.Assessment.Name</p>
+                </div>
+                <div>
+                    <p class="text-sm text-slate-600 mb-1">Academic Year</p>
+                    <p class="font-medium">@Model.Assessment.AcademicYear.YearValue</p>
+                </div>
+                <div>
+                    <p class="text-sm text-slate-600 mb-1">Mode of Study</p>
+                    <p class="font-medium">@Model.Assessment.ModeOfStudy.ModeName (@Model.Assessment.ModeOfStudy.Code)</p>
+                </div>
+                <div>
+                    <p class="text-sm text-slate-600 mb-1">Duration</p>
+                    <p class="font-medium">@Model.Assessment.DurationMinutes minutes</p>
+                </div>
+                <div>
+                    <p class="text-sm text-slate-600 mb-1">Available From</p>
+                    <p class="font-medium">@Model.Assessment.StartDateTime.ToString("MMM dd, yyyy HH:mm")</p>
+                </div>
+                <div>
+                    <p class="text-sm text-slate-600 mb-1">Available Until</p>
+                    <p class="font-medium">@Model.Assessment.EndDateTime.ToString("MMM dd, yyyy HH:mm")</p>
+                </div>
+            </div>
+
+            <!-- Assessment Settings -->
+            <div class="mt-6 pt-4 border-t border-slate-200">
+                <h3 class="text-md font-medium text-slate-800 mb-3">Assessment Settings</h3>
+                <div class="flex flex-wrap gap-4">
+                    <div class="inline-flex items-center bg-slate-100 rounded-full px-3 py-1">
+                        <i class="material-icons text-slate-600 text-sm mr-1">@(Model.Assessment.RandomizeQuestions ? "check_circle" : "cancel")</i>
+                        <span class="text-sm">Randomized Questions</span>
+                    </div>
+                    <div class="inline-flex items-center bg-slate-100 rounded-full px-3 py-1">
+                        <i class="material-icons text-slate-600 text-sm mr-1">@(Model.Assessment.PreventTabSwitching ? "check_circle" : "cancel")</i>
+                        <span class="text-sm">Prevent Tab Switching</span>
+                    </div>
+                    <div class="inline-flex items-center bg-slate-100 rounded-full px-3 py-1">
+                        <i class="material-icons text-slate-600 text-sm mr-1">@(Model.Assessment.ShowResults ? "check_circle" : "cancel")</i>
+                        <span class="text-sm">Show Results After Submission</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Time Information Card -->
+    <div class="bg-white rounded-xl shadow-sm mb-6">
+        <div class="p-6">
+            <h2 class="text-xl font-semibold text-slate-800 mb-4">Time Information</h2>
+            
+            <div class="flex flex-col md:flex-row gap-6">
+                <div class="flex-1 p-4 bg-blue-50 rounded-lg">
+                    <h3 class="text-blue-700 font-medium mb-2">Assessment Window</h3>
+                    <p class="text-sm text-slate-700 mb-1">This assessment is available for:</p>
+                    <div class="text-xl font-semibold text-blue-800">
+                        <span data-end="@Model.Assessment.EndDateTime.ToString("o")" class="window-countdown">
+                            @FormatTimeRemaining(Model.TimeRemaining)
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-1">Time until the assessment closes</p>
+                </div>
+                
+                @if (Model.HasExistingAttempt && Model.StudentAttempt.Status == "InProgress" && Model.AttemptTimeRemaining.HasValue)
+                {
+                    <div class="flex-1 p-4 bg-yellow-50 rounded-lg">
+                        <h3 class="text-yellow-700 font-medium mb-2">Your Time Remaining</h3>
+                        <p class="text-sm text-slate-700 mb-1">You have already started this assessment. Time left:</p>
+                        <div class="text-xl font-semibold text-yellow-800">
+                            @FormatTimeRemaining(Model.AttemptTimeRemaining.Value)
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1">
+                            Once your time expires, your assessment will be automatically submitted
+                        </p>
+                    </div>
+                }
+                else
+                {
+                    <div class="flex-1 p-4 bg-green-50 rounded-lg">
+                        <h3 class="text-green-700 font-medium mb-2">Assessment Duration</h3>
+                        <p class="text-sm text-slate-700 mb-1">When you start, you will have:</p>
+                        <div class="text-xl font-semibold text-green-800">
+                            @Model.Assessment.DurationMinutes minutes
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1">
+                            The timer starts once you click the Start button
+                        </p>
+                    </div>
+                }
+            </div>
+            
+            @if (!string.IsNullOrEmpty(Model.TimeExpiryWarning))
+            {
+                <div class="mt-4 p-4 bg-red-50 border-l-4 border-red-500 text-red-700">
+                    <p class="font-medium">@Model.TimeExpiryWarning</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Student Instructions -->
+    <div class="bg-white rounded-xl shadow-sm mb-6">
+        <div class="p-6">
+            <h2 class="text-xl font-semibold text-slate-800 mb-4">Instructions</h2>
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-4">
+                <ul class="list-disc list-inside text-blue-700 space-y-2">
+                    <li>This assessment must be completed in @Model.Assessment.DurationMinutes minutes.</li>
+                    <li>Once you start the assessment, the timer cannot be paused.</li>
+                    <li>Make sure you have a stable internet connection before beginning.</li>
+                    @if (Model.Assessment.RandomizeQuestions)
+                    {
+                        <li>Questions will be presented in random order.</li>
+                    }
+                    @if (Model.Assessment.PreventTabSwitching)
+                    {
+                        <li><strong>Important:</strong> Switching to another browser tab or window will be recorded and may result in automatic submission.</li>
+                    }
+                    @if (Model.Assessment.ShowResults)
+                    {
+                        <li>Your results will be displayed immediately after submission.</li>
+                    }
+                    else
+                    {
+                        <li>Results will be available after the assessment is graded by your instructor.</li>
+                    }
+                </ul>
+            </div>
+            
+            @if (Model.HasExistingAttempt && Model.StudentAttempt.Status == "InProgress")
+            {
+                <div class="mt-4 bg-slate-100 p-4 rounded-lg">
+                    <p class="text-slate-700">
+                        <strong>Note:</strong> You have already started this assessment. Your previous answers have been saved.
+                        You can continue from where you left off.
+                    </p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Action Button -->
+    <div class="flex justify-center">
+        @if (Model.CanStart)
+        {
+            <a href="@Model.ActionButtonUrl" class="inline-flex items-center px-6 py-3 bg-blue-600 text-white text-lg font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                <i class="material-icons mr-2">play_arrow</i>
+                @Model.ActionButtonText
+            </a>
+        }
+        else
+        {
+            <a href="@Model.ActionButtonUrl" class="inline-flex items-center px-6 py-3 bg-slate-100 text-slate-700 text-lg font-medium rounded-lg hover:bg-slate-200 transition-colors">
+                <i class="material-icons mr-2">visibility</i>
+                @Model.ActionButtonText
+            </a>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Update window countdown
+            function updateWindowCountdown() {
+                const $countdown = $('.window-countdown');
+                const endTime = new Date($countdown.data('end'));
+                const now = new Date();
+                const diff = endTime - now;
+
+                if (diff <= 0) {
+                    $countdown.text('Expired');
+                    location.reload(); // Reload the page to show it's expired
+                    return;
+                }
+
+                // Calculate time components
+                const hours = Math.floor(diff / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+                // Format with leading zeros
+                const formattedHours = String(hours).padStart(2, '0');
+                const formattedMinutes = String(minutes).padStart(2, '0');
+                const formattedSeconds = String(seconds).padStart(2, '0');
+
+                // Update the display
+                $countdown.text(`${formattedHours}:${formattedMinutes}:${formattedSeconds}`);
+            }
+
+            // Update countdown every second
+            updateWindowCountdown();
+            setInterval(updateWindowCountdown, 1000);
+        });
+    </script>
+}
+
+@functions {
+    string FormatTimeRemaining(TimeSpan time)
+    {
+        return $"{Math.Floor(time.TotalHours):00}:{time.Minutes:00}:{time.Seconds:00}";
+    }
+}

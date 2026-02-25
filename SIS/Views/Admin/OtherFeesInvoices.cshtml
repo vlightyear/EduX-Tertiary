@@ -1,0 +1,1123 @@
+@{
+    ViewData["Title"] = "Other Fees Invoices";
+}
+
+<div class="min-h-screen p-4">
+    <!-- Header with Toggle -->
+    <div class="flex justify-between items-center mb-4">
+        <h1 class="text-2xl font-bold text-primary-800 flex items-center">
+            <i class="material-icons mr-2 text-primary-600">receipt_long</i>
+            Other Fees Invoices
+        </h1>
+        <div class="flex gap-2">
+            <button onclick="showSection('generate')" id="btnShowGenerate"
+                    class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center shadow-md">
+                <i class="material-icons mr-2">add</i>
+                Generate Invoice
+            </button>
+            <button onclick="showSection('list')" id="btnShowList"
+                    class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center shadow-md">
+                <i class="material-icons mr-2">list</i>
+                View Invoices
+            </button>
+        </div>
+    </div>
+
+    <!-- Alert Messages -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg flex items-center">
+            <i class="material-icons mr-2">check_circle</i>
+            <span>@TempData["SuccessMessage"]</span>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg flex items-center">
+            <i class="material-icons mr-2">error</i>
+            <span>@TempData["ErrorMessage"]</span>
+        </div>
+    }
+
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div class="mb-4 p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded-lg">
+            <i class="material-icons mr-2">warning</i>
+            <div>@Html.Raw(TempData["WarningMessage"])</div>
+        </div>
+    }
+
+    <!-- SECTION 1: GENERATE INVOICES -->
+    <div id="generateSection" class="bg-white rounded-lg shadow-lg p-6">
+        <form id="invoiceForm" method="post" action="/Admin/GenerateInvoices">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="StudentIds" id="hiddenStudentIds" />
+
+            <!-- Step 1: Select Fees -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                    <span class="bg-primary-600 text-white rounded-full w-8 h-8 flex items-center justify-center mr-2">1</span>
+                    Select Fees
+                </h3>
+                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    @if (ViewBag.OtherFees != null && ViewBag.OtherFees.Count > 0)
+                    {
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3" id="feesContainer">
+                            @foreach (var fee in ViewBag.OtherFees)
+                            {
+                                <label class="flex items-start space-x-3 p-3 bg-white rounded-lg border border-gray-200 hover:border-primary-500 cursor-pointer transition-all">
+                                    <input type="checkbox" name="SelectedFeeIds" value="@fee.Id" 
+                                           class="mt-1 rounded text-primary-600 focus:ring-primary-500"
+                                           onchange="updateSelectedFees()">
+                                    <div class="flex-1">
+                                        <div class="font-medium text-gray-900">@fee.FeeName</div>
+                                        <div class="text-sm text-gray-600">K @fee.Amount.ToString("N2")</div>
+                                        <div class="text-xs text-gray-500">@fee.SchoolName</div>
+                                     <span class="px-2 py-1 text-xs rounded-full font-medium @fee.BadgeClass">
+    <i class="material-icons text-xs">@fee.IconClass</i>
+    @fee.InvoiceType
+</span>
+
+                                    </div>
+                                </label>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-gray-500 text-center py-4">No fees available. Please add fees first.</p>
+                    }
+                    <div id="selectedFeesInfo" class="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200 hidden">
+                        <div class="flex justify-between items-center">
+                            <span class="font-medium text-blue-900">Selected Fees:</span>
+                            <span id="selectedFeesCount" class="text-blue-700">0 fees selected</span>
+                        </div>
+                        <div class="mt-2 flex justify-between items-center">
+                            <span class="text-blue-800">Total Amount per Invoice:</span>
+                            <span id="totalAmount" class="font-bold text-lg text-blue-900">K 0.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Academic Year, Semester, Batch Reference & Description -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                    <span class="bg-primary-600 text-white rounded-full w-8 h-8 flex items-center justify-center mr-2">2</span>
+                    Invoice Details
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Academic Year *</label>
+                        <select name="AcademicYearId" id="academicYear" required
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500">
+                            <option value="">Select Academic Year</option>
+                            @if (ViewBag.AcademicYears != null)
+                            {
+                                @foreach (var year in ViewBag.AcademicYears)
+                                {
+                                    <option value="@year.Value">@year.Text</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Semester (Optional)</label>
+                        <select name="Semester" id="semester"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500">
+                            <option value="">No Semester</option>
+                            <option value="1">Semester 1</option>
+                            <option value="2">Semester 2</option>
+                        </select>
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Invoice Description (Optional)</label>
+                        <input type="text" name="InvoiceDescription" id="invoiceDescription"
+                               placeholder="e.g., Semester 1 Library Fees"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500">
+                        <p class="text-xs text-gray-500 mt-1">Batch reference will be auto-generated (e.g., Batch-000001)</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Enter Student Numbers -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                    <span class="bg-primary-600 text-white rounded-full w-8 h-8 flex items-center justify-center mr-2">3</span>
+                    Add Student Numbers
+                </h3>
+                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <!-- Manual Entry with Plus/Minus -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Enter Student IDs One by One
+                        </label>
+                        
+                        <!-- Dynamic Student Input Fields -->
+                        <div id="studentInputsContainer" class="space-y-2 mb-3">
+                            <div class="flex gap-2 student-input-row">
+                                <input type="text" placeholder="Enter Student ID" 
+                                       class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 student-id-input">
+                                <button type="button" onclick="addStudentInput()" 
+                                        class="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                    <i class="material-icons">add</i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="border-t pt-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Upload CSV File with Student IDs
+                        </label>
+                        
+                        <div class="flex gap-2 mb-3">
+                            <input type="file" id="csvFile" accept=".csv" 
+                                   class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500">
+                            <button type="button" onclick="uploadCSV()" 
+                                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center">
+                                <i class="material-icons mr-2 text-sm">cloud_upload</i>
+                                Upload CSV
+                            </button>
+                            <button type="button" onclick="downloadTemplate()" 
+                                    class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center">
+                                <i class="material-icons mr-2 text-sm">download</i>
+                                Template
+                            </button>
+                        </div>
+                        
+                        <p class="text-xs text-gray-500">
+                            <i class="material-icons text-xs align-middle">info</i>
+                            Upload a CSV file with one student ID per line. Click "Template" to download a sample CSV file.
+                        </p>
+                    </div>
+
+                    <div class="border-t pt-4 mt-4">
+                        <div class="flex items-center justify-between">
+                            <button type="button" onclick="validateStudents()" 
+                                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+                                <i class="material-icons mr-2 text-sm">fact_check</i>
+                                Validate Students
+                            </button>
+                            <span id="studentCount" class="text-sm text-gray-600">0 student IDs entered</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Validation Results -->
+            <div id="validationResults" class="mb-6 hidden">
+                <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                    <span class="bg-primary-600 text-white rounded-full w-8 h-8 flex items-center justify-center mr-2">4</span>
+                    Validation Results
+                </h3>
+                
+                <!-- Valid Students -->
+                <div id="validStudentsSection" class="mb-4 hidden">
+                    <div class="bg-green-50 rounded-lg p-4 border border-green-200">
+                        <h4 class="font-semibold text-green-900 mb-2 flex items-center">
+                            <i class="material-icons mr-2">check_circle</i>
+                            Valid Students (<span id="validCount">0</span>)
+                        </h4>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full text-sm">
+                                <thead class="bg-green-100">
+                                    <tr>
+                                        <th class="px-3 py-2 text-left text-xs font-semibold text-green-900">Student ID</th>
+                                        <th class="px-3 py-2 text-left text-xs font-semibold text-green-900">Name</th>
+                                        <th class="px-3 py-2 text-left text-xs font-semibold text-green-900">Programme</th>
+                                        <th class="px-3 py-2 text-left text-xs font-semibold text-green-900">School</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="validStudentsBody" class="bg-white divide-y divide-green-100">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Invalid Students -->
+                <div id="invalidStudentsSection" class="mb-4 hidden">
+                    <div class="bg-red-50 rounded-lg p-4 border border-red-200">
+                        <h4 class="font-semibold text-red-900 mb-2 flex items-center">
+                            <i class="material-icons mr-2">error</i>
+                            Invalid/Not Found Students (<span id="invalidCount">0</span>)
+                        </h4>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full text-sm">
+                                <thead class="bg-red-100">
+                                    <tr>
+                                        <th class="px-3 py-2 text-left text-xs font-semibold text-red-900">Student ID</th>
+                                        <th class="px-3 py-2 text-left text-xs font-semibold text-red-900">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="invalidStudentsBody" class="bg-white divide-y divide-red-100">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Options and Submit -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-3">
+                    Options & Generate
+                </h3>
+                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <label class="flex items-center space-x-3 mb-4">
+                        <input type="checkbox" name="AllowDuplicates" value="true"
+                               class="rounded text-primary-600 focus:ring-primary-500">
+                        <span class="text-sm text-gray-700">
+                            Allow duplicate invoices (create invoice even if one exists for same academic year & semester)
+                        </span>
+                    </label>
+
+                    <div class="flex justify-between items-center">
+                        <div class="text-sm text-gray-600">
+                            <p>All invoice references will be automatically generated by the system.</p>
+                        </div>
+                        <button type="submit" id="generateBtn"
+                                class="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center shadow-md">
+                            <i class="material-icons mr-2">receipt</i>
+                            Generate Invoices
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- SECTION 2: INVOICE LIST -->
+    <div id="listSection" class="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-100 hidden">
+        <!-- Filters -->
+        <div class="p-4 bg-gray-50 border-b border-gray-200">
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Academic Year</label>
+                    <select id="filterAcademicYear" onchange="loadInvoices()"
+                            class="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500">
+                        <option value="">All Years</option>
+                        @if (ViewBag.AcademicYears != null)
+                        {
+                            @foreach (var year in ViewBag.AcademicYears)
+                            {
+                                <option value="@year.Value">@year.Text</option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Semester</label>
+                    <select id="filterSemester" onchange="loadInvoices()"
+                            class="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500">
+                        <option value="">All Semesters</option>
+                        <option value="1">Semester 1</option>
+                        <option value="2">Semester 2</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Status</label>
+                    <select id="filterStatus" onchange="loadInvoices()"
+                            class="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500">
+                        <option value="">All Statuses</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Paid">Paid</option>
+                        <option value="PartiallyPaid">Partially Paid</option>
+                        <option value="Cancelled">Cancelled</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Search</label>
+                    <input type="text" id="searchTerm" onkeyup="loadInvoices()"
+                           placeholder="Student ID, Name, or Invoice #"
+                           class="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">&nbsp;</label>
+                    <label class="flex items-center space-x-2">
+                        <input type="checkbox" id="includeDeleted" onchange="loadInvoices()"
+                               class="rounded text-primary-600 focus:ring-primary-500">
+                        <span class="text-xs text-gray-700">Show Deleted</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-primary-50">
+                    <tr>
+                        <th class="px-3 py-3 text-left text-xs font-semibold text-primary-700 uppercase">#</th>
+                        <th class="px-3 py-3 text-left text-xs font-semibold text-primary-700 uppercase">Invoice Ref</th>
+                        <th class="px-3 py-3 text-left text-xs font-semibold text-primary-700 uppercase">Batch Ref</th>
+                        <th class="px-3 py-3 text-left text-xs font-semibold text-primary-700 uppercase">Student</th>
+                        <th class="px-3 py-3 text-left text-xs font-semibold text-primary-700 uppercase">Academic Year</th>
+                        <th class="px-3 py-3 text-left text-xs font-semibold text-primary-700 uppercase">Semester</th>
+                        <th class="px-3 py-3 text-left text-xs font-semibold text-primary-700 uppercase">Amount</th>
+                        <th class="px-3 py-3 text-left text-xs font-semibold text-primary-700 uppercase">Status</th>
+                        <th class="px-3 py-3 text-left text-xs font-semibold text-primary-700 uppercase">Date</th>
+                        <th class="px-3 py-3 text-left text-xs font-semibold text-primary-700 uppercase">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="invoiceTableBody" class="bg-white divide-y divide-gray-200">
+                    <tr>
+                        <td colspan="10" class="px-6 py-8 text-center text-gray-500">
+                            <i class="material-icons text-4xl text-gray-300 mb-2 animate-spin">refresh</i>
+                            <p>Loading invoices...</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="border-t border-gray-200 px-4 py-3 bg-gray-50">
+            <div class="flex items-center justify-between">
+                <div>
+                    <select id="pageSize" onchange="changePageSize()"
+                            class="px-2 py-1 text-xs border border-gray-300 rounded-lg">
+                        <option value="10">10 per page</option>
+                        <option value="25">25 per page</option>
+                        <option value="50">50 per page</option>
+                    </select>
+                </div>
+                <div id="paginationInfo" class="text-xs text-gray-600"></div>
+                <div id="paginationControls" class="flex gap-1"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Invoice Modal -->
+<div id="viewInvoiceModal" class="hidden fixed inset-0 z-50">
+    <div class="fixed inset-0 bg-black bg-opacity-50"></div>
+    <div class="fixed inset-0 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl">
+                <div class="bg-primary-600 text-white px-6 py-4 rounded-t-xl flex justify-between items-center">
+                    <h3 class="text-lg font-semibold">Invoice Details</h3>
+                    <button onclick="closeViewModal()" class="text-white hover:text-gray-200">
+                        <i class="material-icons">close</i>
+                    </button>
+                </div>
+                <div id="invoiceDetailsContent" class="p-6">
+                    <!-- Content loaded dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Print Invoice Template (Hidden) -->
+<div id="printInvoiceTemplate" style="display: none;">
+    <div style="width: 210mm; min-height: 297mm; padding: 20mm; font-family: Arial, sans-serif; background: white;">
+        <!-- University Header -->
+        <div style="text-align: center; margin-bottom: 30px; border-bottom: 3px solid #1e3a8a; padding-bottom: 20px;">
+            <div style="display: flex; align-items: center; justify-center; margin-bottom: 10px;">
+                <img src="/images/institution-logo.png" alt="Eden University Logo" style="width: 100px; height: 100px; object-fit: contain; margin-right: 20px;" />
+                <div style="text-align: left;">
+                    <h1 style="margin: 0; color: #1e3a8a; font-size: 28px;">Invoice</h1>
+                    <h2 style="margin: 5px 0; color: #3b82f6; font-size: 22px;">Eden University</h2>
+                    <p style="margin: 0; font-size: 12px; color: #666;">Barlastone Park, Lusaka, Zambia</p>
+                    <p style="margin: 0; font-size: 12px; color: #666;">P.O Box 37787</p>
+                    <p style="margin: 0; font-size: 12px; color: #666;">TEL:0979079400/0979079480/0966686666</p>
+                    <p style="margin: 0; font-size: 12px; color: #666;">WEBSITE: www.edenuniversity.net</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Invoice Details -->
+        <div style="margin-bottom: 30px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                <div>
+                    <strong>Invoice No:</strong> <span id="print-invoice-ref"></span>
+                </div>
+                <div>
+                    <strong>Date:</strong> <span id="print-invoice-date"></span>
+                </div>
+            </div>
+            
+            <div style="border: 2px solid #3b82f6; padding: 15px; margin: 20px 0; background: #eff6ff;">
+                <div style="margin-bottom: 10px;">
+                    <strong>To:</strong> <span id="print-invoice-student-name" style="font-size: 16px;"></span>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <strong>Student ID:</strong> <span id="print-invoice-student-id" style="font-size: 14px;"></span>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <strong>Academic Year:</strong> <span id="print-invoice-academic-year"></span>
+                </div>
+                <div>
+                    <strong>Semester:</strong> <span id="print-invoice-semester"></span>
+                </div>
+            </div>
+
+            <!-- Invoice Items Table -->
+            <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                <thead>
+                    <tr style="background: #f3f4f6; border-bottom: 2px solid #3b82f6;">
+                        <th style="padding: 10px; text-align: left; border: 1px solid #e5e7eb;">Fee Type</th>
+                        <th style="padding: 10px; text-align: left; border: 1px solid #e5e7eb;">Description</th>
+                        <th style="padding: 10px; text-align: right; border: 1px solid #e5e7eb;">Amount</th>
+                    </tr>
+                </thead>
+                <tbody id="print-invoice-items">
+                    <!-- Items will be inserted here -->
+                </tbody>
+                <tfoot>
+                    <tr style="background: #f3f4f6; font-weight: bold;">
+                        <td colspan="2" style="padding: 10px; border: 1px solid #e5e7eb;">Total Amount</td>
+                        <td style="padding: 10px; text-align: right; border: 1px solid #e5e7eb; color: #059669;" id="print-invoice-total"></td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <!-- Amount in Words -->
+            <div style="margin: 20px 0; padding: 15px; background: #eff6ff; border-left: 4px solid #3b82f6;">
+                <strong>Amount in words:</strong> <span id="print-invoice-amount-words" style="font-style: italic;"></span>
+            </div>
+
+            <!-- Additional Info -->
+            <div style="margin: 30px 0; border-top: 1px solid #e5e7eb; padding-top: 20px;">
+                <p style="margin: 5px 0; font-size: 12px; color: #666;"><strong>Batch Reference:</strong> <span id="print-invoice-batch-ref"></span></p>
+                <p style="margin: 5px 0; font-size: 12px; color: #666;"><strong>Status:</strong> <span id="print-invoice-status"></span></p>
+            </div>
+        </div>
+
+        <!-- Signatures -->
+        <div style="margin-top: 60px; display: flex; justify-content: space-between;">
+            <div style="width: 45%; border-top: 1px solid #000; padding-top: 10px;">
+                <p style="margin: 0;"><strong>Authorized by:</strong></p>
+                <p style="margin: 5px 0 0 0; font-size: 12px; color: #666;">Finance Office Signature:</p>
+            </div>
+            <div style="width: 45%; border-top: 1px solid #000; padding-top: 10px;">
+                <p style="margin: 0; font-size: 12px; color: #666;">Student Signature:</p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="margin-top: 40px; text-align: center; font-size: 11px; color: #666; border-top: 1px solid #e5e7eb; padding-top: 15px;">
+            <p style="margin: 0;">This is a computer-generated invoice and does not require a signature.</p>
+            <p style="margin: 5px 0 0 0;">For inquiries, please contact finance@edenuniversity.edu.zm</p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+      
+
+let currentPage = 1;
+let pageSize = 10;
+let selectedFees = [];
+let validatedStudents = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    showSection('generate');
+    updateStudentCount();
+});
+
+// Number to words conversion
+function numberToWords(num) {
+    const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+    const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+    const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+
+    if (num === 0) return 'Zero';
+
+    let words = '';
+
+    if (Math.floor(num / 1000000) > 0) {
+        words += numberToWords(Math.floor(num / 1000000)) + ' Million ';
+        num %= 1000000;
+    }
+
+    if (Math.floor(num / 1000) > 0) {
+        words += numberToWords(Math.floor(num / 1000)) + ' Thousand ';
+        num %= 1000;
+    }
+
+    if (Math.floor(num / 100) > 0) {
+        words += ones[Math.floor(num / 100)] + ' Hundred ';
+        num %= 100;
+    }
+
+    if (num > 0) {
+        if (num < 10) {
+            words += ones[num];
+        } else if (num >= 10 && num < 20) {
+            words += teens[num - 10];
+        } else {
+            words += tens[Math.floor(num / 10)];
+            if (num % 10 > 0) {
+                words += ' ' + ones[num % 10];
+            }
+        }
+    }
+
+    return words.trim();
+}
+
+function formatAmountInWords(amount) {
+    const integerPart = Math.floor(amount);
+    const decimalPart = Math.round((amount - integerPart) * 100);
+
+    let result = numberToWords(integerPart);
+    
+    if (decimalPart > 0) {
+        result += ' and ' + decimalPart + '/100';
+    }
+
+    return result + ' Only.';
+}
+
+// Print invoice function
+function printInvoice(invoiceData) {
+    const printWindow = window.open('', '', 'height=800,width=800');
+    const template = document.getElementById('printInvoiceTemplate').innerHTML;
+    
+    printWindow.document.write('<html><head><title>Invoice - ' + invoiceData.invoiceReference + '</title>');
+    printWindow.document.write('</head><body>');
+    printWindow.document.write(template);
+    printWindow.document.write('</body></html>');
+    
+    printWindow.document.close();
+
+    // Format date
+    const date = invoiceData.createdDate ? new Date(invoiceData.createdDate) : new Date();
+    const formattedDate = date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+
+    // Populate invoice data
+    setTimeout(() => {
+        printWindow.document.getElementById('print-invoice-ref').textContent = invoiceData.invoiceReference || 'N/A';
+        printWindow.document.getElementById('print-invoice-date').textContent = formattedDate;
+        printWindow.document.getElementById('print-invoice-student-name').textContent = invoiceData.studentName || '';
+        printWindow.document.getElementById('print-invoice-student-id').textContent = invoiceData.studentId || '';
+        printWindow.document.getElementById('print-invoice-academic-year').textContent = invoiceData.academicYear || '';
+        printWindow.document.getElementById('print-invoice-semester').textContent = invoiceData.semester || 'N/A';
+        
+        // Populate invoice items
+        const itemsBody = printWindow.document.getElementById('print-invoice-items');
+        itemsBody.innerHTML = invoiceData.items.map(item => `
+            <tr>
+                <td style="padding: 10px; border: 1px solid #e5e7eb;">${item.feeTypeName}</td>
+                <td style="padding: 10px; border: 1px solid #e5e7eb;">${item.description}</td>
+                <td style="padding: 10px; text-align: right; border: 1px solid #e5e7eb;">K ${parseFloat(item.amount).toFixed(2)}</td>
+            </tr>
+        `).join('');
+        
+        printWindow.document.getElementById('print-invoice-total').textContent = 'K ' + parseFloat(invoiceData.totalAmount).toFixed(2);
+        printWindow.document.getElementById('print-invoice-amount-words').textContent = formatAmountInWords(invoiceData.totalAmount);
+        printWindow.document.getElementById('print-invoice-batch-ref').textContent = invoiceData.batchReference || 'N/A';
+        printWindow.document.getElementById('print-invoice-status').textContent = invoiceData.status || '';
+
+        printWindow.print();
+        printWindow.close();
+    }, 250);
+}
+
+function showSection(section) {
+    if (section === 'generate') {
+        document.getElementById('generateSection').classList.remove('hidden');
+        document.getElementById('listSection').classList.add('hidden');
+        document.getElementById('btnShowGenerate').classList.add('bg-primary-600', 'hover:bg-primary-700');
+        document.getElementById('btnShowGenerate').classList.remove('bg-gray-600', 'hover:bg-gray-700');
+        document.getElementById('btnShowList').classList.remove('bg-primary-600', 'hover:bg-primary-700');
+        document.getElementById('btnShowList').classList.add('bg-gray-600', 'hover:bg-gray-700');
+    } else {
+        document.getElementById('generateSection').classList.add('hidden');
+        document.getElementById('listSection').classList.remove('hidden');
+        document.getElementById('btnShowGenerate').classList.remove('bg-primary-600', 'hover:bg-primary-700');
+        document.getElementById('btnShowGenerate').classList.add('bg-gray-600', 'hover:bg-gray-700');
+        document.getElementById('btnShowList').classList.add('bg-primary-600', 'hover:bg-primary-700');
+        document.getElementById('btnShowList').classList.remove('bg-gray-600', 'hover:bg-gray-700');
+        loadInvoices();
+    }
+}
+
+// ===== GENERATE SECTION FUNCTIONS =====
+
+function addStudentInput() {
+    const container = document.getElementById('studentInputsContainer');
+    const newRow = document.createElement('div');
+    newRow.className = 'flex gap-2 student-input-row';
+    newRow.innerHTML = `
+        <input type="text" placeholder="Enter Student ID" 
+               class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 student-id-input">
+        <button type="button" onclick="removeStudentInput(this)" 
+                class="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+            <i class="material-icons">remove</i>
+        </button>
+    `;
+    container.appendChild(newRow);
+    updateStudentCount();
+}
+
+function removeStudentInput(btn) {
+    btn.closest('.student-input-row').remove();
+    updateStudentCount();
+}
+
+function updateStudentCount() {
+    const inputs = document.querySelectorAll('.student-id-input');
+    const filledInputs = Array.from(inputs).filter(input => input.value.trim() !== '');
+    document.getElementById('studentCount').textContent = 
+        `${filledInputs.length} student ID${filledInputs.length !== 1 ? 's' : ''} entered`;
+}
+
+document.addEventListener('input', function(e) {
+    if (e.target.classList.contains('student-id-input')) {
+        updateStudentCount();
+    }
+});
+
+function collectStudentIds() {
+    const inputs = document.querySelectorAll('.student-id-input');
+    return Array.from(inputs)
+        .map(input => input.value.trim())
+        .filter(id => id !== '')
+        .join(',');
+}
+
+function uploadCSV() {
+    const fileInput = document.getElementById('csvFile');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        alert('Please select a CSV file first');
+        return;
+    }
+
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+        alert('Please upload a CSV file');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const text = e.target.result;
+        
+        const studentIds = text
+            .split(/[\n\r,]+/)
+            .map(s => s.trim())
+            .filter(s => s !== '' && s !== 'StudentID' && s !== 'Student ID');
+
+        if (studentIds.length === 0) {
+            alert('No valid student IDs found in CSV file');
+            return;
+        }
+
+        const container = document.getElementById('studentInputsContainer');
+        container.innerHTML = '';
+
+        studentIds.forEach((id, index) => {
+            const newRow = document.createElement('div');
+            newRow.className = 'flex gap-2 student-input-row';
+            newRow.innerHTML = `
+                <input type="text" placeholder="Enter Student ID" value="${id}"
+                       class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 student-id-input">
+                <button type="button" onclick="${index === 0 ? 'addStudentInput()' : 'removeStudentInput(this)'}" 
+                        class="px-3 py-2 ${index === 0 ? 'bg-blue-600 hover:bg-blue-700' : 'bg-red-600 hover:bg-red-700'} text-white rounded-lg transition-colors">
+                    <i class="material-icons">${index === 0 ? 'add' : 'remove'}</i>
+                </button>
+            `;
+            container.appendChild(newRow);
+        });
+
+        fileInput.value = '';
+        updateStudentCount();
+        alert(`Imported ${studentIds.length} student IDs from CSV`);
+    };
+
+    reader.onerror = function() {
+        alert('Error reading CSV file. Please try again.');
+    };
+
+    reader.readAsText(file);
+}
+
+function downloadTemplate() {
+    const csvContent = 'StudentID\n2025010041\n2025210003\n2023050285';
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'student_ids_template.csv';
+    document.body.appendChild(link);
+    link.click();
+    
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+}
+
+function updateSelectedFees() {
+    const checkboxes = document.querySelectorAll('input[name="SelectedFeeIds"]:checked');
+    const feesDataElement = document.querySelector('[data-fees-json]');
+    
+    if (!feesDataElement) return;
+    
+    const feesData = JSON.parse(feesDataElement.getAttribute('data-fees-json'));
+    
+    selectedFees = Array.from(checkboxes).map(cb => {
+        const feeId = parseInt(cb.value);
+        return feesData.find(f => f.Id === feeId);
+    }).filter(f => f != null);
+
+    const totalAmount = selectedFees.reduce((sum, fee) => sum + fee.Amount, 0);
+    
+    const infoDiv = document.getElementById('selectedFeesInfo');
+    if (selectedFees.length > 0) {
+        infoDiv.classList.remove('hidden');
+        document.getElementById('selectedFeesCount').textContent = 
+            `${selectedFees.length} fee${selectedFees.length !== 1 ? 's' : ''} selected`;
+        document.getElementById('totalAmount').textContent = 
+            `K ${totalAmount.toFixed(2)}`;
+    } else {
+        infoDiv.classList.add('hidden');
+    }
+}
+
+async function validateStudents() {
+    const studentIds = collectStudentIds();
+    
+    if (!studentIds) {
+        alert('Please enter at least one student ID');
+        return;
+    }
+
+    document.getElementById('hiddenStudentIds').value = studentIds;
+
+    try {
+        const response = await fetch('/Admin/ValidateStudents', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ studentIds: studentIds })
+        });
+
+        const data = await response.json();
+        
+        document.getElementById('validationResults').classList.remove('hidden');
+        
+        if (data.validStudents.length > 0) {
+            document.getElementById('validStudentsSection').classList.remove('hidden');
+            document.getElementById('validCount').textContent = data.totalValid;
+            
+            const validBody = document.getElementById('validStudentsBody');
+            validBody.innerHTML = data.validStudents.map(s => `
+                <tr class="hover:bg-green-50">
+                    <td class="px-3 py-2 font-medium text-gray-900">${s.studentId_Number}</td>
+                    <td class="px-3 py-2">${s.fullName}</td>
+                    <td class="px-3 py-2 text-gray-600">${s.programmeName}</td>
+                    <td class="px-3 py-2 text-gray-600">${s.schoolName}</td>
+                </tr>
+            `).join('');
+        } else {
+            document.getElementById('validStudentsSection').classList.add('hidden');
+        }
+
+        if (data.invalidStudents.length > 0) {
+            document.getElementById('invalidStudentsSection').classList.remove('hidden');
+            document.getElementById('invalidCount').textContent = data.totalInvalid;
+            
+            const invalidBody = document.getElementById('invalidStudentsBody');
+            invalidBody.innerHTML = data.invalidStudents.map(s => `
+                <tr class="hover:bg-red-50">
+                    <td class="px-3 py-2 font-medium text-red-900">${s.studentId_Number}</td>
+                    <td class="px-3 py-2 text-red-700">NOT FOUND</td>
+                </tr>
+            `).join('');
+        } else {
+            document.getElementById('invalidStudentsSection').classList.add('hidden');
+        }
+
+        validatedStudents = data.validStudents;
+
+    } catch (error) {
+        console.error('Error validating students:', error);
+        alert('Error validating students. Please try again.');
+    }
+}
+
+document.getElementById('invoiceForm').addEventListener('submit', function(e) {
+    document.getElementById('hiddenStudentIds').value = collectStudentIds();
+});
+
+// ===== LIST SECTION FUNCTIONS =====
+
+async function loadInvoices() {
+    try {
+        const response = await fetch('/Admin/GetInvoices', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                page: currentPage,
+                pageSize: pageSize,
+                academicYearId: document.getElementById('filterAcademicYear').value || null,
+                semester: document.getElementById('filterSemester').value || null,
+                status: document.getElementById('filterStatus').value || null,
+                searchTerm: document.getElementById('searchTerm').value || null,
+                includeDeleted: document.getElementById('includeDeleted').checked
+            })
+        });
+
+        const data = await response.json();
+        renderInvoices(data.invoices);
+        updatePagination(data.totalRecords, data.totalPages, data.currentPage);
+    } catch (error) {
+        console.error('Error loading invoices:', error);
+    }
+}
+
+function renderInvoices(invoices) {
+    const tbody = document.getElementById('invoiceTableBody');
+
+    if (invoices.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="10" class="px-6 py-8 text-center text-gray-500">
+                    <i class="material-icons text-4xl text-gray-300 mb-2">receipt_long</i>
+                    <p>No invoices found</p>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tbody.innerHTML = invoices.map(inv => `
+        <tr class="hover:bg-gray-50 ${inv.isDeleted ? 'bg-red-50' : ''}">
+            <td class="px-3 py-3 text-sm">${inv.rowNumber}</td>
+            <td class="px-3 py-3 text-sm font-medium text-primary-700">
+                ${inv.invoiceReference}
+                ${inv.isDeleted ? '<span class="ml-2 text-xs text-red-600">(Deleted)</span>' : ''}
+            </td>
+            <td class="px-3 py-3 text-sm text-gray-600">${inv.batchReference || 'N/A'}</td>
+            <td class="px-3 py-3 text-sm">
+                <div class="font-medium">${inv.studentName}</div>
+                <div class="text-gray-500 text-xs">${inv.studentId}</div>
+            </td>
+            <td class="px-3 py-3 text-sm">${inv.academicYear}</td>
+            <td class="px-3 py-3 text-sm">${inv.semester || 'N/A'}</td>
+            <td class="px-3 py-3 text-sm font-bold">K${inv.totalAmount.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+            <td class="px-3 py-3 text-sm">
+                <span class="px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(inv.status)}">
+                    ${inv.status}
+                </span>
+            </td>
+            <td class="px-3 py-3 text-sm">${new Date(inv.createdDate).toLocaleDateString()}</td>
+            <td class="px-3 py-3 text-sm">
+                <button onclick="viewInvoice(${inv.id})"
+                        class="text-primary-600 hover:text-primary-800 mr-2">
+                    <i class="material-icons text-sm">visibility</i>
+                </button>
+                <button onclick="printInvoiceById(${inv.id})"
+                        class="text-green-600 hover:text-green-800 mr-2" title="Print Invoice">
+                    <i class="material-icons text-sm">print</i>
+                </button>
+                ${inv.isDeleted ? `
+                    <button onclick="restoreInvoice(${inv.id})"
+                            class="text-green-600 hover:text-green-800" title="Restore Invoice">
+                        <i class="material-icons text-sm">restore</i>
+                    </button>
+                ` : `
+                    ${inv.status === 'Pending' ? `
+                        <button onclick="cancelInvoice(${inv.id})"
+                                class="text-red-600 hover:text-red-800" title="Delete Invoice">
+                            <i class="material-icons text-sm">delete</i>
+                        </button>
+                    ` : ''}
+                `}
+            </td>
+        </tr>
+    `).join('');
+}
+
+function getStatusColor(status) {
+    const colors = {
+        'Pending': 'bg-yellow-100 text-yellow-700',
+        'Paid': 'bg-green-100 text-green-700',
+        'PartiallyPaid': 'bg-blue-100 text-blue-700',
+        'Cancelled': 'bg-red-100 text-red-700'
+    };
+    return colors[status] || 'bg-gray-100 text-gray-700';
+}
+
+async function printInvoiceById(id) {
+    try {
+        const response = await fetch(`/Admin/GetInvoiceDetails?id=${id}`);
+        const invoice = await response.json();
+        printInvoice(invoice);
+    } catch (error) {
+        console.error('Error loading invoice for printing:', error);
+        alert('Error loading invoice details');
+    }
+}
+
+async function viewInvoice(id) {
+    try {
+        const response = await fetch(`/Admin/GetInvoiceDetails?id=${id}`);
+        const invoice = await response.json();
+
+        document.getElementById('invoiceDetailsContent').innerHTML = `
+            <div class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-sm text-gray-600">Invoice Reference</p>
+                        <p class="font-semibold">${invoice.invoiceReference}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Status</p>
+                        <span class="px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(invoice.status)}">
+                            ${invoice.status}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="border-t pt-4">
+                    <h4 class="font-semibold mb-2">Student Information</h4>
+                    <div class="grid grid-cols-2 gap-3 text-sm">
+                        <div><span class="text-gray-600">ID:</span> ${invoice.studentId}</div>
+                        <div><span class="text-gray-600">Name:</span> ${invoice.studentName}</div>
+                        <div><span class="text-gray-600">Email:</span> ${invoice.studentEmail || 'N/A'}</div>
+                        <div><span class="text-gray-600">Phone:</span> ${invoice.studentPhone || 'N/A'}</div>
+                    </div>
+                </div>
+
+                <div class="border-t pt-4">
+                    <h4 class="font-semibold mb-3">Invoice Items</h4>
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-3 py-2 text-left">Fee Type</th>
+                                <th class="px-3 py-2 text-left">Description</th>
+                                <th class="px-3 py-2 text-right">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${invoice.items.map(item => `
+                                <tr class="border-t">
+                                    <td class="px-3 py-2">${item.feeTypeName}</td>
+                                    <td class="px-3 py-2 text-gray-600">${item.description}</td>
+                                    <td class="px-3 py-2 text-right font-medium">K${item.amount.toFixed(2)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                        <tfoot class="border-t-2 border-gray-300">
+                            <tr>
+                                <td colspan="2" class="px-3 py-2 font-semibold">Total Amount</td>
+                                <td class="px-3 py-2 text-right font-bold text-lg">K${invoice.totalAmount.toFixed(2)}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <div class="border-t pt-4 text-sm text-gray-600">
+                    <p>Academic Year: ${invoice.academicYear}</p>
+                    <p>Semester: ${invoice.semester || 'N/A'}</p>
+                    <p>Created Date: ${new Date(invoice.createdDate).toLocaleString()}</p>
+                </div>
+
+                <div class="border-t pt-4 flex justify-end gap-2">
+                    <button onclick="printInvoice(${JSON.stringify(invoice).replace(/"/g, '&quot;')})"
+                            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center">
+                        <i class="material-icons text-sm mr-2">print</i>
+                        Print Invoice
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('viewInvoiceModal').classList.remove('hidden');
+    } catch (error) {
+        console.error('Error loading invoice details:', error);
+    }
+}
+
+function closeViewModal() {
+    document.getElementById('viewInvoiceModal').classList.add('hidden');
+}
+
+function cancelInvoice(id) {
+    if (!confirm('Are you sure you want to delete this invoice? It will be soft deleted and can be restored later.')) return;
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/Admin/CancelInvoice';
+    
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'id';
+    input.value = id;
+    
+    form.appendChild(input);
+    document.body.appendChild(form);
+    form.submit();
+}
+
+function restoreInvoice(id) {
+    if (!confirm('Are you sure you want to restore this invoice?')) return;
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/Admin/RestoreInvoice';
+    
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'id';
+    input.value = id;
+    
+    form.appendChild(input);
+    document.body.appendChild(form);
+    form.submit();
+}
+
+function updatePagination(total, totalPages, current) {
+    const start = (current - 1) * pageSize + 1;
+    const end = Math.min(current * pageSize, total);
+    document.getElementById('paginationInfo').textContent = `${start}-${end} of ${total}`;
+
+    let html = `
+        <button onclick="changePage(${current - 1})" ${current === 1 ? 'disabled' : ''}
+                class="px-2 py-1 text-xs rounded ${current === 1 ? 'text-gray-400' : 'text-gray-600 hover:bg-gray-100'}">
+            <i class="material-icons text-sm">chevron_left</i>
+        </button>
+    `;
+
+    for (let i = Math.max(1, current - 1); i <= Math.min(totalPages, current + 1); i++) {
+        html += `
+            <button onclick="changePage(${i})"
+                    class="px-2 py-1 text-xs rounded ${i === current ? 'bg-primary-100 text-primary-700 font-semibold' : 'text-gray-600 hover:bg-gray-100'}">
+                ${i}
+            </button>
+        `;
+    }
+
+    html += `
+        <button onclick="changePage(${current + 1})" ${current === totalPages ? 'disabled' : ''}
+                class="px-2 py-1 text-xs rounded ${current === totalPages ? 'text-gray-400' : 'text-gray-600 hover:bg-gray-100'}">
+            <i class="material-icons text-sm">chevron_right</i>
+        </button>
+    `;
+
+    document.getElementById('paginationControls').innerHTML = html;
+}
+
+function changePage(page) {
+    currentPage = page;
+    loadInvoices();
+}
+
+function changePageSize() {
+    pageSize = parseInt(document.getElementById('pageSize').value);
+    currentPage = 1;
+    loadInvoices();
+}
+</script>
+}

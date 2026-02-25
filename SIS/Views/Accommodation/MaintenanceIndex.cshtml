@@ -1,0 +1,1258 @@
+﻿@model IEnumerable<SIS.Models.StudentAccommodation.MaintenanceRequest>
+
+@{
+    ViewData["Title"] = "Maintenance Management";
+}
+
+<div class="min-h-screen p-2 sm:p-4">
+    <!-- Header Section -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
+        <div class="flex items-center text-gray-800">
+            <i class="material-icons text-2xl sm:text-3xl mr-2">build</i>
+            <div>
+                <h1 class="text-xl sm:text-2xl font-bold">Maintenance Management</h1>
+                <p class="text-xs sm:text-sm text-slate-600">Track and manage accommodation maintenance requests</p>
+            </div>
+        </div>
+        <button type="button"
+                onclick="showCreateRequestModal()"
+                class="w-full sm:w-auto px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors flex items-center justify-center">
+            <i class="material-icons mr-2 text-lg">add_circle</i>
+            <span class="text-sm sm:text-base">New Request</span>
+        </button>
+    </div>
+
+    <!-- Main Content Layout -->
+    <div class="flex flex-col lg:flex-row gap-4">
+        <!-- Main Table Section -->
+        <div class="w-full lg:w-3/4 order-2 lg:order-1">
+            <div class="bg-white rounded-lg shadow-md">
+                <div class="p-2 sm:p-4">
+                    <!-- Filters Section -->
+                    <div class="flex flex-col gap-3 mb-4">
+                        <!-- Search Input -->
+                        <div class="relative w-full">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <i class="material-icons text-slate-400 text-sm">search</i>
+                            </div>
+                            <input type="text" id="searchInput"
+                                   class="block w-full pl-10 pr-4 py-2 text-sm border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500"
+                                   placeholder="Search requests..." />
+                        </div>
+
+                        <!-- Filter Controls -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <div class="flex flex-col">
+                                <label for="filterCampus" class="text-xs text-slate-600 mb-1">Campus:</label>
+                                <select id="filterCampus"
+                                        class="px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500">
+                                    <option value="all">All Campuses</option>
+                                    @if (ViewBag.Campuses != null)
+                                    {
+                                        foreach (var campus in ViewBag.Campuses)
+                                        {
+                                            <option value="@campus.Value">@campus.Text</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="flex flex-col">
+                                <label for="filterPriority" class="text-xs text-slate-600 mb-1">Priority:</label>
+                                <select id="filterPriority"
+                                        class="px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500">
+                                    <option value="all">All Priorities</option>
+                                    <option value="low">Low</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="high">High</option>
+                                </select>
+                            </div>
+
+                            <div class="flex flex-col">
+                                <label for="filterStatus" class="text-xs text-slate-600 mb-1">Status:</label>
+                                <select id="filterStatus"
+                                        class="px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500">
+                                    <option value="all">All Statuses</option>
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                    <option value="maintenance">Maintenance</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Clear Filters Button -->
+                        <div class="flex justify-end">
+                            <button type="button"
+                                    onclick="clearFilters()"
+                                    class="px-3 py-1.5 text-xs sm:text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-1">
+                                <i class="material-icons text-sm">clear</i>
+                                Clear Filters
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Table Container -->
+                    <div class="overflow-x-auto overflow-y-auto max-h-[calc(100vh-300px)] sm:max-h-[calc(100vh-250px)]">
+                        @if (TempData["Success"] != null)
+                        {
+                            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-3 mb-4 text-sm" role="alert">
+                                <p>@TempData["Success"]</p>
+                            </div>
+                        }
+
+                        @if (TempData["Error"] != null)
+                        {
+                            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-3 mb-4 text-sm" role="alert">
+                                <p>@TempData["Error"]</p>
+                            </div>
+                        }
+
+                        <table id="requestsTable" class="w-full text-xs sm:text-sm text-gray-600">
+                            <thead class="sticky top-0 bg-slate-50 z-10">
+                                <tr>
+                                    <th class="px-2 sm:px-4 py-2 text-left whitespace-nowrap">#</th>
+                                    <th class="px-2 sm:px-4 py-2 text-left whitespace-nowrap">Location</th>
+                                    <th class="px-2 sm:px-4 py-2 text-left hidden md:table-cell">Description</th>
+                                    <th class="px-2 sm:px-4 py-2 text-left hidden lg:table-cell">Requester</th>
+                                    <th class="px-2 sm:px-4 py-2 text-left">Priority</th>
+                                    <th class="px-2 sm:px-4 py-2 text-left hidden sm:table-cell">Status</th>
+                                    <th class="px-2 sm:px-4 py-2 text-left hidden xl:table-cell">Date</th>
+                                    <th class="px-2 sm:px-4 py-2 text-left">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="requestsTableBody">
+                                @if (Model != null && Model.Any())
+                                {
+                                    int index = 1;
+                                    foreach (var request in Model)
+                                    {
+                                        <tr data-campus="@request.Room?.Hostel?.CampusId"
+                                            data-priority="@request.Priority?.ToLower()"
+                                            data-status="@request.Status.ToString().ToLower()"
+                                            class="border-b hover:bg-slate-50 transition-colors">
+                                            <td class="px-2 sm:px-4 py-3">@index</td>
+                                            <td class="px-2 sm:px-4 py-3">
+                                                <div>
+                                                    <p class="font-semibold text-xs sm:text-sm">@(request.Room?.Hostel?.HostelName ?? "N/A")</p>
+                                                    <p class="text-xs text-gray-500">Room @(request.Room?.RoomNumber ?? "N/A")</p>
+                                                </div>
+                                            </td>
+                                            <td class="px-2 sm:px-4 py-3 hidden md:table-cell">
+                                                <p class="line-clamp-2 max-w-xs">@request.Description</p>
+                                            </td>
+                                            <td class="px-2 sm:px-4 py-3 hidden lg:table-cell">
+                                                <div>
+                                                    <p class="font-medium">@request.RequestedBy</p>
+                                                    <p class="text-xs text-gray-500">@request.RequesterType</p>
+                                                </div>
+                                            </td>
+                                            <td class="px-2 sm:px-4 py-3">
+                                                <span class="px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap @(
+                                                    request.Priority?.ToLower() == "high" ? "bg-red-100 text-red-800" :
+                                                    request.Priority?.ToLower() == "medium" ? "bg-yellow-100 text-yellow-800" :
+                                                    "bg-green-100 text-green-800")">
+                                                    @request.Priority
+                                                </span>
+                                            </td>
+                                            <td class="px-2 sm:px-4 py-3 hidden sm:table-cell">
+                                                <span class="px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap @(
+                                                    request.Status.ToString().ToLower() == "active" ? "bg-green-100 text-green-800" :
+                                                    request.Status.ToString().ToLower() == "inactive" ? "bg-gray-100 text-gray-800" :
+                                                    "bg-orange-100 text-orange-800")">
+                                                    @request.Status
+                                                </span>
+                                            </td>
+                                            <td class="px-2 sm:px-4 py-3 hidden xl:table-cell whitespace-nowrap">
+                                                @request.RequestDate.ToString("MMM dd, yyyy")
+                                            </td>
+                                            <td class="px-2 sm:px-4 py-3">
+                                                <div class="flex space-x-1 sm:space-x-2">
+                                                    <button type="button"
+                                                            onclick="showRequestDetails(@request.RequestId)"
+                                                            class="text-cyan-600 hover:text-cyan-800 p-1"
+                                                            title="View Details">
+                                                        <i class="material-icons text-base sm:text-lg">visibility</i>
+                                                    </button>
+                                                    <button type="button"
+                                                            onclick="showUpdateRequestModal(@request.RequestId)"
+                                                            class="text-blue-600 hover:text-blue-800 p-1"
+                                                            title="Edit">
+                                                        <i class="material-icons text-base sm:text-lg">edit</i>
+                                                    </button>
+                                                    <button type="button"
+                                                            onclick="showDeleteRequestModal(@request.RequestId)"
+                                                            class="text-red-600 hover:text-red-800 p-1"
+                                                            title="Delete">
+                                                        <i class="material-icons text-base sm:text-lg">delete</i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        index++;
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="8" class="px-4 py-8 text-center text-slate-500">
+                                            <div class="flex flex-col items-center">
+                                                <i class="material-icons text-4xl sm:text-6xl mb-2 text-slate-300">build</i>
+                                                <p class="text-sm sm:text-lg">No maintenance requests found</p>
+                                                <p class="text-xs sm:text-sm">Click "New Request" to add your first maintenance request</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Side Statistics Panel -->
+        <div class="w-full lg:w-1/4 order-1 lg:order-2">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
+                <!-- Quick Stats Card -->
+                <div class="bg-white rounded-lg shadow-md p-3 sm:p-4">
+                    <h3 class="text-base sm:text-lg font-semibold text-slate-700 mb-3 flex items-center">
+                        <i class="material-icons mr-2 text-lg sm:text-xl">analytics</i>
+                        <span class="text-sm sm:text-base">Quick Stats</span>
+                    </h3>
+                    <div class="space-y-2 sm:space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs sm:text-sm text-slate-600">Total Requests</span>
+                            <span id="totalRequests" class="text-lg sm:text-xl font-bold text-cyan-600">@(Model?.Count() ?? 0)</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs sm:text-sm text-slate-600">High Priority</span>
+                            <span class="text-lg sm:text-xl font-bold text-red-600">@(Model?.Count(r => r.Priority?.ToLower() == "high") ?? 0)</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs sm:text-sm text-slate-600">Pending</span>
+                            <span class="text-lg sm:text-xl font-bold text-orange-600">@(Model?.Count(r => r.Status == SIS.Enums.Status.Inactive) ?? 0)</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs sm:text-sm text-slate-600">Resolved</span>
+                            <span class="text-lg sm:text-xl font-bold text-green-600">@(Model?.Count(r => r.ResolutionDate.HasValue) ?? 0)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Priority Distribution Chart -->
+                <div class="bg-white rounded-lg shadow-md p-3 sm:p-4">
+                    <h3 class="text-base sm:text-lg font-semibold text-slate-700 mb-3 flex items-center">
+                        <i class="material-icons mr-2 text-lg sm:text-xl">pie_chart</i>
+                        <span class="text-sm sm:text-base">Priority Distribution</span>
+                    </h3>
+                    <div id="priorityChart" style="height: 180px; min-height: 180px;"></div>
+                </div>
+
+                <!-- Status Distribution Chart -->
+                <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 sm:col-span-2 lg:col-span-1">
+                    <h3 class="text-base sm:text-lg font-semibold text-slate-700 mb-3 flex items-center">
+                        <i class="material-icons mr-2 text-lg sm:text-xl">bar_chart</i>
+                        <span class="text-sm sm:text-base">Status Distribution</span>
+                    </h3>
+                    <div id="statusChart" style="height: 200px; min-height: 200px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Indicator -->
+<div id="loadingIndicator" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-lg p-4 sm:p-6 flex items-center space-x-4 mx-4">
+        <div class="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-cyan-600"></div>
+        <span class="text-slate-700 text-sm sm:text-base">Loading...</span>
+    </div>
+</div>
+
+<!-- Create Request Modal -->
+<div id="createRequestModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+    <div class="fixed inset-0 bg-black opacity-40" onclick="hideCreateRequestModal()"></div>
+    <div class="bg-white rounded-lg shadow-lg w-full max-w-2xl z-10 overflow-hidden max-h-[90vh] overflow-y-auto">
+        <div class="px-4 sm:px-6 py-3 sm:py-4 bg-cyan-600 text-white sticky top-0">
+            <h3 class="text-lg sm:text-xl font-semibold flex items-center">
+                <i class="material-icons mr-2">add_circle</i>
+                Create Maintenance Request
+            </h3>
+        </div>
+        <form id="createRequestForm" method="post" asp-action="CreateMaintenanceRequest" onsubmit="handleCreateSubmit(event)">
+            @Html.AntiForgeryToken()
+            <div class="px-4 sm:px-6 py-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                    <div class="relative z-0 w-full group">
+                        <select required name="CampusId" id="createCampusId" onchange="loadHostelsByCampus(this.value, 'create')"
+                                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer">
+                            <option value="">Select Campus</option>
+                            @if (ViewBag.Campuses != null)
+                            {
+                                foreach (var campus in ViewBag.Campuses)
+                                {
+                                    <option value="@campus.Value">@campus.Text</option>
+                                }
+                            }
+                        </select>
+                        <label for="createCampusId"
+                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600">
+                            Campus
+                        </label>
+                    </div>
+
+                    <div class="relative z-0 w-full group">
+                        <select required name="HostelId" id="createHostelId" onchange="loadRoomsByHostel(this.value, 'create')"
+                                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer">
+                            <option value="">Select Hostel</option>
+                        </select>
+                        <label for="createHostelId"
+                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600">
+                            Hostel
+                        </label>
+                    </div>
+
+                    <div class="relative z-0 w-full group">
+                        <select required name="RoomId" id="createRoomId"
+                                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer">
+                            <option value="">Select Room</option>
+                        </select>
+                        <label for="createRoomId"
+                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600">
+                            Room
+                        </label>
+                    </div>
+
+                    <div class="relative z-0 w-full group">
+                        <input required type="text" name="RequestedBy" id="createRequestedBy"
+                               class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
+                               placeholder=" " />
+                        <label for="createRequestedBy"
+                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600">
+                            Requested By (ID)
+                        </label>
+                    </div>
+
+                    <div class="relative z-0 w-full group">
+                        <select required name="RequesterType" id="createRequesterType"
+                                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer">
+                            <option value="">Select Type</option>
+                            <option value="Student">Student</option>
+                            <option value="Staff">Staff</option>
+                        </select>
+                        <label for="createRequesterType"
+                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600">
+                            Requester Type
+                        </label>
+                    </div>
+
+                    <div class="relative z-0 w-full group">
+                        <select required name="Priority" id="createPriority"
+                                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer">
+                            <option value="">Select Priority</option>
+                            <option value="Low">Low</option>
+                            <option value="Medium">Medium</option>
+                            <option value="High">High</option>
+                        </select>
+                        <label for="createPriority"
+                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600">
+                            Priority
+                        </label>
+                    </div>
+                </div>
+
+                <div class="relative z-0 w-full group mb-6">
+                    <textarea required name="Description" id="createDescription" rows="4"
+                              class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
+                              placeholder=" "></textarea>
+                    <label for="createDescription"
+                           class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600">
+                        Description
+                    </label>
+                </div>
+
+                <div class="relative z-0 w-full group">
+                    <select required name="Status" id="createStatus"
+                            class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer">
+                        @if (ViewBag.StatusOptions != null)
+                        {
+                            foreach (var status in ViewBag.StatusOptions)
+                            {
+                                <option value="@status.Value">@status.Text</option>
+                            }
+                        }
+                    </select>
+                    <label for="createStatus"
+                           class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600">
+                        Status
+                    </label>
+                </div>
+            </div>
+            <div class="px-4 sm:px-6 py-3 sm:py-4 bg-gray-50 flex flex-col sm:flex-row justify-end gap-2">
+                <button type="button" onclick="hideCreateRequestModal()" class="w-full sm:w-auto px-4 py-2 bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300 transition-colors text-sm sm:text-base">
+                    Cancel
+                </button>
+                <button type="submit" id="createSubmitBtn" class="w-full sm:w-auto px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors text-sm sm:text-base flex items-center justify-center gap-2">
+                    <span id="createBtnText">Create Request</span>
+                    <div id="createBtnSpinner" class="hidden animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Update Request Modal -->
+<div id="updateRequestModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+    <div class="fixed inset-0 bg-black opacity-40" onclick="hideUpdateRequestModal()"></div>
+    <div class="bg-white rounded-lg shadow-lg w-full max-w-2xl z-10 overflow-hidden max-h-[90vh] overflow-y-auto">
+        <div class="px-4 sm:px-6 py-3 sm:py-4 bg-blue-600 text-white sticky top-0">
+            <h3 class="text-lg sm:text-xl font-semibold flex items-center">
+                <i class="material-icons mr-2">edit</i>
+                Update Maintenance Request
+            </h3>
+        </div>
+        <form id="updateRequestForm" method="post" onsubmit="handleUpdateSubmit(event)">
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="updateRequestId" name="id" />
+            <div class="px-4 sm:px-6 py-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                    <div class="relative z-0 w-full group">
+                        <select required name="CampusId" id="updateCampusId" onchange="loadHostelsByCampus(this.value, 'update')"
+                                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer">
+                            <option value="">Select Campus</option>
+                            @if (ViewBag.Campuses != null)
+                            {
+                                foreach (var campus in ViewBag.Campuses)
+                                {
+                                    <option value="@campus.Value">@campus.Text</option>
+                                }
+                            }
+                        </select>
+                        <label for="updateCampusId"
+                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600">
+                            Campus
+                        </label>
+                    </div>
+
+                    <div class="relative z-0 w-full group">
+                        <select required name="HostelId" id="updateHostelId" onchange="loadRoomsByHostel(this.value, 'update')"
+                                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer">
+                            <option value="">Select Hostel</option>
+                        </select>
+                        <label for="updateHostelId"
+                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600">
+                            Hostel
+                        </label>
+                    </div>
+
+                    <div class="relative z-0 w-full group">
+                        <select required name="RoomId" id="updateRoomId"
+                                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer">
+                            <option value="">Select Room</option>
+                        </select>
+                        <label for="updateRoomId"
+                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600">
+                            Room
+                        </label>
+                    </div>
+
+                    <div class="relative z-0 w-full group">
+                        <input required type="text" name="RequestedBy" id="updateRequestedBy"
+                               class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
+                               placeholder=" " />
+                        <label for="updateRequestedBy"
+                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600">
+                            Requested By (ID)
+                        </label>
+                    </div>
+
+                    <div class="relative z-0 w-full group">
+                        <select required name="RequesterType" id="updateRequesterType"
+                                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer">
+                            <option value="">Select Type</option>
+                            <option value="Student">Student</option>
+                            <option value="Staff">Staff</option>
+                        </select>
+                        <label for="updateRequesterType"
+                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600">
+                            Requester Type
+                        </label>
+                    </div>
+
+                    <div class="relative z-0 w-full group">
+                        <select required name="Priority" id="updatePriority"
+                                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer">
+                            <option value="">Select Priority</option>
+                            <option value="Low">Low</option>
+                            <option value="Medium">Medium</option>
+                            <option value="High">High</option>
+                        </select>
+                        <label for="updatePriority"
+                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600">
+                            Priority
+                        </label>
+                    </div>
+                </div>
+
+                <div class="relative z-0 w-full group mb-6">
+                    <textarea required name="Description" id="updateDescription" rows="4"
+                              class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
+                              placeholder=" "></textarea>
+                    <label for="updateDescription"
+                           class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600">
+                        Description
+                    </label>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                    <div class="relative z-0 w-full group">
+                        <select required name="Status" id="updateStatus"
+                                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer">
+                            @if (ViewBag.StatusOptions != null)
+                            {
+                                foreach (var status in ViewBag.StatusOptions)
+                                {
+                                    <option value="@status.Value">@status.Text</option>
+                                }
+                            }
+                        </select>
+                        <label for="updateStatus"
+                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600">
+                            Status
+                        </label>
+                    </div>
+                </div>
+
+                <div class="relative z-0 w-full group">
+                    <textarea name="ResolutionNotes" id="updateResolutionNotes" rows="3"
+                              class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
+                              placeholder=" "></textarea>
+                    <label for="updateResolutionNotes"
+                           class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600">
+                        Resolution Notes
+                    </label>
+                </div>
+            </div>
+            <div class="px-4 sm:px-6 py-3 sm:py-4 bg-gray-50 flex flex-col sm:flex-row justify-end gap-2">
+                <button type="button" onclick="hideUpdateRequestModal()" class="w-full sm:w-auto px-4 py-2 bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300 transition-colors text-sm sm:text-base">
+                    Cancel
+                </button>
+                <button type="submit" id="updateSubmitBtn" class="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base flex items-center justify-center gap-2">
+                    <span id="updateBtnText">Update Request</span>
+                    <div id="updateBtnSpinner" class="hidden animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Request Modal -->
+<div id="deleteRequestModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+    <div class="fixed inset-0 bg-black opacity-40" onclick="hideDeleteRequestModal()"></div>
+    <div class="bg-white rounded-lg shadow-lg w-full max-w-md z-10 overflow-hidden">
+        <div class="px-4 sm:px-6 py-3 sm:py-4 bg-red-600 text-white">
+            <h3 class="text-lg sm:text-xl font-semibold flex items-center">
+                <i class="material-icons mr-2">warning</i>
+                Confirm Delete
+            </h3>
+        </div>
+        <form id="deleteRequestForm" method="post" asp-action="DeleteMaintenanceRequest" onsubmit="handleDeleteSubmit(event)">
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="deleteRequestId" name="id" />
+            <div class="px-4 sm:px-6 py-4">
+                <p class="text-slate-700 mb-4 text-sm sm:text-base">
+                    Are you sure you want to delete this maintenance request?
+                    This action cannot be undone.
+                </p>
+            </div>
+            <div class="px-4 sm:px-6 py-3 sm:py-4 bg-gray-50 flex flex-col sm:flex-row justify-end gap-2">
+                <button type="button" onclick="hideDeleteRequestModal()" class="w-full sm:w-auto px-4 py-2 bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300 transition-colors text-sm sm:text-base">
+                    Cancel
+                </button>
+                <button type="submit" id="deleteSubmitBtn" class="w-full sm:w-auto px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm sm:text-base flex items-center justify-center gap-2">
+                    <span id="deleteBtnText">Delete Request</span>
+                    <div id="deleteBtnSpinner" class="hidden animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Details Modal -->
+<div id="detailsModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+    <div class="fixed inset-0 bg-black opacity-40" onclick="hideDetailsModal()"></div>
+    <div class="bg-white rounded-lg shadow-lg w-full max-w-2xl z-10 overflow-hidden max-h-[90vh] overflow-y-auto">
+        <div class="px-4 sm:px-6 py-3 sm:py-4 bg-cyan-600 text-white sticky top-0">
+            <h3 class="text-lg sm:text-xl font-semibold flex items-center">
+                <i class="material-icons mr-2">info</i>
+                Request Details
+            </h3>
+        </div>
+        <div id="detailsContent" class="px-4 sm:px-6 py-4">
+            <!-- Details will be loaded here -->
+        </div>
+        <div class="px-4 sm:px-6 py-3 sm:py-4 bg-gray-50 flex justify-end">
+            <button type="button" onclick="hideDetailsModal()" class="w-full sm:w-auto px-4 py-2 bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300 transition-colors text-sm sm:text-base">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- ApexCharts for statistics -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const requestsTableBody = document.getElementById('requestsTableBody');
+            const searchInput = document.getElementById('searchInput');
+            const filterCampus = document.getElementById('filterCampus');
+            const filterPriority = document.getElementById('filterPriority');
+            const filterStatus = document.getElementById('filterStatus');
+
+            // LocalStorage keys
+            const STORAGE_KEYS = {
+                campus: 'maintenance_filter_campus',
+                priority: 'maintenance_filter_priority',
+                status: 'maintenance_filter_status',
+                search: 'maintenance_search_term',
+                hostel: 'maintenance_last_hostel'
+            };
+
+            // Load saved filter values from localStorage
+            const loadSavedFilters = () => {
+                const savedCampus = localStorage.getItem(STORAGE_KEYS.campus);
+                const savedPriority = localStorage.getItem(STORAGE_KEYS.priority);
+                const savedStatus = localStorage.getItem(STORAGE_KEYS.status);
+                const savedSearch = localStorage.getItem(STORAGE_KEYS.search);
+
+                if (savedCampus) {
+                    filterCampus.value = savedCampus;
+                }
+                if (savedPriority) {
+                    filterPriority.value = savedPriority;
+                }
+                if (savedStatus) {
+                    filterStatus.value = savedStatus;
+                }
+                if (savedSearch) {
+                    searchInput.value = savedSearch;
+                }
+
+                // Apply filters after loading saved values
+                filterTable();
+            };
+
+            // Save filter values to localStorage
+            const saveFilterToStorage = (key, value) => {
+                localStorage.setItem(key, value);
+            };
+
+            // Filtering and Search
+            const filterTable = () => {
+                const searchTerm = searchInput.value.toLowerCase();
+                const selectedCampus = filterCampus.value;
+                const selectedPriority = filterPriority.value;
+                const selectedStatus = filterStatus.value;
+
+                const rows = requestsTableBody.querySelectorAll('tr');
+                let visibleCount = 0;
+
+                rows.forEach(row => {
+                    if (row.querySelector('td[colspan]')) return;
+
+                    const description = row.children[2]?.textContent.toLowerCase() || '';
+                    const requester = row.children[3]?.textContent.toLowerCase() || '';
+                    const campusId = row.getAttribute('data-campus');
+                    const priority = row.getAttribute('data-priority');
+                    const status = row.getAttribute('data-status');
+
+                    const matchesSearch = description.includes(searchTerm) || requester.includes(searchTerm);
+                    const matchesCampus = selectedCampus === 'all' || campusId === selectedCampus;
+                    const matchesPriority = selectedPriority === 'all' || priority === selectedPriority;
+                    const matchesStatus = selectedStatus === 'all' || status === selectedStatus;
+
+                    if (matchesSearch && matchesCampus && matchesPriority && matchesStatus) {
+                        row.style.display = '';
+                        visibleCount++;
+                        row.children[0].textContent = visibleCount;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            };
+
+            // Form submission handlers with loading states
+            window.handleCreateSubmit = (event) => {
+                const submitBtn = document.getElementById('createSubmitBtn');
+                const btnText = document.getElementById('createBtnText');
+                const btnSpinner = document.getElementById('createBtnSpinner');
+
+                // Disable button and show loading
+                submitBtn.disabled = true;
+                btnText.textContent = 'Creating...';
+                btnSpinner.classList.remove('hidden');
+            };
+
+            window.handleUpdateSubmit = (event) => {
+                const submitBtn = document.getElementById('updateSubmitBtn');
+                const btnText = document.getElementById('updateBtnText');
+                const btnSpinner = document.getElementById('updateBtnSpinner');
+
+                // Disable button and show loading
+                submitBtn.disabled = true;
+                btnText.textContent = 'Updating...';
+                btnSpinner.classList.remove('hidden');
+            };
+
+            window.handleDeleteSubmit = (event) => {
+                const submitBtn = document.getElementById('deleteSubmitBtn');
+                const btnText = document.getElementById('deleteBtnText');
+                const btnSpinner = document.getElementById('deleteBtnSpinner');
+
+                // Disable button and show loading
+                submitBtn.disabled = true;
+                btnText.textContent = 'Deleting...';
+                btnSpinner.classList.remove('hidden');
+            };
+
+            // Initialize Priority Chart
+            const initializePriorityChart = () => {
+                const chartContainer = document.getElementById('priorityChart');
+                const rows = requestsTableBody.querySelectorAll('tr');
+
+                if (rows.length === 0 || rows[0].querySelector('td[colspan]')) {
+                    chartContainer.innerHTML = `
+                        <div class="flex flex-col items-center justify-center h-full text-slate-500">
+                            <p class="text-xs sm:text-sm text-center">Chart data will appear here once requests are added.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const priorityCounts = { low: 0, medium: 0, high: 0 };
+
+                rows.forEach(row => {
+                    const priority = row.getAttribute('data-priority');
+                    if (priority && priorityCounts.hasOwnProperty(priority)) {
+                        priorityCounts[priority]++;
+                    }
+                });
+
+                const series = [priorityCounts.low, priorityCounts.medium, priorityCounts.high];
+                const labels = ['Low', 'Medium', 'High'];
+
+                const options = {
+                    series: series,
+                    chart: {
+                        type: 'donut',
+                        height: 180
+                    },
+                    labels: labels,
+                    colors: ['#10b981', '#f59e0b', '#ef4444'],
+                    plotOptions: {
+                        pie: {
+                            donut: {
+                                size: '65%',
+                                labels: {
+                                    show: true,
+                                    total: {
+                                        show: true,
+                                        label: 'Total',
+                                        fontSize: '14px',
+                                        formatter: () => series.reduce((a, b) => a + b, 0)
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    dataLabels: { enabled: false },
+                    legend: {
+                        show: true,
+                        position: 'bottom',
+                        fontSize: '12px'
+                    },
+                    responsive: [{
+                        breakpoint: 480,
+                        options: {
+                            chart: { height: 160 },
+                            legend: { fontSize: '10px' }
+                        }
+                    }]
+                };
+
+                const chart = new ApexCharts(chartContainer, options);
+                chart.render();
+            };
+
+            // Initialize Status Chart
+            const initializeStatusChart = () => {
+                const chartContainer = document.getElementById('statusChart');
+                const rows = requestsTableBody.querySelectorAll('tr');
+
+                if (rows.length === 0 || rows[0].querySelector('td[colspan]')) {
+                    chartContainer.innerHTML = `
+                        <div class="flex flex-col items-center justify-center h-full text-slate-500">
+                            <p class="text-xs sm:text-sm text-center">Chart data will appear here once requests are added.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const statusCounts = { active: 0, inactive: 0, maintenance: 0 };
+
+                rows.forEach(row => {
+                    const status = row.getAttribute('data-status');
+                    if (status && statusCounts.hasOwnProperty(status)) {
+                        statusCounts[status]++;
+                    }
+                });
+
+                const options = {
+                    series: [{
+                        name: 'Requests',
+                        data: [
+                            statusCounts.active,
+                            statusCounts.inactive,
+                            statusCounts.maintenance
+                        ]
+                    }],
+                    chart: {
+                        type: 'bar',
+                        height: 200,
+                        toolbar: { show: false }
+                    },
+                    plotOptions: {
+                        bar: {
+                            borderRadius: 4,
+                            columnWidth: '60%',
+                            distributed: true
+                        }
+                    },
+                    colors: ['#10b981', '#f59e0b', '#06b6d4'],
+                    dataLabels: {
+                        enabled: true,
+                        formatter: (val) => val,
+                        style: {
+                            fontSize: '12px',
+                            fontWeight: 'bold',
+                            colors: ['#fff']
+                        },
+                        offsetY: -15
+                    },
+                    xaxis: {
+                        categories: ['Completed', 'Pending', 'In Progress'],
+                        labels: {
+                            style: {
+                                fontSize: '10px',
+                                fontWeight: 500
+                            }
+                        },
+                        axisBorder: { show: false },
+                        axisTicks: { show: false }
+                    },
+                    yaxis: {
+                        labels: {
+                            style: { fontSize: '10px' },
+                            formatter: (val) => Math.floor(val)
+                        }
+                    },
+                    grid: {
+                        show: true,
+                        borderColor: '#f1f1f1',
+                        strokeDashArray: 4,
+                        padding: {
+                            top: 0,
+                            right: 5,
+                            bottom: 0,
+                            left: 5
+                        },
+                        yaxis: { lines: { show: true } },
+                        xaxis: { lines: { show: false } }
+                    },
+                    legend: { show: false },
+                    tooltip: {
+                        y: {
+                            formatter: function(val) {
+                                return val + " request" + (val !== 1 ? "s" : "");
+                            }
+                        }
+                    },
+                    responsive: [{
+                        breakpoint: 480,
+                        options: {
+                            chart: { height: 180 },
+                            plotOptions: {
+                                bar: { columnWidth: '70%' }
+                            },
+                            xaxis: {
+                                labels: { style: { fontSize: '9px' } }
+                            }
+                        }
+                    }]
+                };
+
+                const chart = new ApexCharts(chartContainer, options);
+                chart.render();
+            };
+
+            // Load hostels by campus
+            window.loadHostelsByCampus = async (campusId, context) => {
+                const hostelSelect = document.getElementById(`${context}HostelId`);
+                const roomSelect = document.getElementById(`${context}RoomId`);
+
+                hostelSelect.innerHTML = '<option value="">Select Hostel</option>';
+                roomSelect.innerHTML = '<option value="">Select Room</option>';
+
+                if (!campusId || campusId === '') {
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/Maintenance/GetHostelsByCampus/${campusId}`);
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const hostels = await response.json();
+
+                    if (hostels && hostels.length > 0) {
+                        hostels.forEach(hostel => {
+                            const option = document.createElement('option');
+                            option.value = hostel.id;
+                            option.textContent = hostel.text;
+                            hostelSelect.appendChild(option);
+                        });
+                    } else {
+                        const option = document.createElement('option');
+                        option.value = '';
+                        option.textContent = 'No hostels available';
+                        hostelSelect.appendChild(option);
+                    }
+                } catch (error) {
+                    console.error('Error loading hostels:', error);
+                    alert('Error loading hostels. Please try again.');
+                }
+            };
+
+            // Load rooms by hostel
+            window.loadRoomsByHostel = async (hostelId, context) => {
+                const roomSelect = document.getElementById(`${context}RoomId`);
+
+                roomSelect.innerHTML = '<option value="">Select Room</option>';
+
+                if (!hostelId || hostelId === '') {
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/Maintenance/GetRoomsByHostel/${hostelId}`);
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const rooms = await response.json();
+
+                    if (rooms && rooms.length > 0) {
+                        rooms.forEach(room => {
+                            const option = document.createElement('option');
+                            option.value = room.id;
+                            option.textContent = room.text;
+                            roomSelect.appendChild(option);
+                        });
+                    } else {
+                        const option = document.createElement('option');
+                        option.value = '';
+                        option.textContent = 'No rooms available';
+                        roomSelect.appendChild(option);
+                    }
+                } catch (error) {
+                    console.error('Error loading rooms:', error);
+                    alert('Error loading rooms. Please try again.');
+                }
+            };
+
+            // Helper function to preselect dropdowns based on saved filters
+            const preSelectFiltersInModal = async () => {
+                const savedCampus = localStorage.getItem(STORAGE_KEYS.campus);
+                const savedHostel = localStorage.getItem(STORAGE_KEYS.hostel);
+
+                if (savedCampus && savedCampus !== 'all') {
+                    const campusSelect = document.getElementById('createCampusId');
+                    campusSelect.value = savedCampus;
+
+                    // Load hostels for selected campus
+                    await loadHostelsByCampus(savedCampus, 'create');
+
+                    // If there's a saved hostel, select it after hostels are loaded
+                    if (savedHostel) {
+                        setTimeout(async () => {
+                            const hostelSelect = document.getElementById('createHostelId');
+                            const hostelOption = Array.from(hostelSelect.options).find(opt => opt.value === savedHostel);
+                            if (hostelOption) {
+                                hostelSelect.value = savedHostel;
+                                // Load rooms for the selected hostel
+                                await loadRoomsByHostel(savedHostel, 'create');
+                            }
+                        }, 300);
+                    }
+                }
+            };
+
+            // Modal functions
+            window.showCreateRequestModal = async () => {
+                const form = document.getElementById('createRequestForm');
+                const submitBtn = document.getElementById('createSubmitBtn');
+                const btnText = document.getElementById('createBtnText');
+                const btnSpinner = document.getElementById('createBtnSpinner');
+
+                // Reset form and button state
+                form.reset();
+                submitBtn.disabled = false;
+                btnText.textContent = 'Create Request';
+                btnSpinner.classList.add('hidden');
+
+                document.getElementById('createRequestModal').classList.remove('hidden');
+
+                // Preselect campus and hostel based on saved filters
+                await preSelectFiltersInModal();
+            };
+
+            window.hideCreateRequestModal = () => {
+                document.getElementById('createRequestModal').classList.add('hidden');
+            };
+
+            window.showUpdateRequestModal = async (id) => {
+                loadingIndicator.style.display = 'flex';
+
+                try {
+                    const response = await fetch(`/Maintenance/GetMaintenanceRequest/${id}`);
+                    const request = await response.json();
+
+                    // Reset button state
+                    const submitBtn = document.getElementById('updateSubmitBtn');
+                    const btnText = document.getElementById('updateBtnText');
+                    const btnSpinner = document.getElementById('updateBtnSpinner');
+                    submitBtn.disabled = false;
+                    btnText.textContent = 'Update Request';
+                    btnSpinner.classList.add('hidden');
+
+                    document.getElementById('updateRequestId').value = request.id;
+
+                    const campusSelect = document.getElementById('updateCampusId');
+                    const campusId = Array.from(campusSelect.options).find(opt =>
+                        opt.textContent === request.campusName
+                    )?.value;
+
+                    if (campusId) {
+                        campusSelect.value = campusId;
+                        await loadHostelsByCampus(campusId, 'update');
+
+                        setTimeout(async () => {
+                            const hostelSelect = document.getElementById('updateHostelId');
+                            const hostelId = Array.from(hostelSelect.options).find(opt =>
+                                opt.textContent === request.hostelName
+                            )?.value;
+
+                            if (hostelId) {
+                                hostelSelect.value = hostelId;
+                                await loadRoomsByHostel(hostelId, 'update');
+
+                                setTimeout(() => {
+                                    document.getElementById('updateRoomId').value = request.roomId;
+                                }, 200);
+                            }
+                        }, 200);
+                    }
+
+                    document.getElementById('updateRequestedBy').value = request.requestedBy;
+                    document.getElementById('updateRequesterType').value = request.requesterType;
+                    document.getElementById('updateDescription').value = request.description;
+                    document.getElementById('updatePriority').value = request.priority;
+
+                    const statusMap = {
+                        'Active': '1',
+                        'Inactive': '0',
+                        'Maintenance': '2'
+                    };
+                    document.getElementById('updateStatus').value = statusMap[request.status] || '0';
+                    document.getElementById('updateResolutionNotes').value = request.resolutionNotes || '';
+
+                    document.getElementById('updateRequestModal').classList.remove('hidden');
+                    document.getElementById('updateRequestForm').action = `/Maintenance/UpdateMaintenanceRequest/${id}`;
+                } catch (error) {
+                    console.error('Error loading request:', error);
+                    alert('Error loading request data');
+                } finally {
+                    loadingIndicator.style.display = 'none';
+                }
+            };
+
+            window.hideUpdateRequestModal = () => {
+                document.getElementById('updateRequestModal').classList.add('hidden');
+            };
+
+            window.showDeleteRequestModal = (id) => {
+                // Reset button state
+                const submitBtn = document.getElementById('deleteSubmitBtn');
+                const btnText = document.getElementById('deleteBtnText');
+                const btnSpinner = document.getElementById('deleteBtnSpinner');
+                submitBtn.disabled = false;
+                btnText.textContent = 'Delete Request';
+                btnSpinner.classList.add('hidden');
+
+                document.getElementById('deleteRequestId').value = id;
+                document.getElementById('deleteRequestModal').classList.remove('hidden');
+            };
+
+            window.hideDeleteRequestModal = () => {
+                document.getElementById('deleteRequestModal').classList.add('hidden');
+            };
+
+            window.showRequestDetails = async (id) => {
+                loadingIndicator.style.display = 'flex';
+
+                try {
+                    const response = await fetch(`/Maintenance/GetMaintenanceRequest/${id}`);
+                    const request = await response.json();
+
+                    const statusClass = request.status === 'Active' ? 'text-green-600' :
+                                      request.status === 'Inactive' ? 'text-gray-600' : 'text-orange-600';
+
+                    const priorityClass = request.priority?.toLowerCase() === 'high' ? 'text-red-600' :
+                                        request.priority?.toLowerCase() === 'medium' ? 'text-yellow-600' : 'text-green-600';
+
+                    document.getElementById('detailsContent').innerHTML = `
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <p class="text-xs sm:text-sm text-gray-500">Location</p>
+                                    <p class="font-semibold text-sm sm:text-base">${request.hostelName} - Room ${request.roomNumber}</p>
+                                    <p class="text-xs text-gray-500">${request.campusName}</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs sm:text-sm text-gray-500">Requested By</p>
+                                    <p class="font-semibold text-sm sm:text-base">${request.requestedBy}</p>
+                                    <p class="text-xs text-gray-500">${request.requesterType}</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs sm:text-sm text-gray-500">Priority</p>
+                                    <p class="font-semibold text-sm sm:text-base ${priorityClass}">${request.priority}</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs sm:text-sm text-gray-500">Status</p>
+                                    <p class="font-semibold text-sm sm:text-base ${statusClass}">${request.status}</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs sm:text-sm text-gray-500">Request Date</p>
+                                    <p class="font-semibold text-sm sm:text-base">${new Date(request.requestDate).toLocaleDateString()}</p>
+                                </div>
+                                ${request.resolutionDate ? `
+                                    <div>
+                                        <p class="text-xs sm:text-sm text-gray-500">Resolution Date</p>
+                                        <p class="font-semibold text-sm sm:text-base">${new Date(request.resolutionDate).toLocaleDateString()}</p>
+                                    </div>
+                                ` : ''}
+                            </div>
+                            <div>
+                                <p class="text-xs sm:text-sm text-gray-500 mb-2">Description</p>
+                                <div class="p-3 sm:p-4 bg-gray-50 rounded border">
+                                    <p class="text-sm sm:text-base">${request.description}</p>
+                                </div>
+                            </div>
+                            ${request.resolutionNotes ? `
+                                <div>
+                                    <p class="text-xs sm:text-sm text-gray-500 mb-2">Resolution Notes</p>
+                                    <div class="p-3 sm:p-4 bg-green-50 rounded border border-green-200">
+                                        <p class="text-green-800 text-sm sm:text-base">${request.resolutionNotes}</p>
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+
+                    document.getElementById('detailsModal').classList.remove('hidden');
+                } catch (error) {
+                    console.error('Error loading details:', error);
+                    alert('Error loading request details');
+                } finally {
+                    loadingIndicator.style.display = 'none';
+                }
+            };
+
+            window.hideDetailsModal = () => {
+                document.getElementById('detailsModal').classList.add('hidden');
+            };
+
+            // Clear filters function
+            window.clearFilters = () => {
+                searchInput.value = '';
+                filterCampus.value = 'all';
+                filterPriority.value = 'all';
+                filterStatus.value = 'all';
+
+                localStorage.removeItem(STORAGE_KEYS.campus);
+                localStorage.removeItem(STORAGE_KEYS.priority);
+                localStorage.removeItem(STORAGE_KEYS.status);
+                localStorage.removeItem(STORAGE_KEYS.search);
+                localStorage.removeItem(STORAGE_KEYS.hostel);
+
+                filterTable();
+            };
+
+            // Add event listeners with localStorage save
+            searchInput.addEventListener('input', () => {
+                saveFilterToStorage(STORAGE_KEYS.search, searchInput.value);
+                filterTable();
+            });
+
+            filterCampus.addEventListener('change', () => {
+                saveFilterToStorage(STORAGE_KEYS.campus, filterCampus.value);
+                filterTable();
+            });
+
+            filterPriority.addEventListener('change', () => {
+                saveFilterToStorage(STORAGE_KEYS.priority, filterPriority.value);
+                filterTable();
+            });
+
+            filterStatus.addEventListener('change', () => {
+                saveFilterToStorage(STORAGE_KEYS.status, filterStatus.value);
+                filterTable();
+            });
+
+            // Track hostel selection for preselection in create modal
+            document.addEventListener('change', (e) => {
+                if (e.target.id === 'createHostelId' || e.target.id === 'updateHostelId') {
+                    const selectedHostel = e.target.value;
+                    if (selectedHostel) {
+                        saveFilterToStorage(STORAGE_KEYS.hostel, selectedHostel);
+                    }
+                }
+            });
+
+            // Handle Escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    hideCreateRequestModal();
+                    hideUpdateRequestModal();
+                    hideDeleteRequestModal();
+                    hideDetailsModal();
+                }
+            });
+
+            // Load saved filters on page load
+            loadSavedFilters();
+
+            // Initialize charts
+            if (requestsTableBody.children.length > 0 && !requestsTableBody.querySelector('tr td[colspan]')) {
+                initializePriorityChart();
+                initializeStatusChart();
+            }
+        });
+    </script>
+}

@@ -1,0 +1,356 @@
+@{
+    ViewData["Title"] = "Maintenance Management";
+    var hostel = ViewBag.Hostel as SIS.Models.StudentAccommodation.Hostel;
+    var rooms = ViewBag.Rooms as List<SIS.Models.StudentAccommodation.Room>;
+}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+    .maintenance-card {
+        border: 2px solid #e5e7eb;
+        border-radius: 0.75rem;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        transition: all 0.3s;
+    }
+
+        .maintenance-card:hover {
+            border-color: var(--teal-primary);
+            box-shadow: 0 4px 12px rgba(13, 148, 136, 0.15);
+        }
+
+        .maintenance-card.low-priority {
+            border-left: 4px solid #10b981;
+        }
+
+        .maintenance-card.medium-priority {
+            border-left: 4px solid #f59e0b;
+        }
+
+        .maintenance-card.high-priority {
+            border-left: 4px solid #ef4444;
+        }
+
+    .modal-overlay {
+        position: fixed !important;
+        inset: 0 !important;
+        z-index: 9998 !important;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+    }
+
+        .modal-overlay.hidden {
+            display: none !important;
+        }
+</style>
+
+<div class="container mx-auto px-4 py-6">
+    @Html.AntiForgeryToken()
+
+    <!-- Header -->
+    <div class="mb-6">
+        <div class="bg-gradient-to-r from-orange-600 to-orange-500 rounded-xl shadow-lg p-6 text-white">
+            <div class="flex justify-between items-center flex-wrap gap-4">
+                <div>
+                    <h4 class="text-2xl font-bold mb-2">
+                        <i class="fas fa-tools me-2"></i>Maintenance Management
+                    </h4>
+                    <p class="text-orange-100">@hostel.HostelName - @hostel.Campus.CampusName</p>
+                </div>
+                <div>
+                    <a href="@Url.Action("Index", "HostelManagement")" class="bg-white text-orange-700 hover:bg-orange-50 px-6 py-3 rounded-lg font-semibold shadow-md transition">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h6 class="text-lg font-semibold text-gray-800 mb-4">
+            <i class="fas fa-filter me-2 text-orange-600"></i>Filter Requests
+        </h6>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Room</label>
+                <select id="roomFilter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500">
+                    <option value="">All Rooms</option>
+                    @if (rooms != null)
+                    {
+                        foreach (var room in rooms)
+                        {
+                            <option value="@room.RoomId">Room @room.RoomNumber (Floor @room.Floor)</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Priority</label>
+                <select id="priorityFilter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500">
+                    <option value="">All Priorities</option>
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                <select id="statusFilter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500">
+                    <option value="">All Statuses</option>
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                    <option value="Maintenance">In Progress</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Maintenance Requests -->
+    <div id="maintenanceRequestsContainer"></div>
+
+    <!-- Update Maintenance Modal -->
+    <div id="updateMaintenanceModal" class="modal-overlay hidden">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full">
+            <div class="bg-gradient-to-r from-orange-600 to-orange-500 px-6 py-4 flex justify-between items-center">
+                <h5 class="text-xl font-bold text-white">
+                    <i class="fas fa-edit me-2"></i>Update Maintenance Request
+                </h5>
+                <button onclick="hideUpdateMaintenanceModal()" class="text-white hover:text-gray-200 transition">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <form id="updateMaintenanceForm">
+                    <input type="hidden" id="updateRequestId" name="RequestId">
+                    <div id="requestInfoDiv" class="mb-4"></div>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Priority *</label>
+                            <select id="updatePriority" name="Priority" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500" required>
+                                <option value="Low">Low</option>
+                                <option value="Medium">Medium</option>
+                                <option value="High">High</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Status *</label>
+                            <select id="updateStatus" name="Status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500" required>
+                                @if (ViewBag.StatusOptions != null)
+                                {
+                                    foreach (var status in ViewBag.StatusOptions)
+                                    {
+                                        <option value="@status.Value">@status.Text</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Resolution Notes</label>
+                            <textarea id="updateResolutionNotes" name="ResolutionNotes" rows="4"
+                                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                                      placeholder="Add notes about the resolution..."></textarea>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex justify-end space-x-3">
+                        <button type="button" onclick="hideUpdateMaintenanceModal()"
+                                class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition">
+                            <i class="fas fa-save me-2"></i>Update Request
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Global functions
+        let loadMaintenanceRequests, showUpdateMaintenanceModal, hideUpdateMaintenanceModal;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Setup form submission handler
+            document.getElementById('updateMaintenanceForm').addEventListener('submit', handleUpdateMaintenance);
+
+            // Setup filter change handlers
+            document.getElementById('roomFilter').addEventListener('change', loadMaintenanceRequests);
+            document.getElementById('priorityFilter').addEventListener('change', loadMaintenanceRequests);
+            document.getElementById('statusFilter').addEventListener('change', loadMaintenanceRequests);
+
+            // Initial load
+            loadMaintenanceRequests();
+        });
+
+        function getAntiForgeryToken() {
+            return document.querySelector('input[name="__RequestVerificationToken"]').value;
+        }
+
+        loadMaintenanceRequests = async function() {
+            try {
+                const roomId = document.getElementById('roomFilter').value;
+                const priority = document.getElementById('priorityFilter').value;
+                const status = document.getElementById('statusFilter').value;
+
+                let url = '/HostelManagement/GetMaintenanceRequests?';
+                if (roomId) url += `roomId=${roomId}&`;
+                if (priority) url += `priority=${priority}&`;
+                if (status) url += `status=${status}&`;
+
+                const response = await fetch(url);
+                const requests = await response.json();
+
+                const container = document.getElementById('maintenanceRequestsContainer');
+
+                if (requests.length === 0) {
+                    container.innerHTML = `
+                        <div class="bg-white rounded-lg shadow-md p-12 text-center text-gray-500">
+                            <i class="fas fa-inbox text-5xl mb-4 opacity-50"></i>
+                            <p class="text-lg">No maintenance requests found</p>
+                            <p class="text-sm">Try adjusting your filters</p>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = requests.map(request => {
+                        const priorityClass = request.priority.toLowerCase();
+                        const requestDate = new Date(request.requestDate).toLocaleDateString();
+                        const resolutionDate = request.resolutionDate ? new Date(request.resolutionDate).toLocaleDateString() : null;
+
+                        return `
+                            <div class="maintenance-card ${priorityClass}-priority bg-white">
+                                <div class="flex justify-between items-start">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-3 mb-2">
+                                            <i class="fas fa-tools text-2xl text-orange-600"></i>
+                                            <div class="flex-1">
+                                                <div class="flex items-center gap-2 mb-1">
+                                                    <span class="px-3 py-1 rounded-full text-xs font-semibold uppercase ${
+                                                        priorityClass === 'low' ? 'bg-green-100 text-green-700' :
+                                                        priorityClass === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                                                        'bg-red-100 text-red-700'
+                                                    }">
+                                                        ${request.priority}
+                                                    </span>
+                                                    <span class="px-2 py-1 rounded text-xs font-semibold ${
+                                                        request.status === 'Active' ? 'bg-green-100 text-green-700' :
+                                                        request.status === 'Inactive' ? 'bg-gray-100 text-gray-700' :
+                                                        'bg-yellow-100 text-yellow-700'
+                                                    }">
+                                                        ${request.status}
+                                                    </span>
+                                                </div>
+                                                <p class="text-sm font-semibold text-gray-800">Room ${request.roomNumber} • Floor ${request.floor}</p>
+                                                <p class="text-xs text-gray-500">
+                                                    Requested on ${requestDate} by ${request.requestedBy} (${request.requesterType})
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div class="mt-2 p-3 bg-gray-50 rounded border border-gray-200">
+                                            <p class="text-sm text-gray-700 font-medium mb-1">Issue Description:</p>
+                                            <p class="text-sm text-gray-600">${request.description || 'No description provided'}</p>
+                                        </div>
+                                        ${request.resolutionNotes && request.resolutionNotes.trim() !== '' ? `
+                                            <div class="mt-2 p-3 bg-green-50 rounded border border-green-200">
+                                                <p class="text-xs font-semibold text-green-800 mb-1">
+                                                    <i class="fas fa-check-circle me-1"></i>Resolution Notes
+                                                    ${resolutionDate ? `<span class="font-normal">(Resolved: ${resolutionDate})</span>` : ''}
+                                                </p>
+                                                <p class="text-sm text-green-700">${request.resolutionNotes}</p>
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                    <div class="ml-3">
+                                        <button type="button" class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition"
+                                                onclick="showUpdateMaintenanceModal(${request.requestId}, '${request.roomNumber}', '${request.description}', '${request.priority}', '${request.status}', '${request.resolutionNotes || ''}')">
+                                            <i class="fas fa-edit me-1"></i>Update
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            } catch (error) {
+                console.error('Error loading maintenance requests:', error);
+                showNotification('Error loading maintenance requests', 'error');
+            }
+        }
+
+        showUpdateMaintenanceModal = function(requestId, roomNumber, description, priority, status, resolutionNotes) {
+            document.getElementById('updateRequestId').value = requestId;
+            document.getElementById('requestInfoDiv').innerHTML = `
+                <div class="bg-orange-50 border-l-4 border-orange-500 p-4 rounded">
+                    <p class="font-semibold text-orange-800">Room ${roomNumber}</p>
+                    <p class="text-sm text-orange-700 mt-1">${description}</p>
+                </div>
+            `;
+            document.getElementById('updatePriority').value = priority;
+
+            // Map status text to numeric value
+            const statusMap = {
+                'Active': '1',
+                'Inactive': '0',
+                'Maintenance': '2'
+            };
+            document.getElementById('updateStatus').value = statusMap[status] || '0';
+            document.getElementById('updateResolutionNotes').value = resolutionNotes || '';
+            document.getElementById('updateMaintenanceModal').classList.remove('hidden');
+        }
+
+        hideUpdateMaintenanceModal = function() {
+            document.getElementById('updateMaintenanceModal').classList.add('hidden');
+        }
+
+        async function handleUpdateMaintenance(e) {
+            e.preventDefault();
+            try {
+                const formData = new FormData(e.target);
+                const response = await fetch('/HostelManagement/UpdateMaintenanceRequest', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'RequestVerificationToken': getAntiForgeryToken()
+                    },
+                    body: new URLSearchParams(formData)
+                });
+
+                if (response.ok) {
+                    showNotification('Maintenance request updated successfully!', 'success');
+                    hideUpdateMaintenanceModal();
+                    loadMaintenanceRequests();
+                } else {
+                    const error = await response.text();
+                    showNotification(error || 'Error updating request', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification('Error updating request', 'error');
+            }
+        }
+
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg transition-all transform ${
+                type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+            }`;
+            notification.innerHTML = `
+                <div class="flex items-center space-x-2">
+                    <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            document.body.appendChild(notification);
+            setTimeout(() => {
+                notification.style.transform = 'translateX(400px)';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+    </script>
+}

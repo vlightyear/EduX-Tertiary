@@ -1,0 +1,1436 @@
+﻿@{
+    var course = ViewBag.Course;
+    var chapters = ViewBag.Chapters;
+    var uncategorizedContent = ViewBag.UncategorizedContent;
+    var contentByChapter = ViewBag.ContentByChapter;
+    var assessmentsByChapter = ViewBag.AssessmentsByChapter;
+    var uncategorizedAssessments = ViewBag.UncategorizedAssessments;
+    var assessmentData = ViewBag.AssessmentData;
+    var selectedChapterId = ViewBag.SelectedChapterId;
+    var viewingUncategorized = ViewBag.ViewingUncategorized;
+    var studentId = ViewBag.StudentId;
+    var chapterProgress = ViewBag.ChapterProgress;
+    var accessibleChapters = ViewBag.AccessibleChapters;
+    var chapterRatings = ViewBag.ChapterRatings; // NEW
+
+    // Get content for the selected chapter
+    var currentContent = viewingUncategorized
+        ? uncategorizedContent
+        : (contentByChapter.ContainsKey(selectedChapterId) ? contentByChapter[selectedChapterId] : new List<dynamic>());
+
+    // Get assessments for the selected chapter
+    var currentAssessments = viewingUncategorized
+        ? uncategorizedAssessments
+        : (assessmentsByChapter.ContainsKey(selectedChapterId) ? assessmentsByChapter[selectedChapterId] : new List<dynamic>());
+
+    // Process content groups before the Razor section
+    // This avoids using lambdas with dynamic objects directly in the view
+    var contentDictionary = new Dictionary<string, List<object>>();
+
+    if (currentContent != null)
+    {
+        foreach (var content in currentContent)
+        {
+            string category = content.ContentCategory ?? "General";
+
+            if (!contentDictionary.ContainsKey(category))
+            {
+                contentDictionary[category] = new List<object>();
+            }
+
+            contentDictionary[category].Add(content);
+        }
+    }
+
+    // Sort content groups by category name
+    var sortedCategories = contentDictionary?.Keys.OrderBy(k => k).ToList() ?? new List<string>();
+
+    // The current chapter (if available)
+    dynamic currentChapter = null;
+    if (!viewingUncategorized && chapters != null)
+    {
+        foreach (var chapter in chapters)
+        {
+            if (chapter.Id == selectedChapterId)
+            {
+                currentChapter = chapter;
+                break;
+            }
+        }
+    }
+
+    // Helper function to check if a chapter is accessible
+    bool IsChapterAccessible(int chapterId)
+    {
+        return accessibleChapters?.Contains(chapterId) ?? false;
+    }
+
+    // Helper function to check if a chapter is complete
+    bool IsChapterComplete(int chapterId)
+    {
+        return chapterProgress?.ContainsKey(chapterId) == true && chapterProgress[chapterId];
+    }
+
+    // NEW: Helper function to check if a chapter is rated
+    bool IsChapterRated(int chapterId)
+    {
+        return chapterRatings?.ContainsKey(chapterId) == true && chapterRatings[chapterId].HasRated;
+    }
+
+    // Helper function to check if a chapter has assessments
+    bool ChapterHasAssessments(int chapterId)
+    {
+        if (assessmentsByChapter?.ContainsKey(chapterId) == true)
+        {
+            var assessments = assessmentsByChapter[chapterId];
+            return assessments != null && assessments.Count > 0;
+        }
+        return false;
+    }
+
+    // Helper to get chapter order by index
+    int GetChapterOrderIndex(int chapterId)
+    {
+        foreach (var chapter in chapters)
+        {
+            if (chapter.Id == chapterId)
+            {
+                return chapter.OrderIndex;
+            }
+        }
+        return 0;
+    }
+
+    // Check if the current chapter has all assessments attempted
+    bool currentChapterHasAttemptedAssessments = false;
+    if (currentChapter != null && ChapterHasAssessments(currentChapter.Id))
+    {
+        var chapterAssessments = assessmentsByChapter[currentChapter.Id];
+        currentChapterHasAttemptedAssessments = true;
+
+        // Use traditional foreach loop instead of LINQ Where
+        foreach (var assessment in chapterAssessments)
+        {
+            // Check if assessment is published manually
+            if (assessment.IsPublished)
+            {
+                bool hasAttempt = false;
+                if (assessmentData != null)
+                {
+                    foreach (var item in assessmentData)
+                    {
+                        if (item.Assessment.Id == assessment.Id && item.StudentAttempt != null)
+                        {
+                            hasAttempt = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!hasAttempt)
+                {
+                    currentChapterHasAttemptedAssessments = false;
+                    break;
+                }
+            }
+        }
+    }
+
+    // NEW: Check if current chapter is rated
+    bool currentChapterIsRated = currentChapter != null && IsChapterRated(currentChapter.Id);
+}
+
+@section Styles {
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css" />
+    <style>
+        .file-card {
+            transition: all 0.2s ease;
+        }
+
+            .file-card:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            }
+
+        .file-icon {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+        }
+
+        .chapter-nav {
+            position: sticky;
+            top: 20px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+
+        .chapter-item {
+            transition: all 0.2s ease;
+        }
+
+            .chapter-item:hover:not(.chapter-locked) {
+                background-color: #f1f5f9;
+            }
+
+            .chapter-item.active {
+                background-color: #e0f2fe;
+                border-left: 3px solid #0284c7;
+            }
+
+        .chapter-locked {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background-color: #f1f1f1;
+        }
+
+        .progress-indicator {
+            width: 20px;
+            height: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .chapter-complete {
+            background-color: #bbf7d0;
+            color: #16a34a;
+        }
+
+        .chapter-incomplete {
+            background-color: #fecaca;
+            color: #ef4444;
+        }
+
+        .chapter-locked-indicator {
+            background-color: #e5e7eb;
+            color: #6b7280;
+        }
+
+        .chapter-current {
+            background-color: #dbeafe;
+            color: #2563eb;
+        }
+
+        .assessment-required {
+            border: 2px solid #fef08a;
+            position: relative;
+        }
+
+            .assessment-required::after {
+                content: "Assessment Required";
+                position: absolute;
+                top: -10px;
+                right: 10px;
+                background-color: #fef08a;
+                color: #854d0e;
+                font-size: 10px;
+                padding: 2px 8px;
+                border-radius: 10px;
+                font-weight: 600;
+            }
+
+        /* NEW: Rating required styles */
+        .rating-required {
+            border: 2px solid #f3e8ff;
+            position: relative;
+        }
+
+            .rating-required::after {
+                content: "Rating Required";
+                position: absolute;
+                top: -10px;
+                left: 10px;
+                background-color: #f3e8ff;
+                color: #7c3aed;
+                font-size: 10px;
+                padding: 2px 8px;
+                border-radius: 10px;
+                font-weight: 600;
+            }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            transform: translateY(-100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+            .toast.show {
+                transform: translateY(0);
+                opacity: 1;
+            }
+
+        .toast-success {
+            background-color: #dcfce7;
+            color: #16a34a;
+            border-left: 4px solid #16a34a;
+        }
+
+        .toast-warning {
+            background-color: #fef3c7;
+            color: #d97706;
+            border-left: 4px solid #d97706;
+        }
+
+        .toast-error {
+            background-color: #fee2e2;
+            color: #dc2626;
+            border-left: 4px solid #dc2626;
+        }
+
+        .progress-container {
+            margin-top: auto;
+        }
+
+        .chapter-nav {
+            position: sticky;
+            top: 20px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* NEW: Star Rating Styles */
+        .star-rating {
+            display: flex;
+            gap: 4px;
+            margin: 8px 0;
+        }
+
+        .star {
+            font-size: 24px;
+            color: #d1d5db;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+            .star:hover,
+            .star.hovered {
+                color: #fbbf24;
+                transform: scale(1.1);
+            }
+
+            .star.selected {
+                color: #f59e0b;
+            }
+
+            .star.readonly {
+                cursor: default;
+            }
+
+                .star.readonly:hover {
+                    transform: none;
+                }
+
+        .rating-display {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 4px 0;
+        }
+
+            .rating-display .star {
+                font-size: 16px;
+                cursor: default;
+            }
+
+                .rating-display .star:hover {
+                    transform: none;
+                }
+
+        /* Modal styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+            .modal-overlay.show {
+                opacity: 1;
+                visibility: visible;
+            }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.show .modal-content {
+            transform: scale(1);
+        }
+
+        .chapter-rating-indicator {
+            font-size: 12px;
+            margin-left: 4px;
+        }
+    </style>
+}
+
+<div class="min-h-screen bg-slate-50 p-6">
+    <!-- Toast notification container -->
+    <div id="toast" class="toast">
+        <span id="toastMessage"></span>
+    </div>
+
+    <!-- Rating Modal -->
+    <div id="ratingModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-slate-800">Rate This Chapter</h3>
+                <button id="closeModal" class="text-slate-400 hover:text-slate-600">
+                    <i class="material-icons">close</i>
+                </button>
+            </div>
+
+            <div class="mb-4">
+                <p class="text-sm text-slate-600 mb-3">
+                    How would you rate your learning experience with this chapter?
+                </p>
+
+                <div class="star-rating" id="starRating">
+                    <span class="star" data-rating="1">★</span>
+                    <span class="star" data-rating="2">★</span>
+                    <span class="star" data-rating="3">★</span>
+                    <span class="star" data-rating="4">★</span>
+                    <span class="star" data-rating="5">★</span>
+                </div>
+
+                <div id="ratingText" class="text-sm text-slate-600 mt-2 hidden"></div>
+            </div>
+
+            <div class="mb-6">
+                <label for="reviewText" class="block text-sm font-medium text-slate-700 mb-2">
+                    Review (Optional)
+                </label>
+                <textarea id="reviewText"
+                          placeholder="Share your thoughts about this chapter..."
+                          class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                          rows="3"
+                          maxlength="500"></textarea>
+                <div class="text-xs text-slate-500 mt-1">
+                    <span id="charCount">0</span>/500 characters
+                </div>
+            </div>
+
+            <div class="flex gap-3">
+                <button id="cancelRating" class="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50">
+                    Cancel
+                </button>
+                <button id="submitRating" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-slate-400 disabled:cursor-not-allowed" disabled>
+                    Submit Rating
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <div class="mb-6">
+        <div class="flex items-center mb-4">
+            <a href="@Url.Action("MyCourses", "Course")" class="text-blue-600 hover:text-blue-800 mr-2">
+                <i class="material-icons">arrow_back</i>
+            </a>
+            <div class="flex items-center">
+                <span class="px-3 py-1 bg-blue-100 text-blue-700 text-sm font-medium rounded-full mr-3">
+                    @course.CourseCode
+                </span>
+                <h1 class="text-2xl font-bold text-slate-800">@course.CourseName</h1>
+            </div>
+        </div>
+        <p class="text-slate-600 ml-8">@course.CourseDescription</p>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="flex flex-col md:flex-row gap-6">
+        <!-- Main Content Area - 3/4 width -->
+        <div class="md:w-3/4">
+            <!-- Current Chapter Content -->
+            <div class="bg-white rounded-xl shadow-sm mb-6 min-h-[70vh] @(ChapterHasAssessments(selectedChapterId) && !currentChapterHasAttemptedAssessments ? "assessment-required" : "") @(!currentChapterIsRated && currentChapter != null ? "rating-required" : "")">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-semibold text-slate-800">
+                            @if (viewingUncategorized)
+                            {
+                                <span>Uncategorized Content</span>
+                            }
+                            else if (currentChapter != null)
+                            {
+                                <span>@currentChapter.Title</span>
+                            }
+                            else
+                            {
+                                <span>Course Content</span>
+                            }
+                        </h2>
+
+                        @if (currentChapter != null && IsChapterRated(currentChapter.Id))
+                        {
+                            var rating = chapterRatings[currentChapter.Id];
+                            <div class="rating-display">
+                                <span class="text-sm text-slate-600">Your rating:</span>
+                                @for (int i = 1; i <= 5; i++)
+                                {
+                                    <span class="star readonly @(i <= rating.Rating ? "selected" : "")">★</span>
+                                }
+                                <button class="text-xs text-blue-600 hover:text-blue-800 ml-2" onclick="openRatingModal(@currentChapter.Id, @course.Id, true)">
+                                    Edit
+                                </button>
+                            </div>
+                        }
+                    </div>
+
+                    @if (contentDictionary.Count == 0 && currentAssessments.Count == 0)
+                    {
+                        <div class="text-center p-12 bg-slate-50 rounded-lg">
+                            <i class="material-icons text-5xl text-slate-300 mb-4">folder_open</i>
+                            <p class="text-slate-600">No materials available in this section.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- Chapter Assessments (if any) -->
+                        @if (currentAssessments.Count > 0)
+                        {
+                            <div class="mb-6">
+                                <h3 class="text-lg font-medium text-slate-800 mb-4">Assessments</h3>
+                                <div class="space-y-3">
+                                    @foreach (var assessment in currentAssessments)
+                                    {
+                                        var now = DateTime.Now;
+                                        var isActive = assessment.StartDateTime <= now && assessment.EndDateTime >= now;
+                                        // Find the student attempt for this assessment
+                                        dynamic attempt = null;
+                                        if (assessmentData != null)
+                                        {
+                                            foreach (var item in assessmentData)
+                                            {
+                                                if (item.Assessment.Id == assessment.Id)
+                                                {
+                                                    attempt = item.StudentAttempt;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        var timeRemaining = assessment.EndDateTime - now;
+
+                                        string status = "Not Available";
+                                        string statusClass = "bg-slate-100 text-slate-600";
+
+                                        if (isActive)
+                                        {
+                                            if (attempt != null)
+                                            {
+                                                if (attempt.Status == "Submitted" || attempt.Status == "TimedOut")
+                                                {
+                                                    status = "Completed";
+                                                    statusClass = "bg-green-100 text-green-800";
+                                                }
+                                                else if (attempt.Status == "InProgress")
+                                                {
+                                                    status = "In Progress";
+                                                    statusClass = "bg-yellow-100 text-yellow-800";
+                                                }
+                                            }
+                                            else
+                                            {
+                                                status = "Available";
+                                                statusClass = "bg-blue-100 text-blue-800";
+                                            }
+                                        }
+
+                                        <div class="flex items-center justify-between bg-slate-50 rounded-lg p-4">
+                                            <div class="flex items-center">
+                                                <div class="file-icon bg-amber-50 text-amber-500">
+                                                    <i class="material-icons">assignment</i>
+                                                </div>
+                                                <div class="ml-3">
+                                                    <h4 class="font-medium text-slate-800">@assessment.Assessment.Name</h4>
+                                                    <p class="text-xs text-slate-500">
+                                                        Available: @assessment.StartDateTime.ToString("MMM dd, yyyy - HH:mm") to
+                                                        @assessment.EndDateTime.ToString("MMM dd, yyyy - HH:mm") •
+                                                        Duration: @assessment.DurationMinutes min
+                                                    </p>
+                                                    @if (isActive && timeRemaining.TotalHours < 24 && (attempt == null || attempt.Status == "InProgress"))
+                                                    {
+                                                        <p class="text-xs font-medium text-red-600 mt-1">
+                                                            Time remaining: <span class="countdown" data-end="@assessment.EndDateTime.ToString("o")">
+                                                                @FormatTimeRemaining(timeRemaining)
+                                                            </span>
+                                                        </p>
+                                                    }
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center">
+                                                <span class="px-2 py-1 text-xs font-medium rounded-full mr-3 @statusClass">
+                                                    @status
+                                                </span>
+                                                @if (isActive)
+                                                {
+                                                    string actionText = "Start Assessment";
+                                                    string actionUrl = $"/StudentAssessment/Details/{assessment.Id}";
+
+                                                    if (attempt != null)
+                                                    {
+                                                        if (attempt.Status == "Submitted" || attempt.Status == "TimedOut")
+                                                        {
+                                                            actionText = "View Results";
+                                                            actionUrl = $"/StudentAssessment/Results/{attempt.Id}";
+                                                        }
+                                                        else if (attempt.Status == "InProgress")
+                                                        {
+                                                            actionText = "Continue";
+                                                            actionUrl = $"/StudentAssessment/Take/{attempt.Id}";
+                                                        }
+                                                    }
+
+                                                    <a href="@actionUrl" class="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                                        @actionText
+                                                    </a>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Chapter Content -->
+                        @if (contentDictionary.Count > 0)
+                        {
+                            <div class="mb-6">
+                                <h3 class="text-lg font-medium text-slate-800 mb-4">Materials</h3>
+
+                                <!-- Category tabs -->
+                                @if (sortedCategories.Count > 1)
+                                {
+                                    <div class="border-b border-slate-200 mb-6">
+                                        <div class="flex overflow-x-auto">
+                                            @for (int i = 0; i < sortedCategories.Count; i++)
+                                            {
+                                                var category = sortedCategories[i];
+                                                var categoryId = category.ToLower().Replace(" ", "-");
+                                                var isActive = i == 0;
+
+                                                <button class="category-tab px-4 py-2 text-sm font-medium @(isActive ? "text-blue-600 border-b-2 border-blue-600" : "text-slate-600")"
+                                                        data-category="@categoryId">
+                                                    @category
+                                                    <span class="ml-1 text-xs rounded-full bg-slate-100 px-2 py-0.5">@contentDictionary[category].Count</span>
+                                                </button>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+
+                                <!-- Content sections -->
+                                @for (int i = 0; i < sortedCategories.Count; i++)
+                                {
+                                    var category = sortedCategories[i];
+                                    var categoryId = category.ToLower().Replace(" ", "-");
+                                    var isActive = i == 0;
+                                    var categoryContents = contentDictionary[category];
+
+                                    <div class="category-content @(isActive ? "" : "hidden")" id="category-@categoryId">
+                                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                            @foreach (dynamic content in categoryContents)
+                                            {
+                                                string fileType = Convert.ToString(content.FileType);
+                                                string title = Convert.ToString(content.Title);
+                                                string fileSize = Convert.ToString(content.FileSizeFormatted);
+                                                DateTime createdAt = content.CreatedAt;
+                                                string description = Convert.ToString(content.Description);
+
+                                                <div class="file-card bg-white border border-slate-200 rounded-lg p-4 hover:border-blue-300">
+                                                    <div class="flex items-start gap-3">
+                                                        <div class="file-icon @GetFileColorClass(fileType)">
+                                                            <i class="material-icons">@GetFileIcon(fileType)</i>
+                                                        </div>
+                                                        <div class="flex-grow">
+                                                            <p class="font-medium text-slate-800 mb-1">@title</p>
+                                                            <p class="text-xs text-slate-500 mb-2">
+                                                                @fileSize • @createdAt.ToString("MMM dd, yyyy")
+                                                            </p>
+                                                            @if (!string.IsNullOrEmpty(description))
+                                                            {
+                                                                <p class="text-sm text-slate-600 line-clamp-2">@description</p>
+                                                            }
+                                                        </div>
+                                                        @if (content.FileType?.ToLower() == "pdf")
+                                                        {
+                                                            <a href="@Url.Action("ViewPdf", "DocumentViewer", new { filePath = content.FilePath })" class="text-blue-600 hover:text-blue-800">
+                                                                <i class="material-icons">visibility</i>
+                                                            </a>
+                                                        }
+                                                        else
+                                                        {
+                                                            <a href="@GetFileUrl(content)" target="_blank" class="text-blue-600 hover:text-blue-800">
+                                                                <i class="material-icons">open_in_new</i>
+                                                            </a>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+
+            <!-- Active Assessments Tab -->
+            @if (assessmentData != null && assessmentData.Count > 0)
+            {
+                <div id="assessmentsTab" class="bg-white rounded-xl shadow-sm mb-6">
+                    <div class="p-6">
+                        <h2 class="text-xl font-semibold text-slate-800 mb-6">Active Assessments</h2>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left text-slate-700">
+                                <thead class="text-xs uppercase bg-slate-100">
+                                    <tr>
+                                        <th class="px-4 py-3 rounded-tl-lg">Assessment</th>
+                                        <th class="px-4 py-3">Academic Year</th>
+                                        <th class="px-4 py-3">Duration</th>
+                                        <th class="px-4 py-3">Available Until</th>
+                                        <th class="px-4 py-3">Status</th>
+                                        <th class="px-4 py-3 rounded-tr-lg">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in assessmentData)
+                                    {
+                                        var assessment = item.Assessment;
+                                        var attempt = item.StudentAttempt;
+                                        var timeRemaining = item.TimeRemaining;
+
+                                        string status = "Not Started";
+                                        string statusClass = "bg-blue-100 text-blue-800";
+                                        string actionText = "Start Assessment";
+                                        string actionUrl = $"/StudentAssessment/Details/{assessment.Id}";
+
+                                        if (attempt != null)
+                                        {
+                                            if (attempt.Status == "Submitted" || attempt.Status == "TimedOut")
+                                            {
+                                                status = "Completed";
+                                                statusClass = "bg-green-100 text-green-800";
+                                                actionText = "View Results";
+                                                actionUrl = $"/StudentAssessment/Results/{attempt.Id}";
+                                            }
+                                            else if (attempt.Status == "InProgress")
+                                            {
+                                                status = "In Progress";
+                                                statusClass = "bg-yellow-100 text-yellow-800";
+                                                actionText = "Continue";
+                                                actionUrl = $"/StudentAssessment/Take/{attempt.Id}";
+                                            }
+                                        }
+
+                                        <tr class="bg-white border-b hover:bg-slate-50">
+                                            <td class="px-4 py-3 font-medium">
+                                                <div class="flex items-center">
+                                                    <i class="material-icons text-slate-500 mr-2">assignment</i>
+                                                    @assessment.Assessment.Name
+                                                </div>
+                                                @if (timeRemaining.TotalHours < 24 && status != "Completed")
+                                                {
+                                                    <div class="text-xs mt-1 font-medium text-red-600">
+                                                        Time remaining: <span class="countdown" data-end="@assessment.EndDateTime.ToString("o")">@FormatTimeRemaining(timeRemaining)</span>
+                                                    </div>
+                                                }
+                                            </td>
+                                            <td class="px-4 py-3">@assessment.AcademicYear.YearValue</td>
+                                            <td class="px-4 py-3">@assessment.DurationMinutes minutes</td>
+                                            <td class="px-4 py-3">@assessment.EndDateTime.ToString("MMM dd, yyyy HH:mm")</td>
+                                            <td class="px-4 py-3">
+                                                <span class="px-2 py-1 text-xs font-medium rounded-full @statusClass">
+                                                    @status
+                                                </span>
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                <a href="@actionUrl" class="text-blue-600 hover:text-blue-800">
+                                                    @actionText
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Chapter Navigation Sidebar - 1/4 width -->
+        <div class="md:w-1/4">
+            <div class="bg-white rounded-xl shadow-sm chapter-nav min-h-[70vh]">
+                <div class="p-4 border-b border-slate-200">
+                    <h2 class="text-lg font-semibold text-slate-800">Chapters</h2>
+                </div>
+                <div class="p-2">
+                    <ul class="space-y-1">
+                        @if ((uncategorizedContent != null && uncategorizedContent.Count > 0) ||
+                        (uncategorizedAssessments != null && uncategorizedAssessments.Count > 0))
+                        {
+                            <li>
+                                <a href="@Url.Action("ViewCourseContent", "Course", new { id = course.Id, chapterId = -1 })"
+                                   class="chapter-item flex items-center justify-between p-3 rounded-lg @(viewingUncategorized ? "active" : "")">
+                                    <div class="flex items-center">
+                                        <i class="material-icons text-slate-400 mr-2">folder</i>
+                                        <span>Uncategorized</span>
+                                    </div>
+                                    <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
+                                        @(uncategorizedContent.Count + uncategorizedAssessments.Count) items
+                                    </span>
+                                </a>
+                            </li>
+                        }
+
+                        @foreach (var chapter in chapters)
+                        {
+                            var isActive = selectedChapterId == chapter.Id;
+                            var isComplete = IsChapterComplete(chapter.Id);
+                            var isRated = IsChapterRated(chapter.Id);
+                            var isAccessible = IsChapterAccessible(chapter.Id);
+                            var contentCount = contentByChapter.ContainsKey(chapter.Id) ? contentByChapter[chapter.Id].Count : 0;
+                            var assessmentCount = assessmentsByChapter.ContainsKey(chapter.Id) ? assessmentsByChapter[chapter.Id].Count : 0;
+                            var totalItems = contentCount + assessmentCount;
+
+                            var indicatorClass = (isComplete && isRated) ? "chapter-complete" :
+                            (isAccessible ? (isActive ? "chapter-current" : "chapter-incomplete") : "chapter-locked-indicator");
+
+                            var chapterClass = $"chapter-item flex items-center justify-between p-3 rounded-lg {(isActive ? "active" : "")} {(!isAccessible ? "chapter-locked" : "")}";
+
+                            <li>
+                                @if (isAccessible)
+                                {
+                                    <a href="@Url.Action("ViewCourseContent", "Course", new { id = course.Id, chapterId = chapter.Id })"
+                                       class="@chapterClass">
+                                        <div class="flex items-center">
+                                            <div class="progress-indicator mr-2 @indicatorClass">
+                                                <i class="material-icons text-xs">
+                                                    @if (isComplete && isRated)
+                                                    {
+                                                        @:done
+                                                    }
+                                                    else if (isActive)
+                                                    {
+                                                        @:play_arrow
+                                                    }
+                                                    else
+                                                    {
+                                                        @:close
+                                                    }
+                                                </i>
+                                            </div>
+                                            <div class="flex-grow">
+                                                <span>@chapter.Title</span>
+                                                <div class="flex items-center mt-1">
+                                                    @if (ChapterHasAssessments(chapter.Id))
+                                                    {
+                                                        <span class="px-1 py-0.5 bg-amber-100 text-amber-800 rounded text-xs mr-1">Assessment</span>
+                                                    }
+                                                    @if (isRated)
+                                                    {
+                                                        var rating = chapterRatings[chapter.Id];
+                                                        <span class="chapter-rating-indicator text-yellow-500">
+                                                            @for (int i = 1; i <= rating.Rating; i++)
+                                                            {
+                                                                @:★
+                                                            }
+                                                        </span>
+                                                    }
+                                                    else if (isComplete)
+                                                    {
+                                                        <span class="px-1 py-0.5 bg-purple-100 text-purple-800 rounded text-xs">Rate Required</span>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
+                                            @totalItems items
+                                        </span>
+                                    </a>
+                                }
+                                else
+                                {
+                                    <div class="@chapterClass" title="Complete and rate previous chapters to unlock">
+                                        <div class="flex items-center">
+                                            <div class="progress-indicator mr-2 @indicatorClass">
+                                                <i class="material-icons text-xs">lock</i>
+                                            </div>
+                                            <div class="flex-grow">
+                                                <span>@chapter.Title</span>
+                                                <div class="flex items-center mt-1">
+                                                    @if (ChapterHasAssessments(chapter.Id))
+                                                    {
+                                                        <span class="px-1 py-0.5 bg-amber-100 text-amber-800 rounded text-xs">Assessment</span>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
+                                            @totalItems items
+                                        </span>
+                                    </div>
+                                }
+                            </li>
+                        }
+
+                        @if (assessmentData != null && assessmentData.Count > 0)
+                        {
+                            <li>
+                                <a href="#assessmentsTab" class="chapter-item flex items-center justify-between p-3 rounded-lg">
+                                    <div class="flex items-center">
+                                        <i class="material-icons text-amber-500 mr-2">assignment</i>
+                                        <span>Active Assessments</span>
+                                    </div>
+                                    <span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">
+                                        @assessmentData.Count
+                                    </span>
+                                </a>
+                            </li>
+                        }
+
+                        <!-- Course Progress Bar -->
+                        <div class="p-4 border-t border-slate-200">
+                            <div class="mb-2 flex justify-between items-center">
+                                <h3 class="text-sm font-medium text-slate-700">Course Progress</h3>
+                                <span class="text-xs font-medium text-slate-600">@ViewBag.CompletedChapters/@ViewBag.TotalChapters chapters</span>
+                            </div>
+                            <div class="w-full bg-slate-200 rounded-full h-2.5">
+                                <div class="bg-cyan-600 h-2.5 rounded-full" style="width: @(ViewBag.ProgressPercentage)%"></div>
+                            </div>
+                            <p class="text-xs text-slate-500 mt-1 text-center">@ViewBag.ProgressPercentage% complete</p>
+                        </div>
+                    </ul>
+                </div>
+
+                @if (currentChapter != null && IsChapterAccessible(currentChapter.Id))
+                {
+                    <div class="p-4 border-t border-slate-200">
+                        @if (!IsChapterRated(currentChapter.Id))
+                        {
+                            <div class="bg-purple-50 text-purple-800 p-3 rounded-lg mb-3 text-sm">
+                                <div class="flex items-start">
+                                    <i class="material-icons text-purple-600 mr-2">star_border</i>
+                                    <div>
+                                        Please rate this chapter to help improve the learning experience and unlock the next chapter.
+                                    </div>
+                                </div>
+                            </div>
+                            <button onclick="openRatingModal(@currentChapter.Id, @course.Id, false)"
+                                    class="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center justify-center mb-3">
+                                <i class="material-icons text-sm mr-1">star</i>
+                                <span>Rate This Chapter</span>
+                            </button>
+                        }
+
+                        @if (!IsChapterComplete(currentChapter.Id))
+                        {
+                            @if (ChapterHasAssessments(currentChapter.Id) && !currentChapterHasAttemptedAssessments)
+                            {
+                                <div class="bg-amber-50 text-amber-800 p-3 rounded-lg mb-3 text-sm">
+                                    <div class="flex items-start">
+                                        <i class="material-icons text-amber-600 mr-2">warning</i>
+                                        <div>
+                                            You must attempt all assessments in this chapter before marking it as complete.
+                                        </div>
+                                    </div>
+                                </div>
+                                <button id="markChapterComplete" data-chapter-id="@currentChapter.Id" data-course-id="@course.Id"
+                                        class="w-full px-4 py-2 bg-gray-400 text-white rounded-lg flex items-center justify-center cursor-not-allowed"
+                                        disabled>
+                                    <i class="material-icons text-sm mr-1">done</i>
+                                    <span>Complete Assessments First</span>
+                                </button>
+                            }
+                            else if (!IsChapterRated(currentChapter.Id))
+                            {
+                                <button id="markChapterComplete" data-chapter-id="@currentChapter.Id" data-course-id="@course.Id"
+                                        class="w-full px-4 py-2 bg-gray-400 text-white rounded-lg flex items-center justify-center cursor-not-allowed"
+                                        disabled>
+                                    <i class="material-icons text-sm mr-1">done</i>
+                                    <span>Rate Chapter First</span>
+                                </button>
+                            }
+                            else
+                            {
+                                <button id="markChapterComplete" data-chapter-id="@currentChapter.Id" data-course-id="@course.Id"
+                                        class="w-full px-4 py-2 bg-cyan-800 text-white rounded-lg hover:bg-cyan-700 flex items-center justify-center">
+                                    <i class="material-icons text-sm mr-1">done</i>
+                                    <span>Mark as Complete</span>
+                                </button>
+                            }
+                        }
+                        else
+                        {
+                            <div class="bg-green-50 text-green-800 p-3 rounded-lg text-sm">
+                                <div class="flex items-start">
+                                    <i class="material-icons text-green-600 mr-2">check_circle</i>
+                                    <div>
+                                        You've completed this chapter! You can move on to the next chapter.
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
+    <script>
+        // Global variables for rating modal
+        let currentRatingChapterId = 0;
+        let currentRatingCourseId = 0;
+        let selectedRating = 0;
+        let isEditMode = false;
+
+        $(document).ready(function() {
+            // Show toast message if it exists in TempData
+        @if (TempData["Error"] != null)
+        {
+            <text>
+                        showToast('@TempData["Error"]', 'error');
+            </text>
+        }
+
+        @if (TempData["Warning"] != null)
+        {
+            <text>
+                        showToast('@TempData["Warning"]', 'warning');
+            </text>
+        }
+
+        @if (TempData["Success"] != null)
+        {
+            <text>
+                        showToast('@TempData["Success"]', 'success');
+            </text>
+        }
+
+            // Toast function
+            function showToast(message, type) {
+                const toast = $('#toast');
+                $('#toastMessage').text(message);
+
+                // Set the toast type
+                toast.removeClass('toast-success toast-warning toast-error');
+                toast.addClass('toast-' + type);
+
+                // Show the toast
+                toast.addClass('show');
+
+                // Hide after 5 seconds
+                setTimeout(function() {
+                    toast.removeClass('show');
+                }, 5000);
+            }
+
+            // Category tabs for materials
+            $('.category-tab').on('click', function() {
+                const category = $(this).data('category');
+
+                // Update tab styling
+                $('.category-tab').removeClass('text-blue-600 border-b-2 border-blue-600').addClass('text-slate-600');
+                $(this).addClass('text-blue-600 border-b-2 border-blue-600').removeClass('text-slate-600');
+
+                // Show selected content
+                $('.category-content').addClass('hidden');
+                $('#category-' + category).removeClass('hidden');
+            });
+
+            // Initialize lightbox
+            lightbox.option({
+                'resizeDuration': 200,
+                'wrapAround': true
+            });
+
+            // Update countdown timers
+            function updateCountdowns() {
+                $('.countdown').each(function() {
+                    const $this = $(this);
+                    const endTime = new Date($this.data('end'));
+                    const now = new Date();
+                    const diff = endTime - now;
+
+                    if (diff <= 0) {
+                        $this.text('Expired');
+                        return;
+                    }
+
+                    // Calculate hours, minutes, seconds
+                    const hours = Math.floor(diff / (1000 * 60 * 60));
+                    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+                    // Format with leading zeros
+                    const formattedHours = String(hours).padStart(2, '0');
+                    const formattedMinutes = String(minutes).padStart(2, '0');
+                    const formattedSeconds = String(seconds).padStart(2, '0');
+
+                    // Update the display
+                    $this.text(`${formattedHours}:${formattedMinutes}:${formattedSeconds}`);
+                });
+            }
+
+            // Initial update
+            updateCountdowns();
+
+            // Update every second
+            setInterval(updateCountdowns, 1000);
+
+            // Mark chapter as complete button handler
+            $('#markChapterComplete').on('click', function() {
+                const chapterId = $(this).data('chapter-id');
+                const courseId = $(this).data('course-id');
+                const $button = $(this);
+
+                // Disable button and show loading state
+                $button.prop('disabled', true);
+                $button.html('<i class="material-icons text-sm mr-1">hourglass_empty</i><span>Processing...</span>');
+
+                // Make API call
+                $.ajax({
+                    url: '/Course/MarkChapterComplete',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        chapterId: chapterId,
+                        courseId: courseId
+                    }),
+                    success: function(response) {
+                        // Update UI to show completion
+                        $button.html('<i class="material-icons text-sm mr-1">check</i><span>Marked as Complete!</span>');
+                        $button.removeClass('bg-cyan-800 hover:bg-cyan-700').addClass('bg-gray-400');
+
+                        // Update the chapter indicator in sidebar
+                        $(`.chapter-item:not(.chapter-locked) .progress-indicator`).each(function() {
+                            const $chapterLink = $(this).closest('.chapter-item');
+                            const href = $chapterLink.attr('href');
+                            if (href && href.includes(`chapterId=${chapterId}`)) {
+                                $(this).removeClass('chapter-incomplete chapter-current').addClass('chapter-complete');
+                                $(this).html('<i class="material-icons text-xs">done</i>');
+                            }
+                        });
+
+                        // Show completion message
+                        showToast('Chapter marked as complete!', 'success');
+
+                       // Refresh the page after short delay (or navigate to next chapter)
+                    if (response.nextChapterId) {
+                        setTimeout(function() {
+                            // Automatically navigate to the next chapter without confirmation
+                            window.location.href = `/Course/ViewCourseContent/${courseId}?chapterId=${response.nextChapterId}`;
+                        }, 1500);
+                    } else {
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1500);
+                    }
+                    },
+                    error: function(xhr) {
+                        // Re-enable button
+                        $button.prop('disabled', false);
+                        $button.html('<i class="material-icons text-sm mr-1">done</i><span>Mark as Complete</span>');
+                        $button.removeClass('bg-gray-400').addClass('bg-cyan-800 hover:bg-cyan-700');
+
+                        // Show error message
+                        const errorMessage = xhr.responseJSON ? xhr.responseJSON.message || xhr.responseText : 'An unknown error occurred';
+                        showToast(`Error: ${errorMessage}`, 'error');
+                    }
+                });
+            });
+
+            // Prevent clicking on locked chapters
+            $('.chapter-locked').on('click', function(e) {
+                e.preventDefault();
+                showToast('You must complete and rate previous chapters first.', 'warning');
+            });
+
+            // Smooth scroll to assessments tab when clicking the link in sidebar
+            $('a[href="#assessmentsTab"]').on('click', function(e) {
+                e.preventDefault();
+                $('html, body').animate({
+                    scrollTop: $($(this).attr('href')).offset().top - 20
+                }, 500);
+            });
+
+            // Star rating functionality
+            $('.star').hover(function() {
+                if (!$(this).hasClass('readonly')) {
+                    const rating = parseInt($(this).data('rating'));
+                    updateStarDisplay(rating, true);
+                }
+            }, function() {
+                if (!$(this).hasClass('readonly')) {
+                    updateStarDisplay(selectedRating, false);
+                }
+            });
+
+            $('.star').click(function() {
+                if (!$(this).hasClass('readonly')) {
+                    selectedRating = parseInt($(this).data('rating'));
+                    updateStarDisplay(selectedRating, false);
+                    updateRatingText(selectedRating);
+                    $('#submitRating').prop('disabled', false);
+                }
+            });
+
+            // Character count for review text
+            $('#reviewText').on('input', function() {
+                const count = $(this).val().length;
+                $('#charCount').text(count);
+
+                if (count > 500) {
+                    $(this).val($(this).val().substring(0, 500));
+                    $('#charCount').text(500);
+                }
+            });
+
+            // Modal close handlers
+            $('#closeModal, #cancelRating').click(function() {
+                closeRatingModal();
+            });
+
+            // Close modal when clicking outside
+            $('#ratingModal').click(function(e) {
+                if (e.target === this) {
+                    closeRatingModal();
+                }
+            });
+
+            // Submit rating handler
+            $('#submitRating').click(function() {
+                submitChapterRating();
+            });
+
+            // Make showToast available globally
+            window.showToast = showToast;
+        });
+
+        // Rating modal functions
+        function openRatingModal(chapterId, courseId, editMode = false) {
+            currentRatingChapterId = chapterId;
+            currentRatingCourseId = courseId;
+            isEditMode = editMode;
+            selectedRating = 0;
+
+            // Reset form
+            $('#reviewText').val('');
+            $('#charCount').text('0');
+            updateStarDisplay(0, false);
+            $('#ratingText').addClass('hidden');
+            $('#submitRating').prop('disabled', true);
+
+            if (editMode) {
+                // Load existing rating
+                $.ajax({
+                    url: '/Course/GetChapterRating',
+                    type: 'GET',
+                    data: { chapterId: chapterId, courseId: courseId },
+                    success: function(response) {
+                        if (response.hasRated) {
+                            selectedRating = response.rating;
+                            updateStarDisplay(selectedRating, false);
+                            updateRatingText(selectedRating);
+                            $('#reviewText').val(response.reviewText || '');
+                            $('#charCount').text((response.reviewText || '').length);
+                            $('#submitRating').prop('disabled', false);
+                        }
+                    },
+                    error: function() {
+                        showToast('Error loading existing rating', 'error');
+                    }
+                });
+            }
+
+            $('#ratingModal').addClass('show');
+        }
+
+        function closeRatingModal() {
+            $('#ratingModal').removeClass('show');
+            selectedRating = 0;
+            currentRatingChapterId = 0;
+            currentRatingCourseId = 0;
+            isEditMode = false;
+        }
+
+        function updateStarDisplay(rating, isHover) {
+            $('.star').each(function() {
+                const starRating = parseInt($(this).data('rating'));
+                $(this).removeClass('selected hovered');
+
+                if (starRating <= rating) {
+                    $(this).addClass(isHover ? 'hovered' : 'selected');
+                }
+            });
+        }
+
+        function updateRatingText(rating) {
+            const texts = {
+                1: 'Poor - Needs significant improvement',
+                2: 'Fair - Some improvements needed',
+                3: 'Good - Satisfactory learning experience',
+                4: 'Very Good - Enjoyable and informative',
+                5: 'Excellent - Outstanding learning experience'
+            };
+
+            $('#ratingText').text(texts[rating] || '').removeClass('hidden');
+        }
+
+        function submitChapterRating() {
+            if (selectedRating === 0) {
+                showToast('Please select a rating', 'warning');
+                return;
+            }
+
+            const data = {
+                chapterId: currentRatingChapterId,
+                courseId: currentRatingCourseId,
+                rating: selectedRating,
+                reviewText: $('#reviewText').val().trim()
+            };
+
+            $('#submitRating').prop('disabled', true).text('Submitting...');
+
+            $.ajax({
+                url: '/Course/SubmitChapterRating',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function(response) {
+                    closeRatingModal();
+                    showToast(response.message, 'success');
+
+                    // Refresh the page to update UI
+                    setTimeout(function() {
+                        location.reload();
+                    }, 1000);
+                },
+                error: function(xhr) {
+                    $('#submitRating').prop('disabled', false).text('Submit Rating');
+                    const errorMessage = xhr.responseJSON ? xhr.responseJSON.message || xhr.responseText : 'An error occurred';
+                    showToast(`Error: ${errorMessage}`, 'error');
+                }
+            });
+        }
+    </script>
+}
+
+@functions {
+    string GetFileIcon(string fileType)
+    {
+        if (string.IsNullOrEmpty(fileType)) return "insert_drive_file";
+
+        switch (fileType.ToLower())
+        {
+            case "pdf": return "picture_as_pdf";
+            case "doc":
+            case "docx": return "description";
+            case "ppt":
+            case "pptx": return "slideshow";
+            case "xls":
+            case "xlsx": return "table_chart";
+            case "txt": return "text_snippet";
+            case "zip":
+            case "rar": return "folder_zip";
+            case "mp4":
+            case "avi":
+            case "mov": return "movie";
+            case "mp3":
+            case "wav": return "music_note";
+            case "jpg":
+            case "jpeg":
+            case "png":
+            case "gif": return "image";
+            case "url": return "link";
+            default: return "insert_drive_file";
+        }
+    }
+
+    string GetFileColorClass(string fileType)
+    {
+        if (string.IsNullOrEmpty(fileType)) return "bg-slate-100 text-slate-600";
+
+        switch (fileType.ToLower())
+        {
+            case "pdf": return "bg-red-50 text-red-500";
+            case "doc":
+            case "docx": return "bg-blue-50 text-blue-500";
+            case "ppt":
+            case "pptx": return "bg-orange-50 text-orange-500";
+            case "xls":
+            case "xlsx": return "bg-green-50 text-green-500";
+            case "txt": return "bg-slate-100 text-slate-600";
+            case "zip":
+            case "rar": return "bg-purple-50 text-purple-500";
+            case "mp4":
+            case "avi":
+            case "mov": return "bg-pink-50 text-pink-500";
+            case "mp3":
+            case "wav": return "bg-indigo-50 text-indigo-500";
+            case "jpg":
+            case "jpeg":
+            case "png":
+            case "gif": return "bg-cyan-50 text-cyan-500";
+            case "url": return "bg-blue-50 text-blue-500";
+            default: return "bg-slate-100 text-slate-600";
+        }
+    }
+
+    string GetFileUrl(dynamic content)
+    {
+        string filePath = Convert.ToString(content.FilePath);
+        if (string.IsNullOrEmpty(filePath)) return "#";
+
+        string fileType = Convert.ToString(content.FileType);
+        if (fileType?.ToLower() == "url")
+        {
+            return filePath;
+        }
+
+        return Url.Content("~/" + filePath);
+    }
+
+    string FormatTimeRemaining(TimeSpan time)
+    {
+        return $"{Math.Floor(time.TotalHours):00}:{time.Minutes:00}:{time.Seconds:00}";
+    }
+}

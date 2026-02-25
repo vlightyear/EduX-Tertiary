@@ -1,0 +1,35 @@
+﻿using SIS.Models.StudentApplication;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations;
+using SIS.Enums;
+using SIS.Models.Registration;
+
+namespace SIS.Models.Admin
+{
+    public class StudentExaminableCourse
+    {
+        [Key]
+        public int Id { get; set; }
+
+        public int StudentId { get; set; }
+        [ForeignKey("StudentId")]
+        public Student Student { get; set; }
+
+        public int CourseId { get; set; }
+        [ForeignKey("CourseId")]
+        public Course Course { get; set; }
+
+        public int AcademicYearId { get; set; }  // New foreign key property
+        [ForeignKey("AcademicYearId")]
+        public AcademicYear AcademicYear { get; set; }  // New navigation property
+
+        public int Semester { get; set; }
+        public DateTime RegistrationDate { get; set; }
+
+        [Column(TypeName = "nvarchar(max)")]
+        public string AssessmentScores { get; set; }
+
+        [Required]
+        public Status Status { get; set; } = Status.Unpublished;
+    }
+}

@@ -1,0 +1,514 @@
+﻿@model IEnumerable<SIS.Models.Admin.Assessment>
+
+<div class="h-[90vh] p-4">
+    <!-- Header Section -->
+    <div class="flex justify-between items-center mb-4">
+        <h1 class="text-2xl font-bold text-gray-800 flex items-center">
+            <i class="material-icons mr-2">assessment</i>
+            Assessments
+        </h1>
+        <button type="button"
+                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+                onclick="showCreateAssessmentModal()">
+            <i class="material-icons mr-2">add</i>
+            Create Assessment
+        </button>
+    </div>
+
+    <!-- Main Content Layout -->
+    <div class="flex gap-4 h-[calc(90vh-80px)]">
+        <!-- Main Table Section (3/4 width) -->
+        <div class="w-3/4">
+            <div class="bg-white rounded-lg shadow-md h-full overflow-hidden">
+                <div class="p-4">
+                    <table id="assessmentTable" class="w-full text-sm text-gray-600">
+                        <thead>
+                            <tr>
+                                <th class="px-6 py-4">
+                                    <span class="flex items-center">
+                                        #
+                                        <svg class="w-4 h-4 ms-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 15 4 4 4-4m0-6-4-4-4 4" />
+                                        </svg>
+                                    </span>
+                                </th>
+                                <th class="px-6 py-4">Name</th>
+                                <th class="px-6 py-4">Type</th>
+                                <th class="px-6 py-4">Weight(%)</th>
+                                <th class="px-6 py-4">Pass Mark</th>
+                                <th class="px-6 py-4">Due Date</th>
+                                <th class="px-6 py-4">Status</th>
+                                <th class="px-6 py-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model != null && Model.Any())
+                            {
+                                int index = 1;
+                                foreach (var assessment in Model)
+                                {
+                                    <tr class="border-b hover:bg-gray-50 transition-colors">
+                                        <td class="px-6 py-4">@index</td>
+                                        <td class="px-6 py-4 font-medium text-gray-900">@assessment.Name</td>
+                                        <td class="px-6 py-4">@assessment.Type</td>
+                                        <td class="px-6 py-4">@assessment.WeightPercentage%</td>
+                                        <td class="px-6 py-4">@assessment.PassMark%</td>
+                                        <td class="px-6 py-4">@(assessment.DueDate?.ToString("dd/MM/yyyy") ?? "N/A")</td>
+                                        <td class="px-6 py-4">
+                                            @if (assessment.IsActive)
+                                            {
+                                                <span class="px-2 py-1 text-sm bg-green-100 text-green-800 rounded-full">Active</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="px-2 py-1 text-sm bg-red-100 text-red-800 rounded-full">Inactive</span>
+                                            }
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="flex space-x-2">
+                                                <button onclick="showUpdateAssessmentModal('@assessment.Id')"
+                                                        class="inline-flex items-center px-3 py-1 text-sm text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
+                                                    <i class="material-icons text-sm mr-1">edit</i> Edit
+                                                </button>
+                                                <button onclick="showDeleteAssessmentModal('@assessment.Id', '@assessment.Name')"
+                                                        class="inline-flex items-center px-3 py-1 text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
+                                                    <i class="material-icons text-sm mr-1">delete</i> Delete
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    index++;
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="8" class="px-6 py-4 text-center text-gray-500">No assessments found.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Sidebar (1/4 width) -->
+        <div class="w-1/4 space-y-4">
+            <!-- Statistics Cards -->
+            <div class="bg-white rounded-lg shadow p-4">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Assessment Summary</h3>
+                <div class="space-y-4">
+                    <!-- Total Assessments -->
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="p-3 bg-blue-100 rounded-lg">
+                                <i class="material-icons text-blue-600 text-xl">list</i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-gray-500 text-sm">Total Assessments</p>
+                                <p class="text-xl font-semibold">@Model?.Count()</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Active Assessments -->
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="p-3 bg-green-100 rounded-lg">
+                                <i class="material-icons text-green-600 text-xl">assignment</i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-gray-500 text-sm">Active Assessments</p>
+                                <p class="text-xl font-semibold text-green-600">@Model?.Count(x => x.IsActive)</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pending Due -->
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="p-3 bg-yellow-100 rounded-lg">
+                                <i class="material-icons text-yellow-600 text-xl">assignment_late</i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-gray-500 text-sm">Pending Due</p>
+                                <p class="text-xl font-semibold text-yellow-600">@Model?.Count(x => x.DueDate.HasValue && x.DueDate > DateTime.Now)</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Total Programmes -->
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="p-3 bg-purple-100 rounded-lg">
+                                <i class="material-icons text-purple-600 text-xl">school</i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-gray-500 text-sm">Total Programmes</p>
+                                <p class="text-xl font-semibold">20</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Total Courses -->
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="p-3 bg-indigo-100 rounded-lg">
+                                <i class="material-icons text-indigo-600 text-xl">library_books</i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-gray-500 text-sm">Total Courses</p>
+                                <p class="text-xl font-semibold">150</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Distribution Chart -->
+            <div class="bg-white rounded-lg shadow p-4">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Assessment Distribution</h3>
+                <div id="assessment-distribution-chart" class="h-64"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Assessment Modal -->
+<div id="createAssessmentModal" class="hidden fixed inset-0 z-50">
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-lg shadow-xl w-full max-w-4xl">
+                <!-- Modal Header -->
+                <div class="bg-blue-600 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
+                    <h3 class="text-lg font-semibold flex items-center">
+                        <i class="material-icons mr-2">add</i>
+                        Create New Assessment
+                    </h3>
+                    <button type="button" class="text-white hover:text-gray-200" data-bs-dismiss="modal">
+                        <i class="material-icons">close</i>
+                    </button>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="p-6">
+                    <form id="createAssessmentForm" method="post" asp-controller="Admin" asp-action="CreateAssessment">
+                        @Html.AntiForgeryToken()
+
+                        <div class="space-y-6">
+                            <!-- Basic Information -->
+                            <div class="grid grid-cols-2 gap-6">
+                                <div>
+                                    <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Assessment Name</label>
+                                    <input type="text" id="name" name="Name"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                           required maxlength="100" />
+                                </div>
+                            </div>
+
+                            <!-- Assessment Details -->
+                            <div class="grid grid-cols-3 gap-6">
+                                <div>
+                                    <label for="type" class="block text-sm font-medium text-gray-700 mb-1">Assessment Type</label>
+                                    <select id="type" name="Type"
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                            required>
+                                        <option value="">Select Type</option>
+                                        <option value="Exam">Exam</option>
+                                        <option value="Assignment">Assignment</option>
+                                        <option value="Project">Project</option>
+                                        <option value="Quiz">Quiz</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label for="weightPercentage" class="block text-sm font-medium text-gray-700 mb-1">Weight (%)</label>
+                                    <input type="number" id="weightPercentage" name="WeightPercentage"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                           required min="1" max="100" />
+                                </div>
+
+                                <div>
+                                    <label for="passMark" class="block text-sm font-medium text-gray-700 mb-1">Pass Mark (%)</label>
+                                    <input type="number" id="passMark" name="PassMark"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                           required min="1" max="100" step="0.1" />
+                                </div>
+                            </div>
+
+                            <!-- Description -->
+                            <div>
+                                <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                                <textarea id="description" name="Description" rows="3"
+                                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                          maxlength="500"></textarea>
+                            </div>
+
+                            <!-- Submission Details -->
+                            <div class="grid grid-cols-2 gap-6">
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="requiresSubmission" name="RequiresSubmission"
+                                           class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                                    <label for="requiresSubmission" class="ml-2 text-sm text-gray-700">
+                                        Requires Submission
+                                    </label>
+                                </div>
+
+                                <div class="hidden">
+                                    <label for="dueDate" class="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+                                    <input type="datetime-local" id="dueDate" name="DueDate"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 hidden" />
+                                </div>
+                            </div>
+
+                            <!-- Submission Instructions -->
+                            <div class="submission-section hidden">
+                                <label for="submissionInstructions" class="block text-sm font-medium text-gray-700 mb-1">
+                                    Submission Instructions
+                                </label>
+                                <textarea id="submissionInstructions" name="SubmissionInstructions" rows="2"
+                                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                          maxlength="200"></textarea>
+                            </div>
+
+                            <!-- Resit Options -->
+                            <div class="grid grid-cols-2 gap-6">
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="allowResit" name="AllowResit"
+                                           class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                                    <label for="allowResit" class="ml-2 text-sm text-gray-700">
+                                        Allow Resit
+                                    </label>
+                                </div>
+
+                                <div class="resit-section hidden">
+                                    <label for="maximumResitMark" class="block text-sm font-medium text-gray-700 mb-1">Maximum Resit Mark</label>
+                                    <input type="number" id="maximumResitMark" name="MaximumResitMark"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                           min="0" max="100" />
+                                </div>
+                            </div>
+
+                            <!-- Status -->
+                            <div class="flex items-center">
+                                <input type="checkbox" id="isActive" name="IsActive"
+                                       class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" checked />
+                                <label for="isActive" class="ml-2 text-sm text-gray-700">Is Active</label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-end space-x-2">
+                    <button type="button" class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center" data-bs-dismiss="modal">
+                        <i class="material-icons mr-1">close</i>Cancel
+                    </button>
+                    <button type="button" id="confirmCreate" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+                        <i class="material-icons mr-1">save</i>Create
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Update Assessment Modal -->
+<div id="updateAssessmentModal" class="hidden fixed inset-0 z-50">
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-lg shadow-xl w-full max-w-4xl">
+                <!-- Modal Header -->
+                <div class="bg-gray-700 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
+                    <h3 class="text-lg font-semibold flex items-center">
+                        <i class="material-icons mr-2">edit</i>
+                        Update Assessment
+                    </h3>
+                    <button type="button" class="text-white hover:text-gray-200" data-bs-dismiss="modal">
+                        <i class="material-icons">close</i>
+                    </button>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="p-6">
+                    <form id="updateAssessmentForm" method="post" asp-controller="Admin" asp-action="UpdateAssessment">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" id="updateAssessmentId" name="Id" />
+
+                        <div class="space-y-6">
+                            <!-- Basic Information -->
+                            <div class="grid grid-cols-2 gap-6">
+                                <div>
+                                    <label for="updateName" class="block text-sm font-medium text-gray-700 mb-1">Assessment Name</label>
+                                    <input type="text" id="updateName" name="Name"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                           required maxlength="100" />
+                                </div>
+                            </div>
+
+                            <!-- Assessment Details -->
+                            <div class="grid grid-cols-3 gap-6">
+                                <div>
+                                    <label for="updateType" class="block text-sm font-medium text-gray-700 mb-1">Assessment Type</label>
+                                    <select id="updateType" name="Type"
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                            required>
+                                        <option value="">Select Type</option>
+                                        <option value="Exam">Exam</option>
+                                        <option value="Assignment">Assignment</option>
+                                        <option value="Project">Project</option>
+                                        <option value="Quiz">Quiz</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label for="updateWeightPercentage" class="block text-sm font-medium text-gray-700 mb-1">Weight (%)</label>
+                                    <input type="number" id="updateWeightPercentage" name="WeightPercentage"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                           required min="1" max="100" />
+                                </div>
+
+                                <div>
+                                    <label for="updatePassMark" class="block text-sm font-medium text-gray-700 mb-1">Pass Mark (%)</label>
+                                    <input type="number" id="updatePassMark" name="PassMark"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                           required min="1" max="100" step="0.1" />
+                                </div>
+                            </div>
+
+                            <!-- Description -->
+                            <div>
+                                <label for="updateDescription" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                                <textarea id="updateDescription" name="Description" rows="3"
+                                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                          maxlength="500"></textarea>
+                            </div>
+
+                            <!-- Submission Details -->
+                            <div class="grid grid-cols-2 gap-6">
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="updateRequiresSubmission" name="RequiresSubmission"
+                                           class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                                    <label for="updateRequiresSubmission" class="ml-2 text-sm text-gray-700">
+                                        Requires Submission
+                                    </label>
+                                </div>
+
+                                <div class="hidden">
+                                    <label for="updateDueDate" class="block text-sm font-medium text-gray-700 mb-1 hidden">Due Date</label>
+                                    <input type="datetime-local" id="updateDueDate" name="DueDate"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
+                                </div>
+                            </div>
+
+                            <!-- Resit Options -->
+                            <div class="grid grid-cols-2 gap-6">
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="updateAllowResit" name="AllowResit"
+                                           class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                                    <label for="updateAllowResit" class="ml-2 text-sm text-gray-700">
+                                        Allow Resit
+                                    </label>
+                                </div>
+
+                                <div class="resit-section hidden">
+                                    <label for="updateMaximumResitMark" class="block text-sm font-medium text-gray-700 mb-1">Maximum Resit Mark</label>
+                                    <input type="number" id="updateMaximumResitMark" name="MaximumResitMark"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                           min="0" max="100" />
+                                </div>
+                            </div>
+
+                            <!-- Status -->
+                            <div class="flex items-center">
+                                <input type="checkbox" id="updateIsActive" name="IsActive"
+                                       class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                                <label for="updateIsActive" class="ml-2 text-sm text-gray-700">Is Active</label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-end space-x-2">
+                    <button type="button" class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center" data-bs-dismiss="modal">
+                        <i class="material-icons mr-1">close</i>Cancel
+                    </button>
+                    <button type="button" id="confirmUpdate" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+                        <i class="material-icons mr-1">save</i>Update
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Assessment Modal -->
+<div id="deleteAssessmentModal" class="hidden fixed inset-0 z-50">
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-lg shadow-xl w-full max-w-lg">
+                <!-- Modal Header -->
+                <div class="bg-red-600 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
+                    <h3 class="text-lg font-semibold flex items-center">
+                        <i class="material-icons mr-2">warning</i>
+                        Confirm Delete
+                    </h3>
+                    <button type="button" class="text-white hover:text-gray-200" data-bs-dismiss="modal">
+                        <i class="material-icons">close</i>
+                    </button>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="p-6">
+                    <form id="deleteAssessmentForm" method="post" asp-controller="Admin" asp-action="DeleteAssessment">
+                        <input type="hidden" id="deleteAssessmentId" name="Id" />
+                        @Html.AntiForgeryToken()
+
+                        <div class="space-y-4">
+                            <div class="flex items-center text-red-600 mb-4">
+                                <i class="material-icons mr-2">error_outline</i>
+                                <p class="text-lg font-medium">Delete Assessment</p>
+                            </div>
+
+                            <p class="text-gray-700">Are you sure you want to delete this assessment?</p>
+
+                            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                <p class="text-gray-700 font-medium mb-2">Assessment Details:</p>
+                                <p class="text-gray-600">
+                                    <span class="font-medium">Assessment Name:</span>
+                                    <span id="deleteAssessmentName" class="ml-2"></span>
+                                </p>
+                            </div>
+
+                            <div class="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                                <div class="flex items-center text-red-800">
+                                    <i class="material-icons text-red-600 mr-2 text-sm">info</i>
+                                    <p class="text-sm">This action cannot be undone. All associated data will be permanently deleted.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-end space-x-2">
+                    <button type="button" class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center" data-bs-dismiss="modal">
+                        <i class="material-icons mr-1">close</i>Cancel
+                    </button>
+                    <button type="button" id="confirmDelete" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center">
+                        <i class="material-icons mr-1">delete</i>Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module" src="~/js/assessments.js"></script>

@@ -1,0 +1,313 @@
+﻿@model SIS.Models.Assessments.AssessmentResultsViewModel
+
+<div class="min-h-screen bg-slate-50 p-4">
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+        <div class="flex items-center text-slate-800">
+            <i class="material-icons text-3xl mr-2">assignment_turned_in</i>
+            <div>
+                <h1 class="text-2xl font-bold">Assessment Results</h1>
+                <p class="text-sm text-slate-600">
+                    @Model.StudentAttempt.AssessmentConfiguration.Course.CourseCode -
+                    @Model.StudentAttempt.AssessmentConfiguration.Course.CourseName
+                </p>
+            </div>
+        </div>
+        <div class="mt-4 md:mt-0">
+            <a href="@Url.Action("ViewCourseContent", "Course", new { id = Model.StudentAttempt.AssessmentConfiguration.CourseId })"
+               class="inline-flex items-center px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-100 transition-colors">
+                <i class="material-icons text-sm mr-1">arrow_back</i>
+                <span>Back to Course</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Manual Grading Banner (if applicable) -->
+    @if (Model.RequiresManualGrading)
+    {
+        <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 rounded-r-lg">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="material-icons text-blue-600">info</i>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-blue-800">Some questions require manual grading</h3>
+                    <div class="mt-2 text-sm text-blue-700">
+                        <p>This assessment includes questions that need to be graded by your instructor. The score shown may be preliminary and could change after all questions have been graded.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Results Summary Card -->
+    <div class="bg-white rounded-xl shadow-sm mb-6">
+        <div class="p-6">
+            <h2 class="text-xl font-semibold text-slate-800 mb-4">Results Summary</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-slate-50 p-4 rounded-lg">
+                    <div class="text-sm text-slate-600 mb-1">Assessment</div>
+                    <div class="font-medium">@Model.StudentAttempt.AssessmentConfiguration.Assessment.Name</div>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-lg">
+                    <div class="text-sm text-slate-600 mb-1">Submission Time</div>
+                    <div class="font-medium">
+                        @(Model.StudentAttempt.EndTime?.ToString("MMM dd, yyyy HH:mm") ?? "Not completed")
+                    </div>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-lg">
+                    <div class="text-sm text-slate-600 mb-1">Time Taken</div>
+                    <div class="font-medium">
+                        @(Model.TimeTaken.Hours > 0 ? $"{Model.TimeTaken.Hours}h " : "")
+                        @(Model.TimeTaken.Minutes)m @(Model.TimeTaken.Seconds)s
+                    </div>
+                </div>
+            </div>
+
+            <!-- Score Summary -->
+            <div class="mt-6 pt-6 border-t border-slate-200">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="flex flex-col items-center bg-blue-50 p-6 rounded-lg">
+                        <div class="text-sm text-blue-700 mb-2">Your Score</div>
+                        <div class="text-4xl font-bold text-blue-800">@Model.Percentage.ToString("0.0")%</div>
+                        <div class="text-xs text-blue-600 mt-1">
+                            @Model.TotalScore points out of
+                            @Model.Responses.Sum(r => r.Question.Points)
+                        </div>
+                        @if (Model.RequiresManualGrading && Model.HasUnGradedResponses)
+                        {
+                            <div class="text-xs text-orange-500 mt-2 italic">
+                                * Preliminary score - some questions still pending instructor review
+                            </div>
+                        }
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="flex flex-col items-center bg-slate-50 p-4 rounded-lg">
+                            <div class="text-sm text-slate-600 mb-1">Total Questions</div>
+                            <div class="text-2xl font-bold text-slate-800">@Model.TotalQuestions</div>
+                        </div>
+                        <div class="flex flex-col items-center bg-slate-50 p-4 rounded-lg">
+                            <div class="text-sm text-slate-600 mb-1">Answered</div>
+                            <div class="text-2xl font-bold text-slate-800">@Model.TotalAnswered</div>
+                        </div>
+                        <div class="flex flex-col items-center bg-green-50 p-4 rounded-lg">
+                            <div class="text-sm text-green-600 mb-1">Correct</div>
+                            <div class="text-2xl font-bold text-green-800">@Model.TotalCorrect</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pass/Fail Status -->
+                @if (Model.StudentAttempt.Percentage.HasValue || Model.StudentAttempt.TotalScore.HasValue)
+                {
+                    <div class="mt-6 flex justify-center">
+                        @if (!Model.StudentAttempt.Passed.HasValue)
+                        {
+                            <div class="inline-flex items-center px-6 py-3 rounded-full bg-gray-100 text-gray-800">
+                                <i class="material-icons mr-2">help</i>
+                                <span class="text-lg font-medium">Pending Result</span>
+                            </div>
+                        }
+                        else if (Model.StudentAttempt.Passed.Value)
+                        {
+                            <div class="inline-flex items-center px-6 py-3 rounded-full bg-green-100 text-green-800">
+                                <i class="material-icons mr-2">check_circle</i>
+                                <span class="text-lg font-medium">Passed</span>
+                                <span class="ml-2 text-sm">(Pass mark: @Model.PassMark%)</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="inline-flex items-center px-6 py-3 rounded-full bg-red-100 text-red-800">
+                                <i class="material-icons mr-2">cancel</i>
+                                <span class="text-lg font-medium">Failed</span>
+                                <span class="ml-2 text-sm">(Pass mark: @Model.PassMark%)</span>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Results -->
+    @if (Model.StudentAttempt.AssessmentConfiguration.ShowResults)
+    {
+        <div class="bg-white rounded-xl shadow-sm mb-6 overflow-hidden">
+            <div class="p-6 border-b border-slate-200">
+                <h2 class="text-xl font-semibold text-slate-800">Detailed Results</h2>
+                <p class="text-sm text-slate-600">Review your answers and see the correct solutions.</p>
+            </div>
+
+            <!-- Answers List -->
+            <div class="divide-y divide-slate-200">
+                @for (int i = 0; i < Model.Responses.Count; i++)
+                {
+                    var response = Model.Responses[i];
+                    var question = response.Question;
+
+                    <div class="p-6">
+                        <div class="flex justify-between items-start mb-4">
+                            <span class="inline-block bg-slate-200 text-slate-800 text-xs font-medium px-2 py-1 rounded-full">
+                                Question @(i + 1) of @Model.TotalQuestions
+                            </span>
+                            <div class="flex items-center">
+                                @if (response.IsGraded)
+                                {
+                                    <span class="inline-flex items-center mr-2 px-2 py-1 rounded-full text-xs font-medium
+                                 @(response.IsCorrect == true ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800")">
+                                        <i class="material-icons text-xs mr-1">
+                                            @(response.IsCorrect == true ? "check_circle" : "cancel")
+                                        </i>
+                                        <span>@(response.IsCorrect == true ? "Correct" : "Incorrect")</span>
+                                    </span>
+                                }
+                                else if (question.QuestionType == "ShortAnswer" || question.QuestionType == "LongText")
+                                {
+                                    <span class="inline-flex items-center mr-2 px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                        <i class="material-icons text-xs mr-1">pending</i>
+                                        <span>Pending Review</span>
+                                    </span>
+                                }
+                                @if (response.Score.HasValue)
+                                {
+                                    <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
+                                        @response.Score / @question.Points points
+                                    </span>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 mb-4">
+                            <!-- Display image above if configured that way -->
+                            @if (!string.IsNullOrEmpty(question.ImagePath) &&
+                           question.ImageDisplayPosition == "Above")
+                            {
+                                <div class="mb-4 text-center">
+                                    <img src="@question.ImagePath"
+                                         alt="@question.ImageDescription"
+                                         class="max-w-full h-auto rounded-lg border border-slate-200"
+                                         style="max-height: 300px;">
+                                    @if (!string.IsNullOrEmpty(question.ImageDescription))
+                                    {
+                                        <p class="text-sm text-slate-500 mt-2">@question.ImageDescription</p>
+                                    }
+                                </div>
+                            }
+
+                            <div class="text-sm font-medium text-gray-800 mb-3">@Html.Raw(question.QuestionText)</div>
+
+                            <!-- Display image below if configured that way -->
+                            @if (!string.IsNullOrEmpty(question.ImagePath) &&
+                           question.ImageDisplayPosition == "Below")
+                            {
+                                <div class="mt-4 mb-4 text-center">
+                                    <img src="@question.ImagePath"
+                                         alt="@question.ImageDescription"
+                                         class="max-w-full h-auto rounded-lg border border-slate-200"
+                                         style="max-height: 300px;">
+                                    @if (!string.IsNullOrEmpty(question.ImageDescription))
+                                    {
+                                        <p class="text-sm text-slate-500 mt-2">@question.ImageDescription</p>
+                                    }
+                                </div>
+                            }
+
+                            @if (!string.IsNullOrEmpty(question.AdditionalInfo))
+                            {
+                                <div class="text-xs italic text-slate-600 mt-2">@Html.Raw(question.AdditionalInfo)</div>
+                            }
+                        </div>
+
+                        <!-- Response details -->
+                        <div class="mt-3">
+                            <h4 class="text-sm font-medium text-slate-700 mb-2">Your Answer:</h4>
+
+                            @if (question.QuestionType == "MultipleChoice" || question.QuestionType == "TrueFalse")
+                            {
+                                @if (!string.IsNullOrEmpty(response.ResponseText) && int.TryParse(response.ResponseText, out int selectedId))
+                                {
+                                    var selectedOption = question.Options.FirstOrDefault(o => o.Id == selectedId);
+                                    if (selectedOption != null)
+                                    {
+                                        <div class="p-3 rounded-lg @(response.IsCorrect == true ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200")">
+                                            @Html.Raw(selectedOption.OptionText)
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-500 italic">No answer provided</div>
+                                    }
+                                }
+                                else
+                                {
+                                    <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-500 italic">No answer provided</div>
+                                }
+
+                                @if (response.IsCorrect == false)
+                                {
+                                    <h4 class="text-sm font-medium text-slate-700 mt-4 mb-2">Correct Answer:</h4>
+                                    @foreach (var option in question.Options.Where(o => o.IsCorrect))
+                                    {
+                                        <div class="p-3 bg-green-50 border border-green-200 rounded-lg">
+                                            @Html.Raw(option.OptionText)
+                                        </div>
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                @if (!string.IsNullOrEmpty(response.ResponseText))
+                                {
+                                    <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                                        @response.ResponseText
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-500 italic">No answer provided</div>
+                                }
+                            }
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(response.FeedbackFromInstructor))
+                        {
+                            <div class="mt-4">
+                                <h4 class="text-sm font-medium text-slate-700 mb-2">Instructor Feedback:</h4>
+                                <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                    @response.FeedbackFromInstructor
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="bg-white rounded-xl shadow-sm mb-6 p-6">
+            <div class="flex items-center justify-center p-6 bg-yellow-50 rounded-lg">
+                <div class="text-center">
+                    <i class="material-icons text-yellow-500 text-4xl mb-2">info</i>
+                    <h3 class="text-lg font-medium text-slate-800 mb-1">Detailed Results Not Available</h3>
+                    <p class="text-slate-600">
+                        The detailed results for this assessment are not available for viewing at this time.
+                        Please check with your instructor for more information.
+                    </p>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Action Buttons -->
+    <div class="flex justify-center my-6">
+        <a href="@Url.Action("ViewCourseContent", "Course", new { id = Model.StudentAttempt.AssessmentConfiguration.CourseId })"
+           class="inline-flex items-center px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
+            <i class="material-icons text-sm mr-2">arrow_back</i>
+            <span>Return to Course</span>
+        </a>
+    </div>
+</div>

@@ -1,0 +1,1393 @@
+@{
+    ViewData["Title"] = "Quotations Management";
+}
+
+<div class="min-h-screen p-4">
+    <div class="flex justify-between items-center mb-4">
+        <h1 class="text-2xl font-bold text-primary-800 flex items-center">
+            <i class="material-icons mr-2 text-primary-600">request_quote</i>
+            Quotations Management
+        </h1>
+        <div class="flex gap-2">
+            <button onclick="showSection('generate')" id="btnShowGenerate"
+                    class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center">
+                <i class="material-icons mr-2">add</i>Generate Quotation
+            </button>
+            <button onclick="showSection('list')" id="btnShowList"
+                    class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 flex items-center">
+                <i class="material-icons mr-2">list</i>View Quotations
+            </button>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg flex items-start">
+            <i class="material-icons mr-2">check_circle</i>
+            <div class="flex-1">
+                <p class="font-medium">Success!</p>
+                <p class="text-sm">@TempData["SuccessMessage"]</p>
+            </div>
+            @if (TempData["LastQuotationData"] != null)
+            {
+                <button onclick='printQuotation(@Html.Raw(TempData["LastQuotationData"]))'
+                        class="ml-3 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center shadow-md hover:shadow-lg">
+                    <i class="material-icons text-sm mr-2">print</i>
+                    Print Quotation
+                </button>
+            }
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg flex items-center">
+            <i class="material-icons mr-2">error</i><span>@TempData["ErrorMessage"]</span>
+        </div>
+    }
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div class="mb-4 p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded-lg flex items-center">
+            <i class="material-icons mr-2">warning</i><span>@Html.Raw(TempData["WarningMessage"])</span>
+        </div>
+    }
+
+    <div id="generateSection" class="bg-white rounded-lg shadow-lg p-6">
+        <form id="quotationForm" method="post" action="/Admin/GenerateQuotations">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="StudentIds" id="hiddenStudentIds" />
+
+            <!-- Step 1: Select Fee Source and Filter -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold mb-3 flex items-center">
+                    <span class="bg-primary-600 text-white rounded-full w-8 h-8 flex items-center justify-center mr-2">1</span>
+                    Select Fee Source and Filters
+                </h3>
+
+                <!-- Primary Filters (School & Programme) - REQUIRED -->
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border-2 border-blue-300 mb-4">
+                    <div class="flex items-center mb-3">
+                        <i class="material-icons text-blue-600 mr-2">filter_alt</i>
+                        <h4 class="font-semibold text-blue-900">Required Filters</h4>
+                        <span class="ml-2 text-xs px-2 py-1 bg-red-100 text-red-700 rounded-full font-medium">Required</span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                School <span class="text-red-600">*</span>
+                            </label>
+                            <select id="primaryFilterSchool" onchange="onSchoolChange()"
+                                    class="w-full px-4 py-2 border-2 border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">-- Select School --</option>
+                                @foreach (var school in ViewBag.Schools)
+                                {
+                                    <option value="@school.Id">@school.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Programme <span class="text-red-600">*</span>
+                            </label>
+                            <select id="primaryFilterProgramme" onchange="applyFilters()"
+                                    class="w-full px-4 py-2 border-2 border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">-- Select Programme --</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fee Source Selection -->
+                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200 mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Fee Source</label>
+                    <div class="flex gap-4 mb-3">
+                        @* <label class="flex items-center cursor-pointer">
+                            <input type="radio" name="feeSourceFilter" value="OtherFees" checked onchange="changeFeeSource()" class="mr-2">
+                            <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm font-medium">Other Fees</span>
+                        </label> *@
+                        <label class="flex items-center cursor-pointer">
+                            <input type="radio" name="feeSourceFilter" value="FeeConfiguration" checked onchange="changeFeeSource()" class="mr-2">
+                            <span class="px-3 py-1 bg-green-100 text-green-700 rounded text-sm font-medium">Fee Configuration</span>
+                        </label>
+                    </div>
+
+                    <!-- Student Type Filter -->
+                    <div class="border-t pt-3">
+                        <label class="block text-xs font-medium text-gray-700 mb-2">Filter by Student Type</label>
+                        <div class="flex gap-3">
+                            <label class="flex items-center cursor-pointer">
+                                <input type="radio" name="studentTypeFilter" value="all" checked onchange="applyFilters()" class="mr-1.5">
+                                <span class="text-sm">All Students</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer">
+                                <input type="radio" name="studentTypeFilter" value="local" onchange="applyFilters()" class="mr-1.5">
+                                <span class="text-sm text-green-700">Local Only</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer">
+                                <input type="radio" name="studentTypeFilter" value="foreign" onchange="applyFilters()" class="mr-1.5">
+                                <span class="text-sm text-orange-700">Foreign Only</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Additional Filters for Fee Configuration (shown only when Fee Configuration is selected) -->
+                <div id="feeConfigFilters" class="bg-gray-50 rounded-lg p-4 border border-gray-200 mb-4 hidden">
+                    <h4 class="font-medium text-gray-700 mb-3 flex items-center">
+                        <i class="material-icons text-sm mr-2">tune</i>
+                        Additional Filters (Optional)
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Mode of Study</label>
+                            <select id="filterMode" onchange="applyFilters()" class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-primary-500">
+                                <option value="">All Modes</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Program Level</label>
+                            <select id="filterLevel" onchange="applyFilters()" class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-primary-500">
+                                <option value="">All Levels</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Year of Study</label>
+                            <select id="filterYearOfStudy" onchange="applyFilters()" class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-primary-500">
+                                <option value="">All Years</option>
+                                <option value="1">Year 1</option>
+                                <option value="2">Year 2</option>
+                                <option value="3">Year 3</option>
+                                <option value="4">Year 4</option>
+                                <option value="5">Year 5</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Semester</label>
+                            <select id="filterSemester" onchange="applyFilters()" class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-primary-500">
+                                <option value="">All Semesters</option>
+                                <option value="1">Semester 1</option>
+                                <option value="2">Semester 2</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <button type="button" onclick="clearAdditionalFilters()" class="px-3 py-1.5 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+                            <i class="material-icons text-sm mr-1">clear</i>Clear Additional Filters
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Selection Prompt (shown when no filters selected) -->
+                <div id="selectionPrompt" class="bg-white rounded-lg p-8 border-2 border-dashed border-gray-300 text-center">
+                    <i class="material-icons text-6xl text-gray-300 mb-3">school</i>
+                    <h4 class="text-lg font-semibold text-gray-700 mb-2">Select School and Programme</h4>
+                    <p class="text-gray-500">Please select both school and programme from the filters above to view available fees</p>
+                </div>
+
+                <!-- Available Fees Display (shown only after filters selected) -->
+                <div id="feesDisplayContainer" class="bg-gray-50 rounded-lg p-4 border border-gray-200 hidden">
+                    <div class="flex justify-between items-center mb-3">
+                        <h4 class="font-medium text-gray-700">Available Fees</h4>
+                        <span id="availableFeesCount" class="text-sm text-gray-600">0 fees available</span>
+                    </div>
+
+                    <div id="feesContainer">
+                        @if (ViewBag.AllFees != null && ((IEnumerable<dynamic>)ViewBag.AllFees).Any())
+                        {
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                @foreach (var fee in ViewBag.AllFees)
+                                {
+                                    var isLocalFee = fee.AppliesOnlyToLocalStudents;
+                                    var isForeignFee = fee.AppliesOnlyToForeignStudents;
+                                    var isUniversalFee = !fee.AppliesOnlyToLocalStudents && !fee.AppliesOnlyToForeignStudents;
+
+                                    <label class="fee-item flex items-start space-x-3 p-3 bg-white rounded-lg border border-gray-200 hover:border-primary-500 cursor-pointer transition-all"
+                                           data-source="@fee.Source"
+                                           data-school-id="@(fee.SchoolId ?? 0)"
+                                           data-programme-id="@(fee.ProgrammeId ?? 0)"
+                                           data-mode-id="@(fee.ModeId ?? 0)"
+                                           data-level-id="@(fee.LevelId ?? 0)"
+                                           data-year-of-study="@(fee.YearOfStudy ?? 0)"
+                                           data-semester="@(fee.Semester ?? 0)"
+                                           data-is-foreign="@isForeignFee.ToString().ToLower()"
+                                           data-is-local="@isLocalFee.ToString().ToLower()">
+                                        <input type="checkbox" name="SelectedFeeIds" value="@(fee.Source)-@(fee.Id)"
+                                               class="mt-1 rounded text-primary-600 focus:ring-primary-500"
+                                               onchange="updateSelectedFees()"
+                                               data-amount="@fee.Amount">
+                                        <div class="flex-1">
+                                            <div class="flex items-center justify-between mb-1">
+                                                <div class="font-medium text-gray-900">@fee.FeeName</div>
+                                                <span class="text-xs px-2 py-1 rounded @(fee.Source == "OtherFees" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700")">
+                                                    @(fee.Source == "OtherFees" ? "Other" : "Config")
+                                                </span>
+                                            </div>
+                                            <div class="text-sm text-gray-600 fee-amount">K @fee.Amount.ToString("N2")</div>
+                                            <div class="text-xs text-gray-500">@fee.SchoolName</div>
+
+                                            @if (isUniversalFee)
+                                            {
+                                                <div class="text-xs text-blue-600 font-medium mt-1 flex items-center">
+                                                    <span class="inline-block w-2 h-2 bg-blue-500 rounded-full mr-1"></span>
+                                                    All Students
+                                                </div>
+                                            }
+                                            else if (isForeignFee)
+                                            {
+                                                <div class="text-xs text-orange-600 font-medium mt-1 flex items-center">
+                                                    <span class="inline-block w-2 h-2 bg-orange-500 rounded-full mr-1"></span>
+                                                    Foreign Students
+                                                </div>
+                                            }
+                                            else if (isLocalFee)
+                                            {
+                                                <div class="text-xs text-green-600 font-medium mt-1 flex items-center">
+                                                    <span class="inline-block w-2 h-2 bg-green-500 rounded-full mr-1"></span>
+                                                    Local Students
+                                                </div>
+                                            }
+
+                                            @if (fee.Source == "FeeConfiguration")
+                                            {
+                                                @if (fee.YearOfStudy != null && fee.YearOfStudy > 0)
+                                                {
+                                                    <div class="text-xs text-blue-600 mt-1">Year @fee.YearOfStudy</div>
+                                                }
+                                                @if (fee.Semester != null && fee.Semester > 0)
+                                                {
+                                                    <div class="text-xs text-purple-600">Semester @fee.Semester</div>
+                                                }
+                                            }
+                                        </div>
+                                    </label>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-gray-500 text-center py-8">
+                                <i class="material-icons text-4xl text-gray-300 mb-2">assignment</i><br>
+                                No fees available. Please add fees first.
+                            </p>
+                        }
+                    </div>
+
+                    @* <div id="feesContainer">
+                        @if (ViewBag.AllFees != null && ((IEnumerable<dynamic>)ViewBag.AllFees).Any())
+                        {
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                @foreach (var fee in ViewBag.AllFees)
+                                {
+                                    <label class="fee-item flex items-start space-x-3 p-3 bg-white rounded-lg border border-gray-200 hover:border-primary-500 cursor-pointer transition-all"
+                                           data-source="@fee.Source"
+                                           data-school-id="@(fee.SchoolId ?? 0)"
+                                           data-programme-id="@(fee.ProgrammeId ?? 0)"
+                                           data-mode-id="@(fee.ModeId ?? 0)"
+                                           data-level-id="@(fee.LevelId ?? 0)"
+                                           data-year-of-study="@(fee.YearOfStudy ?? 0)"
+                                           data-semester="@(fee.Semester ?? 0)"
+                                           data-is-foreign="@fee.AppliesOnlyToForeignStudents.ToString().ToLower()">
+                                        <input type="checkbox" name="SelectedFeeIds" value="@(fee.Source)-@(fee.Id)"
+                                               class="mt-1 rounded text-primary-600 focus:ring-primary-500"
+                                               onchange="updateSelectedFees()"
+                                               data-amount="@fee.Amount">
+                                        <div class="flex-1">
+                                            <div class="flex items-center justify-between mb-1">
+                                                <div class="font-medium text-gray-900">@fee.FeeName</div>
+                                                <span class="text-xs px-2 py-1 rounded @(fee.Source == "OtherFees" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700")">
+                                                    @(fee.Source == "OtherFees" ? "Other" : "Config")
+                                                </span>
+                                            </div>
+                                            <div class="text-sm text-gray-600 fee-amount">K @fee.Amount.ToString("N2")</div>
+                                            <div class="text-xs text-gray-500">@fee.SchoolName</div>
+                                            @if (fee.AppliesOnlyToForeignStudents)
+                                            {
+                                                <div class="text-xs text-orange-600 font-medium mt-1 flex items-center">
+                                                    <span class="inline-block w-2 h-2 bg-orange-500 rounded-full mr-1"></span>
+                                                    Foreign Student Fee
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div class="text-xs text-green-600 font-medium mt-1 flex items-center">
+                                                    <span class="inline-block w-2 h-2 bg-green-500 rounded-full mr-1"></span>
+                                                    Local Student Fee
+                                                </div>
+                                            }
+                                            @if (fee.Source == "FeeConfiguration")
+                                            {
+                                                @if (fee.YearOfStudy != null && fee.YearOfStudy > 0)
+                                                {
+                                                    <div class="text-xs text-blue-600 mt-1">Year @fee.YearOfStudy</div>
+                                                }
+                                                @if (fee.Semester != null && fee.Semester > 0)
+                                                {
+                                                    <div class="text-xs text-purple-600">Semester @fee.Semester</div>
+                                                }
+                                            }
+                                        </div>
+                                    </label>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-gray-500 text-center py-8">
+                                <i class="material-icons text-4xl text-gray-300 mb-2">assignment</i><br>
+                                No fees available. Please add fees first.
+                            </p>
+                        }
+                    </div> *@
+
+                    <div id="selectedFeesInfo" class="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200 hidden">
+                        <div class="flex justify-between items-center">
+                            <span class="font-medium text-blue-900">Selected Fees:</span>
+                            <span id="selectedFeesCount" class="text-blue-700">0 fees selected</span>
+                        </div>
+                        <div class="mt-2 flex justify-between items-center">
+                            <span class="text-blue-800">Total Amount per Quotation:</span>
+                            <span id="totalAmount" class="font-bold text-lg text-blue-900">K 0.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Quotation Details -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold mb-3 flex items-center">
+                    <span class="bg-primary-600 text-white rounded-full w-8 h-8 flex items-center justify-center mr-2">2</span>
+                    Quotation Details
+                </h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Academic Year *</label>
+                        <select name="AcademicYearId" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500">
+                            <option value="">Select Year</option>
+                            @if (ViewBag.AcademicYears != null)
+                            {
+                                @foreach (var year in ViewBag.AcademicYears)
+                                {
+                                    <option value="@year.Value">@year.Text</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Semester</label>
+                        <select name="Semester" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500">
+                            <option value="">None</option>
+                            <option value="1">Semester 1</option>
+                            <option value="2">Semester 2</option>
+                        </select>
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium mb-2">Description (Optional)</label>
+                        <input type="text" name="QuotationDescription" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500"
+                               placeholder="e.g., 2024/2025 Tuition Estimate">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Add Students -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold mb-3 flex items-center">
+                    <span class="bg-primary-600 text-white rounded-full w-8 h-8 flex items-center justify-center mr-2">3</span>
+                    Add Students (Optional)
+                </h3>
+                <div class="bg-gray-50 rounded-lg p-4 border">
+                    <div class="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <p class="text-sm text-blue-800">
+                            <i class="material-icons text-sm">info</i>
+                            <strong>Note:</strong> You can generate a general quotation without student IDs for walk-in inquiries or prospective students.
+                        </p>
+                    </div>
+                    <div id="studentInputsContainer" class="space-y-2 mb-3">
+                        <div class="flex gap-2 student-input-row">
+                            <input type="text" placeholder="Student ID (optional - leave empty for general quotation)" class="flex-1 px-4 py-2 border rounded-lg student-id-input focus:ring-2 focus:ring-primary-500">
+                            <button type="button" onclick="addStudentInput()" class="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                <i class="material-icons">add</i>
+                            </button>
+                        </div>
+                    </div>
+                    <button type="button" onclick="validateStudents()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        <i class="material-icons text-sm mr-2">fact_check</i>Validate Students
+                    </button>
+                </div>
+            </div>
+
+            <div id="validationResults" class="mb-6 hidden"></div>
+
+            <div class="flex justify-between items-center">
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" name="AllowDuplicates" value="true" checked class="rounded">
+                    <span class="ml-2 text-sm">Allow duplicate quotations</span>
+                </label>
+                <button type="submit" id="generateQuotationBtn" class="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center shadow-lg">
+                    <i class="material-icons mr-2">request_quote</i>Generate Quotations
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- View Quotations Section -->
+    <div id="listSection" class="bg-white rounded-lg shadow-lg hidden">
+        <div class="p-4 bg-gray-50 border-b">
+            <div class="grid grid-cols-4 gap-3">
+                <select id="filterAcademicYear" onchange="loadQuotations()" class="px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-primary-500">
+                    <option value="">All Years</option>
+                    @if (ViewBag.AcademicYears != null)
+                    {
+                        @foreach (var year in ViewBag.AcademicYears)
+                        {
+                            <option value="@year.Value">@year.Text</option>
+                        }
+                    }
+                </select>
+                <select id="filterListSemester" onchange="loadQuotations()" class="px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-primary-500">
+                    <option value="">All Semesters</option>
+                    <option value="1">Semester 1</option>
+                    <option value="2">Semester 2</option>
+                </select>
+                <select id="filterStatus" onchange="loadQuotations()" class="px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-primary-500">
+                    <option value="">All Status</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Accepted">Accepted</option>
+                    <option value="Rejected">Rejected</option>
+                    <option value="Converted">Converted</option>
+                </select>
+                <input type="text" id="searchTerm" onkeyup="loadQuotations()" placeholder="Search..." class="px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-primary-500">
+            </div>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full">
+                <thead class="bg-primary-50">
+                    <tr>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase">#</th>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase">Quotation</th>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase">Student</th>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase">Amount</th>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase">Status</th>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase">Generated By</th>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase">Valid Until</th>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-700 uppercase">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="quotationTableBody">
+                    <tr>
+                        <td colspan="8" class="px-3 py-8 text-center text-gray-500">
+                            <i class="material-icons text-4xl text-gray-300 mb-2">assignment</i>
+                            <p>No quotations to display</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Print Quotation Template (Hidden) -->
+<div id="printQuotationTemplate" style="display: none;">
+    <div style="width: 210mm; min-height: 297mm; padding: 20mm; font-family: Arial, sans-serif; background: white;">
+        <!-- University Header -->
+        <div style="text-align: center; margin-bottom: 30px; border-bottom: 3px solid #1e3a8a; padding-bottom: 20px;">
+            <div style="display: flex; align-items: center; justify-center; margin-bottom: 10px;">
+                <img src="/images/institution-logo.png" alt="Eden University Logo" style="width: 100px; height: 100px; object-fit: contain; margin-right: 20px;" />
+                <div style="text-align: left;">
+                    <h1 style="margin: 0; color: #1e3a8a; font-size: 28px;">Fee Quotation</h1>
+                    <h2 style="margin: 5px 0; color: #3b82f6; font-size: 22px;">Eden University</h2>
+                    <p style="margin: 0; font-size: 12px; color: #666;">Barlastone Park, Lusaka, Zambia</p>
+                    <p style="margin: 0; font-size: 12px; color: #666;">P.O Box 37787</p>
+                    <p style="margin: 0; font-size: 12px; color: #666;">TEL:0979079400/0979079480/0966686666</p>
+                    <p style="margin: 0; font-size: 12px; color: #666;">WEBSITE: www.edenuniversity.edu.zm</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quotation Details -->
+        <div style="margin-bottom: 30px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                <div>
+                    <strong>Quotation No:</strong> <span id="print-quotation-ref"></span>
+                </div>
+                <div>
+                    <strong>Date:</strong> <span id="print-date"></span>
+                </div>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                <div>
+                    <strong>Batch Reference:</strong> <span id="print-batch-ref"></span>
+                </div>
+                <div>
+                    <strong>Valid Until:</strong> <span id="print-valid-until"></span>
+                </div>
+            </div>
+
+            <!-- Student Information -->
+            <div style="border: 2px solid #3b82f6; padding: 15px; margin: 20px 0; background: #eff6ff;">
+                <div style="margin-bottom: 10px;">
+                    <strong>Student Name:</strong> <span id="print-student-name" style="font-size: 16px;"></span>
+                    <span id="print-new-student-badge" style="margin-left: 10px;"></span>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <strong>Student Number:</strong> <span id="print-student-number" style="font-size: 14px;"></span>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <strong>Academic Year:</strong> <span id="print-academic-year"></span>
+                    &nbsp;&nbsp;|&nbsp;&nbsp;
+                    <strong>Semester:</strong> <span id="print-semester"></span>
+                </div>
+            </div>
+
+            <!-- Description -->
+            <div style="margin: 20px 0;">
+                <strong>Description:</strong> <span id="print-description" style="font-style: italic;"></span>
+            </div>
+
+            <!-- Fees Table -->
+            <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                <thead>
+                    <tr style="background: #f3f4f6; border-bottom: 2px solid #3b82f6;">
+                        <th style="padding: 10px; text-align: left; border: 1px solid #e5e7eb;">Fee Type</th>
+                        <th style="padding: 10px; text-align: left; border: 1px solid #e5e7eb;">Description</th>
+                        <th style="padding: 10px; text-align: right; border: 1px solid #e5e7eb;">Amount (ZMW)</th>
+                    </tr>
+                </thead>
+                <tbody id="print-fees-tbody">
+                </tbody>
+                <tfoot>
+                    <tr style="background: #f3f4f6; font-weight: bold;">
+                        <td colspan="2" style="padding: 10px; border: 1px solid #e5e7eb; text-align: right;">Total Amount:</td>
+                        <td style="padding: 10px; text-align: right; border: 1px solid #e5e7eb; color: #059669; font-size: 18px;">
+                            K <span id="print-total-amount"></span>
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <!-- Amount in Words -->
+            <div style="margin: 20px 0; padding: 15px; background: #f9fafb; border-left: 4px solid #3b82f6;">
+                <strong>Amount in Words:</strong>
+                <span id="print-amount-words" style="font-style: italic; font-size: 14px;"></span>
+            </div>
+        </div>
+
+        <!-- Important Notes -->
+        <div style="margin-top: 30px; padding: 15px; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px;">
+            <h4 style="margin: 0 0 10px 0; color: #92400e; font-size: 14px;">Important Notes:</h4>
+            <ul style="margin: 0; padding-left: 20px; font-size: 12px; color: #78350f;">
+                <li>This is a quotation and not a receipt. Payment must be made to validate.</li>
+                <li>Fees are subject to change without prior notice.</li>
+            </ul>
+        </div>
+
+        <!-- Signatures -->
+        <div style="margin-top: 60px; display: flex; justify-content: space-between;">
+            <div style="width: 45%; border-top: 1px solid #000; padding-top: 10px;">
+                <p style="margin: 0;"><strong>Prepared by:</strong></p>
+                <p style="margin: 5px 0 0 0; font-size: 12px; color: #666;">&nbsp;</p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="margin-top: 40px; text-align: center; font-size: 11px; color: #666; border-top: 1px solid #e5e7eb; padding-top: 15px;">
+            <p style="margin: 0;">This is a computer-generated quotation and does not require a signature.</p>
+            <p style="margin: 5px 0 0 0;">For inquiries, please contact finance@edenuniversity.edu.zm</p>
+        </div>
+    </div>
+</div>
+
+@section Scripts
+{
+    <!-- Add these CDN links before your Scripts section -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+        let currentPage = 1, pageSize = 10;
+        let allProgrammes = [];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            showSection('generate');
+            loadFilterOptions();
+            changeFeeSource();
+        });
+
+        function showSection(section) {
+            const generateSection = document.getElementById('generateSection');
+            const listSection = document.getElementById('listSection');
+            const btnGenerate = document.getElementById('btnShowGenerate');
+            const btnList = document.getElementById('btnShowList');
+
+            if (section === 'generate') {
+                generateSection.classList.remove('hidden');
+                listSection.classList.add('hidden');
+                btnGenerate.classList.remove('bg-gray-600', 'hover:bg-gray-700');
+                btnGenerate.classList.add('bg-primary-600', 'hover:bg-primary-700');
+                btnList.classList.remove('bg-primary-600', 'hover:bg-primary-700');
+                btnList.classList.add('bg-gray-600', 'hover:bg-gray-700');
+            } else {
+                generateSection.classList.add('hidden');
+                listSection.classList.remove('hidden');
+                btnGenerate.classList.remove('bg-primary-600', 'hover:bg-primary-700');
+                btnGenerate.classList.add('bg-gray-600', 'hover:bg-gray-700');
+                btnList.classList.remove('bg-gray-600', 'hover:bg-gray-700');
+                btnList.classList.add('bg-primary-600', 'hover:bg-primary-700');
+                loadQuotations();
+            }
+        }
+
+        async function loadFilterOptions() {
+            try {
+                const [schools, programmes, modes, levels] = await Promise.all([
+                    fetch('/Admin/GetSchools').then(r => r.json()),
+                    fetch('/Admin/GetProgrammes').then(r => r.json()),
+                    fetch('/Admin/GetModesOfStudy').then(r => r.json()),
+                    fetch('/Admin/GetProgramLevels').then(r => r.json())
+                ]);
+
+                allProgrammes = programmes;
+                //populateSelect('primaryFilterSchool', schools, 'Id', 'Name');
+                populateSelect('filterMode', modes, 'modeId', 'modeName');
+                populateSelect('filterLevel', levels, 'id', 'name');
+            } catch (error) {
+                console.error('Error loading filter options:', error);
+            }
+        }
+
+        function populateSelect(id, data, valueField, textField) {
+            const select = document.getElementById(id);
+            if (!select) return;
+
+            const currentValue = select.value;
+            const firstOption = select.querySelector('option[value=""]');
+            const placeholder = firstOption ? firstOption.textContent : 'All';
+
+            select.innerHTML = '<option value="">' + placeholder + '</option>' +
+                data.map(item => '<option value="' + item[valueField] + '">' + item[textField] + '</option>').join('');
+            select.value = currentValue;
+        }
+
+        async function onSchoolChange() {
+            const schoolId = document.getElementById('primaryFilterSchool').value;
+            const programmeSelect = document.getElementById('primaryFilterProgramme');
+
+            if (!schoolId) {
+                programmeSelect.innerHTML = '<option value="">-- Select Programme --</option>';
+                programmeSelect.value = '';
+                applyFilters();
+                return;
+            }
+
+            try {
+                const response = await fetch('/Admin/GetProgrammesBySchool2?schoolId=' + schoolId);
+                const programmes = await response.json();
+
+                populateSelect('primaryFilterProgramme', programmes, 'id', 'name');
+                applyFilters();
+            } catch (error) {
+                console.error('Error loading programmes:', error);
+            }
+        }
+
+        function changeFeeSource() {
+            const selectedSource = document.querySelector('input[name="feeSourceFilter"]:checked').value;
+            const filtersDiv = document.getElementById('feeConfigFilters');
+
+            if (selectedSource === 'FeeConfiguration') {
+                filtersDiv.classList.remove('hidden');
+            } else {
+                filtersDiv.classList.add('hidden');
+                clearAdditionalFilters();
+            }
+
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const primarySchoolId = document.getElementById('primaryFilterSchool') ? document.getElementById('primaryFilterSchool').value : '';
+            const primaryProgrammeId = document.getElementById('primaryFilterProgramme') ? document.getElementById('primaryFilterProgramme').value : '';
+
+            const hasRequiredFilters = primarySchoolId && primaryProgrammeId;
+
+            const selectionPrompt = document.getElementById('selectionPrompt');
+            const feesDisplayContainer = document.getElementById('feesDisplayContainer');
+
+            if (!hasRequiredFilters) {
+                selectionPrompt.classList.remove('hidden');
+                feesDisplayContainer.classList.add('hidden');
+                return;
+            }
+
+            selectionPrompt.classList.add('hidden');
+            feesDisplayContainer.classList.remove('hidden');
+
+            const selectedSource = document.querySelector('input[name="feeSourceFilter"]:checked').value;
+            const selectedStudentType = document.querySelector('input[name="studentTypeFilter"]:checked').value;
+            const feeItems = document.querySelectorAll('.fee-item');
+            let visibleCount = 0;
+
+            const filterModeId = document.getElementById('filterMode') ? document.getElementById('filterMode').value : '';
+            const filterLevelId = document.getElementById('filterLevel') ? document.getElementById('filterLevel').value : '';
+            const filterYearOfStudy = document.getElementById('filterYearOfStudy') ? document.getElementById('filterYearOfStudy').value : '';
+            const filterSemester = document.getElementById('filterSemester') ? document.getElementById('filterSemester').value : '';
+
+            // Check if ALL additional filters are selected (only for FeeConfiguration source)
+            const allAdditionalFiltersSelected = selectedSource === 'FeeConfiguration' &&
+                                                 filterModeId &&
+                                                 filterLevelId &&
+                                                 filterYearOfStudy &&
+                                                 filterSemester;
+
+            // Determine if we should auto-check fees (when student type is local or foreign AND all filters selected)
+            const shouldAutoCheck = (selectedStudentType === 'local' || selectedStudentType === 'foreign') &&
+                                    allAdditionalFiltersSelected;
+
+            feeItems.forEach(item => {
+                const feeSource = item.getAttribute('data-source');
+                const isForeignFee = item.getAttribute('data-is-foreign') === 'true';
+                const isLocalFee = item.getAttribute('data-is-local') === 'true';
+                const isUniversalFee = item.getAttribute('data-is-foreign') === 'false' && item.getAttribute('data-is-local') === 'false';
+                const schoolId = item.getAttribute('data-school-id');
+                const programmeId = item.getAttribute('data-programme-id');
+
+                let shouldShow = feeSource === selectedSource;
+
+                // Apply required filters (school and programme)
+                if (shouldShow) {
+                    if (primarySchoolId && schoolId !== '0' && schoolId !== primarySchoolId) {
+                        shouldShow = false;
+                    }
+                    if (primaryProgrammeId && programmeId !== '0' && programmeId !== primaryProgrammeId) {
+                        shouldShow = false;
+                    }
+                }
+
+                // Apply student type filter with new logic
+                if (shouldShow && selectedStudentType !== 'all') {
+                    if (selectedStudentType === 'foreign') {
+                        // Show foreign fees AND universal fees
+                        if (!isForeignFee && !isUniversalFee) {
+                            shouldShow = false;
+                        }
+                    } else if (selectedStudentType === 'local') {
+                        // Show local fees AND universal fees
+                        if (!isLocalFee && !isUniversalFee) {
+                            shouldShow = false;
+                        }
+                    }
+                }
+
+                // Apply additional filters for Fee Configuration
+                if (shouldShow && selectedSource === 'FeeConfiguration') {
+                    const modeId = item.getAttribute('data-mode-id');
+                    const levelId = item.getAttribute('data-level-id');
+                    const yearOfStudy = item.getAttribute('data-year-of-study');
+                    const semester = item.getAttribute('data-semester');
+
+                    if (filterModeId && modeId !== '0' && modeId !== filterModeId) shouldShow = false;
+                    if (filterLevelId && levelId !== '0' && levelId !== filterLevelId) shouldShow = false;
+                    if (filterYearOfStudy && yearOfStudy !== '0' && yearOfStudy !== filterYearOfStudy) shouldShow = false;
+                    if (filterSemester && semester !== '0' && semester !== filterSemester) shouldShow = false;
+                }
+
+                const checkbox = item.querySelector('input[type="checkbox"]');
+
+                if (shouldShow) {
+                    item.style.display = '';
+                    visibleCount++;
+
+                    // Auto-check checkbox ONLY if all conditions are met:
+                    // 1. Student type is local or foreign (not "all")
+                    // 2. ALL additional filters are selected (Mode, Level, Year, Semester)
+                    if (shouldAutoCheck && checkbox) {
+                        checkbox.checked = true;
+                    }
+                } else {
+                    item.style.display = 'none';
+                    // Uncheck hidden items
+                    if (checkbox && checkbox.checked) {
+                        checkbox.checked = false;
+                    }
+                }
+            });
+
+            document.getElementById('availableFeesCount').textContent = visibleCount + ' fee' + (visibleCount !== 1 ? 's' : '') + ' available';
+            updateSelectedFees();
+        }
+
+        function clearAdditionalFilters() {
+            document.getElementById('filterMode').value = '';
+            document.getElementById('filterLevel').value = '';
+            document.getElementById('filterYearOfStudy').value = '';
+            document.getElementById('filterSemester').value = '';
+            applyFilters();
+        }
+
+        function updateSelectedFees() {
+            const checkboxes = document.querySelectorAll('input[name="SelectedFeeIds"]:checked');
+            let totalAmount = 0;
+
+            checkboxes.forEach(cb => {
+                const amount = parseFloat(cb.getAttribute('data-amount'));
+                if (!isNaN(amount)) {
+                    totalAmount += amount;
+                }
+            });
+
+            const infoDiv = document.getElementById('selectedFeesInfo');
+            if (checkboxes.length > 0) {
+                infoDiv.classList.remove('hidden');
+                document.getElementById('selectedFeesCount').textContent = checkboxes.length + ' fee' + (checkboxes.length !== 1 ? 's' : '') + ' selected';
+                document.getElementById('totalAmount').textContent = 'K ' + totalAmount.toFixed(2);
+            } else {
+                infoDiv.classList.add('hidden');
+            }
+        }
+
+        function addStudentInput() {
+            const container = document.getElementById('studentInputsContainer');
+            const row = document.createElement('div');
+            row.className = 'flex gap-2 student-input-row';
+            row.innerHTML = '<input type="text" placeholder="Student ID" class="flex-1 px-4 py-2 border rounded-lg student-id-input focus:ring-2 focus:ring-primary-500">' +
+                '<button type="button" onclick="this.closest(\'.student-input-row\').remove()" class="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">' +
+                '<i class="material-icons">remove</i></button>';
+            container.appendChild(row);
+        }
+
+        async function validateStudents() {
+            const inputs = document.querySelectorAll('.student-id-input');
+            const ids = Array.from(inputs).map(i => i.value.trim()).filter(Boolean).join(',');
+
+            if (!ids) {
+                const resultsDiv = document.getElementById('validationResults');
+                resultsDiv.classList.remove('hidden');
+                resultsDiv.innerHTML = '<div class="bg-blue-50 p-4 rounded-lg border border-blue-200">' +
+                    '<h4 class="font-semibold text-blue-900 mb-2 flex items-center"><i class="material-icons mr-2">info</i>General Quotation</h4>' +
+                    '<p class="text-sm text-blue-800">No student IDs entered. This quotation will be created as a general quotation for walk-in inquiries or prospective students.</p></div>';
+                document.getElementById('hiddenStudentIds').value = '';
+                return;
+            }
+
+            document.getElementById('hiddenStudentIds').value = ids;
+
+            try {
+                const response = await fetch('/Admin/ValidateStudentsForQuotation', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    },
+                    body: JSON.stringify({studentIds: ids})
+                });
+
+                const data = await response.json();
+                const resultsDiv = document.getElementById('validationResults');
+                resultsDiv.classList.remove('hidden');
+
+                let html = '';
+
+                if (data.totalValid > 0) {
+                    html += '<div class="bg-green-50 p-4 rounded-lg border border-green-200">' +
+                        '<h4 class="font-semibold text-green-900 mb-2 flex items-center"><i class="material-icons mr-2">check_circle</i>Valid Students: ' + data.totalValid + '</h4><div class="space-y-1">';
+                    data.validStudents.forEach(s => {
+                        html += '<div class="text-sm text-green-800"><strong>' + s.studentId_Number + '</strong> - ' + s.fullName +
+                            '<span class="text-xs text-green-600 ml-2">(' + s.programmeName + ')</span></div>';
+                    });
+                    html += '</div></div>';
+                }
+
+                if (data.totalNew > 0) {
+                    html += '<div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200 ' + (data.totalValid > 0 ? 'mt-3' : '') + '">' +
+                        '<h4 class="font-semibold text-yellow-900 mb-2 flex items-center"><i class="material-icons mr-2">info</i>New Students (Pending Admission): ' + data.totalNew + '</h4><div class="space-y-1">';
+                    data.newStudents.forEach(s => {
+                        html += '<div class="text-sm text-yellow-800"><strong>' + s.studentId_Number + '</strong> - ' + s.status + '</div>';
+                    });
+                    html += '</div><p class="text-xs text-yellow-700 mt-2 italic"><i class="material-icons text-xs">info</i> These students will be marked as pending admission. Quotations can still be generated for them.</p></div>';
+                }
+
+                if (data.totalInvalid > 0) {
+                    html += '<div class="bg-red-50 p-4 rounded-lg border border-red-200 ' + (data.totalValid > 0 ? 'mt-3' : '') + '">' +
+                        '<h4 class="font-semibold text-red-900 mb-2 flex items-center"><i class="material-icons mr-2">error</i>Invalid Student IDs: ' + data.totalInvalid + '</h4><div class="space-y-1">';
+                    data.invalidStudents.forEach(s => {
+                        html += '<div class="text-sm text-red-800"><strong>' + s.studentId_Number + '</strong> - ' + s.status + '</div>';
+                    });
+                    html += '</div></div>';
+                }
+
+                resultsDiv.innerHTML = html;
+            } catch (error) {
+                console.error('Validation error:', error);
+                alert('Error validating students. Please try again.');
+            }
+        }
+
+        async function loadQuotations() {
+            try {
+                const response = await fetch('/Admin/GetQuotations', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        page: currentPage,
+                        pageSize: pageSize,
+                        academicYearId: document.getElementById('filterAcademicYear') ? document.getElementById('filterAcademicYear').value : null,
+                        semester: document.getElementById('filterListSemester') ? document.getElementById('filterListSemester').value : null,
+                        status: document.getElementById('filterStatus') ? document.getElementById('filterStatus').value : null,
+                        searchTerm: document.getElementById('searchTerm') ? document.getElementById('searchTerm').value : null
+                    })
+                });
+
+                const data = await response.json();
+                const tbody = document.getElementById('quotationTableBody');
+
+                if (data.quotations && data.quotations.length > 0) {
+                    tbody.innerHTML = data.quotations.map(q =>
+                        '<tr class="border-b hover:bg-gray-50">' +
+                        '<td class="px-3 py-3 text-sm">' + q.rowNumber + '</td>' +
+                        '<td class="px-3 py-3"><div class="font-medium text-primary-700">' + q.quotationReference + '</div>' +
+                        (q.batchReference ? '<div class="text-xs text-gray-500">' + q.batchReference + '</div>' : '') + '</td>' +
+                        '<td class="px-3 py-3"><div class="flex items-center justify-between"><div><div class="font-medium">' + q.studentName + '</div>' +
+                        '<div class="text-xs text-gray-500">' + q.studentId + '</div></div>' +
+                        (q.isNewStudent ? '<span class="text-xs px-2 py-1 bg-yellow-100 text-yellow-700 rounded ml-2">New</span>' : '') + '</div></td>' +
+                        '<td class="px-3 py-3 font-bold text-gray-900">K ' + q.totalAmount.toFixed(2) + '</td>' +
+                        '<td class="px-3 py-3"><span class="px-2 py-1 rounded text-xs font-medium ' + getStatusColor(q.status) + '">' + q.status + '</span></td>' +
+                        '<td class="px-3 py-3"><div class="text-sm text-gray-900">' + q.createdBy + '</div>' +
+                        '<div class="text-xs text-gray-500">' + new Date(q.createdDate).toLocaleDateString() + '</div></td>' +
+                        '<td class="px-3 py-3 text-sm text-gray-600">' + new Date(q.validUntil).toLocaleDateString() + '</td>' +
+                        '<td class="px-3 py-3"><button onclick="viewQuotation(' + q.id + ')" class="text-blue-600 hover:text-blue-800" title="View Details">' +
+                        '<i class="material-icons text-sm">visibility</i></button></td></tr>'
+                    ).join('');
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="8" class="px-3 py-8 text-center text-gray-500">' +
+                        '<i class="material-icons text-4xl text-gray-300 mb-2">search_off</i><p>No quotations found</p></td></tr>';
+                }
+            } catch (error) {
+                console.error('Error loading quotations:', error);
+                document.getElementById('quotationTableBody').innerHTML = '<tr><td colspan="8" class="px-3 py-8 text-center text-red-500">' +
+                    '<i class="material-icons text-4xl text-red-300 mb-2">error</i><p>Error loading quotations</p></td></tr>';
+            }
+        }
+
+        function getStatusColor(status) {
+            const colors = {
+                'Pending': 'bg-yellow-100 text-yellow-800',
+                'Accepted': 'bg-green-100 text-green-800',
+                'Rejected': 'bg-red-100 text-red-800',
+                'Converted': 'bg-blue-100 text-blue-800',
+                'Expired': 'bg-gray-100 text-gray-800'
+            };
+            return colors[status] || 'bg-gray-100 text-gray-800';
+        }
+
+        async function viewQuotation(id) {
+            try {
+                const response = await fetch('/Admin/GetQuotationDetails?id=' + id);
+                const data = await response.json();
+                console.log(data);
+            } catch (error) {
+                console.error('Error viewing quotation:', error);
+                alert('Error loading quotation details');
+            }
+        }
+
+        @*async function viewQuotation(id) {
+            try {
+                const response = await fetch('/Admin/GetQuotationDetails?id=' + id);
+                const data = await response.json();
+                generateQuotationPDF(data);
+            } catch (error) {
+                console.error('Error viewing quotation:', error);
+                alert('Error loading quotation details');
+            }
+        }*@
+
+        function printQuotation(quotationData) {
+            const printWindow = window.open('', '', 'height=800,width=800');
+            const template = document.getElementById('printQuotationTemplate').innerHTML;
+
+            printWindow.document.write('<html><head><title>Quotation - ' + quotationData.quotationReference + '</title>');
+            printWindow.document.write('</head><body>');
+            printWindow.document.write(template);
+            printWindow.document.write('</body></html>');
+
+            printWindow.document.close();
+
+            const createdDate = new Date(quotationData.createdDate);
+            const formattedCreatedDate = createdDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+
+            const validUntilDate = new Date(quotationData.validUntil);
+            const formattedValidDate = validUntilDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+
+            setTimeout(() => {
+                // Quotation details
+                printWindow.document.getElementById('print-quotation-ref').textContent = quotationData.quotationReference || 'N/A';
+                printWindow.document.getElementById('print-date').textContent = formattedCreatedDate;
+                printWindow.document.getElementById('print-batch-ref').textContent = quotationData.batchReference || 'N/A';
+                printWindow.document.getElementById('print-valid-until').textContent = formattedValidDate;
+
+                // Student information
+                printWindow.document.getElementById('print-student-name').textContent = quotationData.studentName || 'General Quotation';
+                printWindow.document.getElementById('print-student-number').textContent = quotationData.studentId || 'N/A';
+                printWindow.document.getElementById('print-academic-year').textContent = quotationData.academicYear || 'N/A';
+                printWindow.document.getElementById('print-semester').textContent = quotationData.semester ? 'Semester ' + quotationData.semester : 'N/A';
+                printWindow.document.getElementById('print-description').textContent = quotationData.quotationDescription || 'Standard Quotation';
+
+                // New student badge
+                if (quotationData.isNewStudent) {
+                    printWindow.document.getElementById('print-new-student-badge').innerHTML =
+                        '<span style="background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; border: 1px solid #d97706;">PENDING ADMISSION</span>';
+                } else {
+                    printWindow.document.getElementById('print-new-student-badge').innerHTML = '';
+                }
+
+                // Fees table
+                let totalAmount = 0;
+                let feesHtml = '';
+
+                quotationData.items.forEach((item, index) => {
+                    // Clean description - remove source tags
+                    let cleanDescription = item.description || item.feeTypeName;
+                    cleanDescription = cleanDescription.replace(/\s*\(OtherFees\)\s*/gi, '');
+                    cleanDescription = cleanDescription.replace(/\s*\(FeeConfiguration\)\s*/gi, '');
+
+                    const amount = parseFloat(item.amount);
+                    totalAmount += amount;
+
+                    // Alternating row colors
+                    const bgColor = index % 2 === 0 ? '#f9fafb' : '#ffffff';
+
+                    feesHtml += `
+                        <tr style="background: ${bgColor};">
+                            <td style="padding: 10px; border: 1px solid #e5e7eb;">${item.feeTypeName}</td>
+                            <td style="padding: 10px; border: 1px solid #e5e7eb;">${cleanDescription}</td>
+                            <td style="padding: 10px; text-align: right; border: 1px solid #e5e7eb;">K ${amount.toFixed(2)}</td>
+                        </tr>
+                    `;
+                });
+
+                printWindow.document.getElementById('print-fees-tbody').innerHTML = feesHtml;
+                printWindow.document.getElementById('print-total-amount').textContent = totalAmount.toFixed(2);
+                printWindow.document.getElementById('print-amount-words').textContent = formatAmountInWords(totalAmount);
+
+                printWindow.print();
+                printWindow.close();
+            }, 250);
+        }
+
+        function generateQuotationPDF(quotationData) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+            const margin = 20;
+            const contentWidth = pageWidth - (margin * 2);
+            let yPosition = margin;
+
+            // Colors
+            const primaryColor = [30, 58, 138]; // #1e3a8a
+            const secondaryColor = [59, 130, 246]; // #3b82f6
+            const textColor = [0, 0, 0];
+            const grayColor = [102, 102, 102];
+
+            // Header
+            doc.setFillColor(240, 249, 255);
+            doc.rect(0, 0, pageWidth, 40, 'F');
+
+            // University Logo (if you have it as base64, otherwise skip this)
+            // doc.addImage(logoBase64, 'PNG', margin, yPosition, 30, 30);
+
+            // University Info
+            doc.setFontSize(24);
+            doc.setTextColor(...primaryColor);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Fee Quotation', margin, yPosition + 10);
+
+            doc.setFontSize(18);
+            doc.setTextColor(...secondaryColor);
+            doc.text('Eden University', margin, yPosition + 18);
+
+            doc.setFontSize(9);
+            doc.setTextColor(...grayColor);
+            doc.setFont('helvetica', 'normal');
+            doc.text('Barlastone Park, Lusaka, Zambia', margin, yPosition + 24);
+            doc.text('P.O Box 37787 | TEL: 0979079400/0979079480/0966686666', margin, yPosition + 28);
+            doc.text('WEBSITE: www.edenuniversity.edu.zm', margin, yPosition + 32);
+
+            yPosition = 55;
+
+            // Quotation Details Box
+            doc.setDrawColor(59, 130, 246);
+            doc.setLineWidth(0.5);
+            doc.line(margin, yPosition, pageWidth - margin, yPosition);
+            yPosition += 8;
+
+            // Two-column layout for quotation details
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(...textColor);
+            doc.text('Quotation No:', margin, yPosition);
+            doc.setFont('helvetica', 'normal');
+            doc.text(quotationData.quotationReference || 'N/A', margin + 35, yPosition);
+
+            const createdDate = new Date(quotationData.createdDate);
+            const formattedDate = createdDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+            doc.setFont('helvetica', 'bold');
+            doc.text('Date:', pageWidth - margin - 50, yPosition);
+            doc.setFont('helvetica', 'normal');
+            doc.text(formattedDate, pageWidth - margin - 30, yPosition);
+
+            yPosition += 6;
+            doc.setFont('helvetica', 'bold');
+            doc.text('Batch Reference:', margin, yPosition);
+            doc.setFont('helvetica', 'normal');
+            doc.text(quotationData.batchReference || 'N/A', margin + 35, yPosition);
+
+            const validUntilDate = new Date(quotationData.validUntil);
+            const formattedValidDate = validUntilDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+            doc.setFont('helvetica', 'bold');
+            doc.text('Valid Until:', pageWidth - margin - 50, yPosition);
+            doc.setFont('helvetica', 'normal');
+            doc.text(formattedValidDate, pageWidth - margin - 30, yPosition);
+
+            yPosition += 10;
+
+            // Student Information Box
+            doc.setFillColor(239, 246, 255);
+            doc.setDrawColor(59, 130, 246);
+            doc.roundedRect(margin, yPosition, contentWidth, 28, 2, 2, 'FD');
+
+            yPosition += 7;
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(...textColor);
+            doc.text('Student Name:', margin + 5, yPosition);
+            doc.setFont('helvetica', 'normal');
+            doc.text(quotationData.studentName || 'General Quotation', margin + 40, yPosition);
+
+            if (quotationData.isNewStudent) {
+                doc.setFillColor(254, 243, 199);
+                doc.setDrawColor(146, 64, 14);
+                doc.roundedRect(pageWidth - margin - 45, yPosition - 4, 40, 5, 1, 1, 'FD');
+                doc.setFontSize(8);
+                doc.setTextColor(146, 64, 14);
+                doc.setFont('helvetica', 'bold');
+                doc.text('PENDING ADMISSION', pageWidth - margin - 43, yPosition);
+            }
+
+            yPosition += 6;
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(...textColor);
+            doc.text('Student Number:', margin + 5, yPosition);
+            doc.setFont('helvetica', 'normal');
+            doc.text(quotationData.studentId || 'N/A', margin + 40, yPosition);
+
+            yPosition += 6;
+            doc.setFont('helvetica', 'bold');
+            doc.text('Academic Year:', margin + 5, yPosition);
+            doc.setFont('helvetica', 'normal');
+            doc.text(quotationData.academicYear || 'N/A', margin + 40, yPosition);
+
+            doc.setFont('helvetica', 'bold');
+            doc.text('Semester:', margin + 90, yPosition);
+            doc.setFont('helvetica', 'normal');
+            doc.text(quotationData.semester ? 'Semester ' + quotationData.semester : 'N/A', margin + 110, yPosition);
+
+            yPosition += 5;
+
+            // Description
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Description:', margin + 5, yPosition);
+            doc.setFont('helvetica', 'italic');
+            doc.setTextColor(...grayColor);
+            const description = quotationData.quotationDescription || 'Standard Quotation';
+            doc.text(description, margin + 30, yPosition, { maxWidth: contentWidth - 30 });
+
+            yPosition += 10;
+
+            // Fees Table Header
+            doc.setFillColor(243, 244, 246);
+            doc.setDrawColor(59, 130, 246);
+            doc.rect(margin, yPosition, contentWidth, 8, 'FD');
+
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(...textColor);
+            doc.text('Fee Type', margin + 2, yPosition + 5);
+            doc.text('Description', margin + 50, yPosition + 5);
+            doc.text('Amount (ZMW)', pageWidth - margin - 30, yPosition + 5);
+
+            yPosition += 8;
+
+            // Fees Table Body
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9);
+
+            let totalAmount = 0;
+            quotationData.items.forEach((item, index) => {
+                // Check if we need a new page
+                if (yPosition > pageHeight - 40) {
+                    doc.addPage();
+                    yPosition = margin;
+                }
+
+                let cleanDescription = item.description || item.feeTypeName;
+                cleanDescription = cleanDescription.replace(/\s*\(OtherFees\)\s*/gi, '');
+                cleanDescription = cleanDescription.replace(/\s*\(FeeConfiguration\)\s*/gi, '');
+
+                // Alternating row colors
+                if (index % 2 === 0) {
+                    doc.setFillColor(249, 250, 251);
+                    doc.rect(margin, yPosition, contentWidth, 7, 'F');
+                }
+
+                doc.setDrawColor(229, 231, 235);
+                doc.line(margin, yPosition, pageWidth - margin, yPosition);
+
+                doc.text(item.feeTypeName.substring(0, 25), margin + 2, yPosition + 5);
+                doc.text(cleanDescription.substring(0, 40), margin + 50, yPosition + 5);
+                doc.text('K ' + parseFloat(item.amount).toFixed(2), pageWidth - margin - 30, yPosition + 5);
+
+                totalAmount += parseFloat(item.amount);
+                yPosition += 7;
+            });
+
+            // Total Row
+            doc.setFillColor(243, 244, 246);
+            doc.rect(margin, yPosition, contentWidth, 8, 'F');
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(11);
+            doc.setTextColor(...textColor);
+            doc.text('Total Amount:', pageWidth - margin - 60, yPosition + 5);
+            doc.setTextColor(5, 150, 105);
+            doc.text('K ' + totalAmount.toFixed(2), pageWidth - margin - 30, yPosition + 5);
+
+            yPosition += 12;
+
+            // Amount in Words
+            doc.setFillColor(249, 250, 251);
+            doc.setDrawColor(59, 130, 246);
+            doc.roundedRect(margin, yPosition, contentWidth, 12, 2, 2, 'FD');
+            yPosition += 5;
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(...textColor);
+            doc.text('Amount in Words:', margin + 3, yPosition);
+            doc.setFont('helvetica', 'italic');
+            const amountWords = formatAmountInWords(totalAmount);
+            doc.text(amountWords, margin + 3, yPosition + 4, { maxWidth: contentWidth - 6 });
+
+            yPosition += 15;
+
+            // Important Notes
+            if (yPosition > pageHeight - 50) {
+                doc.addPage();
+                yPosition = margin;
+            }
+
+            doc.setFillColor(255, 247, 237);
+            doc.setDrawColor(254, 215, 170);
+            doc.roundedRect(margin, yPosition, contentWidth, 20, 2, 2, 'FD');
+            yPosition += 6;
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(146, 64, 14);
+            doc.text('Important Notes:', margin + 3, yPosition);
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(120, 53, 15);
+            yPosition += 5;
+            doc.text('• This is a quotation and not a receipt. Payment must be made to validate.', margin + 5, yPosition);
+            yPosition += 4;
+            doc.text('• Fees are subject to change without prior notice.', margin + 5, yPosition);
+
+            // Footer
+            yPosition = pageHeight - 20;
+            doc.setDrawColor(229, 231, 235);
+            doc.line(margin, yPosition, pageWidth - margin, yPosition);
+            yPosition += 5;
+            doc.setFontSize(8);
+            doc.setTextColor(...grayColor);
+            doc.setFont('helvetica', 'italic');
+            doc.text('This is a computer-generated quotation and does not require a signature.', pageWidth / 2, yPosition, { align: 'center' });
+            yPosition += 4;
+            doc.text('For inquiries, please contact finance@edenuniversity.edu.zm', pageWidth / 2, yPosition, { align: 'center' });
+
+            // Open PDF in new window
+            const pdfBlob = doc.output('blob');
+            const pdfUrl = URL.createObjectURL(pdfBlob);
+            window.open(pdfUrl, '_blank');
+        }
+
+        function formatAmountInWords(amount) {
+            const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+            const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+            const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+
+            function numberToWords(num) {
+                if (num === 0) return 'Zero';
+                let words = '';
+                if (Math.floor(num / 1000000) > 0) {
+                    words += numberToWords(Math.floor(num / 1000000)) + ' Million ';
+                    num %= 1000000;
+                }
+                if (Math.floor(num / 1000) > 0) {
+                    words += numberToWords(Math.floor(num / 1000)) + ' Thousand ';
+                    num %= 1000;
+                }
+                if (Math.floor(num / 100) > 0) {
+                    words += ones[Math.floor(num / 100)] + ' Hundred ';
+                    num %= 100;
+                }
+                if (num > 0) {
+                    if (num < 10) {
+                        words += ones[num];
+                    } else if (num >= 10 && num < 20) {
+                        words += teens[num - 10];
+                    } else {
+                        words += tens[Math.floor(num / 10)];
+                        if (num % 10 > 0) {
+                            words += ' ' + ones[num % 10];
+                        }
+                    }
+                }
+                return words.trim();
+            }
+
+            const integerPart = Math.floor(amount);
+            const decimalPart = Math.round((amount - integerPart) * 100);
+            let result = numberToWords(integerPart);
+            if (decimalPart > 0) {
+                result += ' and ' + decimalPart + '/100';
+            }
+            return result + ' Kwacha Only.';
+        }
+
+        document.getElementById('quotationForm').addEventListener('submit', function(e) {
+            const primarySchoolId = document.getElementById('primaryFilterSchool') ? document.getElementById('primaryFilterSchool').value : '';
+            const primaryProgrammeId = document.getElementById('primaryFilterProgramme') ? document.getElementById('primaryFilterProgramme').value : '';
+
+            if (!primarySchoolId || !primaryProgrammeId) {
+                e.preventDefault();
+                alert('Please select both School and Programme before generating quotations.');
+                return false;
+            }
+
+            const inputs = document.querySelectorAll('.student-id-input');
+            const studentIds = Array.from(inputs).map(i => i.value.trim()).filter(Boolean).join(',');
+            document.getElementById('hiddenStudentIds').value = studentIds;
+
+            const selectedFees = document.querySelectorAll('input[name="SelectedFeeIds"]:checked');
+            if (selectedFees.length === 0) {
+                e.preventDefault();
+                alert('Please select at least one fee before generating quotations.');
+                return false;
+            }
+
+            const submitBtn = document.getElementById('generateQuotationBtn');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="material-icons mr-2 animate-spin">sync</i>Generating...';
+            }
+        });
+    </script>
+}

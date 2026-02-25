@@ -1,0 +1,534 @@
+﻿@using SIS.Models.Admin
+@model SIS.Models.ViewModels.DocketLookupIndexViewModel
+@{
+    ViewData["Title"] = "Docket Lookup";
+    var programmes = ViewData["programmes"] as List<Programme>;
+}
+
+<div class="min-h-screen bg-slate-50 p-6">
+    @Html.AntiForgeryToken()
+
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+        <div class="flex items-center text-slate-800">
+            <i class="material-icons text-3xl mr-3 text-primary-600">people_alt</i>
+            <div>
+                <h1 class="text-2xl font-bold">Docket Lookup</h1>
+                <p class="text-sm text-slate-600">@Model.JurisdictionInfo</p>
+            </div>
+        </div>
+        <div class="mt-4 md:mt-0 flex items-center space-x-4">
+            <div class="flex items-center bg-white rounded-lg px-4 py-2 shadow-sm border border-slate-200">
+                <i class="material-icons text-primary-600 mr-2">admin_panel_settings</i>
+                <span class="text-sm font-medium text-slate-700">Role: @Model.UserRole</span>
+            </div>
+            <!-- STUDENTLIST BUTTON -->
+            <a href="@Url.Action("Complice", "Dockets")"
+               class="inline-flex items-center px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 transition-colors">
+                <i class="material-icons mr-2 text-sm">list_alt</i>
+                Docket Lists
+            </a>
+        </div>
+    </div>
+
+    <!-- Search Section -->
+    <div class="bg-white rounded-xl shadow-sm mb-6 border border-slate-200">
+        <div class="p-6">
+            <div class="flex items-center mb-4">
+                <i class="material-icons text-primary-600 mr-2">search</i>
+                <h2 class="text-lg font-semibold text-slate-800">Search Dockets</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                <!-- Search Input -->
+                <div class="md:col-span-4">
+                    <label for="programme" class="block text-sm font-medium text-slate-700 mb-2">Programme</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                            <i class="material-icons text-slate-400 text-sm">search</i>
+                        </div>
+                        <select id="programme"
+                                class="block w-full py-3 px-4 text-sm border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 transition-colors">
+                            @if(programmes != null && programmes.Any())
+                            {
+                                foreach(var p in programmes)
+                                {
+                                    <option value="@p.Id">@p.Name</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                </div>
+
+                <div class="md:col-span-2">
+                    <label for="student" class="block text-sm font-medium text-slate-700 mb-2">Student Number<i style="color:red;">(If single student)</i></label>
+                    <input text id="student"
+                            class="block w-full py-3 px-4 text-sm border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 transition-colors" />
+                </div>
+
+                <div class="md:col-span-2">
+                    <label for="docket" class="block text-sm font-medium text-slate-700 mb-2">Docket</label>
+                    <select id="docket"
+                            class="block w-full py-3 px-4 text-sm border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 transition-colors">
+                        <option value="1">CA 1</option>
+                        <option value="2">CA 2</option>
+                        <option value="3">Exam</option>
+                        <option value="4">Sup/Deffered</option>
+                    </select>
+                </div>
+
+                <!-- Search Type -->
+                <div class="md:col-span-1">
+                    <label for="year" class="block text-sm font-medium text-slate-700 mb-2">Year</label>
+                    <select id="year"
+                            class="block w-full py-3 px-4 text-sm border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 transition-colors">
+                        <option value="1">First</option>
+                        <option value="2">Second</option>
+                        <option value="3">Third</option>
+                        <option value="4">Fourth</option>
+                        <option value="5">Fifth</option>
+                        <option value="6">Sixth</option>
+                        <option value="7">Seventh</option>
+                    </select>
+                </div>
+
+                <!-- Search Type -->
+                <div class="md:col-span-1">
+                    <label for="semester" class="block text-sm font-medium text-slate-700 mb-2">Semester</label>
+                    <select id="semester"
+                            class="block w-full py-3 px-4 text-sm border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 transition-colors">
+                        <option value="1">First</option>
+                        <option value="2">Second</option>
+                    </select>
+                </div>
+
+                <!-- Search Button -->
+                <div class="md:col-span-2">
+                    <button type="button"
+                            id="searchButton"
+                            class="w-full inline-flex items-center justify-center px-4 py-3 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 transition-colors">
+                        <i class="material-icons mr-2 text-sm">search</i>
+                        Search
+                    </button>
+                </div>
+
+                <!-- Clear Button -->
+                @* <div class="md:col-span-1">
+                    <button type="button"
+                            id="clearButton"
+                            class="w-full inline-flex items-center justify-center px-4 py-3 bg-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-300 focus:ring-4 focus:ring-slate-300 transition-colors">
+                        <i class="material-icons text-sm">clear</i>
+                    </button>
+                </div> *@
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Search Results Panel -->
+        <div class="lg:col-span-1">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col" style="height: calc(100vh - 320px);">
+                <div class="p-4 border-b border-slate-200 flex-shrink-0">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-slate-800">Eligible Students</h3>
+                        <span id="resultsCount" class="text-sm text-slate-600 bg-slate-100 px-2 py-1 rounded-full">0 results</span>
+                    </div>
+                </div>
+
+                <!-- Scrollable Results Container -->
+                <div class="flex-1 overflow-hidden">
+                    <div id="searchResults" class="h-full overflow-y-auto p-4">
+                        <div class="text-center py-12">
+                            <i class="material-icons text-6xl text-slate-300 mb-4">search</i>
+                            <p class="text-slate-500 text-lg font-medium">Start Your Search</p>
+                            <p class="text-slate-400 text-sm mt-2">Enter a search term to find students within your jurisdiction</p>
+                        </div>
+                    </div>
+
+                    <!-- Loading State -->
+                    <div id="searchLoading" class="hidden h-full flex items-center justify-center p-4">
+                        <div class="inline-flex items-center">
+                            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
+                            <span class="ml-2 text-slate-600">Searching...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Student Details Panel -->
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col" style="height: calc(100vh - 320px);">
+                <div class="p-4 border-b border-slate-200 flex-shrink-0">
+                    <h3 class="text-lg font-semibold text-slate-800">Student Dockets</h3>
+                </div>
+                <iframe id="pdfFrame"
+                        class="w-full h-screen border-0 rounded-md shadow"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success/Error Toast Notification -->
+<div id="toastNotification" class="hidden fixed bottom-4 right-4 p-4 rounded-lg shadow-lg max-w-sm z-50">
+    <div class="flex items-center">
+        <i id="toastIcon" class="material-icons mr-2"></i>
+        <p id="toastMessage"></p>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const semester = document.getElementById('semester');
+            const year = document.getElementById('year');
+            const programme = document.getElementById('programme');
+            const docket = document.getElementById('docket');
+            const student = document.getElementById('student');
+            const searchButton = document.getElementById('searchButton');
+            const clearButton = document.getElementById('clearButton');
+            const searchResults = document.getElementById('searchResults');
+            const searchLoading = document.getElementById('searchLoading');
+            const resultsCount = document.getElementById('resultsCount');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const studentDetails = document.getElementById('studentDetails');
+            const studentTabs = document.getElementById('studentTabs');
+            const tabContent = document.getElementById('tabContent');
+
+            let currentStudentId = null;
+            let currentTab = 'profile';
+
+            const iframe = document.getElementById("pdfFrame");
+            iframe.onload = () => {
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                const style = iframeDoc.createElement("style");
+                style.textContent = `
+                  :root {
+                    --toolbar-bg-color: #f9fafb !important;
+                    --page-color: #ffffff !important;
+                    --text-color: #111827 !important;
+                  }
+                  #viewerContainer {
+                    background-color: #ffffff !important;
+                  }
+                `;
+                //iframeDoc.head.appendChild(style);
+            };
+
+
+            // Search functionality
+            function performSearch() {
+                const searchTerm = programme.value.trim();
+                if (!searchTerm) {
+                    showToast('Please enter search terms', 'warning');
+                    return;
+                }
+
+                // Show loading state
+                searchLoading.classList.remove('hidden');
+                searchResults.classList.add('hidden');
+
+                // Prepare search data
+                const searchData = {
+                    semester: semester.value,
+                    year: year.value,
+                    programme: programme.value,
+                    docket: docket.value,
+                    studentNumber: student
+                };
+
+                // Make AJAX request
+                fetch('/Compliance/DocketLookup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    },
+                    body: `semester=${encodeURIComponent(semester.value)}&year=${encodeURIComponent(year.value)}&programme=${encodeURIComponent(programme.value)}&docket=${encodeURIComponent(docket.value)}&studentNumber=${encodeURIComponent(student.value)}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    searchLoading.classList.add('hidden');
+                    searchResults.classList.remove('hidden');
+
+                    if (data.success) {
+                        console.log("Students: ", data.students);
+                        displaySearchResults(data);
+                    } else {
+                        showToast(data.message || 'Search failed', 'error');
+                        displaySearchResults([]);
+                    }
+                })
+                .catch(error => {
+                    console.error('Search error:', error);
+                    searchLoading.classList.add('hidden');
+                    searchResults.classList.remove('hidden');
+                    showToast('An error occurred while searching', 'error');
+                    displaySearchResults([]);
+                });
+            }
+
+            function displaySearchResults(data) {
+                students = data.students;
+                downloadUrl = data.downloadUrl;
+                resultsCount.textContent = `${students.length} result${students.length !== 1 ? 's' : ''}`;
+
+                if (students.length === 0) {
+                    searchResults.innerHTML = `
+                        <div class="text-center py-8">
+                            <i class="material-icons text-4xl text-slate-300 mb-2">search_off</i>
+                            <p class="text-slate-500 font-medium">No students found</p>
+                            <p class="text-slate-400 text-sm mt-1">Try adjusting your search terms</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let resultsHtml = '<div class="space-y-3">';
+                students.forEach(student => {
+                    var regstatus = 'Unregistered';
+
+                    if(student.registrationStatus){
+                        regstatus = 'Registered';
+                    }
+                    const statusColor = getStatusColor(regstatus);
+                    const feeStatus = student.outstandingFees > 0 ? 'Outstanding' : 'Cleared';
+                    const feeStatusColor = student.outstandingFees > 0 ? 'text-red-600 bg-red-50' : 'text-green-600 bg-green-50';
+
+                    resultsHtml += `
+                        <div class="border border-slate-200 rounded-lg p-4 hover:bg-slate-50 cursor-pointer transition-colors student-result"
+                             data-student-id="${student.studentId}">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center mb-2">
+                                        <h4 class="font-semibold text-slate-800">${student.fullName}</h4>
+                                        <span class="ml-2 px-2 py-1 text-xs font-medium rounded-full ${statusColor}">
+                                            ${regstatus}
+                                        </span>
+                                    </div>
+                                    <p class="text-sm text-slate-600 mb-1">
+                                        <i class="material-icons text-xs mr-1">badge</i>
+                                        ${student.studentIdNumber}
+                                    </p>
+                                    <p class="text-sm text-slate-600 mb-1">
+                                        <i class="material-icons text-xs mr-1">school</i>
+                                        ${student.programme}
+                                    </p>
+                                    <p class="text-sm text-slate-600 mb-2">
+                                        <i class="material-icons text-xs mr-1">business</i>
+                                        ${student.school}
+                                    </p>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-xs text-slate-500">Year ${student.studentCurrentYear} • ${student.academicYear}</span>
+                                        <span class="text-xs font-medium px-2 py-1 rounded-full ${feeStatusColor}">
+                                            ${feeStatus}
+                                        </span>
+                                    </div>
+                                </div>
+                                <i class="material-icons text-slate-400 ml-2">chevron_right</i>
+                            </div>
+                        </div>
+                    `;
+                });
+                resultsHtml += '</div>';
+
+                searchResults.innerHTML = resultsHtml;
+                loadPdf(downloadUrl);
+
+                // Attach click handlers
+                document.querySelectorAll('.student-result').forEach(element => {
+                    element.addEventListener('click', function() {
+                        const studentId = parseInt(this.dataset.studentId);
+                        selectStudent(studentId);
+                    });
+                });
+            }
+
+            function loadPdf(url) {
+                // PDF.js official viewer hosted by Mozilla on GitHub
+                const viewerBase = "/pdfjs/web/viewer.html";
+
+                // Append your PDF file URL as a query parameter
+                const fullViewerUrl = `${viewerBase}?file=${url}`;
+                console.log(fullViewerUrl);
+
+                // Load into iframe
+                document.getElementById("pdfFrame").src = fullViewerUrl;
+            }
+
+            function selectStudent(studentId) {
+                currentStudentId = studentId;
+
+                // Highlight selected student
+                document.querySelectorAll('.student-result').forEach(el => {
+                    el.classList.remove('bg-primary-50', 'border-primary-200');
+                });
+
+                const selectedElement = document.querySelector(`[data-student-id="${studentId}"]`);
+                if (selectedElement) {
+                    selectedElement.classList.add('bg-primary-50', 'border-primary-200');
+                }
+
+                // Hide the default "No Student Selected" message and show tabs
+                studentDetails.classList.add('hidden');
+                studentTabs.classList.remove('hidden');
+
+                // Show admin actions if user has appropriate role
+                showAdminActionsIfAuthorized();
+
+                // Load profile tab
+                loadStudentTab('profile');
+            }
+
+            function loadStudentTab(tabName) {
+                if (!currentStudentId) {
+                    console.log('No currentStudentId, returning early');
+                    return;
+                }
+
+                currentTab = tabName;
+
+                // Update tab buttons
+                document.querySelectorAll('.tab-button').forEach(button => {
+                    button.classList.remove('active', 'border-primary-500', 'text-primary-600');
+                    button.classList.add('border-transparent', 'text-slate-500');
+                });
+
+                const activeTab = document.querySelector(`[data-tab="${tabName}"]`);
+                if (activeTab) {
+                    activeTab.classList.add('active', 'border-primary-500', 'text-primary-600');
+                    activeTab.classList.remove('border-transparent', 'text-slate-500');
+                }
+
+                // Show loading state
+                tabContent.innerHTML = `
+                    <div class="text-center py-8">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
+                        <p class="text-slate-600 mt-2">Loading...</p>
+                    </div>
+                `;
+
+                // Load content
+                const endpoints = {
+                    'profile': `/StudentLookup/GetStudentProfile/${currentStudentId}`,
+                    'financials': `/StudentLookup/GetStudentFinancials/${currentStudentId}`,
+                    'results': `/StudentLookup/GetStudentResults/${currentStudentId}`
+                };
+
+                fetch(endpoints[tabName])
+                    .then(response => response.text())
+                    .then(html => {
+                        tabContent.innerHTML = html;
+                    })
+                    .catch(error => {
+                        console.error('Error loading tab content:', error);
+                        tabContent.innerHTML = `
+                            <div class="text-center py-8">
+                                <i class="material-icons text-4xl text-red-300 mb-2">error</i>
+                                <p class="text-slate-500">Error loading content</p>
+                                <button onclick="loadStudentTab('${tabName}')" class="mt-2 text-primary-600 hover:text-primary-700">
+                                    Try Again
+                                </button>
+                            </div>
+                        `;
+                    });
+            }
+
+            function clearSearch() {
+                searchResults.innerHTML = `
+                    <div class="text-center py-12">
+                        <i class="material-icons text-6xl text-slate-300 mb-4">search</i>
+                        <p class="text-slate-500 text-lg font-medium">Start Your Search</p>
+                        <p class="text-slate-400 text-sm mt-2">Enter a search term to find students within your jurisdiction</p>
+                    </div>
+                `;
+                resultsCount.textContent = '0 results';
+
+                // Show default message and hide tabs
+                studentDetails.classList.remove('hidden');
+                studentTabs.classList.add('hidden');
+
+                // Hide admin actions
+                document.getElementById('adminActions').classList.add('hidden');
+
+                currentStudentId = null;
+            }
+
+            function getStatusColor(status) {
+                const statusColors = {
+                    'Registered': 'text-green-600 bg-green-50',
+                    'Unregistered': 'text-amber-600 bg-amber-50',
+                    'Pending': 'text-blue-600 bg-blue-50',
+                    'Suspended': 'text-red-600 bg-red-50',
+                    'Excluded': 'text-red-600 bg-red-50',
+                    'Withdrawn': 'text-slate-600 bg-slate-50'
+                };
+                return statusColors[status] || 'text-slate-600 bg-slate-50';
+            }
+
+            function showToast(message, type = 'info') {
+                const toast = document.getElementById('toastNotification');
+                const toastMessage = document.getElementById('toastMessage');
+                const toastIcon = document.getElementById('toastIcon');
+
+                toastMessage.textContent = message;
+
+                const types = {
+                    'success': { class: 'bg-green-100 text-green-800', icon: 'check_circle' },
+                    'error': { class: 'bg-red-100 text-red-800', icon: 'error' },
+                    'warning': { class: 'bg-amber-100 text-amber-800', icon: 'warning' },
+                    'info': { class: 'bg-blue-100 text-blue-800', icon: 'info' }
+                };
+
+                const typeConfig = types[type] || types.info;
+                toast.className = `fixed bottom-4 right-4 p-4 rounded-lg shadow-lg max-w-sm z-50 ${typeConfig.class}`;
+                toastIcon.textContent = typeConfig.icon;
+
+                toast.classList.remove('hidden');
+                setTimeout(() => {
+                    toast.classList.add('hidden');
+                }, 5000);
+            }
+
+            // Event listeners
+            searchButton.addEventListener('click', performSearch);
+            clearButton.addEventListener('click', clearSearch);
+
+            searchInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    performSearch();
+                }
+            });
+
+            // Tab click handlers
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('tab-button') || e.target.closest('.tab-button')) {
+                    const tabButton = e.target.classList.contains('tab-button') ? e.target : e.target.closest('.tab-button');
+                    const tabName = tabButton.dataset.tab;
+                    loadStudentTab(tabName);
+                }
+            });
+
+            // Make loadStudentTab globally available for retry buttons
+            window.loadStudentTab = loadStudentTab;
+
+            // Check user role and show admin actions
+            function showAdminActionsIfAuthorized() {
+                // Check if user has Admin or Registrar role
+                const userRole = '@Model.UserRole';
+                if (userRole === 'Admin' || userRole === 'Registrar' || userRole === 'VC' || userRole === 'DVC') {
+                    document.getElementById('adminActions').classList.remove('hidden');
+                }
+            }
+
+            // Handle student administration button click
+            document.getElementById('studentAdminButton').addEventListener('click', function() {
+                if (currentStudentId) {
+                    window.location.href = `/StudentAdministration/Index/${currentStudentId}`;
+                }
+            });
+        });
+    </script>
+}

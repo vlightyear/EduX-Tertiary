@@ -1,0 +1,190 @@
+@{
+    ViewData["Title"] = "Payment Failed";
+}
+
+<style>
+    .payment-failed-container {
+        position: relative;
+        z-index: 2;
+        max-width: 500px;
+        width: 90%;
+        margin: 2rem auto;
+        padding: 2rem 0;
+    }
+
+    .failed-card {
+        background: white;
+        border-radius: 24px;
+        padding: 60px 40px;
+        text-align: center;
+        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        transform: translateY(20px);
+        opacity: 0;
+        animation: slideIn 0.8s ease-out forwards;
+    }
+
+    @@keyframes slideIn {
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .failed-icon {
+        width: 120px;
+        height: 120px;
+        margin: 0 auto 30px;
+        background: linear-gradient(135deg, #dc3545, #c82333);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+    }
+
+    .error-mark {
+        width: 60px;
+        height: 60px;
+        fill: white;
+    }
+
+    .error-mark path {
+        stroke-dasharray: 100;
+        stroke-dashoffset: 0;
+    }
+
+    .failed-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #1f2937, #374151);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 16px;
+        letter-spacing: -0.02em;
+    }
+
+    .failed-subtitle {
+        font-size: 1.1rem;
+        color: #6b7280;
+        margin-bottom: 32px;
+        line-height: 1.6;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 16px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        padding: 16px 32px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #dc3545, #c82333);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(220, 53, 69, 0.4);
+    }
+
+    .btn-secondary {
+        background: rgba(0, 0, 0, 0.05);
+        color: #374151;
+        border: 1px solid rgba(55, 65, 81, 0.2);
+    }
+
+    .btn-secondary:hover {
+        background: rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    @@keyframes ripple {
+        to {
+            transform: scale(4);
+            opacity: 0;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .failed-card {
+            padding: 40px 24px;
+            margin: 20px;
+        }
+        
+        .failed-title {
+            font-size: 2rem;
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+        }
+        
+        .btn {
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="payment-failed-container">
+    <div class="failed-card">
+        <div class="failed-icon">
+            <svg class="error-mark" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M18 6L6 18" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M6 6L18 18" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </div>
+        
+        <h1 class="failed-title">Payment Failed!</h1>
+        <p class="failed-subtitle">Unfortunately, your payment could not be processed. Please try again or contact support if the issue persists.</p>
+        
+ 
+    </div>
+</div>
+
+<script>
+    // Add click handlers for buttons
+    document.querySelectorAll('.btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            // Create ripple effect
+            const ripple = document.createElement('span');
+            const rect = btn.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height);
+            const x = e.clientX - rect.left - size / 2;
+            const y = e.clientY - rect.top - size / 2;
+            
+            ripple.style.width = ripple.style.height = size + 'px';
+            ripple.style.left = x + 'px';
+            ripple.style.top = y + 'px';
+            ripple.style.position = 'absolute';
+            ripple.style.borderRadius = '50%';
+            ripple.style.backgroundColor = 'rgba(255, 255, 255, 0.5)';
+            ripple.style.transform = 'scale(0)';
+            ripple.style.animation = 'ripple 0.6s linear';
+            ripple.style.pointerEvents = 'none';
+            
+            btn.appendChild(ripple);
+            
+            setTimeout(() => {
+                ripple.remove();
+            }, 600);
+        });
+    });
+</script>

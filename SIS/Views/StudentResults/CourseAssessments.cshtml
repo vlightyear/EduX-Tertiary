@@ -1,0 +1,858 @@
+﻿@model SIS.Models.Admin.CourseAssessmentDetailsViewModel
+
+<div class="min-h-[90vh] p-4 bg-gray-50">
+
+    <!-- ⭐ NEW: Tamper Detection Alert Banner - ADD THIS ENTIRE BLOCK -->
+    @if (Model.AssessmentGroups.Any(g => g.StudentAssessments.Any(s => s.Scores.Values.Any(sc => sc.IsTampered))))
+    {
+        var tamperedCount = Model.AssessmentGroups
+        .SelectMany(g => g.StudentAssessments)
+        .SelectMany(s => s.Scores.Values)
+        .Count(sc => sc.IsTampered);
+
+        <div class="mb-4 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg animate-pulse">
+            <div class="flex items-center">
+                <i class="material-icons text-red-600 mr-2 text-2xl">report_problem</i>
+                <div class="flex-1">
+                    <strong class="font-medium text-red-800">Data Integrity Warning:</strong>
+                    <span class="text-red-700 ml-2">
+                        @tamperedCount score(s) have failed integrity checks. These are marked with
+                        <i class="material-icons text-sm align-middle">warning</i> icons.
+                        Click the icons for details.
+                    </span>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Header Section -->
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-800 flex items-center">
+            <i class="material-icons mr-2">assignment</i>
+            <span>@Model.CourseCode - @Model.CourseName</span>
+        </h1>
+        <div class="flex space-x-4 items-center">
+            <!-- Save Status Indicator -->
+            <div id="save-status" class="px-4 py-2 rounded-lg text-sm font-medium">
+                <span class="text-gray-500 flex items-center">
+                    <i class="material-icons text-sm mr-1">info</i>
+                    No changes
+                </span>
+            </div>
+
+            <div class="relative">
+                <input type="text"
+                       id="studentSearch"
+                       placeholder="Search by name or ID..."
+                       class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <i class="material-icons text-gray-400">search</i>
+                </div>
+                <button id="clearSearch" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600">
+                    <i class="material-icons">close</i>
+                </button>
+            </div>
+
+            <button type="button"
+                    id="btn-save-scores"
+                    onclick="saveAllScores()"
+                    class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center min-w-[140px] justify-center">
+                <i class="material-icons mr-2">save</i>
+                Save All Scores
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="bg-white rounded-lg shadow-sm">
+        <form id="assessmentForm">
+            @Html.AntiForgeryToken()
+
+            <!-- Tab Navigation -->
+            @if (Model.AssessmentGroups.Any())
+            {
+                <div class="border-b border-gray-200">
+                    <ul class="flex flex-wrap -mb-px text-sm font-medium text-center" role="tablist">
+                        @for (int i = 0; i < Model.AssessmentGroups.Count; i++)
+                        {
+                            var group = Model.AssessmentGroups[i];
+                            <li class="mr-2" role="presentation">
+                                <button class="inline-block p-4 border-b-2 rounded-t-lg hover:text-primary-600 hover:border-primary-300 @(i == 0 ? "text-primary-600 border-primary-600" : "text-gray-500 border-transparent")"
+                                        id="tab-@group.GroupId"
+                                        data-tabs-target="#content-@group.GroupId"
+                                        type="button"
+                                        role="tab"
+                                        aria-controls="content-@group.GroupId"
+                                        aria-selected="@(i == 0 ? "true" : "false")"
+                                        onclick="activateTab('@group.GroupId')">
+                                    @group.AcademicYear - @group.ModeOfStudy
+                                    <span class="ml-1 text-xs inline-flex items-center justify-center px-2 py-1 rounded-full bg-gray-100 text-gray-700">
+                                        @group.StudentAssessments.Count
+                                    </span>
+                                </button>
+                            </li>
+                        }
+                    </ul>
+                </div>
+
+                <!-- Tab Content -->
+                <div class="p-4">
+                    @for (int i = 0; i < Model.AssessmentGroups.Count; i++)
+                    {
+                        var group = Model.AssessmentGroups[i];
+                        <div class="tab-content assessment-group @(i == 0 ? "" : "hidden")"
+                             id="content-@group.GroupId"
+                             role="tabpanel"
+                             aria-labelledby="tab-@group.GroupId"
+                             data-academic-year-id="@group.AcademicYearId"
+                             data-semester="@group.Semester">
+
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm text-gray-600 student-table">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-6 py-4 text-left">Student ID</th>
+                                            <th class="px-6 py-4 text-left">Student Name</th>
+                                            @foreach (var assessment in Model.Assessments)
+                                            {
+                                                <th class="px-6 py-4 text-center">
+                                                    <div>@assessment.Name</div>
+                                                    <div>(%)</div>
+
+                                                </th>
+                                            }
+                                            <th class="px-6 py-4 text-center">
+                                                <div>Total</div>
+                                                <div class="text-xs text-gray-500">(Weighted)</div>
+                                            </th>
+                                            <th class="px-6 py-4 text-center">
+                                                <div>Grade</div>
+                                                <div class="text-xs text-gray-500">(Letter)</div>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-200">
+                                        @foreach (var student in group.StudentAssessments)
+                                        {
+                                            <tr data-student-id="@student.StudentId"
+                                                data-student-name="@student.StudentName.ToLower()"
+                                                data-student-number="@student.StudentNumber.ToLower()"
+                                                data-course-id="@Model.CourseId"
+                                                class="student-row assessment-row hover:bg-gray-50 transition-colors">
+                                                <td class="px-6 py-4">@student.StudentNumber</td>
+                                                <td class="px-6 py-4">@student.StudentName</td>
+                                                @foreach (var assessment in Model.Assessments)
+                                                {
+                                                    if (student.Scores.TryGetValue(assessment.Id, out var score))
+                                                    {
+                                                        <td class="px-6 py-4 relative" style="width: 100px;">
+                                                            <!-- ⭐ MODIFIED: Added relative positioning and tamper styling -->
+                                                            <div class="relative">
+                                                                <input type="number"
+                                                                       class="w-full text-center rounded-lg @(score.IsTampered ? "border-red-500 bg-red-50" : "border-gray-300") focus:border-primary-500 focus:ring focus:ring-primary-200 transition-colors text-sm score-input"
+                                                                       data-assessment-id="@assessment.Id"
+                                                                       data-assessment-name="@assessment.Name"
+                                                                       data-weight="@assessment.WeightPercentage"
+                                                                       data-score-id="@(score.ScoreId ?? 0)"
+                                                                       value="@(score.Score == 0 ? "" : score.Score.ToString())"
+                                                                       min="0"
+                                                                       max="100"
+                                                                       step="1"
+                                                                       placeholder="-"
+                                                                       onchange="calculateWeightedTotal(this)">
+
+                                                                <!-- ⭐ NEW: Tamper Warning Icon -->
+                                                                @if (score.IsTampered)
+                                                                {
+                                                                    <button type="button"
+                                                                            onclick="showTamperModal(@score.ScoreId, '@student.StudentName', '@assessment.Name')"
+                                                                            class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 shadow-lg z-10 animate-pulse"
+                                                                            title="TAMPER DETECTED - Click for details">
+                                                                        <i class="material-icons text-sm">warning</i>
+                                                                    </button>
+                                                                }
+                                                            </div>
+                                                        </td>
+                                                    }
+                                                    else
+                                                    {
+                                                        <td class="px-6 py-4" style="width: 100px;">
+                                                            <input type="number"
+                                                                   class="w-full text-center rounded-lg border-gray-300 focus:border-primary-500 focus:ring focus:ring-primary-200 transition-colors text-sm score-input"
+                                                                   data-assessment-id="@assessment.Id"
+                                                                   data-assessment-name="@assessment.Name"
+                                                                   data-weight="@assessment.WeightPercentage"
+                                                                   value=""
+                                                                   min="0"
+                                                                   max="100"
+                                                                   step="0.1"
+                                                                   placeholder="-"
+                                                                   onchange="calculateWeightedTotal(this)">
+                                                        </td>
+                                                    }
+                                                }
+                                                <td class="px-6 py-4 text-center font-medium">
+                                                    <span class="total-score">@student.CalculateWeightedTotal()</span>
+                                                </td>
+                                                <td class="px-6 py-4 text-center font-medium">
+                                                    <span class="grade-letter text-lg font-bold"></span>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="p-8 text-center">
+                    <div class="text-gray-500">
+                        <i class="material-icons text-5xl mb-3">assignment_ind</i>
+                        <p>No students found for this course.</p>
+                    </div>
+                </div>
+            }
+        </form>
+    </div>
+</div>
+
+<!-- ⭐ NEW: Tamper Detection Modal - ADD THIS ENTIRE BLOCK -->
+<div id="tamperModal" class="hidden fixed inset-0 z-50">
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-lg shadow-xl w-full max-w-2xl">
+                <!-- Modal Header -->
+                <div class="px-6 py-4 border-b border-gray-200 bg-red-50">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <i class="material-icons text-red-600 mr-2">warning</i>
+                            <h3 class="text-lg font-semibold text-red-900">Data Integrity Alert</h3>
+                        </div>
+                        <button type="button" class="text-gray-400 hover:text-gray-500" onclick="closeTamperModal()">
+                            <i class="material-icons">close</i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="p-6">
+                    <div class="mb-4 p-4 bg-red-50 border-l-4 border-red-500 rounded">
+                        <div class="flex items-start">
+                            <i class="material-icons text-red-600 mr-2 mt-1">error</i>
+                            <div>
+                                <h4 class="font-medium text-red-800 mb-1">Tampering Detected</h4>
+                                <p class="text-red-700 text-sm">
+                                    This score's data integrity check has failed. The score may have been altered outside the system
+                                    or the database record has been compromised.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Student</label>
+                            <div class="px-3 py-2 bg-gray-50 rounded border" id="tamperStudentName"></div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Assessment</label>
+                            <div class="px-3 py-2 bg-gray-50 rounded border" id="tamperAssessmentName"></div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Score ID</label>
+                            <div class="px-3 py-2 bg-gray-50 rounded border font-mono text-sm" id="tamperScoreId"></div>
+                        </div>
+
+                        <div id="tamperDetailsContainer" style="display: none;">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Record Details</label>
+                            <div class="px-3 py-2 bg-gray-50 rounded border text-sm" id="tamperDetails"></div>
+                        </div>
+
+                        <div class="mt-4 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded">
+                            <div class="flex items-start">
+                                <i class="material-icons text-yellow-600 mr-2">info</i>
+                                <div>
+                                    <h5 class="font-medium text-yellow-800 mb-1">Recommended Actions:</h5>
+                                    <ul class="text-yellow-700 text-sm space-y-1 list-disc list-inside">
+                                        <li>Contact system administrator immediately</li>
+                                        <li>Do not modify this score until integrity is restored</li>
+                                        <li>Check audit logs for unauthorized access</li>
+                                        <li>Re-enter the score using the official process to restore integrity</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-between">
+                    <!-- ⭐ NEW: Quick Fix Button -->
+                    <button type="button"
+                            onclick="quickFixTamperedScore()"
+                            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center">
+                        <i class="material-icons mr-1 text-sm">healing</i>
+                        Re-enter Score to Fix
+                    </button>
+
+                    <button type="button"
+                            class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center"
+                            onclick="closeTamperModal()">
+                        <i class="material-icons mr-1">close</i>
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+    <script>
+        // ============================================
+        // CONFIGURATION & INITIALIZATION
+        // ============================================
+
+        // Pass grades data from backend to JavaScript
+        var grades = @Html.Raw(Json.Serialize(Model.Grades));
+
+        // Auto-save configuration
+        let autoSaveTimeout;
+        let hasUnsavedChanges = false;
+        const AUTOSAVE_DELAY = 15000; // 15 seconds
+        const MIN_SCORE = 0;
+        const MAX_SCORE = 100;
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeAutoSave();
+            calculateAllWeightedTotals();
+            console.log('Auto-save initialized with ' + (AUTOSAVE_DELAY / 1000) + ' second delay');
+        });
+
+        // ============================================
+        // AUTO-SAVE FUNCTIONALITY
+        // ============================================
+
+        function initializeAutoSave() {
+            // Track changes on score inputs
+            document.querySelectorAll('.score-input').forEach(input => {
+                input.addEventListener('input', function() {
+                    hasUnsavedChanges = true;
+                    scheduleAutoSave();
+                    updateUnsavedIndicator(true);
+                    calculateWeightedTotal(this);
+                });
+            });
+
+            // Warn before leaving with unsaved changes
+            window.addEventListener('beforeunload', function(e) {
+                if (hasUnsavedChanges) {
+                    var message = 'You have unsaved changes. Are you sure you want to leave?';
+                    e.returnValue = message;
+                    return message;
+                }
+            });
+
+            // Keyboard shortcut (Ctrl+S / Cmd+S)
+            document.addEventListener('keydown', function(e) {
+                if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                    e.preventDefault();
+                    console.log('Keyboard shortcut save triggered');
+                    saveAllScores(false);
+                }
+            });
+        }
+
+        function scheduleAutoSave() {
+            clearTimeout(autoSaveTimeout);
+
+            autoSaveTimeout = setTimeout(function() {
+                if (hasUnsavedChanges) {
+                    console.log('Auto-save triggered');
+                    saveAllScores(true); // true = auto-save mode (silent)
+                }
+            }, AUTOSAVE_DELAY);
+        }
+
+        function updateUnsavedIndicator(hasChanges) {
+            const statusDiv = document.getElementById('save-status');
+
+            if (hasChanges) {
+                statusDiv.innerHTML = `
+                    <span class="text-yellow-600 flex items-center">
+                        <i class="material-icons text-sm mr-1 animate-pulse">fiber_manual_record</i>
+                        Unsaved changes
+                    </span>
+                `;
+            } else {
+                const now = new Date();
+                const timeString = now.toLocaleTimeString();
+                statusDiv.innerHTML = `
+                    <span class="text-green-600 flex items-center">
+                        <i class="material-icons text-sm mr-1">check_circle</i>
+                        Last saved at ${timeString}
+                    </span>
+                `;
+            }
+        }
+
+        // ============================================
+        // TAB FUNCTIONALITY
+        // ============================================
+
+        function activateTab(groupId) {
+            // Hide all tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+
+            // Remove active state from all tabs
+            document.querySelectorAll('[role="tab"]').forEach(tab => {
+                tab.classList.remove('text-primary-600', 'border-primary-600');
+                tab.classList.add('text-gray-500', 'border-transparent');
+                tab.setAttribute('aria-selected', 'false');
+            });
+
+            // Show selected tab content
+            const selectedContent = document.getElementById(`content-${groupId}`);
+            if (selectedContent) {
+                selectedContent.classList.remove('hidden');
+            }
+
+            // Set active state for selected tab
+            const selectedTab = document.getElementById(`tab-${groupId}`);
+            if (selectedTab) {
+                selectedTab.classList.remove('text-gray-500', 'border-transparent');
+                selectedTab.classList.add('text-primary-600', 'border-primary-600');
+                selectedTab.setAttribute('aria-selected', 'true');
+            }
+        }
+
+        // ============================================
+        // CALCULATION FUNCTIONS
+        // ============================================
+
+        function calculateWeightedTotal(input) {
+            const row = input.closest('tr');
+            let weightedTotal = 0;
+            let totalWeight = 0;
+
+            row.querySelectorAll('.score-input').forEach(input => {
+                const score = parseFloat(input.value) || 0;
+                const weight = parseFloat(input.dataset.weight) || 0;
+
+                totalWeight += weight;
+                weightedTotal += (score * weight / 100);
+            });
+
+            // Normalize the weighted total to be out of 100
+            let normalizedTotal = totalWeight > 0 ? (weightedTotal / totalWeight) * 100 : 0;
+
+            // Cap the normalized total at 100
+            normalizedTotal = Math.min(normalizedTotal, 100);
+
+            row.querySelector('.total-score').textContent = normalizedTotal.toFixed(1);
+
+            // Update grade based on the normalized total
+            updateGrade(row, normalizedTotal);
+        }
+
+        function updateGrade(row, totalScore) {
+            const gradeElement = row.querySelector('.grade-letter');
+            let gradeLetter = 'N/A';
+            let gradeClass = '';
+
+            // Find matching grade
+            for (let grade of grades) {
+                if (totalScore >= grade.minScore && totalScore <= grade.maxScore) {
+                    gradeLetter = grade.gradeLetter;
+                    gradeClass = grade.isPassingGrade ? 'text-green-600' : 'text-red-600';
+                    break;
+                }
+            }
+
+            gradeElement.textContent = gradeLetter;
+            gradeElement.className = `grade-letter text-lg font-bold ${gradeClass}`;
+        }
+
+        function calculateAllWeightedTotals() {
+            document.querySelectorAll('.score-input').forEach(input => {
+                calculateWeightedTotal(input);
+            });
+        }
+
+        // ============================================
+        // SEARCH FUNCTIONALITY
+        // ============================================
+
+        const searchInput = document.getElementById('studentSearch');
+        const clearSearchBtn = document.getElementById('clearSearch');
+
+        searchInput.addEventListener('input', filterStudents);
+        clearSearchBtn.addEventListener('click', clearSearch);
+
+        function filterStudents() {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            const studentRows = document.querySelectorAll('.assessment-row');
+
+            studentRows.forEach(row => {
+                const studentName = row.dataset.studentName;
+                const studentNumber = row.dataset.studentNumber;
+
+                if (studentName.includes(searchTerm) || studentNumber.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        function clearSearch() {
+            searchInput.value = '';
+            const studentRows = document.querySelectorAll('.assessment-row');
+            studentRows.forEach(row => {
+                row.style.display = '';
+            });
+        }
+
+        // ============================================
+        // DATA COLLECTION
+        // ============================================
+
+        function collectScoresData() {
+            const studentsData = [];
+
+            document.querySelectorAll('.assessment-group').forEach(group => {
+                const academicYearId = parseInt(group.dataset.academicYearId);
+                const semester = parseInt(group.dataset.semester);
+
+                if (isNaN(academicYearId) || isNaN(semester)) {
+                    console.error('Missing academic year or semester data on group');
+                    return;
+                }
+
+                group.querySelectorAll('.student-row').forEach(row => {
+                    const studentId = parseInt(row.dataset.studentId);
+                    const courseId = parseInt(row.dataset.courseId);
+
+                    if (isNaN(studentId) || isNaN(courseId)) {
+                        console.error('Missing student or course data on row');
+                        return;
+                    }
+
+                    const assessmentScores = {};
+                    let hasScores = false;
+
+                    row.querySelectorAll('.score-input').forEach(input => {
+                        const assessmentId = parseInt(input.dataset.assessmentId);
+                        const weight = parseFloat(input.dataset.weight);
+                        const scoreValue = input.value;
+
+                        if (scoreValue !== '' && scoreValue !== null) {
+                            const score = parseFloat(scoreValue);
+
+                            if (!isNaN(score)) {
+                                assessmentScores[assessmentId] = {
+                                    Score: score,
+                                    WeightPercentage: weight
+                                };
+                                hasScores = true;
+                            }
+                        }
+                    });
+
+                    // Only add student if they have at least one score
+                    if (hasScores) {
+                        studentsData.push({
+                            StudentId: studentId,
+                            CourseId: courseId,
+                            AcademicYearId: academicYearId,
+                            Semester: semester,
+                            AssessmentScores: assessmentScores
+                        });
+                    }
+                });
+            });
+
+            console.log('Collected data for ' + studentsData.length + ' students');
+            return studentsData;
+        }
+
+        // ============================================
+        // VALIDATION
+        // ============================================
+
+        function validateScores() {
+            let isValid = true;
+            let invalidCount = 0;
+
+            document.querySelectorAll('.score-input').forEach(input => {
+                const value = input.value;
+
+                // Skip empty inputs
+                if (value === '' || value === null) {
+                    input.classList.remove('border-red-500', 'bg-red-50');
+                    return;
+                }
+
+                const score = parseFloat(value);
+
+                if (isNaN(score) || score < MIN_SCORE || score > MAX_SCORE) {
+                    input.classList.add('border-red-500', 'bg-red-50');
+                    isValid = false;
+                    invalidCount++;
+                } else {
+                    input.classList.remove('border-red-500', 'bg-red-50');
+                }
+            });
+
+            return { isValid: isValid, invalidCount: invalidCount };
+        }
+
+        // ============================================
+        // SAVE FUNCTIONALITY
+        // ============================================
+
+        function saveAllScores(isAutoSave = false) {
+            // Validate scores
+            const validation = validateScores();
+
+            if (!validation.isValid) {
+                if (!isAutoSave) {
+                    showNotification('error', `Please correct ${validation.invalidCount} invalid score(s). Scores must be between ${MIN_SCORE} and ${MAX_SCORE}.`);
+                }
+                return;
+            }
+
+            // Show saving indicator
+            const saveButton = document.getElementById('btn-save-scores');
+            const originalContent = saveButton.innerHTML;
+
+            if (!isAutoSave) {
+                saveButton.innerHTML = `
+                    <i class="material-icons mr-2">hourglass_empty</i>
+                    Saving...
+                `;
+                saveButton.disabled = true;
+            } else {
+                document.getElementById('save-status').innerHTML = `
+                    <span class="text-blue-600 flex items-center">
+                        <i class="material-icons text-sm mr-1 animate-spin">sync</i>
+                        Auto-saving...
+                    </span>
+                `;
+            }
+
+            // Collect data
+            const studentsData = collectScoresData();
+
+            if (studentsData.length === 0) {
+                if (!isAutoSave) {
+                    showNotification('warning', 'No scores to save. Please enter at least one score.');
+                    saveButton.innerHTML = originalContent;
+                    saveButton.disabled = false;
+                }
+                return;
+            }
+
+            console.log('Saving scores for ' + studentsData.length + ' students');
+
+            // Send to server
+            fetch('@Url.Action("UpdateAssessmentScores", "StudentResults")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                },
+                body: JSON.stringify(studentsData)
+            })
+            .then(response => response.json())
+                   .then(result => {
+            console.log('Save response:', result);
+
+            hasUnsavedChanges = false;
+            updateUnsavedIndicator(false);
+
+            if (!isAutoSave) {
+                if (result.success) {
+                    // ⭐ MODIFIED: Check if any integrity was restored
+                    let message = result.message || 'Scores saved successfully!';
+
+                    // Reload page if integrity was restored to refresh tamper indicators
+                    if (message.includes('integrity') || message.includes('restored')) {
+                        showNotification('success', message + ' - Page will refresh to update status.');
+                        setTimeout(() => {
+                            location.reload();
+                        }, 2000);
+                    } else {
+                        showNotification('success', message);
+                    }
+                } else {
+                    showNotification('error', 'Error: ' + (result.message || 'Failed to save scores'));
+                    if (result.errors && result.errors.length > 0) {
+                        console.error('Save errors:', result.errors);
+                    }
+                }
+            }
+        })
+            .catch(error => {
+                console.error('Save error:', error);
+
+                if (!isAutoSave) {
+                    showNotification('error', 'Error saving scores. Please try again. Check console for details.');
+                } else {
+                    document.getElementById('save-status').innerHTML = `
+                        <span class="text-red-600 flex items-center">
+                            <i class="material-icons text-sm mr-1">error</i>
+                            Auto-save failed
+                        </span>
+                    `;
+                }
+            })
+            .finally(() => {
+                // Restore button state
+                if (!isAutoSave) {
+                    saveButton.innerHTML = originalContent;
+                    saveButton.disabled = false;
+                }
+            });
+        }
+
+        // ============================================
+        // NOTIFICATION SYSTEM
+        // ============================================
+
+        function showNotification(type, message) {
+            const iconMap = {
+                'success': 'check_circle',
+                'error': 'error',
+                'warning': 'warning'
+            };
+
+            const colorMap = {
+                'success': 'bg-green-100 border-green-500 text-green-700',
+                'error': 'bg-red-100 border-red-500 text-red-700',
+                'warning': 'bg-yellow-100 border-yellow-500 text-yellow-700'
+            };
+
+            const notification = document.createElement('div');
+            notification.className = `fixed bottom-4 right-4 ${colorMap[type]} border-l-4 p-4 rounded shadow-lg z-50`;
+            notification.innerHTML = `
+                <div class="flex items-center">
+                    <i class="material-icons mr-2">${iconMap[type]}</i>
+                    <p class="font-medium">${message}</p>
+                </div>
+            `;
+
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), type === 'error' ? 5000 : 3000);
+        }
+
+         // ============================================
+        // INPUT VALIDATION
+        // ============================================
+
+        document.querySelectorAll('.score-input').forEach(input => {
+            input.addEventListener('input', function() {
+                let value = parseFloat(this.value);
+                if (value < 0) this.value = 0;
+                if (value > 100) this.value = 100;
+            });
+        });
+
+        function quickFixTamperedScore() {
+            if (currentTamperScoreId) {
+                closeTamperModal();
+
+                // Find and focus the input for this score
+                const input = document.querySelector(`input[data-score-id="${currentTamperScoreId}"]`);
+                if (input) {
+                    input.focus();
+                    input.select();
+
+                    // Add highlighting
+                    input.classList.add('ring-4', 'ring-yellow-300');
+                    setTimeout(() => {
+                        input.classList.remove('ring-4', 'ring-yellow-300');
+                    }, 2000);
+
+                    showNotification('info', 'Please re-enter the correct score and save to restore integrity.');
+                }
+            }
+        }
+
+        // ⭐ NEW: TAMPER DETECTION FUNCTIONS - ADD THIS ENTIRE BLOCK
+        // ============================================
+        // TAMPER DETECTION MODAL
+        // ============================================
+
+        let currentTamperScoreId = null;
+
+        function showTamperModal(scoreId, studentName, assessmentName) {
+            currentTamperScoreId = scoreId;
+
+            document.getElementById('tamperStudentName').textContent = studentName;
+            document.getElementById('tamperAssessmentName').textContent = assessmentName;
+            document.getElementById('tamperScoreId').textContent = scoreId;
+
+            // Fetch additional details via AJAX
+            fetchTamperDetails(scoreId);
+
+            document.getElementById('tamperModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeTamperModal() {
+            document.getElementById('tamperModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+            currentTamperScoreId = null;
+        }
+
+        async function fetchTamperDetails(scoreId) {
+            try {
+                const response = await fetch(`/StudentResults/GetTamperDetails?scoreId=${scoreId}`);
+                const data = await response.json();
+
+                if (data.success && data.details) {
+                    document.getElementById('tamperDetails').innerHTML = data.details;
+                    document.getElementById('tamperDetailsContainer').style.display = 'block';
+                } else {
+                    document.getElementById('tamperDetailsContainer').style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error fetching tamper details:', error);
+                document.getElementById('tamperDetailsContainer').style.display = 'none';
+            }
+        }
+
+        // Close modal on background click
+        document.addEventListener('DOMContentLoaded', function() {
+            const modalElement = document.getElementById('tamperModal');
+            if (modalElement) {
+                modalElement.addEventListener('click', (e) => {
+                    if (e.target === modalElement || e.target.classList.contains('bg-opacity-50')) {
+                        closeTamperModal();
+                    }
+                });
+            }
+        });
+
+        // Close modal on ESC key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeTamperModal();
+            }
+        });
+        // END NEW TAMPER DETECTION FUNCTIONS
+
+    </script>
+}

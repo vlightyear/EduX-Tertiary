@@ -1,0 +1,2532 @@
+﻿@model SIS.Models.ViewModels.StudentAdministrationViewModel
+
+@{
+    ViewData["Title"] = "Student Administration";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="min-h-screen bg-slate-50 p-6">
+    @Html.AntiForgeryToken()
+
+    <!-- Header Section -->
+    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 bg-white rounded-xl shadow-sm p-6">
+        <div class="flex items-start lg:items-center space-x-4">
+            <!-- Student Photo -->
+            <div class="flex-shrink-0 w-16 h-16 rounded-lg bg-gradient-to-r from-red-500 to-orange-600 flex items-center justify-center overflow-hidden border-2 border-white border-opacity-30">
+                @if (!string.IsNullOrEmpty(Model.PassportPhotoPath))
+                {
+                    <img src="/uploads/student-photos/@($"{Model.StudentNumber}.png")"
+                         alt="@Model.FullName"
+                         class="w-full h-full object-cover"
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="w-full h-full flex items-center justify-center text-white text-xl font-bold" style="display: none;">
+                        @if (!string.IsNullOrEmpty(Model.FullName))
+                        {
+                            @Model.FullName.Split(' ').Select(n => n.FirstOrDefault()).Take(2).Aggregate("", (a, c) => a + c)
+                        }
+                        else
+                        {
+                            <i class="material-icons text-2xl">person</i>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-white text-xl font-bold">
+                        @if (!string.IsNullOrEmpty(Model.FullName))
+                        {
+                            @Model.FullName.Split(' ').Select(n => n.FirstOrDefault()).Take(2).Aggregate("", (a, c) => a + c)
+                        }
+                        else
+                        {
+                            <i class="material-icons text-2xl">person</i>
+                        }
+                    </div>
+                }
+            </div>
+
+            <div>
+                <div class="flex items-center space-x-3 mb-2">
+                    <h1 class="text-2xl font-bold text-slate-800">@Model.FullName</h1>
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                        <i class="material-icons text-sm mr-1">admin_panel_settings</i>
+                        Administration Mode
+                    </span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-slate-600">
+                    <div class="flex items-center">
+                        <i class="material-icons text-sm mr-1">badge</i>
+                        <span>@Model.StudentNumber</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="material-icons text-sm mr-1">school</i>
+                        <span>@Model.ProgrammeName</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="material-icons text-sm mr-1">calendar_today</i>
+                        <span>Year @Model.CurrentYear • @Model.AcademicYear</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4 lg:mt-0 flex items-center space-x-3">
+            <div class="text-right text-sm">
+                <p class="text-slate-600">Administered by</p>
+                <p class="font-medium text-slate-800">@Model.AdminName (@Model.UserRole)</p>
+            </div>
+            <a href="@Url.Action("Index", "StudentLookup")" class="inline-flex items-center px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors">
+                <i class="material-icons text-sm mr-1">arrow_back</i>
+                Back to Lookup
+            </a>
+        </div>
+    </div>
+
+    <!-- Quick Status Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white rounded-lg shadow-sm p-4">
+            <div class="flex items-center">
+                <div class="p-2 bg-blue-100 rounded-lg">
+                    <i class="material-icons text-blue-600">how_to_reg</i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-slate-500">Registration Status</p>
+                    <p class="text-lg font-bold text-slate-900">@Model.RegistrationStatus</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm p-4">
+            <div class="flex items-center">
+                <div class="p-2 bg-green-100 rounded-lg">
+                    <i class="material-icons text-green-600">book</i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-slate-500">Courses Registered</p>
+                    <p class="text-lg font-bold text-slate-900">@Model.RegisteredCoursesCount</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm p-4">
+            <div class="flex items-center">
+                <div class="p-2 @(Model.OutstandingFees > 0 ? "bg-red-100" : "bg-green-100") rounded-lg">
+                    <i class="material-icons @(Model.OutstandingFees > 0 ? "text-red-600" : "text-green-600")">account_balance</i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-slate-500">Outstanding Fees</p>
+                    <p class="text-lg font-bold @(Model.OutstandingFees > 0 ? "text-red-600" : "text-green-600")">
+                        K @Model.OutstandingFees.ToString("N2")
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm p-4">
+            <div class="flex items-center">
+                <div class="p-2 bg-purple-100 rounded-lg">
+                    <i class="material-icons text-purple-600">person</i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-slate-500">Student Status</p>
+                    <p class="text-lg font-bold text-slate-900">@Model.StudentStatus</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Tabs -->
+    <div class="bg-white rounded-xl shadow-sm">
+        <!-- Tab Navigation -->
+        <div class="border-b border-slate-200">
+            <nav class="flex space-x-8 px-6" aria-label="Tabs">
+                <button class="admin-tab-button active py-4 px-1 border-b-2 border-red-500 font-medium text-sm text-red-600" data-tab="profile">
+                    <i class="material-icons text-sm mr-1">person</i>
+                    Profile Management
+                </button>
+                <button class="admin-tab-button py-4 px-1 border-b-2 border-transparent font-medium text-sm text-slate-500 hover:text-slate-700 hover:border-slate-300" data-tab="academic">
+                    <i class="material-icons text-sm mr-1">school</i>
+                    Academic Management
+                </button>
+                <button class="admin-tab-button py-4 px-1 border-b-2 border-transparent font-medium text-sm text-slate-500 hover:text-slate-700 hover:border-slate-300" data-tab="registration">
+                    <i class="material-icons text-sm mr-1">how_to_reg</i>
+                    Registration Management
+                </button>
+                <button class="admin-tab-button py-4 px-1 border-b-2 border-transparent font-medium text-sm text-slate-500 hover:text-slate-700 hover:border-slate-300" data-tab="security">
+                    <i class="material-icons text-sm mr-1">security</i>
+                    Security Management
+                </button>
+            </nav>
+        </div>
+
+        <!-- Tab Content Container -->
+        <div id="adminTabContent" class="p-6">
+            <!-- Content will be loaded here dynamically -->
+            <div class="text-center py-8">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto"></div>
+                <p class="text-slate-600 mt-2">Loading...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Profile Management Modal -->
+<div id="profileModal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 p-6 max-h-[95vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-lg font-semibold text-gray-900">Edit Student Profile</h3>
+            <button type="button" onclick="closeModal('profileModal')" class="text-gray-400 hover:text-gray-500">
+                <i class="material-icons">close</i>
+            </button>
+        </div>
+
+        <form id="profileForm" class="space-y-6" enctype="multipart/form-data">
+            <input type="hidden" id="studentId" name="StudentId" value="@Model.StudentId" />
+
+            <!-- Photo Upload Section -->
+            <div class="border-b border-gray-200 pb-6">
+                <h4 class="text-md font-semibold text-gray-800 mb-4">Student Photo</h4>
+                <div class="flex items-start space-x-6">
+                    <div class="w-24 h-24 rounded-lg bg-gray-200 flex items-center justify-center overflow-hidden border-2 border-gray-300">
+                        <img id="photoPreview" src="" alt="Student Photo" class="w-full h-full object-cover hidden">
+                        <div id="photoPlaceholder" class="text-gray-400">
+                            <i class="material-icons text-3xl">person</i>
+                        </div>
+                    </div>
+                    <div class="flex-1">
+                        <label for="passportPhoto" class="block text-sm font-medium text-gray-700 mb-2">Upload New Photo</label>
+                        <input type="file" id="passportPhoto" name="PassportPhoto" accept="image/*"
+                               class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                               onchange="previewPhoto(this)">
+                        <p class="text-xs text-gray-500 mt-1">JPG, PNG, or GIF. Max file size 5MB.</p>
+                        <button type="button" onclick="removePhoto()" class="mt-2 text-sm text-red-600 hover:text-red-700">
+                            Remove Current Photo
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Personal Information Section -->
+            <div>
+                <h4 class="text-md font-semibold text-gray-800 mb-4">Personal Information</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="fullName" class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                        <input type="text" id="fullName" name="FullName" required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500" />
+                    </div>
+
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                        <input type="email" id="email" name="Email" required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500" />
+                    </div>
+
+                    <div>
+                        <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                        <input type="tel" id="phone" name="Phone" required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500" />
+                    </div>
+
+                    <div>
+                        <label for="nrcOrPassport" class="block text-sm font-medium text-gray-700 mb-1">NRC/Passport Number</label>
+                        <input type="text" id="nrcOrPassport" name="NrcOrPassportNumber" required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500" />
+                    </div>
+
+                    <div>
+                        <label for="dateOfBirth" class="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
+                        <input type="date" id="dateOfBirth" name="DateOfBirth" required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500" />
+                    </div>
+
+                    <div>
+                        <label for="gender" class="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+                        <select id="gender" name="Gender" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="nationality" class="block text-sm font-medium text-gray-700 mb-1">Nationality</label>
+                        <select id="nationality" name="nationality" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                            <option value="Zambian">Zambian</option>
+                            <option value="Afghan">Afghan</option>
+                            <option value="Albanian">Albanian</option>
+                            <option value="Algerian">Algerian</option>
+                            <option value="American">American</option>
+                            <option value="Andorran">Andorran</option>
+                            <option value="Angolan">Angolan</option>
+                            <option value="Antiguan or Barbudan">Antiguan or Barbudan</option>
+                            <option value="Argentine">Argentine</option>
+                            <option value="Armenian">Armenian</option>
+                            <option value="Australian">Australian</option>
+                            <option value="Austrian">Austrian</option>
+                            <option value="Azerbaijani">Azerbaijani</option>
+                            <option value="Bahamian">Bahamian</option>
+                            <option value="Bahraini">Bahraini</option>
+                            <option value="Bangladeshi">Bangladeshi</option>
+                            <option value="Barbadian">Barbadian</option>
+                            <option value="Belarusian">Belarusian</option>
+                            <option value="Belgian">Belgian</option>
+                            <option value="Belizean">Belizean</option>
+                            <option value="Beninese">Beninese</option>
+                            <option value="Bhutanese">Bhutanese</option>
+                            <option value="Bolivian">Bolivian</option>
+                            <option value="Bosnian or Herzegovinian">Bosnian or Herzegovinian</option>
+                            <option value="Botswanan">Botswanan</option>
+                            <option value="Brazilian">Brazilian</option>
+                            <option value="Bruneian">Bruneian</option>
+                            <option value="Bulgarian">Bulgarian</option>
+                            <option value="Burkinabé">Burkinabé</option>
+                            <option value="Burmese">Burmese</option>
+                            <option value="Burundian">Burundian</option>
+                            <option value="Cabo Verdean">Cabo Verdean</option>
+                            <option value="Cambodian">Cambodian</option>
+                            <option value="Cameroonian">Cameroonian</option>
+                            <option value="Canadian">Canadian</option>
+                            <option value="Central African">Central African</option>
+                            <option value="Chadian">Chadian</option>
+                            <option value="Chilean">Chilean</option>
+                            <option value="Chinese">Chinese</option>
+                            <option value="Colombian">Colombian</option>
+                            <option value="Comorian">Comorian</option>
+                            <option value="Congolese (Congo)">Congolese (Congo)</option>
+                            <option value="Congolese (DRC)">Congolese (DRC)</option>
+                            <option value="Costa Rican">Costa Rican</option>
+                            <option value="Croatian">Croatian</option>
+                            <option value="Cuban">Cuban</option>
+                            <option value="Cypriot">Cypriot</option>
+                            <option value="Czech">Czech</option>
+                            <option value="Danish">Danish</option>
+                            <option value="Djiboutian">Djiboutian</option>
+                            <option value="Dominican">Dominican</option>
+                            <option value="Dutch">Dutch</option>
+                            <option value="East Timorese">East Timorese</option>
+                            <option value="Ecuadorean">Ecuadorean</option>
+                            <option value="Egyptian">Egyptian</option>
+                            <option value="Emirati">Emirati</option>
+                            <option value="English">English</option>
+                            <option value="Equatorial Guinean">Equatorial Guinean</option>
+                            <option value="Eritrean">Eritrean</option>
+                            <option value="Estonian">Estonian</option>
+                            <option value="Eswatini">Eswatini</option>
+                            <option value="Ethiopian">Ethiopian</option>
+                            <option value="Fijian">Fijian</option>
+                            <option value="Finnish">Finnish</option>
+                            <option value="French">French</option>
+                            <option value="Gabonese">Gabonese</option>
+                            <option value="Gambian">Gambian</option>
+                            <option value="Georgian">Georgian</option>
+                            <option value="German">German</option>
+                            <option value="Ghanaian">Ghanaian</option>
+                            <option value="Greek">Greek</option>
+                            <option value="Grenadian">Grenadian</option>
+                            <option value="Guatemalan">Guatemalan</option>
+                            <option value="Guinean">Guinean</option>
+                            <option value="Guinea-Bissauan">Guinea-Bissauan</option>
+                            <option value="Guyanese">Guyanese</option>
+                            <option value="Haitian">Haitian</option>
+                            <option value="Honduran">Honduran</option>
+                            <option value="Hungarian">Hungarian</option>
+                            <option value="Icelandic">Icelandic</option>
+                            <option value="Indian">Indian</option>
+                            <option value="Indonesian">Indonesian</option>
+                            <option value="Iranian">Iranian</option>
+                            <option value="Iraqi">Iraqi</option>
+                            <option value="Irish">Irish</option>
+                            <option value="Israeli">Israeli</option>
+                            <option value="Italian">Italian</option>
+                            <option value="Ivorian">Ivorian</option>
+                            <option value="Jamaican">Jamaican</option>
+                            <option value="Japanese">Japanese</option>
+                            <option value="Jordanian">Jordanian</option>
+                            <option value="Kazakhstani">Kazakhstani</option>
+                            <option value="Kenyan">Kenyan</option>
+                            <option value="Kiribati">Kiribati</option>
+                            <option value="Kuwaiti">Kuwaiti</option>
+                            <option value="Kyrgyz">Kyrgyz</option>
+                            <option value="Laotian">Laotian</option>
+                            <option value="Latvian">Latvian</option>
+                            <option value="Lebanese">Lebanese</option>
+                            <option value="Liberian">Liberian</option>
+                            <option value="Libyan">Libyan</option>
+                            <option value="Liechtenstein">Liechtenstein</option>
+                            <option value="Lithuanian">Lithuanian</option>
+                            <option value="Luxembourgish">Luxembourgish</option>
+                            <option value="Malagasy">Malagasy</option>
+                            <option value="Malawian">Malawian</option>
+                            <option value="Malaysian">Malaysian</option>
+                            <option value="Maldivian">Maldivian</option>
+                            <option value="Malian">Malian</option>
+                            <option value="Maltese">Maltese</option>
+                            <option value="Marshallese">Marshallese</option>
+                            <option value="Mauritanian">Mauritanian</option>
+                            <option value="Mauritian">Mauritian</option>
+                            <option value="Mexican">Mexican</option>
+                            <option value="Micronesian">Micronesian</option>
+                            <option value="Moldovan">Moldovan</option>
+                            <option value="Monégasque">Monégasque</option>
+                            <option value="Mongolian">Mongolian</option>
+                            <option value="Montenegrin">Montenegrin</option>
+                            <option value="Moroccan">Moroccan</option>
+                            <option value="Mozambican">Mozambican</option>
+                            <option value="Namibian">Namibian</option>
+                            <option value="Nauruan">Nauruan</option>
+                            <option value="Nepalese">Nepalese</option>
+                            <option value="New Zealander">New Zealander</option>
+                            <option value="Nicaraguan">Nicaraguan</option>
+                            <option value="Nigerian">Nigerian</option>
+                            <option value="Nigerien">Nigerien</option>
+                            <option value="North Korean">North Korean</option>
+                            <option value="North Macedonian">North Macedonian</option>
+                            <option value="Norwegian">Norwegian</option>
+                            <option value="Omani">Omani</option>
+                            <option value="Pakistani">Pakistani</option>
+                            <option value="Palauan">Palauan</option>
+                            <option value="Palestinian">Palestinian</option>
+                            <option value="Panamanian">Panamanian</option>
+                            <option value="Papua New Guinean">Papua New Guinean</option>
+                            <option value="Paraguayan">Paraguayan</option>
+                            <option value="Peruvian">Peruvian</option>
+                            <option value="Philippine">Philippine</option>
+                            <option value="Polish">Polish</option>
+                            <option value="Portuguese">Portuguese</option>
+                            <option value="Qatari">Qatari</option>
+                            <option value="Romanian">Romanian</option>
+                            <option value="Russian">Russian</option>
+                            <option value="Rwandan">Rwandan</option>
+                            <option value="Saint Lucian">Saint Lucian</option>
+                            <option value="Salvadoran">Salvadoran</option>
+                            <option value="Samoan">Samoan</option>
+                            <option value="San Marinese">San Marinese</option>
+                            <option value="Sao Tomean">Sao Tomean</option>
+                            <option value="Saudi">Saudi</option>
+                            <option value="Scottish">Scottish</option>
+                            <option value="Senegalese">Senegalese</option>
+                            <option value="Serbian">Serbian</option>
+                            <option value="Seychellois">Seychellois</option>
+                            <option value="Sierra Leonean">Sierra Leonean</option>
+                            <option value="Singaporean">Singaporean</option>
+                            <option value="Slovak">Slovak</option>
+                            <option value="Slovenian">Slovenian</option>
+                            <option value="Solomon Islander">Solomon Islander</option>
+                            <option value="Somali">Somali</option>
+                            <option value="South African">South African</option>
+                            <option value="South Korean">South Korean</option>
+                            <option value="South Sudanese">South Sudanese</option>
+                            <option value="Spanish">Spanish</option>
+                            <option value="Sri Lankan">Sri Lankan</option>
+                            <option value="Sudanese">Sudanese</option>
+                            <option value="Surinamese">Surinamese</option>
+                            <option value="Swazi">Swazi</option>
+                            <option value="Swedish">Swedish</option>
+                            <option value="Swiss">Swiss</option>
+                            <option value="Syrian">Syrian</option>
+                            <option value="Taiwanese">Taiwanese</option>
+                            <option value="Tajik">Tajik</option>
+                            <option value="Tanzanian">Tanzanian</option>
+                            <option value="Thai">Thai</option>
+                            <option value="Togolese">Togolese</option>
+                            <option value="Tongan">Tongan</option>
+                            <option value="Trinidadian or Tobagonian">Trinidadian or Tobagonian</option>
+                            <option value="Tunisian">Tunisian</option>
+                            <option value="Turkish">Turkish</option>
+                            <option value="Turkmen">Turkmen</option>
+                            <option value="Tuvaluan">Tuvaluan</option>
+                            <option value="Ugandan">Ugandan</option>
+                            <option value="Ukrainian">Ukrainian</option>
+                            <option value="Uruguayan">Uruguayan</option>
+                            <option value="Uzbek">Uzbek</option>
+                            <option value="Vanuatuan">Vanuatuan</option>
+                            <option value="Venezuelan">Venezuelan</option>
+                            <option value="Vietnamese">Vietnamese</option>
+                            <option value="Welsh">Welsh</option>
+                            <option value="Yemeni">Yemeni</option>
+                            <option value="Zimbabwean">Zimbabwean</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="maritalStatus" class="block text-sm font-medium text-gray-700 mb-1">Marital Status</label>
+                        <select id="maritalStatus" name="MaritalStatus" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                            <option value="Single">Single</option>
+                            <option value="Married">Married</option>
+                            <option value="Divorced">Divorced</option>
+                            <option value="Widowed">Widowed</option>
+                        </select>
+                    </div>
+
+                    <div class="md:col-span-1">
+                        <label for="religion" class="block text-sm font-medium text-gray-700 mb-1">Religion</label>
+                        <input type="text" id="religion" name="Religion"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500" />
+                    </div>
+                    <div class="md:col-span-1">
+                        <label for="foreigner" class="block text-sm font-medium text-gray-700 mb-1">Foreigner</label>
+                        <input type="checkbox"
+                               id="foreigner"
+                               name="Foreigner"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500" />
+
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Address Information Section -->
+            <div class="border-t border-gray-200 pt-6">
+                <h4 class="text-md font-semibold text-gray-800 mb-4">Address Information</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2">
+                        <label for="addressLine1" class="block text-sm font-medium text-gray-700 mb-1">Address Line 1</label>
+                        <input type="text" id="addressLine1" name="AddressLine1"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500" />
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label for="addressLine2" class="block text-sm font-medium text-gray-700 mb-1">Address Line 2</label>
+                        <input type="text" id="addressLine2" name="AddressLine2"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500" />
+                    </div>
+
+                    <div>
+                        <label for="city" class="block text-sm font-medium text-gray-700 mb-1">City</label>
+                        <input type="text" id="city" name="City"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500" />
+                    </div>
+
+                    <div>
+                        <label for="state" class="block text-sm font-medium text-gray-700 mb-1">State/Province</label>
+                        <input type="text" id="state" name="State"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500" />
+                    </div>
+
+                    <div>
+                        <label for="country" class="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                        <input type="text" id="country" name="Country"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500" />
+                    </div>
+
+                    <div>
+                        <label for="postalCode" class="block text-sm font-medium text-gray-700 mb-1">Postal Code</label>
+                        <input type="text" id="postalCode" name="PostalCode"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Next of Kin Information Section -->
+            <div class="border-t border-gray-200 pt-6">
+                <h4 class="text-md font-semibold text-gray-800 mb-4">Next of Kin Information</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="nextOfKinName" class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                        <input type="text" id="nextOfKinName" name="NextOfKinName"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500" />
+                    </div>
+
+                    <div>
+                        <label for="nextOfKinRelationship" class="block text-sm font-medium text-gray-700 mb-1">Relationship</label>
+                        <input type="text" id="nextOfKinRelationship" name="NextOfKinRelationship"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500" />
+                    </div>
+
+                    <div>
+                        <label for="nextOfKinPhone" class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                        <input type="tel" id="nextOfKinPhone" name="NextOfKinPhone"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500" />
+                    </div>
+
+                    <div>
+                        <label for="nextOfKinEmail" class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                        <input type="email" id="nextOfKinEmail" name="NextOfKinEmail"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500" />
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label for="nextOfKinAddress" class="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                        <textarea id="nextOfKinAddress" name="NextOfKinAddress" rows="3"
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                <button type="button" onclick="closeModal('profileModal')"
+                        class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit"
+                        class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                    <span class="flex items-center">
+                        <i class="material-icons text-sm mr-1 hidden" id="profileLoader">refresh</i>
+                        Update Profile
+                    </span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Academic Management Modal -->
+<div id="academicModal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 p-6 max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-lg font-semibold text-gray-900">Change Academic Details</h3>
+            <button type="button" onclick="closeModal('academicModal')" class="text-gray-400 hover:text-gray-500">
+                <i class="material-icons">close</i>
+            </button>
+        </div>
+
+        <div class="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <div class="flex items-center">
+                <i class="material-icons text-amber-500 mr-2">warning</i>
+                <p class="text-sm text-amber-800">
+                    <strong>Warning:</strong> Changing academic details may reset the student's registration and remove current course enrollments.
+                </p>
+            </div>
+        </div>
+
+        <form id="academicForm" class="space-y-4">
+            <input type="hidden" id="academicStudentId" name="StudentId" value="@Model.StudentId" />
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="schoolSelect" class="block text-sm font-medium text-gray-700 mb-1">School</label>
+                    <select id="schoolSelect" name="SchoolId" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                        <option value="">Select School</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="programmeSelect" class="block text-sm font-medium text-gray-700 mb-1">Programme</label>
+                    <select id="programmeSelect" name="ProgrammeId" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                        <option value="">Select Programme</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="modeSelect" class="block text-sm font-medium text-gray-700 mb-1">Mode of Study</label>
+                    <select id="modeSelect" name="ModeOfStudyId" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                        <option value="">Select Mode</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="levelSelect" class="block text-sm font-medium text-gray-700 mb-1">Programme Level</label>
+                    <select id="levelSelect" name="ProgrammeLevelId" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                        <option value="">Select Level</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="academicYearSelect" class="block text-sm font-medium text-gray-700 mb-1">Academic Year</label>
+                    <select id="academicYearSelect" name="AcademicYearId" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                        <option value="">Select Academic Year</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="currentYear" class="block text-sm font-medium text-gray-700 mb-1">Current Year</label>
+                    <select id="currentYear" name="CurrentYear" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                        <option value="1">Year 1</option>
+                        <option value="2">Year 2</option>
+                        <option value="3">Year 3</option>
+                        <option value="4">Year 4</option>
+                        <option value="5">Year 5</option>
+                        <option value="6">Year 6</option>
+                        <option value="7">Year 7</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="currentSemester" class="block text-sm font-medium text-gray-700 mb-1">Current Semester</label>
+                    <select id="currentSemester" name="CurrentSemester" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                        <option value="1">Semester 1</option>
+                        <option value="2">Semester 2</option>
+                    </select>
+                </div>
+
+                <div class="md:col-span-2">
+                    <label for="changeReason" class="block text-sm font-medium text-gray-700 mb-1">Reason for Change</label>
+                    <textarea id="changeReason" name="ChangeReason" rows="3"
+                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                              placeholder="Please provide a reason for this academic change..."></textarea>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-4">
+                <button type="button" onclick="closeModal('academicModal')"
+                        class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit"
+                        class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                    <span class="flex items-center">
+                        <i class="material-icons text-sm mr-1 hidden" id="academicLoader">refresh</i>
+                        Update Academic Details
+                    </span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Password Reset Modal -->
+<div id="passwordModal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-lg font-semibold text-gray-900">Reset Student Password</h3>
+            <button type="button" onclick="closeModal('passwordModal')" class="text-gray-400 hover:text-gray-500">
+                <i class="material-icons">close</i>
+            </button>
+        </div>
+
+        <div class="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <div class="flex items-center">
+                <i class="material-icons text-amber-500 mr-2">info</i>
+                <p class="text-sm text-amber-800">
+                    This will generate a new temporary password for the student. Make sure to share it securely.
+                </p>
+            </div>
+        </div>
+
+        <div id="passwordResetContent" class="text-center py-4">
+            <button id="resetPasswordBtn" onclick="resetStudentPassword()"
+                    class="inline-flex items-center px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                <i class="material-icons mr-2" id="resetPasswordIcon">lock_reset</i>
+                <span id="resetPasswordText">Generate New Password</span>
+
+            </button>
+
+                
+        </div>
+
+        <div id="passwordResult" class="hidden">
+            <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                <div class="flex items-center mb-2">
+                    <i class="material-icons text-green-500 mr-2">check_circle</i>
+                    <span class="font-medium text-green-800">Password Reset Successful</span>
+                </div>
+                <div class="bg-white rounded-lg p-3 border border-green-300">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Temporary Password</label>
+                    <div class="flex items-center space-x-2">
+                        <input type="text" id="tempPassword" readonly
+                               class="flex-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded text-lg font-mono text-center tracking-wider" />
+                        <button onclick="copyPassword()" class="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
+                            <i class="material-icons text-sm">content_copy</i>
+                        </button>
+                    </div>
+                    <div id="passwordTimer" class="text-sm text-red-600 mt-2 text-center">
+                        Password will be hidden in <span id="countdown">60</span> seconds
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex justify-end">
+            <button type="button" onclick="closeModal('passwordModal')"
+                    class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Success/Error Toast Notification -->
+<div id="toastNotification" class="hidden fixed bottom-4 right-4 p-4 rounded-lg shadow-lg max-w-sm z-50">
+    <div class="flex items-center">
+        <i id="toastIcon" class="material-icons mr-2"></i>
+        <p id="toastMessage"></p>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div id="confirmModal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+        <div class="flex items-center mb-4">
+            <div class="flex-shrink-0">
+                <i id="confirmIcon" class="material-icons text-3xl text-red-500">warning</i>
+            </div>
+            <div class="ml-4">
+                <h3 id="confirmTitle" class="text-lg font-semibold text-gray-900">Confirm Action</h3>
+                <p id="confirmMessage" class="text-sm text-gray-600 mt-1">Are you sure you want to proceed?</p>
+            </div>
+        </div>
+
+        <div class="flex justify-end gap-3">
+            <button type="button" onclick="closeModal('confirmModal')"
+                    class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors">
+                Cancel
+            </button>
+            <button type="button" id="confirmButton"
+                    class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                Confirm
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Registration Management Modal -->
+<div id="registrationModal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-6xl w-full mx-4 p-6 max-h-[95vh] overflow-hidden flex flex-col">
+        <div class="flex justify-between items-center mb-6 flex-shrink-0">
+            <h3 class="text-lg font-semibold text-gray-900">Student Registration Management</h3>
+            <button type="button" onclick="closeModal('registrationModal')" class="text-gray-400 hover:text-gray-500">
+                <i class="material-icons">close</i>
+            </button>
+        </div>
+
+        <!-- Registration Info -->
+        <div id="registrationInfo" class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg flex-shrink-0">
+            <div class="flex items-center">
+                <i class="material-icons text-blue-500 mr-2">info</i>
+                <div id="registrationInfoText">Loading student information...</div>
+            </div>
+        </div>
+
+        <div class="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-0">
+            <!-- Available Courses Section -->
+            <div class="lg:col-span-2 flex flex-col min-h-0">
+                <div class="flex-shrink-0 mb-4">
+                    <h4 class="text-md font-semibold text-gray-800 mb-2">Available Courses</h4>
+                    <div id="courseRequirements" class="text-sm text-gray-600 mb-2">
+                        <!-- Requirements will be loaded here -->
+                    </div>
+                </div>
+
+                <div id="availableCourses" class="flex-1 border border-gray-200 rounded-lg p-4 overflow-y-auto min-h-0">
+                    <div class="text-center py-8">
+                        <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+                        <p class="text-gray-600 mt-2">Loading courses...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Course Search & Management -->
+            <div class="flex flex-col min-h-0">
+                <div class="flex-shrink-0 mb-4">
+                    <h4 class="text-md font-semibold text-gray-800 mb-2">Add Additional Courses</h4>
+                    <div class="relative">
+                        <input type="text" id="courseSearchInput"
+                               placeholder="Search courses by code or name..."
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <button onclick="searchCourses()"
+                                class="absolute right-2 top-2 text-gray-400 hover:text-gray-600">
+                            <i class="material-icons text-sm">search</i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="courseSearchResults" class="flex-1 border border-gray-200 rounded-lg p-4 overflow-y-auto min-h-0">
+                    <div class="text-center py-4 text-gray-500 text-sm">
+                        Enter search terms to find additional courses
+                    </div>
+                </div>
+
+                <!-- Registration Summary -->
+                <div class="flex-shrink-0 mt-4 p-4 bg-gray-50 rounded-lg">
+                    <h5 class="font-medium text-gray-800 mb-2">Registration Summary</h5>
+                    <div id="registrationSummary" class="text-sm text-gray-600">
+                        <!-- Summary will be updated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex justify-between items-center pt-4 border-t mt-4 flex-shrink-0">
+            <div>
+                <button type="button" onclick="resetCourseSelection()"
+                        class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors">
+                    Reset Selection
+                </button>
+            </div>
+            <div class="flex gap-3">
+                <button type="button" onclick="closeModal('registrationModal')"
+                        class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors">
+                    Cancel
+                </button>
+                <button type="button" onclick="executeStudentRegistration()"
+                        id="registerStudentBtn"
+                        class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                    <span class="flex items-center">
+                        <i class="material-icons text-sm mr-1 hidden" id="registrationLoader">refresh</i>
+                        Register Student
+                    </span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+@section Scripts {
+    <script>
+        let currentStudentData = {};
+        let countdownTimer = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStudentDetails().then(() => {
+                loadAdminTab('profile');
+            });
+            initializeFormHandlers();
+        });
+
+        // Load student details
+        async function loadStudentDetails() {
+            try {
+                const response = await fetch(`/StudentAdministration/GetStudentDetails?studentId=@Model.StudentId`);
+                const result = await response.json();
+
+                if (result.success) {
+                    currentStudentData = result.data;
+                    return true; // Return success
+                } else {
+                    showToast(result.message || 'Error loading student details', 'error');
+                    return false;
+                }
+            } catch (error) {
+                console.error('Error loading student details:', error);
+                showToast('Error loading student details', 'error');
+                return false;
+            }
+        }
+
+        // Tab management
+        function loadAdminTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.admin-tab-button').forEach(button => {
+                button.classList.remove('active', 'border-red-500', 'text-red-600');
+                button.classList.add('border-transparent', 'text-slate-500');
+            });
+
+            const activeTab = document.querySelector(`[data-tab="${tabName}"]`);
+            if (activeTab) {
+                activeTab.classList.add('active', 'border-red-500', 'text-red-600');
+                activeTab.classList.remove('border-transparent', 'text-slate-500');
+            }
+
+            // Load tab content
+            const tabContent = document.getElementById('adminTabContent');
+
+            switch(tabName) {
+                case 'profile':
+                    loadProfileTab(tabContent);
+                    break;
+                case 'academic':
+                    loadAcademicTab(tabContent);
+                    break;
+                case 'registration':
+                    loadRegistrationTab(tabContent);
+                    break;
+                case 'security':
+                    loadSecurityTab(tabContent);
+                    break;
+            }
+        }
+
+        function loadProfileTab(container) {
+            container.innerHTML = `
+                <div class="space-y-6">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-slate-800">Student Profile Management</h3>
+                        <button onclick="openProfileModal()"
+                                class="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                            <i class="material-icons text-sm mr-1">edit</i>
+                            Edit Profile
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="bg-slate-50 rounded-lg p-4">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
+                            <p class="text-slate-900 font-medium">${currentStudentData.fullName || 'N/A'}</p>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg p-4">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Email Address</label>
+                            <p class="text-slate-900">${currentStudentData.email || 'N/A'}</p>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg p-4">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Phone Number</label>
+                            <p class="text-slate-900">${currentStudentData.phone || 'N/A'}</p>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg p-4">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">NRC/Passport Number</label>
+                            <p class="text-slate-900">${currentStudentData.nrcOrPassportNumber || 'N/A'}</p>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg p-4">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Date of Birth</label>
+                            <p class="text-slate-900">${currentStudentData.dateOfBirth ? new Date(currentStudentData.dateOfBirth).toLocaleDateString() : 'N/A'}</p>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg p-4">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Gender</label>
+                            <p class="text-slate-900">${currentStudentData.gender || 'N/A'}</p>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg p-4">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Nationality</label>
+                            <p class="text-slate-900">${currentStudentData.nationality || 'N/A'}</p>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg p-4">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Marital Status</label>
+                            <p class="text-slate-900">${currentStudentData.maritalStatus || 'N/A'}</p>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg p-4">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Religion</label>
+                            <p class="text-slate-900">${currentStudentData.religion || 'N/A'}</p>
+                        </div>
+                    </div>
+
+                    ${currentStudentData.address ? `
+                    <div class="border-t pt-6">
+                        <h4 class="text-md font-semibold text-slate-800 mb-4">Address Information</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div class="bg-slate-50 rounded-lg p-4">
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Address Line 1</label>
+                                <p class="text-slate-900">${currentStudentData.address.addressLine1 || 'N/A'}</p>
+                            </div>
+                            <div class="bg-slate-50 rounded-lg p-4">
+                                <label class="block text-sm font-medium text-slate-700 mb-1">City</label>
+                                <p class="text-slate-900">${currentStudentData.address.city || 'N/A'}</p>
+                            </div>
+                            <div class="bg-slate-50 rounded-lg p-4">
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Country</label>
+                                <p class="text-slate-900">${currentStudentData.address.country || 'N/A'}</p>
+                            </div>
+                        </div>
+                    </div>
+                    ` : ''}
+
+                    ${currentStudentData.nextOfKin ? `
+                    <div class="border-t pt-6">
+                        <h4 class="text-md font-semibold text-slate-800 mb-4">Next of Kin Information</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div class="bg-slate-50 rounded-lg p-4">
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Name</label>
+                                <p class="text-slate-900">${currentStudentData.nextOfKin.name || 'N/A'}</p>
+                            </div>
+                            <div class="bg-slate-50 rounded-lg p-4">
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Relationship</label>
+                                <p class="text-slate-900">${currentStudentData.nextOfKin.relationship || 'N/A'}</p>
+                            </div>
+                            <div class="bg-slate-50 rounded-lg p-4">
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Phone</label>
+                                <p class="text-slate-900">${currentStudentData.nextOfKin.phone || 'N/A'}</p>
+                            </div>
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        function loadAcademicTab(container) {
+            container.innerHTML = `
+                <div class="space-y-6">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-slate-800">Academic Management</h3>
+                        <button onclick="openAcademicModal()"
+                                class="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                            <i class="material-icons text-sm mr-1">school</i>
+                            Change Academic Details
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="bg-slate-50 rounded-lg p-4">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Programme</label>
+                            <p class="text-slate-900 font-medium">@Model.ProgrammeName</p>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg p-4">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">School</label>
+                            <p class="text-slate-900">@Model.SchoolName</p>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg p-4">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Department</label>
+                            <p class="text-slate-900">@Model.DepartmentName</p>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg p-4">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Mode of Study</label>
+                            <p class="text-slate-900">@Model.ModeOfStudyName</p>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg p-4">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Programme Level</label>
+                            <p class="text-slate-900">@Model.ProgrammeLevelName</p>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg p-4">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Academic Year</label>
+                            <p class="text-slate-900">@Model.AcademicYear</p>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg p-4">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Current Year</label>
+                            <p class="text-slate-900">Year @Model.CurrentYear</p>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg p-4">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Current Semester</label>
+                            <p class="text-slate-900">Semester @Model.CurrentSemester</p>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg p-4">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Outstanding Fees</label>
+                            <p class="text-slate-900 ${@Model.OutstandingFees > 0 ? 'text-red-600' : 'text-green-600'} font-medium">
+                                K @Model.OutstandingFees.ToString("N2")
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                        <div class="flex items-center">
+                            <i class="material-icons text-amber-500 mr-2">info</i>
+                            <p class="text-sm text-amber-800">
+                                <strong>Note:</strong> Changing academic details may affect the student's current registration status and course enrollments.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function loadRegistrationTab(container) {
+            container.innerHTML = `
+                <div class="space-y-6">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-slate-800">Registration Management</h3>
+                            <div class="flex space-x-2">
+                                <button onclick="openRegistrationModal()"
+                                        class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                    <i class="material-icons text-sm mr-1">how_to_reg</i>
+                                    Manage Registration
+                                </button>
+                                <button onclick="toggleRegistration(false)"
+                                        class="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                                    <i class="material-icons text-sm mr-1">block</i>
+                                    Disable Registration
+                                </button>
+                            </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="bg-slate-50 rounded-lg p-4">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Registration Status</label>
+                            <p class="text-slate-900 font-medium">@Model.RegistrationStatus</p>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg p-4">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Is Registered</label>
+                            <p class="text-slate-900">@(Model.IsRegistered ? "Yes" : "No")</p>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg p-4">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Registration Date</label>
+                            <p class="text-slate-900">@(Model.RegistrationDate?.ToString("MMM dd, yyyy") ?? "Not registered")</p>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg p-4">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Courses Registered</label>
+                            <p class="text-slate-900 font-medium">@Model.RegisteredCoursesCount</p>
+                        </div>
+                    </div>
+
+                    <div id="registrationDetails">
+                        <div class="text-center py-8">
+                            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-red-600 mx-auto"></div>
+                            <p class="text-slate-600 mt-2">Loading registration details...</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Load registration details
+            loadRegistrationDetails();
+        }
+
+        function loadSecurityTab(container) {
+            container.innerHTML = `
+                <div class="space-y-6">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-slate-800">Security Management</h3>
+                        <button onclick="openPasswordModal()"
+                                class="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                            <i class="material-icons text-sm mr-1">lock_reset</i>
+                            Reset Password
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white border border-slate-200 rounded-lg p-6">
+                            <div class="flex items-center mb-4">
+                                <div class="p-2 bg-red-100 rounded-lg">
+                                    <i class="material-icons text-red-600">security</i>
+                                </div>
+                                <div class="ml-3">
+                                    <h4 class="text-lg font-semibold text-slate-800">Password Management</h4>
+                                    <p class="text-sm text-slate-600">Reset student login credentials</p>
+                                </div>
+                            </div>
+                            <p class="text-sm text-slate-700 mb-4">
+                                Generate a new temporary password for the student. The password will be displayed securely and can be shared with the student.
+                            </p>
+                            <button onclick="openPasswordModal()"
+                                    class="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                                <i class="material-icons text-sm mr-1">lock_reset</i>
+                                Reset Password
+                            </button>
+                        </div>
+
+                        <div class="bg-white border border-slate-200 rounded-lg p-6">
+                            <div class="flex items-center mb-4">
+                                <div class="p-2 bg-blue-100 rounded-lg">
+                                    <i class="material-icons text-blue-600">account_circle</i>
+                                </div>
+                                <div class="ml-3">
+                                    <h4 class="text-lg font-semibold text-slate-800">Account Status</h4>
+                                    <p class="text-sm text-slate-600">Current account information</p>
+                                </div>
+                            </div>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700">Student Status</label>
+                                    <p class="text-slate-900">@Model.StudentStatus</p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700">Account Created</label>
+                                    <p class="text-slate-900">@(Model.AdmissionDate?.ToString("MMM dd, yyyy") ?? "N/A")</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                        <div class="flex items-center">
+                            <i class="material-icons text-amber-500 mr-2">warning</i>
+                            <p class="text-sm text-amber-800">
+                                <strong>Security Notice:</strong> All administrative actions are logged. Password resets should only be performed when requested by the student or authorized personnel.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Registration details loading
+        async function loadRegistrationDetails() {
+            try {
+                const response = await fetch(`/StudentAdministration/GetRegistrationInfo?studentId=@Model.StudentId`);
+                const result = await response.json();
+
+                if (result.success) {
+                    const data = result.data;
+                    const container = document.getElementById('registrationDetails');
+
+                    if (data.registeredCourses && data.registeredCourses.length > 0) {
+                        container.innerHTML = `
+                            <div class="bg-white border border-slate-200 rounded-lg">
+                                <div class="px-6 py-4 border-b border-slate-200">
+                                    <h4 class="text-lg font-semibold text-slate-800">Registered Courses (${data.academicYear})</h4>
+                                </div>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full">
+                                        <thead class="bg-slate-50">
+                                            <tr>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Course Code</th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Course Name</th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Type</th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Examinable</th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Registered Date</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="bg-white divide-y divide-slate-200">
+                                            ${data.registeredCourses.map(course => `
+                                                <tr>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">${course.courseCode}</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900">${course.courseName}</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap">
+                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${course.isMandatory ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}">
+                                                            ${course.isMandatory ? 'Mandatory' : 'Elective'}
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900">${course.isExaminable ? 'Yes' : 'No'}</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900">${new Date(course.registrationDate).toLocaleDateString()}</td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        container.innerHTML = `
+                            <div class="text-center py-8 bg-slate-50 rounded-lg">
+                                <i class="material-icons text-4xl text-slate-300 mb-2">school</i>
+                                <p class="text-slate-500 text-lg font-medium">No Courses Registered</p>
+                                <p class="text-slate-400 text-sm">Student has not registered for any courses this academic year</p>
+                            </div>
+                        `;
+                    }
+                } else {
+                    document.getElementById('registrationDetails').innerHTML = `
+                        <div class="text-center py-8 bg-red-50 rounded-lg">
+                            <i class="material-icons text-4xl text-red-300 mb-2">error</i>
+                            <p class="text-red-500">Error loading registration details</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading registration details:', error);
+            }
+        }
+
+        // Modal functions
+        function openProfileModal() {
+            // Personal Information
+            document.getElementById('fullName').value = currentStudentData.fullName || '';
+            document.getElementById('email').value = currentStudentData.email || '';
+            document.getElementById('phone').value = currentStudentData.phone || '';
+            document.getElementById('nrcOrPassport').value = currentStudentData.nrcOrPassportNumber || '';
+            document.getElementById('dateOfBirth').value = currentStudentData.dateOfBirth || '';
+            document.getElementById('religion').value = currentStudentData.religion || '';
+            document.getElementById('foreigner').checked = (currentStudentData.isForeigner == true);
+            
+            const nationalitySelect = document.getElementById('nationality');
+            const genderSelect = document.getElementById('gender');
+            const maritalStatusSelect = document.getElementById('maritalStatus');
+
+            const nationalityValue = (currentStudentData.nationality || '').toLowerCase();
+            const genderValue = (currentStudentData.gender || '').toLowerCase();
+            const maritalStatusValue = (currentStudentData.maritalStatus || '').toLowerCase();
+
+            if (nationalityValue) {
+                for (const option of nationalitySelect.options) {
+                    if (option.value.toLowerCase() === nationalityValue) {
+                        option.selected = true;
+                        break;
+                    }
+                }
+            }
+
+            if (genderValue) {
+                for (const option of genderSelect.options) {
+                    if (option.value.toLowerCase() === genderValue) {
+                        option.selected = true;
+                        break;
+                    }
+                }
+            }
+
+            if (maritalStatusValue) {
+                for (const option of maritalStatusSelect.options) {
+                    if (option.value.toLowerCase() === maritalStatusValue) {
+                        option.selected = true;
+                        break;
+                    }
+                }
+            }
+
+            // Address Information
+            if (currentStudentData.address) {
+                document.getElementById('addressLine1').value = currentStudentData.address.addressLine1 || '';
+                document.getElementById('addressLine2').value = currentStudentData.address.addressLine2 || '';
+                document.getElementById('city').value = currentStudentData.address.city || '';
+                document.getElementById('state').value = currentStudentData.address.state || '';
+                document.getElementById('country').value = currentStudentData.address.country || '';
+                document.getElementById('postalCode').value = currentStudentData.address.postalCode || '';
+            }
+
+            // Next of Kin Information
+            if (currentStudentData.nextOfKin) {
+                document.getElementById('nextOfKinName').value = currentStudentData.nextOfKin.name || '';
+                document.getElementById('nextOfKinRelationship').value = currentStudentData.nextOfKin.relationship || '';
+                document.getElementById('nextOfKinPhone').value = currentStudentData.nextOfKin.phone || '';
+                document.getElementById('nextOfKinEmail').value = currentStudentData.nextOfKin.email || '';
+                document.getElementById('nextOfKinAddress').value = currentStudentData.nextOfKin.address || '';
+            }
+
+            // Load current photo if available
+                    const photoPreview = document.getElementById('photoPreview');
+        const photoPlaceholder = document.getElementById('photoPlaceholder');
+
+        if (currentStudentData.passportPhotoPath && currentStudentData.passportPhotoPath.trim() !== '') {
+            // Use the StudentAdministration preview endpoint instead
+            photoPreview.src = `/uploads/student-photos/@($"{Model.StudentNumber}.png")`;
+            photoPreview.classList.remove('hidden');
+            photoPlaceholder.classList.add('hidden');
+            photoPreview.onerror = function() {
+                console.log('Failed to load photo from:', this.src);
+                this.classList.add('hidden');
+                photoPlaceholder.classList.remove('hidden');
+            };
+        } else {
+            photoPreview.classList.add('hidden');
+            photoPlaceholder.classList.remove('hidden');
+        }
+
+            document.getElementById('profileModal').classList.remove('hidden');
+        }
+
+
+
+        async function openAcademicModal() {
+            // Load dropdown options
+            await loadDropdownOptions();
+
+            // Populate current values
+            document.getElementById('programmeSelect').value = currentStudentData.programmeId || '';
+            document.getElementById('schoolSelect').value = currentStudentData.schoolId || '';
+            document.getElementById('modeSelect').value = currentStudentData.modeOfStudyId || '';
+            document.getElementById('levelSelect').value = currentStudentData.programmeLevelId || '';
+            document.getElementById('academicYearSelect').value = currentStudentData.academicYearId || '';
+            document.getElementById('currentYear').value = currentStudentData.currentYear || 1;
+            document.getElementById('currentSemester').value = currentStudentData.currentSemester || 1;
+
+            document.getElementById('academicModal').classList.remove('hidden');
+        }
+
+        function openPasswordModal() {
+            // Reset modal state
+            document.getElementById('passwordResetContent').classList.remove('hidden');
+            document.getElementById('passwordResult').classList.add('hidden');
+
+            document.getElementById('passwordModal').classList.remove('hidden');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+
+            // Clear countdown timer if exists
+            if (countdownTimer) {
+                clearInterval(countdownTimer);
+                countdownTimer = null;
+            }
+        }
+
+        // Load dropdown options
+        async function loadDropdownOptions() {
+            try {
+                const [schools, modes, levels, years] = await Promise.all([
+                    fetch('/StudentAdministration/GetSchools').then(r => r.json()),
+                    fetch('/StudentAdministration/GetAllModes').then(r => r.json()),
+                    fetch('/StudentAdministration/GetProgrammeLevels').then(r => r.json()),
+                    fetch('/StudentAdministration/GetAcademicYears').then(r => r.json())
+                ]);
+
+                // if (programmes.success) {
+                //     const programmeSelect = document.getElementById('programmeSelect');
+                //     programmeSelect.innerHTML = '<option value="">Select Programme</option>';
+                //     programmes.data.forEach(p => {
+                //         programmeSelect.innerHTML += `<option value="${p.id}">${p.name}</option>`;
+                //     });
+                // }
+
+                if (schools.success) {
+                    const schoolSelect = document.getElementById('schoolSelect');
+                    schoolSelect.innerHTML = '<option value="">Select School</option>';
+                    schools.data.forEach(s => {
+                        schoolSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+                    });
+                }
+
+                if (levels.success) {
+                    const levelSelect = document.getElementById('levelSelect');
+                    levelSelect.innerHTML = '<option value="">Select Level</option>';
+                    levels.data.forEach(l => {
+                        levelSelect.innerHTML += `<option value="${l.id}">${l.name}</option>`;
+                    });
+                }
+
+                if (modes.success) {
+                    const modeSelect = document.getElementById('modeSelect');
+                    modeSelect.innerHTML = '<option value="">Select Mode</option>';
+                    modes.data.forEach(m => {
+                        modeSelect.innerHTML += `<option value="${m.id}">${m.name}</option>`;
+                    });
+                }
+
+                if (years.success) {
+                    const yearSelect = document.getElementById('academicYearSelect');
+                    yearSelect.innerHTML = '<option value="">Select Academic Year</option>';
+                    years.data.forEach(y => {
+                        yearSelect.innerHTML += `<option value="${y.id}">${y.name}</option>`;
+                    });
+                }
+
+                // Add school change handler for programmes
+                document.getElementById('schoolSelect').addEventListener('change', async function() {
+                    const schoolId = this.value;
+                    const programmeSelect = document.getElementById('programmeSelect');
+
+                    programmeSelect.innerHTML = '<option value="">Select Programme</option>';
+
+                    if (schoolId) {
+                        const response = await fetch(`/StudentAdministration/GetProgrammesBySchool?schoolId=${schoolId}`);
+                        const result = await response.json();
+
+                        if (result.success && result.data.length > 0) {
+                            result.data.forEach(p => {
+                                const option = document.createElement('option');
+                                option.value = p.id;
+                                option.textContent = p.name;
+
+                                if (p.id === currentStudentData.programmeId) {
+                                    option.selected = true;
+                                }
+
+                                programmeSelect.appendChild(option);
+                            });
+                        }
+                    }
+                });
+
+                schoolSelect.value = currentStudentData.schoolId;
+                schoolSelect.dispatchEvent(new Event('change'));
+
+            } catch (error) {
+                console.error('Error loading dropdown options:', error);
+                showToast('Error loading form options', 'error');
+            }
+        }
+
+        // Registration toggle
+        function toggleRegistration(enable) {
+            const action = enable ? 'enable' : 'disable';
+            const title = enable ? 'Enable Registration' : 'Disable Registration';
+            const message = enable ?
+                'Are you sure you want to enable registration for this student?' :
+                'Are you sure you want to disable registration? This will remove all current course registrations and invoices.';
+
+            showConfirmModal(title, message, 'warning', () => {
+                performRegistrationToggle(enable);
+            });
+        }
+
+        async function performRegistrationToggle(enable) {
+            try {
+                const reason = `Registration ${enable ? 'enabled' : 'disabled'} by admin`;
+                const response = await fetch('/StudentAdministration/ToggleRegistration', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    },
+                    body: JSON.stringify({
+                        StudentId: @Model.StudentId,
+                        EnableRegistration: enable,
+                        Reason: reason
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast(result.message, 'success');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                } else {
+                    showToast(result.message || 'Operation failed', 'error');
+                }
+            } catch (error) {
+                console.error('Error toggling registration:', error);
+                showToast('An error occurred', 'error');
+            }
+        }
+
+        // Password reset
+        async function resetStudentPassword() {
+            const btn = document.getElementById('resetPasswordBtn');
+            const icon = document.getElementById('resetPasswordIcon');
+            const text = document.getElementById('resetPasswordText');
+
+            try {
+                // Show loading state
+                btn.disabled = true;
+                icon.classList.add('animate-spin');
+                text.textContent = 'Generating...';
+
+                const response = await fetch(`/StudentAdministration/ResetPassword?studentId=@Model.StudentId`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Hide reset form and show result
+                    document.getElementById('passwordResetContent').classList.add('hidden');
+                    document.getElementById('passwordResult').classList.remove('hidden');
+
+                    // Set the temporary password
+                    document.getElementById('tempPassword').value = result.temporaryPassword;
+
+                    // Start countdown timer
+                    startPasswordTimer();
+
+                    showToast('Password reset successfully', 'success');
+                } else {
+                    showToast(result.message || 'Password reset failed', 'error');
+                }
+            } catch (error) {
+                console.error('Error resetting password:', error);
+                showToast('An error occurred while resetting password', 'error');
+            } finally {
+                // Reset button state
+                btn.disabled = false;
+                icon.classList.remove('animate-spin');
+                text.textContent = 'Generate New Password';
+            }
+        }
+
+        function startPasswordTimer() {
+            let seconds = 60;
+            const countdownElement = document.getElementById('countdown');
+            const timerElement = document.getElementById('passwordTimer');
+
+            countdownTimer = setInterval(() => {
+                seconds--;
+                countdownElement.textContent = seconds;
+
+                if (seconds <= 0) {
+                    clearInterval(countdownTimer);
+                    document.getElementById('tempPassword').value = '••••••••';
+                    timerElement.innerHTML = '<span class="text-red-600">Password hidden for security</span>';
+                }
+            }, 1000);
+        }
+
+        function copyPassword() {
+            const passwordField = document.getElementById('tempPassword');
+            passwordField.select();
+            document.execCommand('copy');
+            showToast('Password copied to clipboard', 'success');
+        }
+
+        // Form handlers
+        function initializeFormHandlers() {
+            // Profile form
+            document.getElementById('profileForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                await submitProfileForm();
+            });
+
+            // Academic form
+            document.getElementById('academicForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                await submitAcademicForm();
+            });
+
+            // Tab click handlers
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('admin-tab-button') || e.target.closest('.admin-tab-button')) {
+                    const tabButton = e.target.classList.contains('admin-tab-button') ? e.target : e.target.closest('.admin-tab-button');
+                    const tabName = tabButton.dataset.tab;
+                    loadAdminTab(tabName);
+                }
+            });
+        }
+
+        async function submitProfileForm() {
+            const loader = document.getElementById('profileLoader');
+            const submitBtn = document.querySelector('#profileForm button[type="submit"]');
+
+            // Check for photo warnings before submitting
+            if (hasPhotoWarnings) {
+                showToast('Please resolve photo validation issues before submitting', 'error');
+                return;
+            }
+
+            try {
+                loader.classList.remove('hidden');
+                loader.classList.add('animate-spin');
+                submitBtn.disabled = true;
+
+                const formData = new FormData(document.getElementById('profileForm'));
+
+                const response = await fetch('/StudentAdministration/UpdateStudentProfile', {
+                    method: 'POST',
+                    headers: {
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    },
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    throw new Error(`Expected JSON response, got: ${text}`);
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast('Profile updated successfully', 'success');
+                    closeModal('profileModal');
+                    await loadStudentDetails();
+                    loadAdminTab('profile');
+                    // Reload page to show updated photo in header
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    showToast(result.message || 'Update failed', 'error');
+                }
+            } catch (error) {
+                console.error('Error updating profile:', error);
+                showToast('An error occurred while updating profile', 'error');
+            } finally {
+                loader.classList.add('hidden');
+                loader.classList.remove('animate-spin');
+                submitBtn.disabled = false;
+            }
+        }
+
+
+        async function submitAcademicForm() {
+            const loader = document.getElementById('academicLoader');
+            const submitBtn = document.querySelector('#academicForm button[type="submit"]');
+
+            try {
+                loader.classList.remove('hidden');
+                loader.classList.add('animate-spin');
+                submitBtn.disabled = true;
+
+                const formData = new FormData(document.getElementById('academicForm'));
+                const data = Object.fromEntries(formData.entries());
+
+                const response = await fetch('/StudentAdministration/ChangeProgramme', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast('Academic details updated successfully', 'success');
+                    closeModal('academicModal');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                } else {
+                    showToast(result.message || 'Update failed', 'error');
+                }
+            } catch (error) {
+                console.error('Error updating academic details:', error);
+                showToast('An error occurred while updating academic details', 'error');
+            } finally {
+                loader.classList.add('hidden');
+                loader.classList.remove('animate-spin');
+                submitBtn.disabled = false;
+            }
+        }
+
+        // Utility functions
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toastNotification');
+            const toastMessage = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastMessage.textContent = message;
+
+            if (type === 'error') {
+                toast.className = 'fixed bottom-4 right-4 p-4 rounded-lg shadow-lg max-w-sm z-50 bg-red-100 text-red-800 border border-red-200';
+                toastIcon.textContent = 'error';
+                toastIcon.className = 'material-icons mr-2 text-red-500';
+            } else {
+                toast.className = 'fixed bottom-4 right-4 p-4 rounded-lg shadow-lg max-w-sm z-50 bg-green-100 text-green-800 border border-green-200';
+                toastIcon.textContent = 'check_circle';
+                toastIcon.className = 'material-icons mr-2 text-green-500';
+            }
+
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 5000);
+        }
+
+        function showConfirmModal(title, message, type, onConfirm) {
+            document.getElementById('confirmTitle').textContent = title;
+            document.getElementById('confirmMessage').textContent = message;
+
+            const confirmButton = document.getElementById('confirmButton');
+            confirmButton.onclick = () => {
+                closeModal('confirmModal');
+                onConfirm();
+            };
+
+            document.getElementById('confirmModal').classList.remove('hidden');
+        }
+
+
+        // Registration Management Variables
+        let availableCourses = [];
+        let selectedCourseIds = new Set();
+        let courseRequirements = {};
+        let studentRegistrationInfo = {};
+
+        // Open Registration Modal
+        async function openRegistrationModal() {
+            document.getElementById('registrationModal').classList.remove('hidden');
+            await loadStudentRegistrationData();
+        }
+
+        // Load student registration data
+        async function loadStudentRegistrationData() {
+            try {
+                const response = await fetch(`/StudentAdministration/GetStudentAvailableCourses?studentId=@Model.StudentId`);
+                const result = await response.json();
+
+                if (result.success) {
+                    availableCourses = result.data.courses;
+                    courseRequirements = result.data.requirements;
+                    studentRegistrationInfo = result.data.studentInfo;
+
+                    // Update info panel
+                    updateRegistrationInfo(result.data);
+
+                    // Display courses
+                    displayAvailableCourses();
+
+                    // Initialize selected courses
+                    selectedCourseIds.clear();
+                    availableCourses.filter(c => c.isSelected).forEach(c => selectedCourseIds.add(c.id));
+
+                    // Update summary
+                    updateRegistrationSummary();
+                } else {
+                    showToast(result.message || 'Error loading student data', 'error');
+                }
+            } catch (error) {
+                console.error('Error loading registration data:', error);
+                showToast('Error loading registration data', 'error');
+            }
+        }
+
+
+
+                // Update registration info panel
+        function updateRegistrationInfo(data) {
+           const infoText = document.getElementById('registrationInfoText');
+           const programmeInfo = data.programmeUsed && data.programmeUsed !== data.studentInfo.programmeName
+               ? ` (using courses from ${data.programmeUsed})` : '';
+
+           infoText.innerHTML = `
+               <div class="grid grid-cols-2 gap-4">
+                   <div><strong>Programme:</strong> ${data.studentInfo.programmeName}${programmeInfo}</div>
+                   <div><strong>Academic Year:</strong> ${data.studentInfo.academicYear}</div>
+                   <div><strong>Current Year:</strong> Year ${data.studentInfo.currentYear}</div>
+                   <div><strong>Current Semester:</strong> ${data.studentInfo.isSemesterBased ? `Semester ${data.studentInfo.currentSemester}` : 'N/A'}</div>
+               </div>
+           `;
+
+           // Update requirements info
+           const requirementsDiv = document.getElementById('courseRequirements');
+           if (data.requirements.totalRequired > 0) {
+               requirementsDiv.innerHTML = `
+                   <div class="bg-yellow-50 border border-yellow-200 rounded p-2">
+                       <strong>Requirements:</strong> Total: ${data.requirements.totalRequired} courses,
+                       Electives: ${data.requirements.minimumElectives}-${data.requirements.maximumElectives}
+                       ${data.requirements.carryoverCount > 0 ? `, Carryovers: ${data.requirements.carryoverCount}` : ''}
+                   </div>
+               `;
+           } else {
+               requirementsDiv.innerHTML = `
+                   <div class="bg-blue-50 border border-blue-200 rounded p-2">
+                       <strong>Note:</strong> No specific course requirements defined. Admin can select any available courses.
+                   </div>
+               `;
+           }
+        }
+
+        // Display available courses
+        function displayAvailableCourses() {
+           const container = document.getElementById('availableCourses');
+
+           if (availableCourses.length === 0) {
+               container.innerHTML = `
+                   <div class="text-center py-8 text-gray-500">
+                       <i class="material-icons text-4xl mb-2">school</i>
+                       <p>No courses available for this student</p>
+                   </div>
+               `;
+               return;
+           }
+
+           const mandatoryCourses = availableCourses.filter(c => c.isMandatory);
+           const electiveCourses = availableCourses.filter(c => !c.isMandatory);
+           const carryoverCourses = availableCourses.filter(c => c.isCarryover);
+
+           let html = '<div class="space-y-4">';
+
+           // Carryover courses
+           if (carryoverCourses.length > 0) {
+               html += `
+                   <div class="border-l-4 border-red-500 pl-4">
+                       <h5 class="font-medium text-red-800 mb-2">Carryover Courses (${carryoverCourses.length})</h5>
+                       <div class="space-y-2">
+               `;
+               carryoverCourses.forEach(course => {
+                   html += createCourseCheckbox(course, true); // Carryovers are mandatory
+               });
+               html += '</div></div>';
+           }
+
+           // Mandatory courses
+           if (mandatoryCourses.filter(c => !c.isCarryover).length > 0) {
+               html += `
+                   <div class="border-l-4 border-orange-500 pl-4">
+                       <h5 class="font-medium text-orange-800 mb-2">Mandatory Courses (${mandatoryCourses.filter(c => !c.isCarryover).length})</h5>
+                       <div class="space-y-2">
+               `;
+               mandatoryCourses.filter(c => !c.isCarryover).forEach(course => {
+                   html += createCourseCheckbox(course, false);
+               });
+               html += '</div></div>';
+           }
+
+           // Elective courses
+           if (electiveCourses.length > 0) {
+               html += `
+                   <div class="border-l-4 border-blue-500 pl-4">
+                       <h5 class="font-medium text-blue-800 mb-2">Elective Courses (${electiveCourses.length})</h5>
+                       <div class="space-y-2">
+               `;
+               electiveCourses.forEach(course => {
+                   html += createCourseCheckbox(course, false);
+               });
+               html += '</div></div>';
+           }
+
+           html += '</div>';
+           container.innerHTML = html;
+        }
+
+        // Create course checkbox HTML
+        function createCourseCheckbox(course, isDisabled = false) {
+           const isChecked = selectedCourseIds.has(course.id) || course.isSelected;
+           const disabledAttr = isDisabled ? 'disabled' : '';
+           const disabledClass = isDisabled ? 'opacity-60 cursor-not-allowed' : '';
+
+           return `
+               <div class="flex items-start space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 ${disabledClass}">
+                   <input type="checkbox"
+                          id="course_${course.id}"
+                          value="${course.id}"
+                          ${isChecked ? 'checked' : ''}
+                          ${disabledAttr}
+                          onchange="toggleCourseSelection(${course.id})"
+                          class="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                   <div class="flex-1 min-w-0">
+                       <label for="course_${course.id}" class="flex items-start justify-between cursor-pointer">
+                           <div class="flex-1">
+                               <div class="flex items-center space-x-2 mb-1">
+                                   <span class="font-medium text-gray-900">${course.courseCode}</span>
+                                   ${course.isCarryover ? '<span class="px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full">Carryover</span>' : ''}
+                                   ${course.isMandatory ? '<span class="px-2 py-1 text-xs bg-orange-100 text-orange-800 rounded-full">Mandatory</span>' : ''}
+                                   ${course.isExaminable ? '<span class="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">Examinable</span>' : ''}
+                               </div>
+                               <p class="text-sm font-medium text-gray-800">${course.courseName}</p>
+                               <p class="text-xs text-gray-600 mt-1">${course.courseDescription}</p>
+                               ${course.carryoverReason ? `<p class="text-xs text-red-600 mt-1"><em>Reason: ${course.carryoverReason}</em></p>` : ''}
+                           </div>
+                           <div class="text-right text-xs text-gray-500 ml-4">
+                               <div>Year ${course.yearTaken}</div>
+                               ${studentRegistrationInfo.isSemesterBased ? `<div>Sem ${course.semesterTaken}</div>` : ''}
+                           </div>
+                       </label>
+                   </div>
+               </div>
+           `;
+        }
+
+        // Track photo validation state globally
+        let hasPhotoWarnings = false;
+
+        function previewPhoto(input) {
+            const file = input.files[0];
+            const photoPreview = document.getElementById('photoPreview');
+            const photoPlaceholder = document.getElementById('photoPlaceholder');
+
+            if (file) {
+                // Basic validation first
+                const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+                if (!allowedTypes.includes(file.type)) {
+                    showToast('Please select a valid image file (JPG or PNG)', 'error');
+                    input.value = '';
+                    return;
+                }
+
+                if (file.size > 5 * 1024 * 1024) {
+                    showToast('File size must be less than 5MB', 'error');
+                    input.value = '';
+                    return;
+                }
+
+                // Show preview immediately
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    photoPreview.src = e.target.result;
+                    photoPreview.classList.remove('hidden');
+                    photoPlaceholder.classList.add('hidden');
+                };
+                reader.readAsDataURL(file);
+
+                // Validate photo with server
+                validatePhotoServerSide(file);
+            } else {
+                photoPreview.classList.add('hidden');
+                photoPlaceholder.classList.remove('hidden');
+                clearPhotoValidationState();
+            }
+        }
+
+        // Add server-side photo validation
+        async function validatePhotoServerSide(file) {
+            const validationDiv = getOrCreateValidationDiv();
+
+            // Show loading state
+            validationDiv.innerHTML = `
+                <div class="flex items-center text-blue-600 text-sm mt-2">
+                    <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                    Validating photo...
+                </div>
+            `;
+
+            try {
+                const formData = new FormData();
+                formData.append('passportPhoto', file);
+
+                const response = await fetch('/StudentAdministration/ValidatePassportPhoto', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    }
+                });
+
+                const result = await response.json();
+                displayValidationResult(result, validationDiv);
+            } catch (error) {
+                console.error('Photo validation error:', error);
+                hasPhotoWarnings = true;
+                validationDiv.innerHTML = `
+                    <div class="text-red-600 text-sm mt-2 p-2 bg-red-50 border border-red-200 rounded">
+                        Unable to validate photo. Please try again.
+                    </div>
+                `;
+                updateSubmitButtonState();
+            }
+        }
+
+        function getOrCreateValidationDiv() {
+            let validationDiv = document.getElementById('photo-validation-feedback');
+            if (!validationDiv) {
+                validationDiv = document.createElement('div');
+                validationDiv.id = 'photo-validation-feedback';
+
+                // Insert after the photo preview section
+                const photoSection = document.querySelector('#photoPreview').parentElement.parentElement;
+                photoSection.appendChild(validationDiv);
+            }
+            return validationDiv;
+        }
+
+        function displayValidationResult(result, validationDiv) {
+            validationDiv.innerHTML = '';
+
+            if (result.success) {
+                hasPhotoWarnings = result.warnings && result.warnings.length > 0;
+
+                if (hasPhotoWarnings) {
+                    validationDiv.innerHTML = `
+                        <div class="mt-2 p-3 bg-amber-50 border border-amber-200 rounded">
+                            <div class="text-amber-800 text-sm font-medium flex items-center mb-2">
+                                <i class="material-icons text-sm mr-1">warning</i>
+                                Photo uploaded with recommendations
+                            </div>
+                            ${result.warnings.map(warning =>
+                                `<div class="text-amber-700 text-xs mt-1">• ${warning}</div>`
+                            ).join('')}
+                            <div class="text-amber-700 text-xs mt-2 font-medium">
+                                Consider uploading a better quality photo for best results.
+                            </div>
+                        </div>
+                    `;
+                    showToast('Photo uploaded with recommendations', 'warning');
+                } else {
+                    validationDiv.innerHTML = `
+                        <div class="text-green-600 text-sm flex items-center mt-2">
+                            <i class="material-icons text-sm mr-1">check_circle</i>
+                            ${result.message}
+                        </div>
+                    `;
+                }
+            } else {
+                hasPhotoWarnings = true;
+                const errorsHtml = result.errors.map(error =>
+                    `<div class="text-red-600 text-sm flex items-center mt-1">
+                        <i class="material-icons text-sm mr-1">error</i>
+                        ${error}
+                    </div>`
+                ).join('');
+
+                validationDiv.innerHTML = `
+                    <div class="mt-2 p-3 bg-red-50 border border-red-200 rounded">
+                        <div class="text-red-800 text-sm font-medium mb-1">Photo validation failed:</div>
+                        ${errorsHtml}
+                    </div>
+                `;
+                showToast('Photo validation failed - please upload a different photo', 'error');
+            }
+
+            updateSubmitButtonState();
+        }
+
+        function clearPhotoValidationState() {
+            hasPhotoWarnings = false;
+            const validationDiv = document.getElementById('photo-validation-feedback');
+            if (validationDiv) {
+                validationDiv.innerHTML = '';
+            }
+            updateSubmitButtonState();
+        }
+
+        function updateSubmitButtonState() {
+            const submitButton = document.querySelector('#profileForm button[type="submit"]');
+            if (!submitButton) return;
+
+            if (hasPhotoWarnings) {
+                submitButton.disabled = true;
+                submitButton.classList.add('opacity-50');
+                submitButton.innerHTML = `
+                    <span class="flex items-center">
+                        <i class="material-icons text-sm mr-1">warning</i>
+                        Photo Issues - Fix to Continue
+                    </span>
+                `;
+            } else {
+                submitButton.disabled = false;
+                submitButton.classList.remove('opacity-50');
+                submitButton.innerHTML = `
+                    <span class="flex items-center">
+                        <i class="material-icons text-sm mr-1 hidden" id="profileLoader">refresh</i>
+                        Update Profile
+                    </span>
+                `;
+            }
+        }
+
+        function removePhoto() {
+            const photoInput = document.getElementById('passportPhoto');
+            const photoPreview = document.getElementById('photoPreview');
+            const photoPlaceholder = document.getElementById('photoPlaceholder');
+
+            photoInput.value = '';
+            photoPreview.src = '';
+            photoPreview.classList.add('hidden');
+            photoPlaceholder.classList.remove('hidden');
+            clearPhotoValidationState();
+        }
+
+        // Toggle course selection
+        function toggleCourseSelection(courseId) {
+           const checkbox = document.getElementById(`course_${courseId}`);
+
+           if (checkbox.checked) {
+               selectedCourseIds.add(courseId);
+           } else {
+               selectedCourseIds.delete(courseId);
+           }
+
+           updateRegistrationSummary();
+        }
+
+        // Search for additional courses
+        let searchTimeout;
+        async function searchCourses() {
+           const searchInput = document.getElementById('courseSearchInput');
+           const searchTerm = searchInput.value.trim();
+           const StudentId = @Model.StudentId;
+
+           if (searchTerm.length < 2) {
+               document.getElementById('courseSearchResults').innerHTML = `
+                   <div class="text-center py-4 text-gray-500 text-sm">
+                       Enter at least 2 characters to search
+                   </div>
+               `;
+               return;
+           }
+
+           // Clear existing timeout
+           if (searchTimeout) {
+               clearTimeout(searchTimeout);
+           }
+
+           // Set loading state
+           document.getElementById('courseSearchResults').innerHTML = `
+               <div class="text-center py-4">
+                   <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mx-auto"></div>
+                   <p class="text-gray-600 text-sm mt-2">Searching...</p>
+               </div>
+           `;
+
+           // Debounce search
+           searchTimeout = setTimeout(async () => {
+               try {
+                        const formData = new FormData();
+                        formData.append('studentId', @Model.StudentId);
+                        formData.append('searchTerm', searchTerm);
+
+                        console.log(formData);
+
+                        const response = await fetch('/StudentAdministration/SearchCoursesToAdd', {
+                            method: 'POST',
+                            headers: {
+                                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                            },
+                            body: formData
+                        });
+
+                   const result = await response.json();
+                   displaySearchResults(result);
+               } catch (error) {
+                   console.error('Error searching courses:', error);
+                   document.getElementById('courseSearchResults').innerHTML = `
+                       <div class="text-center py-4 text-red-500 text-sm">
+                           Error searching courses
+                       </div>
+                   `;
+               }
+           }, 300);
+        }
+
+        // Display search results
+        function displaySearchResults(result) {
+            const container = document.getElementById('courseSearchResults');
+
+            if (!result.success) {
+                container.innerHTML = `
+                    <div class="text-center py-4 text-red-500 text-sm">
+                        ${result.message || 'Search failed'}
+                    </div>
+                `;
+                return;
+            }
+
+            if (result.data.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-4 text-gray-500 text-sm">
+                        No courses found matching your search
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '<div class="space-y-2">';
+            result.data.forEach(course => {
+                const isAlreadySelected = selectedCourseIds.has(course.id);
+                const isInAvailable = availableCourses.some(c => c.id === course.id);
+
+                // Determine if this is from student's programme
+                const isFromStudentProgramme = course.isFromStudentProgramme || false;
+                const programmeInfo = course.programmeName || 'Unknown Programme';
+                const schoolInfo = course.schoolName || '';
+
+                html += `
+                    <div class="border border-gray-200 rounded-lg p-3 ${isFromStudentProgramme ? 'bg-blue-50 border-blue-200' : ''}">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-2 mb-1">
+                                    <span class="font-medium text-gray-900">${course.courseCode}</span>
+                                    ${course.isMandatory ? '<span class="px-2 py-1 text-xs bg-orange-100 text-orange-800 rounded-full">Mandatory</span>' : ''}
+                                    ${course.isExaminable ? '<span class="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">Examinable</span>' : ''}
+                                    ${isFromStudentProgramme ? '<span class="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">Student\'s Programme</span>' : ''}
+                                </div>
+                                <p class="text-sm font-medium text-gray-800">${course.courseName}</p>
+                                <p class="text-xs text-gray-600">${course.courseDescription}</p>
+                                <div class="flex items-center justify-between mt-1">
+                                    <p class="text-xs text-gray-500">Year ${course.yearTaken} • Semester ${course.semesterTaken}</p>
+                                    <p class="text-xs text-gray-500">${programmeInfo}${schoolInfo ? ` (${schoolInfo})` : ''}</p>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                ${isInAvailable ?
+                                    '<span class="text-xs text-blue-600">Available</span>' :
+                                    isAlreadySelected ?
+                                        `<button onclick="removeCourseFromSelection(${course.id})"
+                                                class="px-3 py-1 bg-red-100 text-red-700 text-xs rounded hover:bg-red-200">
+                                            Remove
+                                        </button>` :
+                                        `<button onclick="addCourseToSelection(${course.id}, '${course.courseCode}', '${course.courseName}', '${course.courseDescription}', ${course.isMandatory}, ${course.isExaminable}, ${course.yearTaken}, ${course.semesterTaken})"
+                                                class="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700">
+                                            Add
+                                        </button>`
+                                }
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+
+            container.innerHTML = html;
+        }
+
+        // Add course to selection
+        function addCourseToSelection(id, courseCode, courseName, courseDescription, isMandatory, isExaminable, yearTaken, semesterTaken) {
+           // Add to available courses array
+           const newCourse = {
+               id: id,
+               courseCode: courseCode,
+               courseName: courseName,
+               courseDescription: courseDescription + ' (Added by Admin)',
+               isMandatory: isMandatory,
+               isExaminable: isExaminable,
+               isSelected: true,
+               isCarryover: false,
+               yearTaken: yearTaken,
+               semesterTaken: semesterTaken
+           };
+
+           availableCourses.push(newCourse);
+           selectedCourseIds.add(id);
+
+           // Refresh displays
+           displayAvailableCourses();
+           updateRegistrationSummary();
+
+           // Clear search and show success
+           document.getElementById('courseSearchInput').value = '';
+           document.getElementById('courseSearchResults').innerHTML = `
+               <div class="text-center py-4 text-green-600 text-sm">
+                   <i class="material-icons text-lg mb-1">check_circle</i>
+                   <p>Course added successfully</p>
+               </div>
+           `;
+
+           showToast(`${courseCode} added to selection`, 'success');
+        }
+
+        // Remove course from selection
+        function removeCourseFromSelection(courseId) {
+           // Remove from available courses if it was added via search
+           availableCourses = availableCourses.filter(c =>
+               !(c.id === courseId && c.courseDescription.includes('Added by Admin'))
+           );
+
+           selectedCourseIds.delete(courseId);
+
+           // Uncheck checkbox if it exists
+           const checkbox = document.getElementById(`course_${courseId}`);
+           if (checkbox) {
+               checkbox.checked = false;
+           }
+
+           // Refresh displays
+           displayAvailableCourses();
+           updateRegistrationSummary();
+
+           showToast('Course removed from selection', 'info');
+        }
+
+        // Update registration summary
+        function updateRegistrationSummary() {
+           const selectedCourses = availableCourses.filter(c => selectedCourseIds.has(c.id));
+           const mandatoryCount = selectedCourses.filter(c => c.isMandatory).length;
+           const electiveCount = selectedCourses.filter(c => !c.isMandatory).length;
+           const carryoverCount = selectedCourses.filter(c => c.isCarryover).length;
+           const totalCount = selectedCourses.length;
+
+           const summaryDiv = document.getElementById('registrationSummary');
+
+           let validationMessages = [];
+           let isValid = true;
+
+           // Check requirements if they exist
+           if (courseRequirements.totalRequired > 0) {
+               if (totalCount > courseRequirements.totalRequired) {
+                   validationMessages.push(`⚠️ Too many courses selected (${totalCount}/${courseRequirements.totalRequired})`);
+                   isValid = false;
+               }
+
+               const regularElectives = electiveCount - carryoverCount;
+               if (regularElectives < courseRequirements.minimumElectives) {
+                   validationMessages.push(`⚠️ Need ${courseRequirements.minimumElectives - regularElectives} more elective(s)`);
+                   isValid = false;
+               }
+           }
+
+           summaryDiv.innerHTML = `
+               <div class="space-y-2">
+                   <div><strong>Total Selected:</strong> ${totalCount} course${totalCount !== 1 ? 's' : ''}</div>
+                   <div class="text-sm text-gray-600">
+                       • Mandatory: ${mandatoryCount} (includes ${carryoverCount} carryover${carryoverCount !== 1 ? 's' : ''})<br>
+                       • Electives: ${electiveCount}
+                   </div>
+                   ${validationMessages.length > 0 ? `
+                       <div class="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm">
+                           ${validationMessages.join('<br>')}
+                       </div>
+                   ` : isValid ? `
+                       <div class="mt-2 p-2 bg-green-50 border border-green-200 rounded text-sm text-green-800">
+                           ✅ Selection looks good!
+                       </div>
+                   ` : ''}
+               </div>
+           `;
+
+           // Update register button state
+           const registerBtn = document.getElementById('registerStudentBtn');
+           if (totalCount === 0) {
+               registerBtn.disabled = true;
+               registerBtn.classList.add('opacity-50', 'cursor-not-allowed');
+           } else {
+               registerBtn.disabled = false;
+               registerBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+           }
+        }
+
+        // Reset course selection
+        function resetCourseSelection() {
+           selectedCourseIds.clear();
+
+           // Reset to original selection (mandatory and carryover courses)
+           availableCourses.forEach(course => {
+               if (course.isMandatory || course.isCarryover) {
+                   selectedCourseIds.add(course.id);
+               }
+           });
+
+           // Remove courses added by admin
+           availableCourses = availableCourses.filter(c =>
+               !c.courseDescription.includes('Added by Admin')
+           );
+
+           // Refresh displays
+           displayAvailableCourses();
+           updateRegistrationSummary();
+
+           // Clear search
+           document.getElementById('courseSearchInput').value = '';
+           document.getElementById('courseSearchResults').innerHTML = `
+               <div class="text-center py-4 text-gray-500 text-sm">
+                   Enter search terms to find additional courses
+               </div>
+           `;
+        }
+
+        // Execute student registration
+        async function executeStudentRegistration() {
+           const reason = 'Course registration executed by admin';
+
+           const selectedCoursesList = Array.from(selectedCourseIds);
+
+           if (selectedCoursesList.length === 0) {
+               showToast('Please select at least one course', 'warning');
+               return;
+           }
+
+           const registerBtn = document.getElementById('registerStudentBtn');
+           const loader = document.getElementById('registrationLoader');
+
+           try {
+               registerBtn.disabled = true;
+               loader.classList.remove('hidden');
+               loader.classList.add('animate-spin');
+
+               const response = await fetch('/StudentAdministration/ExecuteStudentRegistration', {
+                   method: 'POST',
+                   headers: {
+                       'Content-Type': 'application/json',
+                       'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                   },
+                   body: JSON.stringify({
+                       StudentId: @Model.StudentId,
+                       SelectedCourseIds: selectedCoursesList,
+                       Reason: reason.trim()
+                   })
+               });
+
+               const result = await response.json();
+
+               if (result.success) {
+                   showToast(result.message, 'success');
+                   closeModal('registrationModal');
+                   // Refresh the page to show updated registration status
+                   setTimeout(() => {
+                       window.location.reload();
+                   }, 2000);
+               } else {
+                   showToast(result.message || 'Registration failed', 'error');
+               }
+           } catch (error) {
+               console.error('Error executing registration:', error);
+               showToast('An error occurred during registration', 'error');
+           } finally {
+               registerBtn.disabled = false;
+               loader.classList.add('hidden');
+               loader.classList.remove('animate-spin');
+           }
+        }
+
+        // Add event listener for course search input
+        document.addEventListener('DOMContentLoaded', function() {
+           // Add the existing DOMContentLoaded content here, then add:
+
+           // Course search input event listener
+           document.addEventListener('keyup', function(e) {
+               if (e.target && e.target.id === 'courseSearchInput') {
+                   if (e.key === 'Enter') {
+                       searchCourses();
+                   }
+               }
+           });
+        });
+
+
+
+
+
+
+
+        // Close modals when clicking outside
+        window.addEventListener('click', function(e) {
+            const modals = ['profileModal', 'academicModal', 'passwordModal', 'confirmModal', 'registrationModal'];
+            modals.forEach(modalId => {
+                const modal = document.getElementById(modalId);
+                if (e.target === modal) {
+                    closeModal(modalId);
+                }
+            });
+        });
+
+        // Close modals with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modals = ['profileModal', 'academicModal', 'passwordModal', 'confirmModal', 'registrationModal'];
+                modals.forEach(modalId => {
+                    closeModal(modalId);
+                });
+            }
+        });
+
+        console.log('Student Administration');
+    </script>
+}

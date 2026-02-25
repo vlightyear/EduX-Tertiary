@@ -1,0 +1,1067 @@
+@{
+    ViewData["Title"] = "Result Appeals Management";
+    var remarkFee = ViewBag.RemarkFee ?? 500.00m;
+}
+
+<div class="min-h-screen p-2 sm:p-4">
+    <!-- Header Section -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
+        <div class="flex items-center text-gray-800">
+            <i class="material-icons text-2xl sm:text-3xl mr-2 text-indigo-600">rate_review</i>
+            <div>
+                <h1 class="text-xl sm:text-2xl font-bold">Result Appeals Management</h1>
+                <p class="text-xs sm:text-sm text-slate-600">Review and respond to student result appeals</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-4 mb-4">
+        <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 border-l-4 border-slate-500">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-500 uppercase tracking-wider">Total</p>
+                    <p id="statTotal" class="text-xl sm:text-2xl font-bold text-slate-700">0</p>
+                </div>
+                <div class="hidden sm:flex w-10 h-10 bg-slate-100 rounded-full items-center justify-center">
+                    <i class="material-icons text-slate-600">assessment</i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 border-l-4 border-yellow-500">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-500 uppercase tracking-wider">Pending</p>
+                    <p id="statPending" class="text-xl sm:text-2xl font-bold text-yellow-600">0</p>
+                </div>
+                <div class="hidden sm:flex w-10 h-10 bg-yellow-100 rounded-full items-center justify-center">
+                    <i class="material-icons text-yellow-600">hourglass_empty</i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 border-l-4 border-blue-500">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-500 uppercase tracking-wider">Under Review</p>
+                    <p id="statUnderReview" class="text-xl sm:text-2xl font-bold text-blue-600">0</p>
+                </div>
+                <div class="hidden sm:flex w-10 h-10 bg-blue-100 rounded-full items-center justify-center">
+                    <i class="material-icons text-blue-600">rate_review</i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 border-l-4 border-green-500">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-500 uppercase tracking-wider">Approved</p>
+                    <p id="statApproved" class="text-xl sm:text-2xl font-bold text-green-600">0</p>
+                </div>
+                <div class="hidden sm:flex w-10 h-10 bg-green-100 rounded-full items-center justify-center">
+                    <i class="material-icons text-green-600">check_circle</i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 border-l-4 border-red-500">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-500 uppercase tracking-wider">Rejected</p>
+                    <p id="statRejected" class="text-xl sm:text-2xl font-bold text-red-600">0</p>
+                </div>
+                <div class="hidden sm:flex w-10 h-10 bg-red-100 rounded-full items-center justify-center">
+                    <i class="material-icons text-red-600">cancel</i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 border-l-4 border-orange-500">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-500 uppercase tracking-wider">Fee Pending</p>
+                    <p id="statPendingPayment" class="text-xl sm:text-2xl font-bold text-orange-600">0</p>
+                </div>
+                <div class="hidden sm:flex w-10 h-10 bg-orange-100 rounded-full items-center justify-center">
+                    <i class="material-icons text-orange-600">payment</i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="bg-white rounded-lg shadow-md p-4 mb-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">School</label>
+                <select id="filterSchool" onchange="loadDepartments(); loadAppeals();"
+                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                    <option value="">All Schools</option>
+                    @if (ViewBag.Schools != null)
+                    {
+                        foreach (var item in ViewBag.Schools)
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Department</label>
+                <select id="filterDepartment" onchange="loadProgrammes(); loadAppeals();"
+                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                    <option value="">All Departments</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Programme</label>
+                <select id="filterProgramme" onchange="loadAppeals()"
+                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                    <option value="">All Programmes</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Academic Year</label>
+                <select id="filterAcademicYear" onchange="loadAppeals(); loadStatistics();"
+                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                    <option value="">All Years</option>
+                    @if (ViewBag.AcademicYears != null)
+                    {
+                        foreach (var item in ViewBag.AcademicYears)
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Status</label>
+                <select id="filterStatus" onchange="loadAppeals()"
+                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                    <option value="">All Statuses</option>
+                    @if (ViewBag.Statuses != null)
+                    {
+                        foreach (var item in ViewBag.Statuses)
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Appeal Type</label>
+                <select id="filterAppealType" onchange="loadAppeals()"
+                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                    <option value="">All Types</option>
+                    <option value="Remark">Remark</option>
+                    <option value="Review">Review</option>
+                    <option value="Recalculation">Recalculation</option>
+                    <option value="MissingMarks">Missing Marks</option>
+                    <option value="GradeDispute">Grade Dispute</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="mt-3 flex justify-end gap-2">
+            <button type="button" onclick="exportToExcel()"
+                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm">
+                <i class="material-icons text-sm align-middle mr-1">download</i>
+                Export Excel
+            </button>
+            <button type="button" onclick="clearFilters()"
+                    class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors text-sm">
+                <i class="material-icons text-sm align-middle mr-1">clear</i>
+                Clear Filters
+            </button>
+            <button type="button" onclick="loadAppeals(); loadStatistics();"
+                    class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm">
+                <i class="material-icons text-sm align-middle mr-1">refresh</i>
+                Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- Appeals Table -->
+    <div class="bg-white rounded-lg shadow-md">
+        <div class="p-4 border-b border-slate-200 flex justify-between items-center">
+            <h3 class="text-lg font-semibold text-slate-700">Appeals</h3>
+            <span id="totalCount" class="text-sm text-slate-500">0 records</span>
+        </div>
+        <div class="overflow-x-auto">
+            <div id="appealsContainer" class="p-4">
+                <div class="text-center py-8 text-slate-500">
+                    <i class="material-icons text-6xl mb-2 text-slate-300">hourglass_empty</i>
+                    <p class="text-lg">Loading appeals...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        <div id="paginationContainer" class="hidden p-4 border-t border-slate-200 bg-slate-50">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-2">
+                <span id="paginationInfo" class="text-sm text-slate-600"></span>
+                <div class="flex gap-2">
+                    <button type="button" id="prevPageBtn" onclick="previousPage()"
+                            class="px-3 py-1 bg-slate-200 text-slate-700 rounded hover:bg-slate-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm">
+                        Previous
+                    </button>
+                    <button type="button" id="nextPageBtn" onclick="nextPage()"
+                            class="px-3 py-1 bg-slate-200 text-slate-700 rounded hover:bg-slate-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm">
+                        Next
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Indicator -->
+<div id="loadingIndicator" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-lg p-6 flex items-center space-x-4">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+        <span class="text-slate-700">Loading...</span>
+    </div>
+</div>
+
+<!-- Response Modal -->
+<div id="responseModal" class="fixed inset-0 z-50 hidden flex items-center justify-center">
+    <div class="fixed inset-0 bg-black opacity-40" onclick="hideResponseModal()"></div>
+    <div class="bg-white rounded-lg shadow-lg w-11/12 md:w-2/3 lg:w-1/2 z-10 overflow-hidden max-h-[90vh] overflow-y-auto">
+        <div class="px-6 py-4 bg-indigo-600 text-white sticky top-0">
+            <h3 class="text-xl font-semibold flex items-center">
+                <i class="material-icons mr-2">reply</i>
+                Respond to Appeal
+            </h3>
+        </div>
+        <form id="responseForm" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="responseAppealId" />
+
+            <div class="px-6 py-4">
+                <!-- Appeal Info -->
+                <div class="mb-6 p-4 bg-slate-50 rounded-lg">
+                    <h4 class="text-sm font-semibold text-slate-600 mb-2">Appeal Information</h4>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-xs text-slate-500">Student</p>
+                            <p id="responseStudentName" class="font-medium text-slate-800">-</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-500">Course</p>
+                            <p id="responseCourseName" class="font-medium text-slate-800">-</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-500">Appeal Type</p>
+                            <p id="responseAppealType" class="font-medium text-slate-800">-</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-500">Current Status</p>
+                            <p id="responseCurrentStatus" class="font-medium text-slate-800">-</p>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <p class="text-xs text-slate-500">Reason</p>
+                        <p id="responseReason" class="text-sm text-slate-700 mt-1">-</p>
+                    </div>
+                </div>
+
+                <!-- Fee Status (for Remark appeals) -->
+                <div id="feeStatusSection" class="mb-6 p-4 bg-orange-50 rounded-lg hidden">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="text-sm font-semibold text-orange-800">Remark Fee Status</h4>
+                            <p id="feeStatusText" class="text-sm text-orange-600">-</p>
+                        </div>
+                        <button type="button" id="confirmPaymentBtn" onclick="confirmPayment()"
+                                class="hidden px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm">
+                            <i class="material-icons text-sm align-middle mr-1">check</i>
+                            Confirm Payment
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Response -->
+                <div class="mb-6">
+                    <label for="responseText" class="block text-sm font-medium text-gray-700 mb-2">
+                        Response *
+                    </label>
+                    <textarea required name="response" id="responseText" rows="4"
+                              class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                              placeholder="Enter your response to this appeal..."></textarea>
+                </div>
+
+                <!-- Status Update -->
+                <div class="mb-6">
+                    <div class="relative z-0 w-full group">
+                        <select required name="status" id="responseStatus"
+                                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-indigo-600 peer">
+                            <option value="">Select New Status</option>
+                            @if (ViewBag.Statuses != null)
+                            {
+                                foreach (var item in ViewBag.Statuses)
+                                {
+                                    <option value="@item.Value">@item.Text</option>
+                                }
+                            }
+                        </select>
+                        <label for="responseStatus"
+                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-indigo-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                            New Status *
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Revised Marks (Optional) -->
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="relative z-0 w-full group">
+                        <input type="number" step="0.01" min="0" max="100" name="revisedMark" id="revisedMark"
+                               class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-indigo-600 peer"
+                               placeholder=" " />
+                        <label for="revisedMark"
+                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-indigo-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                            Revised Mark (if applicable)
+                        </label>
+                    </div>
+
+                    <div class="relative z-0 w-full group">
+                        <input type="text" name="revisedGrade" id="revisedGrade"
+                               class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-indigo-600 peer"
+                               placeholder=" " />
+                        <label for="revisedGrade"
+                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-indigo-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                            Revised Grade (if applicable)
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-6 py-4 bg-gray-50 flex justify-end gap-2 sticky bottom-0">
+                <button type="button" onclick="hideResponseModal()" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+                    Submit Response
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- View Appeal Modal -->
+<div id="viewModal" class="fixed inset-0 z-50 hidden flex items-center justify-center">
+    <div class="fixed inset-0 bg-black opacity-40" onclick="hideViewModal()"></div>
+    <div class="bg-white rounded-lg shadow-lg w-11/12 md:w-2/3 lg:w-1/2 z-10 overflow-hidden max-h-[90vh] overflow-y-auto">
+        <div class="px-6 py-4 bg-indigo-600 text-white sticky top-0">
+            <h3 class="text-xl font-semibold flex items-center">
+                <i class="material-icons mr-2">visibility</i>
+                Appeal Details
+            </h3>
+        </div>
+        <div id="viewModalContent" class="px-6 py-4">
+            <!-- Content loaded dynamically -->
+        </div>
+        <div class="px-6 py-4 bg-gray-50 flex justify-end sticky bottom-0">
+            <button type="button" onclick="hideViewModal()" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300 transition-colors">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Confirmation Modal -->
+<div id="paymentModal" class="fixed inset-0 z-50 hidden flex items-center justify-center">
+    <div class="fixed inset-0 bg-black opacity-40" onclick="hidePaymentModal()"></div>
+    <div class="bg-white rounded-lg shadow-lg w-full md:w-1/3 z-10 overflow-hidden">
+        <div class="px-6 py-4 bg-green-600 text-white">
+            <h3 class="text-xl font-semibold flex items-center">
+                <i class="material-icons mr-2">payment</i>
+                Confirm Payment
+            </h3>
+        </div>
+        <form id="paymentForm" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="paymentAppealId" />
+            <div class="px-6 py-4">
+                <p class="text-slate-700 mb-4">
+                    Confirm that the remark fee of <strong>K@remarkFee.ToString("N2")</strong> has been paid.
+                </p>
+                <div class="relative z-0 w-full group">
+                    <input type="text" required name="paymentReference" id="paymentReference"
+                           class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-green-600 peer"
+                           placeholder=" " />
+                    <label for="paymentReference"
+                           class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-green-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                        Payment Reference / Receipt Number *
+                    </label>
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-gray-50 flex justify-end gap-2">
+                <button type="button" onclick="hidePaymentModal()" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                    Confirm Payment
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const REMARK_FEE = @remarkFee;
+        let currentPage = 1;
+        let totalPages = 1;
+        let currentAppealData = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAppeals();
+            loadStatistics();
+        });
+
+        // Load statistics
+        async function loadStatistics() {
+            try {
+                const academicYearId = document.getElementById('filterAcademicYear').value;
+                const schoolId = document.getElementById('filterSchool').value;
+
+                let url = '/ResultAppeal/GetStatistics?';
+                if (academicYearId) url += `academicYearId=${academicYearId}&`;
+                if (schoolId) url += `schoolId=${schoolId}`;
+
+                const response = await fetch(url);
+                const result = await response.json();
+
+                if (result.success) {
+                    document.getElementById('statTotal').textContent = result.data.total;
+                    document.getElementById('statPending').textContent = result.data.pending;
+                    document.getElementById('statUnderReview').textContent = result.data.underReview;
+                    document.getElementById('statApproved').textContent = result.data.approved;
+                    document.getElementById('statRejected').textContent = result.data.rejected;
+                    document.getElementById('statPendingPayment').textContent = result.data.pendingPayment;
+                }
+            } catch (error) {
+                console.error('Error loading statistics:', error);
+            }
+        }
+
+        // Load appeals
+        async function loadAppeals(page = 1) {
+            currentPage = page;
+            showLoading(true);
+
+            try {
+                const schoolId = document.getElementById('filterSchool').value;
+                const departmentId = document.getElementById('filterDepartment').value;
+                const programmeId = document.getElementById('filterProgramme').value;
+                const academicYearId = document.getElementById('filterAcademicYear').value;
+                const status = document.getElementById('filterStatus').value;
+                const appealType = document.getElementById('filterAppealType').value;
+
+                let url = `/ResultAppeal/GetAppeals?pageNumber=${page}&pageSize=20`;
+                if (schoolId) url += `&schoolId=${schoolId}`;
+                if (departmentId) url += `&departmentId=${departmentId}`;
+                if (programmeId) url += `&programmeId=${programmeId}`;
+                if (academicYearId) url += `&academicYearId=${academicYearId}`;
+                if (status) url += `&status=${status}`;
+                if (appealType) url += `&appealType=${appealType}`;
+
+                const response = await fetch(url);
+                const result = await response.json();
+
+                if (result.success) {
+                    displayAppeals(result.data);
+                    updatePagination(result);
+                    document.getElementById('totalCount').textContent = `${result.totalCount} records`;
+                } else {
+                    showNotification(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error loading appeals:', error);
+                showNotification('Error loading appeals', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Display appeals
+        function displayAppeals(appeals) {
+            const container = document.getElementById('appealsContainer');
+
+            if (!appeals || appeals.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-slate-500">
+                        <i class="material-icons text-6xl mb-2 text-slate-300">inbox</i>
+                        <p class="text-lg">No appeals found</p>
+                        <p class="text-sm">Try adjusting your filters</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = `
+                <table class="min-w-full divide-y divide-slate-200">
+                    <thead class="bg-slate-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Student</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Course</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Type</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Submitted</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-200">
+                        ${appeals.map(appeal => `
+                            <tr class="hover:bg-slate-50">
+                                <td class="px-4 py-4">
+                                    <div class="text-sm font-medium text-slate-900">${appeal.studentName}</div>
+                                    <div class="text-xs text-slate-500">${appeal.studentId}</div>
+                                    <div class="text-xs text-slate-400">${appeal.programme}</div>
+                                </td>
+                                <td class="px-4 py-4">
+                                    <div class="text-sm font-medium text-slate-900">${appeal.courseCode}</div>
+                                    <div class="text-xs text-slate-500">${appeal.courseName}</div>
+                                    <div class="text-xs text-slate-400">${appeal.academicYear} - Sem ${appeal.semester}</div>
+                                </td>
+                                <td class="px-4 py-4">
+                                    <span class="px-2 py-1 text-xs rounded-full ${getAppealTypeClass(appeal.appealType)}">
+                                        ${formatAppealType(appeal.appealType)}
+                                    </span>
+                                    ${appeal.appealType === 'Remark' && !appeal.feePaid ?
+                                        '<span class="ml-1 px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full">Fee Pending</span>' : ''}
+                                </td>
+                                <td class="px-4 py-4">
+                                    <span class="px-2 py-1 text-xs rounded-full ${getStatusClass(appeal.status)}">
+                                        ${formatStatus(appeal.status)}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-4 text-sm text-slate-500">
+                                    ${new Date(appeal.submissionDate).toLocaleDateString()}
+                                </td>
+                                <td class="px-4 py-4">
+                                    <div class="flex gap-2">
+                                        <button onclick="viewAppeal(${appeal.id})"
+                                                class="px-3 py-1 text-xs bg-slate-100 text-slate-700 rounded hover:bg-slate-200 transition-colors">
+                                            View
+                                        </button>
+                                        ${appeal.status === 'Pending' || appeal.status === 'UnderReview' ? `
+                                            <button onclick="respondToAppeal(${appeal.id})"
+                                                    class="px-3 py-1 text-xs bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200 transition-colors">
+                                                Respond
+                                            </button>
+                                        ` : ''}
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        // Load departments
+        async function loadDepartments() {
+            const schoolId = document.getElementById('filterSchool').value;
+            const departmentSelect = document.getElementById('filterDepartment');
+            departmentSelect.innerHTML = '<option value="">All Departments</option>';
+
+            if (!schoolId) {
+                document.getElementById('filterProgramme').innerHTML = '<option value="">All Programmes</option>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/ResultAppeal/GetDepartmentsBySchool?schoolId=${schoolId}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    result.data.forEach(dept => {
+                        departmentSelect.innerHTML += `<option value="${dept.id}">${dept.name}</option>`;
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading departments:', error);
+            }
+        }
+
+        // Load programmes
+        async function loadProgrammes() {
+            const departmentId = document.getElementById('filterDepartment').value;
+            const programmeSelect = document.getElementById('filterProgramme');
+            programmeSelect.innerHTML = '<option value="">All Programmes</option>';
+
+            if (!departmentId) return;
+
+            try {
+                const response = await fetch(`/ResultAppeal/GetProgrammesByDepartment?departmentId=${departmentId}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    result.data.forEach(prog => {
+                        programmeSelect.innerHTML += `<option value="${prog.id}">${prog.name}</option>`;
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading programmes:', error);
+            }
+        }
+
+        // Update pagination
+        function updatePagination(result) {
+            const container = document.getElementById('paginationContainer');
+            const info = document.getElementById('paginationInfo');
+            const prevBtn = document.getElementById('prevPageBtn');
+            const nextBtn = document.getElementById('nextPageBtn');
+
+            totalPages = result.totalPages;
+
+            if (result.totalCount > 0) {
+                container.classList.remove('hidden');
+                info.textContent = `Showing ${((result.pageNumber - 1) * result.pageSize) + 1} to ${Math.min(result.pageNumber * result.pageSize, result.totalCount)} of ${result.totalCount}`;
+                prevBtn.disabled = result.pageNumber <= 1;
+                nextBtn.disabled = result.pageNumber >= result.totalPages;
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+
+        function previousPage() {
+            if (currentPage > 1) loadAppeals(currentPage - 1);
+        }
+
+        function nextPage() {
+            if (currentPage < totalPages) loadAppeals(currentPage + 1);
+        }
+
+        // Clear filters
+        function clearFilters() {
+            document.getElementById('filterSchool').value = '';
+            document.getElementById('filterDepartment').innerHTML = '<option value="">All Departments</option>';
+            document.getElementById('filterProgramme').innerHTML = '<option value="">All Programmes</option>';
+            document.getElementById('filterAcademicYear').value = '';
+            document.getElementById('filterStatus').value = '';
+            document.getElementById('filterAppealType').value = '';
+            loadAppeals();
+            loadStatistics();
+        }
+
+        // Export to Excel
+        async function exportToExcel() {
+            const params = new URLSearchParams();
+
+            const schoolId = document.getElementById('filterSchool').value;
+            const departmentId = document.getElementById('filterDepartment').value;
+            const programmeId = document.getElementById('filterProgramme').value;
+            const academicYearId = document.getElementById('filterAcademicYear').value;
+            const status = document.getElementById('filterStatus').value;
+            const appealType = document.getElementById('filterAppealType').value;
+
+            if (schoolId) params.append('schoolId', schoolId);
+            if (departmentId) params.append('departmentId', departmentId);
+            if (programmeId) params.append('programmeId', programmeId);
+            if (academicYearId) params.append('academicYearId', academicYearId);
+            if (status) params.append('status', status);
+            if (appealType) params.append('appealType', appealType);
+
+            const url = `/ResultAppeal/ExportToExcel${params.toString() ? '?' + params.toString() : ''}`;
+
+            showLoading(true);
+
+            try {
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    throw new Error('Export failed');
+                }
+
+                const blob = await response.blob();
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+
+                // Get filename from Content-Disposition header or use default
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let filename = `ResultAppeals_${new Date().toISOString().slice(0,10)}.xlsx`;
+                if (contentDisposition) {
+                    const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                    if (filenameMatch && filenameMatch[1]) {
+                        filename = filenameMatch[1].replace(/['"]/g, '');
+                    }
+                }
+
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(downloadUrl);
+                a.remove();
+
+                showNotification('Excel file downloaded successfully', 'success');
+            } catch (error) {
+                console.error('Export error:', error);
+                showNotification('Failed to export Excel file', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // View appeal
+        async function viewAppeal(id) {
+            showLoading(true);
+
+            try {
+                const response = await fetch(`/ResultAppeal/GetAppeal?id=${id}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    const appeal = result.data;
+                    document.getElementById('viewModalContent').innerHTML = `
+                        <div class="space-y-4">
+                            <!-- Student Info -->
+                            <div class="p-4 bg-slate-50 rounded-lg">
+                                <h4 class="font-semibold text-slate-700 mb-2">Student Information</h4>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <p class="text-xs text-slate-500">Student ID</p>
+                                        <p class="font-medium">${appeal.studentIdNumber}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-slate-500">Name</p>
+                                        <p class="font-medium">${appeal.studentName}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-slate-500">Email</p>
+                                        <p class="font-medium">${appeal.studentEmail}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-slate-500">Programme</p>
+                                        <p class="font-medium">${appeal.programme}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Course Info -->
+                            <div class="p-4 bg-blue-50 rounded-lg">
+                                <h4 class="font-semibold text-blue-800 mb-2">Course Information</h4>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <p class="text-xs text-blue-600">Course</p>
+                                        <p class="font-medium">${appeal.courseCode} - ${appeal.courseName}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-blue-600">Academic Period</p>
+                                        <p class="font-medium">${appeal.academicYear} - Semester ${appeal.semester}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Appeal Details -->
+                            <div class="p-4 bg-indigo-50 rounded-lg">
+                                <h4 class="font-semibold text-indigo-800 mb-2">Appeal Details</h4>
+                                <div class="grid grid-cols-2 gap-4 mb-3">
+                                    <div>
+                                        <p class="text-xs text-indigo-600">Appeal Type</p>
+                                        <p class="font-medium">${formatAppealType(appeal.appealType)}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-indigo-600">Status</p>
+                                        <span class="px-2 py-1 text-xs rounded-full ${getStatusClass(appeal.status)}">
+                                            ${formatStatus(appeal.status)}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-indigo-600">Submitted</p>
+                                        <p class="font-medium">${new Date(appeal.submissionDate).toLocaleString()}</p>
+                                    </div>
+                                    ${appeal.appealType === 'Remark' ? `
+                                    <div>
+                                        <p class="text-xs text-indigo-600">Fee Status</p>
+                                        <p class="font-medium ${appeal.feePaid ? 'text-green-600' : 'text-red-600'}">
+                                            ${appeal.feePaid ? 'Paid (' + appeal.paymentReference + ')' : 'Pending Payment (K' + REMARK_FEE + ')'}
+                                        </p>
+                                    </div>
+                                    ` : ''}
+                                </div>
+                                <div>
+                                    <p class="text-xs text-indigo-600">Reason</p>
+                                    <p class="text-sm text-slate-700 mt-1">${appeal.reason}</p>
+                                </div>
+                            </div>
+
+                            <!-- Marks -->
+                            ${appeal.originalMark !== null || appeal.revisedMark !== null ? `
+                            <div class="p-4 bg-amber-50 rounded-lg">
+                                <h4 class="font-semibold text-amber-800 mb-2">Marks</h4>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <p class="text-xs text-amber-600">Original</p>
+                                        <p class="font-medium">${appeal.originalMark !== null ? appeal.originalMark + '% (' + (appeal.originalGrade || 'N/A') + ')' : 'N/A'}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-amber-600">Revised</p>
+                                        <p class="font-medium">${appeal.revisedMark !== null ? appeal.revisedMark + '% (' + (appeal.revisedGrade || 'N/A') + ')' : 'Pending'}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            ` : ''}
+
+                            <!-- Response -->
+                            ${appeal.response ? `
+                            <div class="p-4 bg-green-50 rounded-lg">
+                                <h4 class="font-semibold text-green-800 mb-2">Response</h4>
+                                <p class="text-sm text-slate-700">${appeal.response}</p>
+                                ${appeal.responseDate ? `
+                                <p class="text-xs text-slate-500 mt-2">Responded on: ${new Date(appeal.responseDate).toLocaleString()}</p>
+                                ` : ''}
+                            </div>
+                            ` : ''}
+
+                            <!-- Final Decision -->
+                            ${appeal.finalDecision ? `
+                            <div class="p-4 bg-purple-50 rounded-lg">
+                                <h4 class="font-semibold text-purple-800 mb-2">Final Decision</h4>
+                                <p class="text-sm text-slate-700">${appeal.finalDecision}</p>
+                                ${appeal.decisionDate ? `
+                                <p class="text-xs text-slate-500 mt-2">Decision made on: ${new Date(appeal.decisionDate).toLocaleString()}</p>
+                                ` : ''}
+                            </div>
+                            ` : ''}
+                        </div>
+                    `;
+                    document.getElementById('viewModal').classList.remove('hidden');
+                } else {
+                    showNotification(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error loading appeal:', error);
+                showNotification('Error loading appeal details', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function hideViewModal() {
+            document.getElementById('viewModal').classList.add('hidden');
+        }
+
+        // Respond to appeal
+        async function respondToAppeal(id) {
+            showLoading(true);
+
+            try {
+                const response = await fetch(`/ResultAppeal/GetAppeal?id=${id}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    currentAppealData = result.data;
+
+                    document.getElementById('responseAppealId').value = id;
+                    document.getElementById('responseStudentName').textContent = result.data.studentName + ' (' + result.data.studentIdNumber + ')';
+                    document.getElementById('responseCourseName').textContent = result.data.courseCode + ' - ' + result.data.courseName;
+                    document.getElementById('responseAppealType').textContent = formatAppealType(result.data.appealType);
+                    document.getElementById('responseCurrentStatus').textContent = formatStatus(result.data.status);
+                    document.getElementById('responseReason').textContent = result.data.reason;
+
+                    // Show fee status for remark appeals
+                    if (result.data.appealType === 'Remark') {
+                        document.getElementById('feeStatusSection').classList.remove('hidden');
+                        if (result.data.feePaid) {
+                            document.getElementById('feeStatusText').textContent = 'Fee Paid (Ref: ' + result.data.paymentReference + ')';
+                            document.getElementById('confirmPaymentBtn').classList.add('hidden');
+                        } else {
+                            document.getElementById('feeStatusText').textContent = 'Fee Pending - K' + REMARK_FEE;
+                            document.getElementById('confirmPaymentBtn').classList.remove('hidden');
+                        }
+                    } else {
+                        document.getElementById('feeStatusSection').classList.add('hidden');
+                    }
+
+                    document.getElementById('responseText').value = '';
+                    document.getElementById('responseStatus').value = 'UnderReview';
+                    document.getElementById('revisedMark').value = '';
+                    document.getElementById('revisedGrade').value = '';
+
+                    document.getElementById('responseModal').classList.remove('hidden');
+                } else {
+                    showNotification(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error loading appeal:', error);
+                showNotification('Error loading appeal', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function hideResponseModal() {
+            document.getElementById('responseModal').classList.add('hidden');
+            currentAppealData = null;
+        }
+
+        // Submit response
+        document.getElementById('responseForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            showLoading(true);
+
+            try {
+                const id = document.getElementById('responseAppealId').value;
+                const formData = new FormData(e.target);
+
+                const response = await fetch(`/ResultAppeal/RespondToAppeal?id=${id}`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showNotification(result.message, 'success');
+                    hideResponseModal();
+                    await loadAppeals(currentPage);
+                    await loadStatistics();
+                } else {
+                    showNotification(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error submitting response:', error);
+                showNotification('Error submitting response', 'error');
+            } finally {
+                showLoading(false);
+            }
+        });
+
+        // Confirm payment
+        function confirmPayment() {
+            if (!currentAppealData) return;
+            document.getElementById('paymentAppealId').value = currentAppealData.id;
+            document.getElementById('paymentReference').value = '';
+            document.getElementById('paymentModal').classList.remove('hidden');
+        }
+
+        function hidePaymentModal() {
+            document.getElementById('paymentModal').classList.add('hidden');
+        }
+
+        document.getElementById('paymentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            showLoading(true);
+
+            try {
+                const id = document.getElementById('paymentAppealId').value;
+                const formData = new FormData(e.target);
+
+                const response = await fetch(`/ResultAppeal/ConfirmPayment?id=${id}`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showNotification(result.message, 'success');
+                    hidePaymentModal();
+                    hideResponseModal();
+                    await loadAppeals(currentPage);
+                    await loadStatistics();
+                } else {
+                    showNotification(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error confirming payment:', error);
+                showNotification('Error confirming payment', 'error');
+            } finally {
+                showLoading(false);
+            }
+        });
+
+        // Helper functions
+        function getStatusClass(status) {
+            const classes = {
+                'Pending': 'bg-yellow-100 text-yellow-800',
+                'UnderReview': 'bg-blue-100 text-blue-800',
+                'Approved': 'bg-green-100 text-green-800',
+                'Rejected': 'bg-red-100 text-red-800',
+                'Completed': 'bg-purple-100 text-purple-800',
+                'Cancelled': 'bg-gray-100 text-gray-800'
+            };
+            return classes[status] || 'bg-gray-100 text-gray-800';
+        }
+
+        function formatStatus(status) {
+            const formats = {
+                'Pending': 'Pending Review',
+                'UnderReview': 'Under Review',
+                'Approved': 'Approved',
+                'Rejected': 'Rejected',
+                'Completed': 'Completed',
+                'Cancelled': 'Cancelled'
+            };
+            return formats[status] || status;
+        }
+
+        function getAppealTypeClass(type) {
+            const classes = {
+                'Remark': 'bg-red-100 text-red-800',
+                'Review': 'bg-blue-100 text-blue-800',
+                'Recalculation': 'bg-amber-100 text-amber-800',
+                'MissingMarks': 'bg-orange-100 text-orange-800',
+                'GradeDispute': 'bg-purple-100 text-purple-800',
+                'Other': 'bg-gray-100 text-gray-800'
+            };
+            return classes[type] || 'bg-gray-100 text-gray-800';
+        }
+
+        function formatAppealType(type) {
+            const formats = {
+                'Remark': 'Remark',
+                'Review': 'Review',
+                'Recalculation': 'Recalculation',
+                'MissingMarks': 'Missing Marks',
+                'GradeDispute': 'Grade Dispute',
+                'Other': 'Other'
+            };
+            return formats[type] || type;
+        }
+
+        function showLoading(show) {
+            document.getElementById('loadingIndicator').style.display = show ? 'flex' : 'none';
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg transition-all transform ${
+                type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+            }`;
+            notification.innerHTML = `
+                <div class="flex items-center space-x-2">
+                    <i class="material-icons">${type === 'success' ? 'check_circle' : 'error'}</i>
+                    <span>${message}</span>
+                </div>
+            `;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.style.transform = 'translateX(400px)';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // Close modals on Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                hideViewModal();
+                hideResponseModal();
+                hidePaymentModal();
+            }
+        });
+    </script>
+}

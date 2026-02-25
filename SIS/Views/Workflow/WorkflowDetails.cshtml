@@ -1,0 +1,1077 @@
+﻿@model WorkflowDetailsViewModel
+
+@{
+    ViewData["Title"] = $"Workflow Details - #{Model.WorkflowInstance.Id}";
+}
+
+<div class="min-h-screen bg-gray-50 p-4">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header Section -->
+        <div class="flex justify-between items-center mb-4">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800 flex items-center">
+                    <i class="material-icons mr-2">account_tree</i>
+                    Workflow Details - @Model.SubmittedResults?.FirstOrDefault()?.Course <br />(@Model.SubmittedResults?.FirstOrDefault()?.Programme - @Model.SubmittedResults?.FirstOrDefault()?.Year [@Model.SubmittedResults?.FirstOrDefault()?.Semester])
+                </h1>
+                <p class="text-gray-600 text-sm mt-1">@Model.WorkflowInstance.EntityType - @Model.WorkflowInstance.TemplateName</p>
+            </div>
+            <button type="button" onclick="history.back()"
+                    class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center">
+                <i class="material-icons mr-2">arrow_back</i>
+                Back
+            </button>
+        </div>
+
+        <!-- Status Banner -->
+        <div class="mb-4 p-4 rounded-lg @GetStatusBannerClass(Model.WorkflowInstance.Status)">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <i class="material-icons text-2xl mr-3">@GetStatusIcon(Model.WorkflowInstance.Status)</i>
+                    <div>
+                        <h3 class="text-lg font-semibold">Status: @Model.WorkflowInstance.Status.ToString()</h3>
+                        <p class="text-sm">
+                            @if (Model.WorkflowInstance.Status == WorkflowStatus.Pending || Model.WorkflowInstance.Status == WorkflowStatus.InProgress)
+                            {
+                                <span>Current Stage: @Model.WorkflowInstance.CurrentStageName (Stage @Model.WorkflowInstance.CurrentStageOrder)</span>
+                            }
+                            else if (Model.WorkflowInstance.Status == WorkflowStatus.Approved)
+                            {
+                                <span>Completed on @Model.WorkflowInstance.CompletedAt?.ToString("MMM dd, yyyy HH:mm")</span>
+                            }
+                            else if (Model.WorkflowInstance.Status == WorkflowStatus.Rejected)
+                            {
+                                <span>Rejected on @Model.WorkflowInstance.CompletedAt?.ToString("MMM dd, yyyy HH:mm")</span>
+                            }
+                        </p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="text-sm">Initiated by</p>
+                    <p class="font-semibold">@Model.WorkflowInstance.InitiatedByName</p>
+                    <p class="text-xs text-gray-600">@Model.WorkflowInstance.StartedAt.ToString("MMM dd, yyyy HH:mm")</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Submitted Results Section -->
+        @if (Model.SubmittedResults != null && Model.SubmittedResults.Any())
+        {
+            <div class="bg-white rounded-lg shadow-md mb-6">
+                <div class="p-6 border-b border-gray-200 bg-blue-50">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-xl font-semibold text-blue-900 flex items-center">
+                            <i class="material-icons mr-2">assignment</i>
+                            Submitted Results (@Model.SubmittedResults.Count)
+                        </h2>
+                        <div class="flex space-x-2">
+                            <button onclick="exportResults()" class="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm flex items-center">
+                                <i class="material-icons text-sm mr-1">download</i>Export
+                            </button>
+                            <button onclick="toggleResultsView()" class="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm flex items-center">
+                                <i class="material-icons text-sm mr-1">unfold_more</i>
+                                <span id="toggleText">Expand All</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-6">
+                    <!-- Summary Stats -->
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+                        <div class="bg-gray-50 rounded-lg p-4 text-center">
+                            <i class="material-icons text-blue-600 mb-2">people</i>
+                            <p class="text-2xl font-bold text-gray-900">@Model.SubmittedResults.Count</p>
+                            <p class="text-xs text-gray-600">Total Students</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-4 text-center">
+                            <i class="material-icons text-green-600 mb-2">check_circle</i>
+                            <p class="text-2xl font-bold text-green-600">@Model.SubmittedResults.Count(r => r.IsPassed)</p>
+                            <p class="text-xs text-gray-600">Passed</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-4 text-center">
+                            <i class="material-icons text-red-600 mb-2">cancel</i>
+                            <p class="text-2xl font-bold text-red-600">@Model.SubmittedResults.Count(r => !r.IsPassed)</p>
+                            <p class="text-xs text-gray-600">Failed</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-4 text-center">
+                            <i class="material-icons text-purple-600 mb-2">trending_up</i>
+                            <p class="text-2xl font-bold text-purple-600">@Model.SubmittedResults.Average(r => r.CalculatedTotal).ToString("F1")%</p>
+                            <p class="text-xs text-gray-600">Average Score</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-4 text-center">
+                            <i class="material-icons text-orange-600 mb-2">@(Model.SubmittedResults.Any(r => r.HadIntegrityIssue) ? "warning" : "verified")</i>
+                            <p class="text-2xl font-bold text-orange-600">@Model.SubmittedResults.Count(r => r.HadIntegrityIssue)</p>
+                            <p class="text-xs text-gray-600">Integrity Issues</p>
+                        </div>
+                    </div>
+
+                    <!-- Filter and Search -->
+                    <div class="mb-4 flex gap-4">
+                        <div class="flex-1">
+                            <input type="text" id="searchResults" placeholder="Search by student number or name..."
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                   onkeyup="filterResults()">
+                        </div>
+                        <select id="filterStatus" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" onchange="filterResults()">
+                            <option value="all">All Results</option>
+                            <option value="pass">Pass Only</option>
+                            <option value="fail">Fail Only</option>
+                            <option value="integrity">Integrity Issues</option>
+                        </select>
+                    </div>
+
+                    <!-- Results Table -->
+                    <div class="overflow-x-auto" id="resultsTableContainer">
+                        <table class="w-full text-sm" id="resultsTable">
+                            <thead class="bg-gray-50 border-b-2 border-gray-200">
+                                <tr>
+                                    <th class="px-4 py-3 text-left font-semibold text-gray-700 cursor-pointer hover:bg-gray-100" onclick="sortTable(0)">
+                                        Row <i class="material-icons text-xs align-middle">unfold_more</i>
+                                    </th>
+                                    <th class="px-4 py-3 text-left font-semibold text-gray-700 cursor-pointer hover:bg-gray-100" onclick="sortTable(1)">
+                                        Student Number <i class="material-icons text-xs align-middle">unfold_more</i>
+                                    </th>
+                                    <th class="px-4 py-3 text-left font-semibold text-gray-700 cursor-pointer hover:bg-gray-100" onclick="sortTable(2)">
+                                        Full Name <i class="material-icons text-xs align-middle">unfold_more</i>
+                                    </th>
+                                    <th class="px-4 py-3 text-center font-semibold text-gray-700">Study Period</th>
+                                    <th class="px-4 py-3 text-center font-semibold text-gray-700 cursor-pointer hover:bg-gray-100" onclick="sortTable(4)">
+                                        Total <i class="material-icons text-xs align-middle">unfold_more</i>
+                                    </th>
+                                    <th class="px-4 py-3 text-center font-semibold text-gray-700">Grade</th>
+                                    <th class="px-4 py-3 text-center font-semibold text-gray-700">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                @foreach (var result in Model.SubmittedResults)
+                                {
+                                    <tr class="hover:bg-gray-50 result-row"
+                                        data-student="@result.StudentNumber.ToLower() @result.StudentName.ToLower()"
+                                        data-status="@(result.IsPassed ? "pass" : "fail")"
+                                        data-integrity="@result.HadIntegrityIssue">
+                                        <td class="px-4 py-3 text-gray-600">@result.RowNumber</td>
+                                        <td class="px-4 py-3 font-medium text-gray-900">@result.StudentNumber</td>
+                                        <td class="px-4 py-3 text-gray-700">@result.StudentName</td>
+                                        <td class="px-4 py-3 text-center">
+                                            @* <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+                                                @result.ScoresRecorded
+                                            </span> *@
+                                            @result?.StudentStudyPeriod
+                                        </td>
+                                        <td class="px-4 py-3 text-center font-semibold">
+                                            @result.CalculatedTotal.ToString("F1")%
+                                        </td>
+                                        <td class="px-4 py-3 text-center">
+                                            <span class="px-2 py-1 @(result.IsPassed ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800") rounded-full text-xs font-bold">
+                                                @result.Grade
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3 text-center">
+                                            <span class="px-2 py-1 @(result.IsPassed ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800") rounded-full text-xs font-medium">
+                                                @(result.IsPassed ? "PASS" : "FAIL")
+                                            </span>
+                                            @if (result.HadIntegrityIssue)
+                                            {
+                                                <span class="ml-1 px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-medium" title="Integrity issue detected">
+                                                    <i class="material-icons text-xs align-middle">warning</i>
+                                                </span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination Info -->
+                    <div class="mt-4 flex justify-between items-center text-sm text-gray-600">
+                        <span id="resultsCount">Showing @Model.SubmittedResults.Count of @Model.SubmittedResults.Count results</span>
+                        @if (Model.SubmittedResults.Count > 50)
+                        {
+                            <div class="text-sm text-gray-500">
+                                <i class="material-icons text-xs align-middle">info</i>
+                                Large dataset - Use filters to refine results
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Timeline Section (2/3 width) -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-lg shadow-md">
+                    <div class="p-6">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-6 flex items-center">
+                            <i class="material-icons mr-2">timeline</i>
+                            Approval Timeline
+                        </h2>
+
+                        <!-- Timeline -->
+                        <div class="relative">
+                            @{
+                                var orderedApprovals = Model.WorkflowInstance.Approvals.OrderBy(a => a.StageOrder).ToList();
+                            }
+                            @for (int i = 0; i < orderedApprovals.Count; i++)
+                            {
+                                var approval = orderedApprovals[i];
+                                var isActive = !approval.IsCompleted && Model.WorkflowInstance.CurrentStageOrder == approval.StageOrder;
+                                var isCompleted = approval.IsCompleted;
+                                var isPending = !approval.IsCompleted && Model.WorkflowInstance.CurrentStageOrder < approval.StageOrder;
+                                var isLast = i == orderedApprovals.Count - 1;
+
+                                <div class="flex mb-8 @(!isLast ? "pb-8 border-l-2 border-gray-300 ml-4" : "ml-4")">
+                                    <!-- Timeline Marker -->
+                                    <div class="absolute left-0 -ml-[9px] mt-1.5 w-6 h-6 rounded-full flex items-center justify-center @GetTimelineMarkerClass(isCompleted, isActive)">
+                                        @if (isCompleted)
+                                        {
+                                            <i class="material-icons text-xs">@GetApprovalActionIcon(approval.Action)</i>
+                                        }
+                                        else if (isActive)
+                                        {
+                                            <i class="material-icons text-xs">schedule</i>
+                                        }
+                                        else
+                                        {
+                                            <i class="material-icons text-xs">radio_button_unchecked</i>
+                                        }
+                                    </div>
+
+                                    <!-- Timeline Content -->
+                                    <div class="ml-8 flex-1">
+                                        <div class="bg-gray-50 rounded-lg p-4 @(isActive ? "ring-2 ring-blue-500" : "")">
+                                            <div class="flex justify-between items-start mb-2">
+                                                <div>
+                                                    <h3 class="font-semibold text-gray-900 flex items-center">
+                                                        Stage @approval.StageOrder: @approval.StageName
+                                                        @if (isActive)
+                                                        {
+                                                            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                                Current
+                                                            </span>
+                                                        }
+                                                    </h3>
+                                                    <p class="text-sm text-gray-600">Approver: @approval.ApproverName</p>
+                                                </div>
+                                                @if (isCompleted)
+                                                {
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium @GetActionBadgeClass(approval.Action)">
+                                                        @approval.Action.ToString()
+                                                    </span>
+                                                }
+                                            </div>
+
+                                            @if (isCompleted)
+                                            {
+                                                <div class="mt-3 space-y-2">
+                                                    <div class="flex items-center text-sm text-gray-600">
+                                                        <i class="material-icons text-sm mr-2">event</i>
+                                                        <span>@approval.ActionedAt?.ToString("MMM dd, yyyy HH:mm")</span>
+                                                    </div>
+                                                    @if (!string.IsNullOrEmpty(approval.Comments))
+                                                    {
+                                                        <div class="bg-white rounded p-3 border border-gray-200">
+                                                            <p class="text-sm text-gray-700"><strong>Comments:</strong></p>
+                                                            <p class="text-sm text-gray-600 mt-1">@approval.Comments</p>
+                                                        </div>
+                                                    }
+                                                    @if (approval.Attachments != null && approval.Attachments.Any())
+                                                    {
+                                                        <div class="mt-2">
+                                                            <p class="text-sm font-medium text-gray-700 mb-1">Attachments:</p>
+                                                            @foreach (var attachment in approval.Attachments)
+                                                            {
+                                                                <a href="@attachment" target="_blank" class="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 mr-3">
+                                                                    <i class="material-icons text-sm mr-1">attach_file</i>
+                                                                    Document
+                                                                </a>
+                                                            }
+                                                        </div>
+                                                    }
+                                                    @if (!string.IsNullOrEmpty(approval.DelegatedToName))
+                                                    {
+                                                        <div class="flex items-center text-sm text-amber-600">
+                                                            <i class="material-icons text-sm mr-2">swap_horiz</i>
+                                                            <span>Delegated to @approval.DelegatedToName</span>
+                                                        </div>
+                                                    }
+                                                </div>
+                                            }
+                                            else if (isActive)
+                                            {
+                                                <div class="mt-3">
+                                                    <div class="flex items-center text-sm text-blue-600">
+                                                        <i class="material-icons text-sm mr-2">schedule</i>
+                                                        <span>Assigned on @approval.AssignedAt.ToString("MMM dd, yyyy HH:mm")</span>
+                                                    </div>
+                                                    <div class="flex items-center text-sm text-gray-600 mt-1">
+                                                        <i class="material-icons text-sm mr-2">pending</i>
+                                                        <span>Waiting for @((DateTime.Now - approval.AssignedAt).Days) day(s)</span>
+                                                    </div>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div class="mt-3">
+                                                    <p class="text-sm text-gray-500 italic">Awaiting previous stage completion</p>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <br />
+                <!-- Actions Card -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                        <i class="material-icons mr-2">settings</i>
+                        Actions
+                    </h3>
+                    <div class="space-y-2">
+                        @if (Model.WorkflowInstance.Status == WorkflowStatus.Pending || Model.WorkflowInstance.Status == WorkflowStatus.InProgress)
+                        {
+                            @if (true)
+                            {
+                                <!-- Approval Actions -->
+                                <button onclick="showApproveModal(@Model.WorkflowInstance.Id, '@Html.Raw(Model.WorkflowInstance.EntityType.Replace("'", "\\'"))')"
+                                        class="w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center shadow-sm">
+                                    <i class="material-icons mr-2">check_circle</i>
+                                    Approve
+                                </button>
+                                <button onclick="showRejectModal(@Model.WorkflowInstance.Id, '@Html.Raw(Model.WorkflowInstance.EntityType.Replace("'", "\\'"))')"
+                                        class="w-full px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center shadow-sm">
+                                    <i class="material-icons mr-2">cancel</i>
+                                    Reject
+                                </button>
+                                <button onclick="showReturnModal(@Model.WorkflowInstance.Id, '@Html.Raw(Model.WorkflowInstance.EntityType.Replace("'", "\\'"))')"
+                                        class="w-full px-4 py-3 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors flex items-center justify-center shadow-sm">
+                                    <i class="material-icons mr-2">undo</i>
+                                    Return for Revision
+                                </button>
+                                <button onclick="showDelegateModal(@Model.WorkflowInstance.Id)"
+                                        class="w-full px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center justify-center shadow-sm">
+                                    <i class="material-icons mr-2">swap_horiz</i>
+                                    Delegate
+                                </button>
+                                <div class="border-t border-gray-200 my-3"></div>
+                            }
+
+                            <button onclick="location.href='@Url.Action("PendingApprovals", "Workflow")'"
+                                    class="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center">
+                                <i class="material-icons mr-2">pending_actions</i>
+                                View All Pending
+                            </button>
+
+                            @if (true)
+                            {
+                                <button onclick="showCancelModal(@Model.WorkflowInstance.Id)"
+                                        class="w-full px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center">
+                                    <i class="material-icons mr-2">block</i>
+                                    Cancel Workflow
+                                </button>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-center py-4">
+                                <i class="material-icons text-4xl text-gray-400 mb-2">check_circle</i>
+                                <p class="text-sm text-gray-600">Workflow is @Model.WorkflowInstance.Status.ToString()</p>
+                            </div>
+                            <button onclick="location.href='@Url.Action("ApprovalHistory", "Workflow")'"
+                                    class="w-full px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center justify-center">
+                                <i class="material-icons mr-2">history</i>
+                                View History
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info Sidebar (1/3 width) -->
+            <div class="space-y-4">
+                <!-- Workflow Information -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                        <i class="material-icons mr-2">info</i>
+                        Workflow Information
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between py-2 border-b">
+                            <span class="text-gray-600">Workflow ID:</span>
+                            <span class="font-medium">#@Model.WorkflowInstance.Id</span>
+                        </div>
+                        <div class="flex justify-between py-2 border-b">
+                            <span class="text-gray-600">Entity Type:</span>
+                            <span class="font-medium">@Model.WorkflowInstance.EntityType</span>
+                        </div>
+                        <div class="flex justify-between py-2 border-b">
+                            <span class="text-gray-600">Entity ID:</span>
+                            <span class="font-medium">#@Model.WorkflowInstance.EntityId</span>
+                        </div>
+                        <div class="flex justify-between py-2 border-b">
+                            <span class="text-gray-600">Template:</span>
+                            <span class="font-medium">@Model.WorkflowInstance.TemplateName</span>
+                        </div>
+                        <div class="flex justify-between py-2 border-b">
+                            <span class="text-gray-600">Started:</span>
+                            <span class="font-medium">@Model.WorkflowInstance.StartedAt.ToString("MMM dd, yyyy")</span>
+                        </div>
+                        @if (Model.WorkflowInstance.CompletedAt.HasValue)
+                        {
+                            <div class="flex justify-between py-2 border-b">
+                                <span class="text-gray-600">Completed:</span>
+                                <span class="font-medium">@Model.WorkflowInstance.CompletedAt?.ToString("MMM dd, yyyy")</span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b">
+                                <span class="text-gray-600">Duration:</span>
+                                <span class="font-medium">@((Model.WorkflowInstance.CompletedAt.Value - Model.WorkflowInstance.StartedAt).Days) day(s)</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Progress Summary -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                        <i class="material-icons mr-2">insights</i>
+                        Progress Summary
+                    </h3>
+                    <div class="space-y-4">
+                        <!-- Progress Bar -->
+                        <div>
+                            <div class="flex justify-between text-sm mb-2">
+                                <span class="text-gray-600">Completion</span>
+                                <span class="font-medium">@Model.WorkflowInstance.Approvals.Count(a => a.IsCompleted)/@Model.WorkflowInstance.Approvals.Count Stages</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                @{
+                                    var completionPercent = Model.WorkflowInstance.Approvals.Any() ? (double)Model.WorkflowInstance.Approvals.Count(a => a.IsCompleted) / Model.WorkflowInstance.Approvals.Count * 100 : 0;
+                                }
+                                <div class="bg-blue-600 h-2 rounded-full transition-all"
+                                     style="width: @completionPercent.ToString("0.0")%"></div>
+                            </div>
+                        </div>
+
+                        <!-- Stage Statistics -->
+                        <div class="grid grid-cols-2 gap-3 mt-4">
+                            <div class="bg-green-50 rounded-lg p-3">
+                                <div class="flex items-center justify-between">
+                                    <i class="material-icons text-green-600">check_circle</i>
+                                    <div class="text-right">
+                                        <p class="text-2xl font-bold text-green-600">@Model.WorkflowInstance.Approvals.Count(a => a.Action == ApprovalAction.Approved)</p>
+                                        <p class="text-xs text-gray-600">Approved</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-red-50 rounded-lg p-3">
+                                <div class="flex items-center justify-between">
+                                    <i class="material-icons text-red-600">cancel</i>
+                                    <div class="text-right">
+                                        <p class="text-2xl font-bold text-red-600">@Model.WorkflowInstance.Approvals.Count(a => a.Action == ApprovalAction.Rejected)</p>
+                                        <p class="text-xs text-gray-600">Rejected</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-blue-50 rounded-lg p-3">
+                                <div class="flex items-center justify-between">
+                                    <i class="material-icons text-blue-600">pending</i>
+                                    <div class="text-right">
+                                        <p class="text-2xl font-bold text-blue-600">@Model.WorkflowInstance.Approvals.Count(a => !a.IsCompleted)</p>
+                                        <p class="text-xs text-gray-600">Pending</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-amber-50 rounded-lg p-3">
+                                <div class="flex items-center justify-between">
+                                    <i class="material-icons text-amber-600">swap_horiz</i>
+                                    <div class="text-right">
+                                        <p class="text-2xl font-bold text-amber-600">@Model.WorkflowInstance.Approvals.Count(a => !string.IsNullOrEmpty(a.DelegatedToName))</p>
+                                        <p class="text-xs text-gray-600">Delegated</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Approve Modal -->
+<div id="approveModal" class="hidden fixed inset-0 z-50">
+    <div class="fixed inset-0 bg-black bg-opacity-50"></div>
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-lg shadow-xl w-full max-w-2xl">
+                <div class="bg-green-600 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
+                    <h3 class="text-lg font-semibold flex items-center">
+                        <i class="material-icons mr-2">check_circle</i>
+                        Approve Submission
+                    </h3>
+                    <button type="button" class="text-white hover:text-gray-200" onclick="hideApproveModal()">
+                        <i class="material-icons">close</i>
+                    </button>
+                </div>
+                <div class="p-6">
+                    <form id="approveForm" method="post" asp-controller="Workflow" asp-action="Approve">
+                        <input type="hidden" id="approveWorkflowId" name="workflowInstanceId" />
+                        @Html.AntiForgeryToken()
+                        <div class="space-y-4">
+                            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                                <p class="text-green-800 font-medium mb-1">You are about to approve:</p>
+                                <p class="text-green-900 font-semibold text-lg" id="approveEntityName"></p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Comments (Optional)</label>
+                                <textarea name="comments" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="Add any comments or notes..."></textarea>
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <label class="flex items-start cursor-pointer">
+                                    <input type="checkbox" id="approveConfirm" required class="mt-1 w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500">
+                                    <span class="ml-3 text-sm text-gray-700">I confirm that I have reviewed the submission and approve it for progression.</span>
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-end space-x-2">
+                    <button type="button" class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors" onclick="hideApproveModal()">Cancel</button>
+                    <button type="button" onclick="submitApprove()" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center">
+                        <i class="material-icons text-sm mr-1">check</i>Approve
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reject Modal -->
+<div id="rejectModal" class="hidden fixed inset-0 z-50">
+    <div class="fixed inset-0 bg-black bg-opacity-50"></div>
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-lg shadow-xl w-full max-w-2xl">
+                <div class="bg-red-600 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
+                    <h3 class="text-lg font-semibold flex items-center">
+                        <i class="material-icons mr-2">cancel</i>
+                        Reject Submission
+                    </h3>
+                    <button type="button" class="text-white hover:text-gray-200" onclick="hideRejectModal()">
+                        <i class="material-icons">close</i>
+                    </button>
+                </div>
+                <div class="p-6">
+                    <form id="rejectForm" method="post" asp-controller="Workflow" asp-action="Reject">
+                        <input type="hidden" id="rejectWorkflowId" name="workflowInstanceId" />
+                        @Html.AntiForgeryToken()
+                        <div class="space-y-4">
+                            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                                <p class="text-red-800 font-semibold mb-1">Important: Rejection is Final</p>
+                                <p class="text-red-700 text-sm">This will terminate the workflow. The submitter will need to resubmit.</p>
+                            </div>
+                            <p class="text-gray-700">You are about to reject: <strong id="rejectEntityName" class="text-red-600"></strong></p>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Reason for Rejection <span class="text-red-600">*</span></label>
+                                <textarea name="comments" id="rejectComments" required rows="6" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500" placeholder="Provide detailed reason (minimum 20 characters)..."></textarea>
+                                <p class="text-xs text-gray-500 mt-1"><span id="rejectCharCount">0</span>/20 min</p>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-end space-x-2">
+                    <button type="button" class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg" onclick="hideRejectModal()">Cancel</button>
+                    <button type="button" onclick="submitReject()" class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center">
+                        <i class="material-icons text-sm mr-1">close</i>Reject
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Return for Revision Modal -->
+<div id="returnModal" class="hidden fixed inset-0 z-50">
+    <div class="fixed inset-0 bg-black bg-opacity-50"></div>
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-lg shadow-xl w-full max-w-2xl">
+                <div class="bg-amber-600 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
+                    <h3 class="text-lg font-semibold flex items-center">
+                        <i class="material-icons mr-2">undo</i>
+                        Return for Revision
+                    </h3>
+                    <button type="button" class="text-white hover:text-gray-200" onclick="hideReturnModal()">
+                        <i class="material-icons">close</i>
+                    </button>
+                </div>
+                <div class="p-6">
+                    <form id="returnForm" method="post" asp-controller="Workflow" asp-action="ReturnForRevision">
+                        <input type="hidden" id="returnWorkflowId" name="workflowInstanceId" />
+                        @Html.AntiForgeryToken()
+                        <div class="space-y-4">
+                            <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                                <p class="text-amber-800 font-semibold mb-1">Return for Corrections</p>
+                                <p class="text-amber-700 text-sm">The submission will be sent back for corrections and can be resubmitted.</p>
+                            </div>
+                            <p class="text-gray-700">Returning: <strong id="returnEntityName" class="text-amber-600"></strong></p>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Required Changes <span class="text-red-600">*</span></label>
+                                <textarea name="comments" required rows="5" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500" placeholder="Specify what needs to be corrected..."></textarea>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-end space-x-2">
+                    <button type="button" class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg" onclick="hideReturnModal()">Cancel</button>
+                    <button type="button" onclick="submitReturn()" class="px-6 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors flex items-center">
+                        <i class="material-icons text-sm mr-1">undo</i>Return
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delegate Modal -->
+<div id="delegateModal" class="hidden fixed inset-0 z-50">
+    <div class="fixed inset-0 bg-black bg-opacity-50"></div>
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-lg shadow-xl w-full max-w-lg">
+                <div class="bg-gray-600 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
+                    <h3 class="text-lg font-semibold flex items-center">
+                        <i class="material-icons mr-2">swap_horiz</i>
+                        Delegate Approval
+                    </h3>
+                    <button type="button" class="text-white hover:text-gray-200" onclick="hideDelegateModal()">
+                        <i class="material-icons">close</i>
+                    </button>
+                </div>
+                <div class="p-6">
+                    <form id="delegateForm" method="post" asp-controller="Workflow" asp-action="Delegate">
+                        <input type="hidden" id="delegateWorkflowId" name="workflowInstanceId" />
+                        @Html.AntiForgeryToken()
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Delegate To <span class="text-red-600">*</span></label>
+                                <select name="toUserId" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500">
+                                    <option value="">Select a user...</option>
+                                    @if (ViewBag.AvailableUsers != null)
+                                    {
+                                        foreach (var user in ViewBag.AvailableUsers)
+                                        {
+                                            <option value="@user.Id">@user.UserName (@user.Email)</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Reason <span class="text-red-600">*</span></label>
+                                <textarea name="reason" required rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Why are you delegating?"></textarea>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-end space-x-2">
+                    <button type="button" class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg" onclick="hideDelegateModal()">Cancel</button>
+                    <button type="button" onclick="submitDelegate()" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center">
+                        <i class="material-icons text-sm mr-1">swap_horiz</i>Delegate
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cancel Workflow Modal -->
+<div id="cancelModal" class="hidden fixed inset-0 z-50">
+    <div class="fixed inset-0 bg-black bg-opacity-50"></div>
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-lg shadow-xl w-full max-w-lg">
+                <div class="bg-red-600 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
+                    <h3 class="text-lg font-semibold flex items-center">
+                        <i class="material-icons mr-2">warning</i>
+                        Cancel Workflow
+                    </h3>
+                    <button type="button" class="text-white hover:text-gray-200" onclick="hideCancelModal()">
+                        <i class="material-icons">close</i>
+                    </button>
+                </div>
+                <div class="p-6">
+                    <form id="cancelForm" method="post" asp-controller="Workflow" asp-action="CancelWorkflow">
+                        <input type="hidden" name="workflowInstanceId" value="@Model.WorkflowInstance.Id" />
+                        @Html.AntiForgeryToken()
+                        <div class="space-y-4">
+                            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                                <p class="text-red-800 text-sm flex items-center">
+                                    <i class="material-icons text-sm mr-1">info</i>
+                                    This action cannot be undone.
+                                </p>
+                            </div>
+                            <p class="text-gray-700">
+                                Are you sure you want to cancel this workflow? All pending approvals will be terminated.
+                            </p>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Reason for Cancellation <span class="text-red-600">*</span></label>
+                                <textarea name="reason" required rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" placeholder="Provide reason for cancellation (minimum 10 characters)..."></textarea>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-end space-x-2">
+                    <button type="button" class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors" onclick="hideCancelModal()">
+                        <i class="material-icons text-sm mr-1">close</i>Cancel
+                    </button>
+                    <button type="button" onclick="submitCancel()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center">
+                        <i class="material-icons text-sm mr-1">cancel</i>Cancel Workflow
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Approve Modal Functions
+        function showApproveModal(workflowId, entityName) {
+            document.getElementById('approveWorkflowId').value = workflowId;
+            document.getElementById('approveEntityName').textContent = entityName;
+            document.getElementById('approveConfirm').checked = false;
+            document.getElementById('approveModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function hideApproveModal() {
+            document.getElementById('approveModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        function submitApprove() {
+            const checkbox = document.getElementById('approveConfirm');
+            if (!checkbox.checked) {
+                alert('Please confirm that you have reviewed the submission before approving.');
+                return;
+            }
+            document.getElementById('approveForm').submit();
+        }
+
+        // Reject Modal Functions
+        function showRejectModal(workflowId, entityName) {
+            document.getElementById('rejectWorkflowId').value = workflowId;
+            document.getElementById('rejectEntityName').textContent = entityName;
+            document.getElementById('rejectComments').value = '';
+            document.getElementById('rejectCharCount').textContent = '0';
+            document.getElementById('rejectModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function hideRejectModal() {
+            document.getElementById('rejectModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        function submitReject() {
+            const form = document.getElementById('rejectForm');
+            const comments = form.querySelector('[name="comments"]').value;
+
+            if (comments.length < 20) {
+                alert('Please provide a detailed reason for rejection (at least 20 characters)');
+                return;
+            }
+
+            if (confirm('Are you sure you want to reject this submission? This action cannot be undone.')) {
+                form.submit();
+            }
+        }
+
+        function addRejectionReason(reason) {
+            const textarea = document.getElementById('rejectComments');
+            if (textarea.value) {
+                textarea.value += '\n• ' + reason;
+            } else {
+                textarea.value = '• ' + reason;
+            }
+            updateCharCount();
+        }
+
+        // Character counter for rejection comments
+        document.addEventListener('DOMContentLoaded', function() {
+            const rejectComments = document.getElementById('rejectComments');
+            if (rejectComments) {
+                rejectComments.addEventListener('input', updateCharCount);
+            }
+        });
+
+        function updateCharCount() {
+            const textarea = document.getElementById('rejectComments');
+            const counter = document.getElementById('rejectCharCount');
+            if (textarea && counter) {
+                counter.textContent = textarea.value.length;
+                if (textarea.value.length >= 20) {
+                    counter.classList.remove('text-red-500');
+                    counter.classList.add('text-green-500');
+                } else {
+                    counter.classList.remove('text-green-500');
+                    counter.classList.add('text-red-500');
+                }
+            }
+        }
+
+        // Return for Revision Modal Functions
+        function showReturnModal(workflowId, entityName) {
+            document.getElementById('returnWorkflowId').value = workflowId;
+            document.getElementById('returnEntityName').textContent = entityName;
+            document.getElementById('returnModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function hideReturnModal() {
+            document.getElementById('returnModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        function submitReturn() {
+            const form = document.getElementById('returnForm');
+            const comments = form.querySelector('[name="comments"]').value;
+
+            if (comments.length < 10) {
+                alert('Please provide detailed information about required changes (at least 10 characters)');
+                return;
+            }
+
+            form.submit();
+        }
+
+        // Delegate Modal Functions
+        function showDelegateModal(workflowId) {
+            document.getElementById('delegateWorkflowId').value = workflowId;
+            document.getElementById('delegateModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function hideDelegateModal() {
+            document.getElementById('delegateModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        function submitDelegate() {
+            const form = document.getElementById('delegateForm');
+            if (form.checkValidity()) {
+                form.submit();
+            } else {
+                alert('Please fill in all required fields');
+            }
+        }
+
+        // Cancel Modal Functions
+        function showCancelModal(workflowId) {
+            document.getElementById('cancelModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function hideCancelModal() {
+            document.getElementById('cancelModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        function submitCancel() {
+            const form = document.getElementById('cancelForm');
+            const reason = form.querySelector('[name="reason"]').value;
+            if (reason.length < 10) {
+                alert('Please provide a detailed reason (at least 10 characters)');
+                return;
+            }
+            if (confirm('Are you absolutely sure? This action cannot be undone.')) {
+                form.submit();
+            }
+        }
+
+        // Results Table Functions
+        function filterResults() {
+            const searchText = document.getElementById('searchResults').value.toLowerCase();
+            const filterStatus = document.getElementById('filterStatus').value;
+            const rows = document.querySelectorAll('.result-row');
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const studentData = row.getAttribute('data-student');
+                const status = row.getAttribute('data-status');
+                const hasIntegrity = row.getAttribute('data-integrity') === 'true';
+
+                let showRow = true;
+
+                // Search filter
+                if (searchText && !studentData.includes(searchText)) {
+                    showRow = false;
+                }
+
+                // Status filter
+                if (filterStatus !== 'all') {
+                    if (filterStatus === 'pass' && status !== 'pass') showRow = false;
+                    if (filterStatus === 'fail' && status !== 'fail') showRow = false;
+                    if (filterStatus === 'integrity' && !hasIntegrity) showRow = false;
+                }
+
+                row.style.display = showRow ? '' : 'none';
+                if (showRow) visibleCount++;
+            });
+
+            document.getElementById('resultsCount').textContent =
+                `Showing ${visibleCount} of @Model.SubmittedResults.Count results`;
+        }
+
+        function sortTable(columnIndex) {
+            const table = document.getElementById('resultsTable');
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            const isNumeric = columnIndex === 0 || columnIndex === 4;
+
+            rows.sort((a, b) => {
+                const aValue = a.cells[columnIndex].textContent.trim();
+                const bValue = b.cells[columnIndex].textContent.trim();
+
+                if (isNumeric) {
+                    const aNum = parseFloat(aValue.replace('%', ''));
+                    const bNum = parseFloat(bValue.replace('%', ''));
+                    return aNum - bNum;
+                } else {
+                    return aValue.localeCompare(bValue);
+                }
+            });
+
+            rows.forEach(row => tbody.appendChild(row));
+        }
+
+        function toggleResultsView() {
+            const container = document.getElementById('resultsTableContainer');
+            const button = document.getElementById('toggleText');
+
+            if (container.classList.contains('max-h-96')) {
+                container.classList.remove('max-h-96', 'overflow-y-auto');
+                button.textContent = 'Collapse';
+            } else {
+                container.classList.add('max-h-96', 'overflow-y-auto');
+                button.textContent = 'Expand All';
+            }
+        }
+
+        function exportResults() {
+            // Create CSV content
+            let csv = 'Row,Student Number,Full Name,Scores Recorded,Total,Grade,Status,Integrity Issue\n';
+
+            const rows = document.querySelectorAll('.result-row');
+            rows.forEach(row => {
+                if (row.style.display !== 'none') {
+                    const cells = row.querySelectorAll('td');
+                    const rowData = [
+                        cells[0].textContent.trim(),
+                        cells[1].textContent.trim(),
+                        cells[2].textContent.trim(),
+                        cells[3].textContent.trim(),
+                        cells[4].textContent.trim(),
+                        cells[5].textContent.trim(),
+                        cells[6].textContent.trim().split('\n')[0],
+                        row.getAttribute('data-integrity') === 'true' ? 'Yes' : 'No'
+                    ];
+                    csv += rowData.join(',') + '\n';
+                }
+            });
+
+            // Download CSV
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('hidden', '');
+            a.setAttribute('href', url);
+            a.setAttribute('download', 'workflow_@Model.WorkflowInstance.Id' + '_results.csv');
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('cancelModal')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideCancelModal();
+            }
+        });
+
+        // Handle Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && !document.getElementById('cancelModal').classList.contains('hidden')) {
+                hideCancelModal();
+            }
+        });
+
+        // Initialize default view (collapsed if more than 20 rows)
+        document.addEventListener('DOMContentLoaded', function() {
+            const resultsCount = @Model.SubmittedResults.Count;
+            if (resultsCount > 20) {
+                document.getElementById('resultsTableContainer').classList.add('max-h-96', 'overflow-y-auto');
+            }
+        });
+    </script>
+}
+
+@functions {
+    string GetStatusBannerClass(WorkflowStatus status)
+    {
+        return status switch
+        {
+            WorkflowStatus.Approved => "bg-green-50 border border-green-200 text-green-800",
+            WorkflowStatus.Rejected => "bg-red-50 border border-red-200 text-red-800",
+            WorkflowStatus.Cancelled => "bg-gray-50 border border-gray-200 text-gray-800",
+            WorkflowStatus.InProgress => "bg-blue-50 border border-blue-200 text-blue-800",
+            _ => "bg-yellow-50 border border-yellow-200 text-yellow-800"
+        };
+    }
+
+    string GetStatusIcon(WorkflowStatus status)
+    {
+        return status switch
+        {
+            WorkflowStatus.Approved => "check_circle",
+            WorkflowStatus.Rejected => "cancel",
+            WorkflowStatus.Cancelled => "block",
+            WorkflowStatus.InProgress => "pending",
+            _ => "schedule"
+        };
+    }
+
+    string GetTimelineMarkerClass(bool isCompleted, bool isActive)
+    {
+        if (isCompleted) return "bg-green-500 text-white";
+        if (isActive) return "bg-blue-500 text-white animate-pulse";
+        return "bg-gray-300 text-gray-600";
+    }
+
+    string GetApprovalActionIcon(ApprovalAction action)
+    {
+        return action switch
+        {
+            ApprovalAction.Approved => "check",
+            ApprovalAction.Rejected => "close",
+            ApprovalAction.Returned => "undo",
+            _ => "pending"
+        };
+    }
+
+    string GetActionBadgeClass(ApprovalAction action)
+    {
+        return action switch
+        {
+            ApprovalAction.Approved => "bg-green-100 text-green-800",
+            ApprovalAction.Rejected => "bg-red-100 text-red-800",
+            ApprovalAction.Returned => "bg-amber-100 text-amber-800",
+            _ => "bg-gray-100 text-gray-800"
+        };
+    }
+}

@@ -1,0 +1,1447 @@
+﻿@using SIS.DTOs.StudentApplication
+@using SIS.Models.Admin
+@model SIS.Models.StudentApplication.PersonalDetailsViewModel
+
+@{
+	var programmes = ViewBag.ActiveProgrammes as List<Programme>;
+}
+
+<style>
+	/* Select2 fixes for the theme */
+	.select2-container--default .select2-selection--single {
+		height: 42px;
+		padding: 7px 12px;
+		border-color: rgb(203, 213, 225);
+		border-radius: 0.5rem;
+	}
+
+		.select2-container--default .select2-selection--single .select2-selection__arrow {
+			height: 42px;
+		}
+
+		.select2-container--default .select2-selection--single .select2-selection__rendered {
+			line-height: normal;
+		}
+
+	.select2-container--default .select2-results__option--highlighted[aria-selected] {
+		background-color: rgb(8, 145, 178);
+	}
+
+	.select2-dropdown {
+		border-color: rgb(203, 213, 225);
+		border-radius: 0.5rem;
+		overflow: hidden;
+	}
+
+	/* Style for phone input fields */
+	.iti {
+		width: 100%;
+	}
+
+	.iti__flag {
+		box-shadow: 0 0 1px 0 rgba(0,0,0,0.2);
+	}
+
+	.iti__selected-flag {
+		padding: 0 6px 0 8px;
+		border-radius: 0.5rem 0 0 0.5rem;
+		background-color: rgba(0, 0, 0, 0.02);
+	}
+
+	/* Move the input text to make room for country code */
+	.iti input[type=tel] {
+		padding-left: 90px !important;
+	}
+</style>
+
+<div class="bg-slate-50 min-h-screen py-8">
+	<!-- Header -->
+	<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
+		<div class="text-center space-y-3">
+			<h2 class="text-3xl font-bold text-slate-800">Student Application</h2>
+			<p class="text-slate-600 text-lg max-w-3xl mx-auto">
+				Welcome! Please complete all sections to submit your application. Your information will be reviewed by our admissions team.
+			</p>
+			<div id="statusMessage" class="text-red-600 font-medium"></div>
+		</div>
+	</div>
+
+	<!-- Progress Steps -->
+	<div class="mx-auto px-4 sm:px-6 lg:px-8 mb-8">
+		<div class="bg-white rounded-xl shadow-sm p-4 border border-slate-200">
+			<ol class="flex items-center w-full text-sm font-medium text-center text-gray-500 sm:text-base">
+				<li class="flex items-center step-item active flex-1 relative" data-step="1">
+					<span class="flex items-center justify-center w-10 h-10 mr-2 text-[#0082bb] border-2 border-[#0082bb] rounded-full shrink-0 bg-white transition-all">
+						<span>1</span>
+					</span>
+					<span class="hidden sm:inline-flex">Personal Info</span>
+					<div class="flex-1 h-0.5 bg-slate-200 mx-2 relative hidden sm:block"></div>
+				</li>
+				<li class="flex items-center step-item flex-1 relative" data-step="2">
+					<span class="flex items-center justify-center w-10 h-10 mr-2 text-gray-500 border-2 border-gray-300 rounded-full shrink-0 transition-all">
+						<span>2</span>
+					</span>
+					<span class="hidden sm:inline-flex">Contact Details</span>
+					<div class="flex-1 h-0.5 bg-slate-200 mx-2 relative hidden sm:block"></div>
+				</li>
+				<li class="flex items-center step-item flex-1 relative" data-step="3">
+					<span class="flex items-center justify-center w-10 h-10 mr-2 text-gray-500 border-2 border-gray-300 rounded-full shrink-0 transition-all">
+						<span>3</span>
+					</span>
+					<span class="hidden sm:inline-flex">Program Choice</span>
+					<div class="flex-1 h-0.5 bg-slate-200 mx-2 relative hidden sm:block"></div>
+				</li>
+				<li class="flex items-center step-item flex-1 relative" data-step="4">
+					<span class="flex items-center justify-center w-10 h-10 mr-2 text-gray-500 border-2 border-gray-300 rounded-full shrink-0 transition-all">
+						<span>4</span>
+					</span>
+					<span class="hidden sm:inline-flex">Education History</span>
+					<div class="flex-1 h-0.5 bg-slate-200 mx-2 relative hidden sm:block"></div>
+				</li>
+				<li class="flex items-center step-item flex-1" data-step="5">
+					<span class="flex items-center justify-center w-10 h-10 mr-2 text-gray-500 border-2 border-gray-300 rounded-full shrink-0 transition-all">
+						<span>5</span>
+					</span>
+					<span class="hidden sm:inline-flex">Documents</span>
+				</li>
+			</ol>
+		</div>
+	</div>
+
+	<!-- Form Container -->
+	<div class=" mx-auto px-4 sm:px-6 lg:px-8">
+		<div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+			<form id="application-form" asp-action="SubmitApplication" method="post" enctype="multipart/form-data" class="space-y-8">
+				<div asp-validation-summary="All" class="text-red-600 bg-red-50 p-4 rounded-lg mb-6 border-l-4 border-red-500" style="display: none;"></div>
+
+				<!-- Steps Content will be placed here -->
+				<div class="steps-content">
+					<!-- The step content will be placed here in the next artifacts -->
+					<!-- Step 1: Personal Details -->
+					<div class="step-pane active" data-step="1">
+						<div class="border-b border-slate-200 pb-4 mb-6">
+							<h4 class="text-xl font-semibold text-slate-800">Personal Details</h4>
+							<p class="text-slate-500 text-sm mt-1">Please provide your basic personal information</p>
+						</div>
+
+						<!-- First Row -->
+						<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+							
+
+							<div>
+								<label class="block text-sm font-medium text-slate-700 mb-2" asp-for="Applicant.FullName">
+									Full Name*
+								</label>
+								<input asp-for="Applicant.FullName"
+									   value="@Model.Applicant.FullName"
+									   type="text"
+									   class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 bg-slate-50 transition-colors"
+									   id="FirstName"
+									   readonly />
+								<span asp-validation-for="Applicant.FullName" class="text-red-500 text-sm mt-1 block"></span>
+							</div>
+
+							<div>
+								<label class="block text-sm font-medium text-slate-700 mb-2" asp-for="Applicant.Email">
+									Email Address*
+								</label>
+								<input asp-for="Applicant.Email"
+									   type="email"
+									   class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 bg-slate-50 transition-colors"
+									   id="EmailAddress"
+									   readonly />
+								<span asp-validation-for="Applicant.Email" class="text-red-500 text-sm mt-1 block"></span>
+							</div>
+
+							<div>
+								<label class="block text-sm font-medium text-slate-700 mb-2" asp-for="Applicant.Phone">
+									Phone Number*
+								</label>
+								<div class="relative">
+									<input asp-for="Applicant.Phone"
+										   type="tel"
+										   class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 transition-colors"
+										   placeholder="Phone Number"
+										   data-name="Phone Number"
+										   id="PhoneNumber"
+										   required />
+									<input type="hidden" id="FullPhoneNumber" name="Applicant.Phone" />
+								</div>
+								<span asp-validation-for="Applicant.Phone" class="text-red-500 text-sm mt-1 block"></span>
+							</div>
+
+							<div>
+								<label class="block text-sm font-medium text-slate-700 mb-2" asp-for="Applicant.Gender">
+									Gender*
+								</label>
+								<select asp-for="Applicant.Gender"
+										class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 transition-colors"
+										data-name="Gender"
+										id="Gender"
+										required>
+									<option value="" disabled selected>Select Gender</option>
+									<option>Male</option>
+									<option>Female</option>
+								</select>
+								<span asp-validation-for="Applicant.Gender" class="text-red-500 text-sm mt-1 block"></span>
+							</div>
+						</div>
+
+						<!-- Second Row -->
+						<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
+							
+
+							<div>
+								<label class="block text-sm font-medium text-slate-700 mb-2" asp-for="Applicant.DateOfBirth">
+									Date of Birth*
+								</label>
+								<div class="relative">
+									<input asp-for="Applicant.DateOfBirth"
+										   type="date"
+										   class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pl-10 transition-colors"
+										   data-name="Date of Birth"
+										   id="DateOfBirth"
+										   required />
+									<div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+										<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+											<path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+										</svg>
+									</div>
+								</div>
+								<span asp-validation-for="Applicant.DateOfBirth" class="text-red-500 text-sm mt-1 block"></span>
+							</div>
+
+							<div>
+								<label class="block text-sm font-medium text-slate-700 mb-2" asp-for="Applicant.MaritalStatus">
+									Marital Status*
+								</label>
+								<select asp-for="Applicant.MaritalStatus"
+										class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 transition-colors"
+										data-name="Marital Status"
+										id="MaritalSts"
+										required>
+									<option value="" disabled selected>Select Marital Status</option>
+									<option>Single</option>
+									<option>Married</option>
+									<option>Divorced</option>
+									<option>Widow</option>
+									<option>Widower</option>
+								</select>
+								<span asp-validation-for="Applicant.MaritalStatus" class="text-red-500 text-sm mt-1 block"></span>
+							</div>
+
+							<div>
+								<label class="block text-sm font-medium text-slate-700 mb-2" asp-for="Applicant.Nationality">
+									Nationality*
+								</label>
+								<div class="relative">
+									<select asp-for="Applicant.Nationality"
+											class="nationality-select w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 transition-colors"
+											data-name="Nationality"
+											id="Nationality"
+											required>
+										<option value="">Select Nationality</option>
+										<!-- Options will be populated by JavaScript -->
+									</select>
+								</div>
+								<span asp-validation-for="Applicant.Nationality" class="text-red-500 text-sm mt-1 block"></span>
+							</div>
+
+							<div>
+								<label class="block text-sm font-medium text-slate-700 mb-2" asp-for="Applicant.IsForeigner">
+									Are you a foreign student?*
+								</label>
+								<select asp-for="Applicant.IsForeigner"
+										class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 transition-colors"
+										data-name="Foreign Student Status"
+										id="Foreigner"
+										required>
+									<option value="" disabled selected>Select Option</option>
+									<option value="true">Yes</option>
+									<option value="false">No</option>
+								</select>
+								<span asp-validation-for="Applicant.IsForeigner" class="text-red-500 text-sm mt-1 block"></span>
+							</div>
+						</div>
+
+						<!-- Third Row -->
+						<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+							<div>
+								<label class="block text-sm font-medium text-slate-700 mb-2" asp-for="Applicant.Religion">
+									Religion*
+								</label>
+								<select asp-for="Applicant.Religion"
+										class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 transition-colors"
+										data-name="Religion"
+										id="Religion"
+										required>
+									<option value="" disabled selected>Select Religion</option>
+									<option>Christianity</option>
+									<option>Islam</option>
+									<option>Hinduism</option>
+									<option>Buddhism</option>
+									<option>Judaism</option>
+									<option>Sikhism</option>
+									<option>Jainism</option>
+									<option>Bahá'í Faith</option>
+									<option>Shinto</option>
+									<option>Taoism</option>
+									<option>Confucianism</option>
+									<option>Traditional African Religion</option>
+									<option>Traditional Chinese Religion</option>
+									<option>Zoroastrianism</option>
+									<option>Rastafarianism</option>
+									<option>Agnosticism</option>
+									<option>Atheism</option>
+									<option>None</option>
+									<option value="Other">Other</option>
+								</select>
+								<span asp-validation-for="Applicant.Religion" class="text-red-500 text-sm mt-1 block"></span>
+
+								<!-- Other Religion Input Field (Hidden by default) -->
+								<div id="otherReligionContainer" class="mt-2 hidden">
+									<input type="text"
+										   id="otherReligion"
+										   placeholder="Please specify your religion"
+										   class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 transition-colors">
+								</div>
+							</div>
+
+							<div>
+								<label class="block text-sm font-medium text-slate-700 mb-2" asp-for="Applicant.NRCOrPassport">
+									NRC/Passport*
+								</label>
+								<div class="relative">
+									<input asp-for="Applicant.NRCOrPassport"
+										   type="text"
+										   class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pl-10 transition-colors"
+										   data-name="NRC/Passport"
+										   placeholder="NRC/Passport Number"
+										   id="NRCOrPassport"
+										   required />
+									<div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+										<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+											<path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+										</svg>
+									</div>
+								</div>
+								<span asp-validation-for="Applicant.NRCOrPassport" class="text-red-500 text-sm mt-1 block"></span>
+							</div>
+						</div>
+
+						<!-- Information Card -->
+						<div class="mt-8 bg-cyan-50 border-l-4 border-cyan-500 p-4 rounded-lg">
+							<div class="flex">
+								<div class="flex-shrink-0">
+									<svg class="h-5 w-5 text-cyan-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+										<path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+									</svg>
+								</div>
+								<div class="ml-3">
+									<p class="text-sm text-cyan-800">
+										All personal information is securely stored and will only be used for academic purposes. Please ensure all information is accurate.
+									</p>
+								</div>
+							</div>
+						</div>
+					</div>
+
+
+					<!-- Step 2: Contact Details -->
+					<div class="step-pane" data-step="2">
+						<!-- Residential Address Section -->
+						<div>
+							<div class="border-b border-slate-200 pb-4 mb-6">
+								<h4 class="text-xl font-semibold text-slate-800">Residential Address</h4>
+								<p class="text-slate-500 text-sm mt-1">Please provide your current residential address</p>
+							</div>
+
+							<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+								<div>
+									<label class="block text-sm font-medium text-slate-700 mb-2" asp-for="Applicant.Country">
+										Country*
+									</label>
+									<div class="relative">
+										<select asp-for="Applicant.Country"
+												id="Country"
+												asp-items="@(new SelectList(Model.Countries))"
+												data-name="Country"
+												class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pl-10 transition-colors"
+												required>
+											<option value="" disabled selected>Select Country</option>
+										</select>
+										<div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+											<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+												<path fill-rule="evenodd" d="M3 6a3 3 0 013-3h10a1 1 0 01.8 1.6L14.25 8l2.55 3.4A1 1 0 0116 13H6a1 1 0 00-1 1v3a1 1 0 11-2 0V6z" clip-rule="evenodd" />
+											</svg>
+										</div>
+									</div>
+									<span asp-validation-for="Applicant.Country" class="text-red-500 text-sm mt-1 block"></span>
+								</div>
+
+								<div>
+									<label class="block text-sm font-medium text-slate-700 mb-2" asp-for="Applicant.State">
+										Province/State*
+									</label>
+									<div class="relative">
+										<select asp-for="Applicant.State"
+												id="State"
+												class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pl-10 transition-colors"
+												data-name="Province"
+												required>
+											<option value="" disabled selected>Select Province</option>
+										</select>
+										<div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+											<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+												<path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+											</svg>
+										</div>
+									</div>
+									<span asp-validation-for="Applicant.State" class="text-red-500 text-sm mt-1 block"></span>
+								</div>
+
+								<div>
+									<label class="block text-sm font-medium text-slate-700 mb-2" asp-for="Applicant.City">
+										City*
+									</label>
+									<div class="relative">
+										<select asp-for="Applicant.City"
+												id="City"
+												class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pl-10 transition-colors"
+												data-name="City"
+												required>
+											<option value="" disabled selected>Select City</option>
+										</select>
+										<div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+											<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+												<path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+											</svg>
+										</div>
+									</div>
+									<span asp-validation-for="Applicant.City" class="text-red-500 text-sm mt-1 block"></span>
+								</div>
+
+								<div>
+									<label class="block text-sm font-medium text-slate-700 mb-2" asp-for="Applicant.PostalCode">
+										Postal Code*
+									</label>
+									<div class="relative">
+										<input asp-for="Applicant.PostalCode"
+											   placeholder="Postal Code"
+											   type="text"
+											   data-name="Postal Code"
+											   class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pl-10 transition-colors"
+											   id="PostalCode"
+											   required />
+										<div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+											<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+												<path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+											</svg>
+										</div>
+									</div>
+									<span asp-validation-for="Applicant.PostalCode" class="text-red-500 text-sm mt-1 block"></span>
+								</div>
+							</div>
+
+							<div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+								<div>
+									<label class="block text-sm font-medium text-slate-700 mb-2" asp-for="Applicant.AddressLine1">
+										Address Line 1*
+									</label>
+									<div class="relative">
+										<input asp-for="Applicant.AddressLine1"
+											   placeholder="Street Address"
+											   type="text"
+											   class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pl-10 transition-colors"
+											   data-name="Address Line 1"
+											   id="StreetAddress"
+											   required />
+										<div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+											<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+												<path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+											</svg>
+										</div>
+									</div>
+									<span asp-validation-for="Applicant.AddressLine1" class="text-red-500 text-sm mt-1 block"></span>
+								</div>
+
+								<div>
+									<label class="block text-sm font-medium text-slate-700 mb-2" asp-for="Applicant.AddressLine2">
+										Address Line 2 <span class="text-slate-400 text-xs">(Optional)</span>
+									</label>
+									<div class="relative">
+										<input asp-for="Applicant.AddressLine2"
+											   placeholder="Apartment, Suite, Unit, etc."
+											   type="text"
+											   class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pl-10 transition-colors"
+											   id="LineAddress2" />
+										<div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+											<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+												<path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+											</svg>
+										</div>
+									</div>
+									<span asp-validation-for="Applicant.AddressLine2" class="text-red-500 text-sm mt-1 block"></span>
+								</div>
+							</div>
+						</div>
+
+						<!-- Next of Kin Details Section -->
+						<div class="mt-10">
+							<div class="border-b border-slate-200 pb-4 mb-6">
+								<h4 class="text-xl font-semibold text-slate-800">Next of Kin Details</h4>
+								<p class="text-slate-500 text-sm mt-1">Please provide details of your emergency contact person</p>
+							</div>
+
+							<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+								<div>
+									<label class="block text-sm font-medium text-slate-700 mb-2" asp-for="Applicant.NextOfKinName">
+										Name*
+									</label>
+									<div class="relative">
+										<input asp-for="Applicant.NextOfKinName"
+											   placeholder="Full Name"
+											   type="text"
+											   class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pl-10 transition-colors"
+											   data-name="Next of Kin Name"
+											   id="NextOfKinName"
+											   required />
+										<div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+											<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+												<path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+											</svg>
+										</div>
+									</div>
+									<span asp-validation-for="Applicant.NextOfKinName" class="text-red-500 text-sm mt-1 block"></span>
+								</div>
+
+								<div>
+									<label class="block text-sm font-medium text-slate-700 mb-2" asp-for="Applicant.NextOfKinPhone">
+										Phone Number*
+									</label>
+									<div class="relative">
+										<input asp-for="Applicant.NextOfKinPhone"
+											   type="tel"
+											   class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 transition-colors"
+											   placeholder="Phone Number"
+											   data-name="Next of Kin Phone Number"
+											   id="NextOfKinPhone"
+											   required />
+										<input type="hidden" id="FullNextOfKinPhoneNumber" name="Applicant.NextOfKinPhone" />
+									</div>
+									<span asp-validation-for="Applicant.NextOfKinPhone" class="text-red-500 text-sm mt-1 block"></span>
+								</div>
+
+								<div>
+									<label class="block text-sm font-medium text-slate-700 mb-2" asp-for="Applicant.NextOfKinEmail">
+										Email Address*
+									</label>
+									<div class="relative">
+										<input asp-for="Applicant.NextOfKinEmail"
+											   placeholder="Email Address"
+											   type="email"
+											   class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pl-10 transition-colors"
+											   data-name="Next of Kin Email"
+											   id="NextOfKinEmail"
+											   required />
+										<div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+											<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+												<path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+												<path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+											</svg>
+										</div>
+									</div>
+									<span asp-validation-for="Applicant.NextOfKinEmail" class="text-red-500 text-sm mt-1 block"></span>
+								</div>
+
+								<div>
+									<label class="block text-sm font-medium text-slate-700 mb-2" asp-for="Applicant.NextOfKinRelation">
+										Relationship*
+									</label>
+									<div class="relative">
+										<select asp-for="Applicant.NextOfKinRelation"
+												class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pl-10 transition-colors"
+												data-name="Next of Kin Relationship"
+												id="NextOfKinRelation"
+												required>
+											<option value="" disabled selected>Select Relationship</option>
+											<option>Parent</option>
+											<option>Mother</option>
+											<option>Father</option>
+											<option>Spouse</option>
+											<option>Child</option>
+											<option>Son</option>
+											<option>Daughter</option>
+											<option>Sibling</option>
+											<option>Brother</option>
+											<option>Sister</option>
+											<option>Grandparent</option>
+											<option>Grandmother</option>
+											<option>Grandfather</option>
+											<option>Uncle</option>
+											<option>Aunt</option>
+											<option>Cousin</option>
+											<option>Niece</option>
+											<option>Nephew</option>
+											<option>Friend</option>
+											<option>Guardian</option>
+											<option>Other</option>
+										</select>
+										<div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+											<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+												<path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
+											</svg>
+										</div>
+									</div>
+									<span asp-validation-for="Applicant.NextOfKinRelation" class="text-red-500 text-sm mt-1 block"></span>
+
+									<!-- Other Relationship Input Field (Hidden by default) -->
+									<div id="otherRelationContainer" class="mt-2 hidden">
+										<input type="text"
+											   id="otherRelation"
+											   placeholder="Please specify relationship"
+											   class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 transition-colors">
+									</div>
+								</div>
+							</div>
+
+							<div class="mt-6">
+								<div>
+									<label class="block text-sm font-medium text-slate-700 mb-2" asp-for="Applicant.NextOfKinAddress">
+										Address*
+									</label>
+									<div class="relative">
+										<input asp-for="Applicant.NextOfKinAddress"
+											   placeholder="Full Address"
+											   type="text"
+											   class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pl-10 transition-colors"
+											   data-name="Next of Kin Address"
+											   id="NextOfKinAddress"
+											   required />
+										<div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+											<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+												<path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+											</svg>
+										</div>
+									</div>
+									<span asp-validation-for="Applicant.NextOfKinAddress" class="text-red-500 text-sm mt-1 block"></span>
+								</div>
+							</div>
+
+							<!-- Information Card -->
+							<div class="mt-8 bg-amber-50 border-l-4 border-amber-500 p-4 rounded-lg">
+								<div class="flex">
+									<div class="flex-shrink-0">
+										<svg class="h-5 w-5 text-amber-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+											<path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+										</svg>
+									</div>
+									<div class="ml-3">
+										<p class="text-sm text-amber-800">
+											In case of emergency, we may need to contact your next of kin. Please ensure the contact details are accurate and up-to-date.
+										</p>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+
+					<!-- Step 3: Program Selection -->
+					<div class="step-pane" data-step="3">
+						<div>
+							<div class="border-b border-slate-200 pb-4 mb-6">
+								<h4 class="text-xl font-semibold text-slate-800">School and Programme Selection</h4>
+								<p class="text-slate-500 text-sm mt-1">Choose your preferred school and programme of study</p>
+							</div>
+
+							<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+								<div>
+									<label class="block text-sm font-medium text-slate-700 mb-2" asp-for="Applicant.FormerSchoolLevel">
+										Highest Education Level Attained*
+									</label>
+									<div class="relative">
+										<select asp-for="Applicant.FormerSchoolLevel"
+												class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pl-10 transition-colors"
+												data-name="Highest Education Level"
+												id="FormerSchoolLevel"
+												required>
+											<option value="" disabled selected>Select Education Level</option>
+											<option>Phd</option>
+											<option>Master's</option>
+											<option>Bachelor's</option>
+											<option>Diploma</option>
+											<option>Certificate</option>
+											<option>Grade 12(High School Certificate)</option>
+										</select>
+										<div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+											<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+												<path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z" />
+											</svg>
+										</div>
+									</div>
+									<span asp-validation-for="Applicant.FormerSchoolLevel" class="text-red-500 text-sm mt-1 block"></span>
+								</div>
+
+								<div>
+									<label class="block text-sm font-medium text-slate-700 mb-2" asp-for="Applicant.ProgrammeLevel">
+										Programme Level (applying for)*
+									</label>
+									<div class="relative">
+										<select asp-for="Applicant.ProgrammeLevel"
+												asp-items="@(new SelectList(Model.ProgrammeLevel, "Id", "Name"))"
+												data-name="Programme Level"
+												class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pl-10 transition-colors"
+												id="ProgrammeLevel"
+												required>
+											<option value="" disabled selected>Select Programme Level</option>
+										</select>
+										<div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+											<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+												<path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
+											</svg>
+										</div>
+									</div>
+									<span asp-validation-for="Applicant.ProgrammeLevel" class="text-red-500 text-sm mt-1 block"></span>
+								</div>
+
+								<div>
+									<label class="block text-sm font-medium text-slate-700 mb-2" asp-for="Applicant.SchoolId">
+										School*
+									</label>
+									<div class="relative">
+										<select asp-for="Applicant.SchoolId"
+												asp-items="@(new SelectList(Model.Schools, "Id", "Name"))"
+												data-name="School"
+												class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pl-10 transition-colors"
+												id="schools"
+												required>
+											<option value="" disabled selected>Select a School</option>
+										</select>
+										<div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+											<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+												<path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z" />
+											</svg>
+										</div>
+									</div>
+									<span asp-validation-for="Applicant.SchoolId" class="text-red-500 text-sm mt-1 block"></span>
+								</div>
+							</div>
+
+							<div class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+								<div>
+									<label class="block text-sm font-medium text-slate-700 mb-2" asp-for="Applicant.ProgrammeId">
+										Programme*
+									</label>
+									<div class="relative">
+										<select asp-for="Applicant.ProgrammeId"
+												class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pl-10 transition-colors"
+												data-name="Programme"
+												id="programmes"
+												disabled
+												required>
+											<option value="" disabled selected>Select School and Programme Level first</option>
+										</select>
+										<div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+											<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+												<path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
+											</svg>
+										</div>
+									</div>
+									<span asp-validation-for="Applicant.ProgrammeId" class="text-red-500 text-sm mt-1 block"></span>
+								</div>
+
+								<div>
+									<label class="block text-sm font-medium text-slate-700 mb-2" asp-for="Applicant.ModeOfStudyId">
+										Mode of Study*
+									</label>
+									<div class="relative">
+										<select asp-for="Applicant.ModeOfStudyId"
+												class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pl-10 transition-colors"
+												asp-items="@(new SelectList(Model.ModesOfStudy, "Id", "Name"))"
+												data-name="Mode of Study"
+												required>
+											<option value="" disabled selected>Select Mode of Study</option>
+										</select>
+										<div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+											<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+												<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+											</svg>
+										</div>
+									</div>
+									<span asp-validation-for="Applicant.ModeOfStudyId" class="text-red-500 text-sm mt-1 block"></span>
+								</div>
+
+								<div>
+									<label class="block text-sm font-medium text-slate-700 mb-2" asp-for="Applicant.AcademicYearId">
+										Intake/Academic Year*
+									</label>
+									<div class="relative">
+										<select asp-for="Applicant.AcademicYearId"
+												class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pl-10 transition-colors"
+												asp-items="@(new SelectList(Model.AcademicYears, "Id", "Name"))"
+												data-name="Intake"
+												required>
+											<option value="" disabled selected>Select Intake</option>
+										</select>
+										<div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+											<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+												<path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+											</svg>
+										</div>
+									</div>
+									<span asp-validation-for="Applicant.AcademicYearId" class="text-red-500 text-sm mt-1 block"></span>
+								</div>
+							</div>
+
+							<!-- Program Information Card -->
+							<div class="mt-8 bg-cyan-50 rounded-lg p-5 border border-cyan-200">
+								<div class="flex">
+									<div class="flex-shrink-0">
+										<svg class="h-6 w-6 text-cyan-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+										</svg>
+									</div>
+									<div class="ml-3">
+										<h3 class="text-sm font-medium text-cyan-800">Program Selection Information</h3>
+										<div class="mt-2 text-sm text-cyan-700">
+											<ul class="list-disc pl-5 space-y-1">
+												<li>Program options will load after selecting a school and program level</li>
+												<li>Consider your qualifications when selecting a program</li>
+												<li>Full-time study requires regular attendance at campus</li>
+												<li>Part-time options have flexible schedules but longer completion times</li>
+											</ul>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+
+
+					<!-- Step 4: Education History -->
+					<div class="step-pane" data-step="4">
+						<!-- Main Education History Container -->
+						<div>
+							<div class="border-b border-slate-200 pb-4 mb-6">
+								<h4 class="text-xl font-semibold text-slate-800">Education History</h4>
+								<p class="text-slate-500 text-sm mt-1">Please provide details about your educational background</p>
+							</div>
+
+							<div class="space-y-10">
+								<!-- Primary School Section -->
+								<div class="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+									<h5 class="text-lg font-medium text-slate-800 mb-4 flex items-center">
+										<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-cyan-600 mr-2" viewBox="0 0 20 20" fill="currentColor">
+											<path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z" />
+										</svg>
+										Primary School Details <span class="text-sm text-slate-500">(Optional)</span>
+									</h5>
+									<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+										<div>
+											<label class="block text-sm font-medium text-slate-700 mb-2" asp-for="Applicant.PrimarySchoolName">
+												School Name <span class="text-slate-400 text-xs">(Optional)</span>
+											</label>
+											<div class="relative">
+												<input asp-for="Applicant.PrimarySchoolName"
+													   placeholder="Primary School Name"
+													   type="text"
+													   class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pl-10 transition-colors"
+													   data-name="Primary School Name"
+													   id="PrimarySchoolName" />
+												<div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+													<!-- SVG icon remains the same -->
+												</div>
+											</div>
+											<span asp-validation-for="Applicant.PrimarySchoolName" class="text-red-500 text-sm mt-1 block"></span>
+										</div>
+
+										<div>
+											<label class="block text-sm font-medium text-slate-700 mb-2" asp-for="Applicant.PrimarySchoolAddress">
+												School Address <span class="text-slate-400 text-xs">(Optional)</span>
+											</label>
+											<div class="relative">
+												<input asp-for="Applicant.PrimarySchoolAddress"
+													   placeholder="Primary School Address"
+													   type="text"
+													   class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pl-10 transition-colors"
+													   data-name="Primary School Address"
+													   id="PrimarySchoolAddress" />
+												<div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+													<!-- SVG icon remains the same -->
+												</div>
+											</div>
+											<span asp-validation-for="Applicant.PrimarySchoolAddress" class="text-red-500 text-sm mt-1 block"></span>
+										</div>
+
+										<div>
+											@* <label class="block text-sm font-medium text-slate-700 mb-2" asp-for="Applicant.PrimarySchoolPeriod"> *@
+											@* 	Study Period <span class="text-slate-400 text-xs">(Optional)</span> *@
+											@* </label> *@
+											<div class="relative">
+												<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+													<div>
+														<label class="block text-sm font-medium text-slate-700 mb-2">
+															Start Year <span class="text-slate-400 text-xs">(Optional)</span>
+														</label>
+														<div class="relative">
+															<select class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pl-10 transition-colors"
+																	data-name="Primary School Start Year"
+																	id="PrimarySchoolStartYear">
+																<option value="" selected>Select Start Year</option>
+															</select>
+															<div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+																<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+																	<path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+																</svg>
+															</div>
+														</div>
+													</div>
+													<div>
+														<label class="block text-sm font-medium text-slate-700 mb-2">
+															End Year <span class="text-slate-400 text-xs">(Optional)</span>
+														</label>
+														<div class="relative">
+															<select class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pl-10 transition-colors"
+																	data-name="Primary School End Year"
+																	id="PrimarySchoolEndYear">
+																<option value="" selected>Select End Year</option>
+															</select>
+															<div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+																<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+																	<path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+																</svg>
+															</div>
+														</div>
+													</div>
+												</div>
+												<!-- Hidden input to store combined period -->
+												<input type="hidden" asp-for="Applicant.PrimarySchoolPeriod" id="PrimarySchoolPeriodHidden" />
+												<div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+													<!-- SVG icon remains the same -->
+												</div>
+											</div>
+											<span asp-validation-for="Applicant.PrimarySchoolPeriod" class="text-red-500 text-sm mt-1 block"></span>
+										</div>
+									</div>
+								</div>
+
+								<!-- Secondary School Section -->
+								<div class="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+									<h5 class="text-lg font-medium text-slate-800 mb-4 flex items-center">
+										<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-cyan-600 mr-2" viewBox="0 0 20 20" fill="currentColor">
+											<path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z" />
+										</svg>
+										Secondary School Details
+									</h5>
+									<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+										<div>
+											<label class="block text-sm font-medium text-slate-700 mb-2" asp-for="Applicant.SecondarySchoolName">
+												School Name*
+											</label>
+											<div class="relative">
+												<input asp-for="Applicant.SecondarySchoolName"
+													   placeholder="High School Name"
+													   type="text"
+													   class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pl-10 transition-colors"
+													   data-name="Secondary School Name"
+													   id="HighSchoolName"
+													   required />
+												<div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+													<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+														<path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z" />
+													</svg>
+												</div>
+											</div>
+											<span asp-validation-for="Applicant.SecondarySchoolName" class="text-red-500 text-sm mt-1 block"></span>
+										</div>
+
+										<div>
+											<label class="block text-sm font-medium text-slate-700 mb-2" asp-for="Applicant.SecondarySchoolAddress">
+												School Address*
+											</label>
+											<div class="relative">
+												<input asp-for="Applicant.SecondarySchoolAddress"
+													   placeholder="High School Address"
+													   type="text"
+													   class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pl-10 transition-colors"
+													   data-name="Secondary School Address"
+													   id="HighSchoolAddress"
+													   required />
+												<div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+													<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+														<path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+													</svg>
+												</div>
+											</div>
+											<span asp-validation-for="Applicant.SecondarySchoolAddress" class="text-red-500 text-sm mt-1 block"></span>
+										</div>
+
+										<div>
+											@* <label class="block text-sm font-medium text-slate-700 mb-2" asp-for="Applicant.SecondarySchoolPeriod"> *@
+											@* 	Study Period* <span class="text-sm text-slate-500">(From - To)</span> *@
+											@* </label> *@
+											<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+												<div>
+													<label class="block text-sm font-medium text-slate-700 mb-2">
+														Start Year*
+													</label>
+													<div class="relative">
+														<select class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pl-10 transition-colors"
+																data-name="Secondary School Start Year"
+																id="SecondarySchoolStartYear"
+																required>
+															<option value="" selected>Select Start Year</option>
+															<!-- Years will be populated by JavaScript -->
+														</select>
+														<div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+															<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+																<path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+															</svg>
+														</div>
+													</div>
+												</div>
+												<div>
+													<label class="block text-sm font-medium text-slate-700 mb-2">
+														End Year*
+													</label>
+													<div class="relative">
+														<select class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pl-10 transition-colors"
+																data-name="Secondary School End Year"
+																id="SecondarySchoolEndYear"
+																required>
+															<option value="" selected>Select End Year</option>
+															<!-- Years will be populated by JavaScript -->
+														</select>
+														<div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+															<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+																<path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+															</svg>
+														</div>
+													</div>
+												</div>
+											</div>
+											<!-- Hidden input to store combined period -->
+											<input type="hidden" asp-for="Applicant.SecondarySchoolPeriod" id="SecondarySchoolPeriodHidden" />
+											<span asp-validation-for="Applicant.SecondarySchoolPeriod" class="text-red-500 text-sm mt-1 block"></span>
+										</div>
+									</div>
+
+									<!-- Secondary School Results Table -->
+									<div id="secondarySchoolResults" class="mt-8">
+										<div class="space-y-4">
+											<div class="flex items-center justify-between">
+												<p class="font-medium text-slate-800 flex items-center">
+													<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-cyan-600 mr-2" viewBox="0 0 20 20" fill="currentColor">
+														<path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+														<path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd" />
+													</svg>
+													Secondary School Results <span class="text-sm text-slate-600 ml-2">(a minimum of 5 subjects required)*</span>
+												</p>
+												<span class="text-sm text-slate-600">
+													Selected: <span id="subject-count" class="font-semibold">1</span> of <span class="font-semibold">5</span> required subjects
+												</span>
+											</div>
+
+											<div id="subject-grades-container" class="border border-slate-200 rounded-lg overflow-hidden">
+												<div class="overflow-x-auto">
+													<table class="w-full" id="subjectsTable">
+														<thead>
+															<tr>
+																<th class="text-left py-3 px-4 bg-slate-50 text-sm font-medium text-slate-700 rounded-tl-lg">Subject</th>
+																<th class="text-left py-3 px-4 bg-slate-50 text-sm font-medium text-slate-700">Grade</th>
+																<th class="text-left py-3 px-4 bg-slate-50 text-sm font-medium text-slate-700 rounded-tr-lg w-24">Action</th>
+															</tr>
+														</thead>
+														<tbody id="subjects">
+															@{
+																if (Model.SelectedSubjects == null)
+																{
+																	Model.SelectedSubjects = new List<SubjectGradeDto>();
+																}
+															}
+															<tr class="subject-grade-pair border-b border-slate-100 hover:bg-slate-50">
+																<td class="py-3 px-4">
+																	<div class="relative">
+																		<select class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 subject-select"
+																				name="SelectedSubjects[0].SubjectId"
+																				data-name="Subject"
+																				required>
+																			<option value="">Select Subject</option>
+																			@foreach (var subject in Model.Subjects)
+																			{
+																				<option value="@subject.Id">@subject.Name</option>
+																			}
+																		</select>
+																	</div>
+																</td>
+																<td class="py-3 px-4">
+																	<div class="relative">
+																		<select class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 grade-select"
+																				name="SelectedSubjects[0].GradeId"
+																				data-name="Grade"
+																				required>
+																			<option value="">Select Grade</option>
+																			@foreach (var grade in Model.Grades)
+																			{
+																				<option value="@grade.Id">@grade.Name</option>
+																			}
+																		</select>
+																	</div>
+																</td>
+																<td class="py-3 px-4">
+																	<button type="button"
+																			class="remove-subject-grade px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors text-sm">
+																		Remove
+																	</button>
+																</td>
+															</tr>
+														</tbody>
+													</table>
+												</div>
+											</div>
+
+											<div class="flex items-center justify-between gap-4">
+												<button type="button"
+														id="add-subject-grade"
+														class="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 transition-colors flex items-center gap-2">
+													<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+														<path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+													</svg>
+													Add Subject
+												</button>
+												<span id="subject-grade-error" class="text-red-500 text-sm"></span>
+											</div>
+										</div>
+									</div>
+								</div>
+
+								<!-- Tertiary Education Section (Initially Hidden) -->
+								<div id="tertiarySchoolResults" class="hidden bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+									<h5 class="text-lg font-medium text-slate-800 mb-4 flex items-center">
+										<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-cyan-600 mr-2" viewBox="0 0 20 20" fill="currentColor">
+											<path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z" />
+										</svg>
+										Tertiary Education Details
+									</h5>
+									<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+										<div>
+											<label class="block text-sm font-medium text-slate-700 mb-2" asp-for="Applicant.FormerSchoolName">
+												College/University Name*
+											</label>
+											<div class="relative">
+												<input asp-for="Applicant.FormerSchoolName"
+													   placeholder="College/University Name"
+													   type="text"
+													   class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pl-10 transition-colors"
+													   data-name="University/College Name"
+													   id="SecondarySchoolName" />
+												<div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+													<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+														<path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z" />
+													</svg>
+												</div>
+											</div>
+											<span asp-validation-for="Applicant.FormerSchoolName" class="text-red-500 text-sm mt-1 block"></span>
+										</div>
+
+										<div>
+											<label class="block text-sm font-medium text-slate-700 mb-2" asp-for="Applicant.FormerSchoolAddress">
+												College/University Address*
+											</label>
+											<div class="relative">
+												<input asp-for="Applicant.FormerSchoolAddress"
+													   placeholder="College/University Address"
+													   type="text"
+													   class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pl-10 transition-colors"
+													   data-name="University/College Address"
+													   id="SecondarySchoolAddress" />
+												<div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+													<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+														<path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+													</svg>
+												</div>
+											</div>
+											<span asp-validation-for="Applicant.FormerSchoolAddress" class="text-red-500 text-sm mt-1 block"></span>
+										</div>
+
+										<div>
+											<label class="block text-sm font-medium text-slate-700 mb-2" asp-for="Applicant.YearOfCompletion">
+												Year of Completion*
+											</label>
+											<div class="relative">
+												<input asp-for="Applicant.YearOfCompletion"
+													   placeholder="Year of Completion"
+													   type="text"
+													   class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 pl-10 transition-colors"
+													   data-name="Year of Completion"
+													   id="YearOfCompletion" />
+												<div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+													<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+														<path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+													</svg>
+												</div>
+											</div>
+											<span asp-validation-for="Applicant.YearOfCompletion" class="text-red-500 text-sm mt-1 block"></span>
+										</div>
+									</div>
+								</div>
+
+								<!-- Education Information Card -->
+								<div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-lg">
+									<div class="flex">
+										<div class="flex-shrink-0">
+											<svg class="h-5 w-5 text-amber-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+												<path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+											</svg>
+										</div>
+										<div class="ml-3">
+											<h3 class="text-sm font-medium text-amber-800">Important Information</h3>
+											<div class="mt-2 text-sm text-amber-700">
+												<ul class="list-disc space-y-1 pl-5">
+													<li>You must enter at least 5 subjects with grades for your secondary education</li>
+													<li>If you selected a higher education level, the tertiary education section will appear</li>
+													<li>Ensure all information is accurate as it will be verified during the admission process</li>
+												</ul>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Step 5: Documents -->
+					<div class="step-pane" data-step="5">
+						<div>
+							<div class="border-b border-slate-200 pb-4 mb-6">
+								<h4 class="text-xl font-semibold text-slate-800">Required Documents</h4>
+								<p class="text-slate-500 text-sm mt-1">Please upload all the required documents in PDF format</p>
+							</div>
+
+							<!-- Info Alert -->
+							<div class="mb-8 bg-cyan-50 border border-cyan-200 rounded-lg p-5">
+								<div class="flex">
+									<div class="flex-shrink-0">
+										<svg class="h-6 w-6 text-cyan-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+										</svg>
+									</div>
+									<div class="ml-3">
+										<h3 class="text-sm font-medium text-cyan-800">Document Upload Requirements</h3>
+										<div class="mt-2 text-sm text-cyan-700">
+											<ul class="list-disc pl-5 space-y-1">
+												<li>All documents must be in PDF format</li>
+												<li>Maximum file size is 5MB per document</li>
+												<li>Documents must be clear and legible</li>
+												<li>Ensure all pages are correctly oriented</li>
+											</ul>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+								<!-- NRC/Passport Upload -->
+								<div class="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+									<label class="block text-base font-medium text-slate-700 mb-3" asp-for="Applicant.NrcOrPassportCopy">
+										NRC or Passport Copy*
+									</label>
+									<div class="space-y-3">
+										<div class="flex items-center justify-center w-full">
+											<label for="NrcOrPassportCopy" class="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-300 border-dashed rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors relative">
+												<div class="flex flex-col items-center justify-center pt-5 pb-6">
+													<svg class="w-10 h-10 mb-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+														<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+													</svg>
+													<p class="mb-2 text-sm text-slate-500">
+														<span class="font-semibold">Click to upload</span> or drag and drop
+													</p>
+													<p class="text-xs text-slate-500">PDF only (MAX. 5MB)</p>
+												</div>
+												<input asp-for="Applicant.NrcOrPassportCopy"
+													   type="file"
+													   class="hidden"
+													   id="NrcOrPassportCopy"
+													   data-name="NRC/Passport Copy"
+													   accept="application/pdf"
+													   required />
+											</label>
+										</div>
+										<span asp-validation-for="Applicant.NrcOrPassportCopy" class="text-red-500 text-sm block"></span>
+										<div class="text-sm text-slate-600">
+											Please upload a clear copy of your NRC or passport identification page
+										</div>
+										<div id="nrc-preview" class="file-preview rounded-lg bg-slate-50 p-4 hidden">
+											<div class="flex items-center justify-between">
+												<div class="flex items-center">
+													<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+														<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+													</svg>
+													<span class="text-sm font-medium text-slate-700 file-name"></span>
+												</div>
+												<button type="button" class="text-red-500 hover:text-red-700 clear-file flex items-center">
+													<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+														<path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+													</svg>
+												</button>
+											</div>
+										</div>
+									</div>
+								</div>
+
+								<!-- Results Certificate Upload -->
+								<div class="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+									<label class="block text-base font-medium text-slate-700 mb-3" asp-for="Applicant.ResultsAttachment">
+										Results Certificate Attachment*
+									</label>
+									<div class="space-y-3">
+										<div class="flex items-center justify-center w-full">
+											<label for="ResultsAttachment" class="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-300 border-dashed rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors relative">
+												<div class="flex flex-col items-center justify-center pt-5 pb-6">
+													<svg class="w-10 h-10 mb-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+														<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+													</svg>
+													<p class="mb-2 text-sm text-slate-500">
+														<span class="font-semibold">Click to upload</span> or drag and drop
+													</p>
+													<p class="text-xs text-slate-500">PDF only (MAX. 5MB)</p>
+												</div>
+												<input asp-for="Applicant.ResultsAttachment"
+													   type="file"
+													   class="hidden"
+													   id="ResultsAttachment"
+													   data-name="Result/Transcript Copy"
+													   accept="application/pdf"
+													   required />
+											</label>
+										</div>
+										<span asp-validation-for="Applicant.ResultsAttachment" class="text-red-500 text-sm block"></span>
+										<div class="text-sm text-slate-600">
+											Upload your academic results/transcript (Grade 12 certificate, diploma, or degree)
+										</div>
+										<div id="results-preview" class="file-preview rounded-lg bg-slate-50 p-4 hidden">
+											<div class="flex items-center justify-between">
+												<div class="flex items-center">
+													<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+														<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+													</svg>
+													<span class="text-sm font-medium text-slate-700 file-name"></span>
+												</div>
+												<button type="button" class="text-red-500 hover:text-red-700 clear-file flex items-center">
+													<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+														<path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+													</svg>
+												</button>
+											</div>
+										</div>
+									</div>
+								</div>
+
+								<!-- Study Permit Upload (Initially Hidden) -->
+								<div id="StudyPermitField" class="hidden bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+									<label class="block text-base font-medium text-slate-700 mb-3" asp-for="Applicant.StudyPermit">
+										Study Permit Certificate*
+									</label>
+									<div class="space-y-3">
+										<div class="flex items-center justify-center w-full">
+											<label for="StudyPermit" class="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-300 border-dashed rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors relative">
+												<div class="flex flex-col items-center justify-center pt-5 pb-6">
+													<svg class="w-10 h-10 mb-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+														<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+													</svg>
+													<p class="mb-2 text-sm text-slate-500">
+														<span class="font-semibold">Click to upload</span> or drag and drop
+													</p>
+													<p class="text-xs text-slate-500">PDF only (MAX. 5MB)</p>
+												</div>
+												<input asp-for="Applicant.StudyPermit"
+													   type="file"
+													   class="hidden"
+													   id="StudyPermit"
+													   data-name="Study Permit"
+													   accept="application/pdf"
+													   required />
+											</label>
+										</div>
+										<span asp-validation-for="Applicant.StudyPermit" class="text-red-500 text-sm block"></span>
+										<div class="text-sm text-slate-600">
+											Required for international students. Please upload your valid study permit.
+										</div>
+										<div id="study-permit-preview" class="file-preview rounded-lg bg-slate-50 p-4 hidden">
+											<div class="flex items-center justify-between">
+												<div class="flex items-center">
+													<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+														<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+													</svg>
+													<span class="text-sm font-medium text-slate-700 file-name"></span>
+												</div>
+												<button type="button" class="text-red-500 hover:text-red-700 clear-file flex items-center">
+													<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+														<path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+													</svg>
+												</button>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<!-- Final Submission Notice -->
+							<div class="mt-8 bg-amber-50 border-l-4 border-amber-500 p-4 rounded-lg">
+								<div class="flex">
+									<div class="flex-shrink-0">
+										<svg class="h-5 w-5 text-amber-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+											<path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+										</svg>
+									</div>
+									<div class="ml-3">
+										<h3 class="text-sm font-medium text-amber-800">Before submitting</h3>
+										<div class="mt-2 text-sm text-amber-700">
+											<p>Please review all your information and ensure uploaded documents are correct and legible. After submission, you will need to make a payment to complete your application process.</p>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+
+
+
+
+					<!-- Steps End -->
+				</div>
+
+				<!-- Navigation Buttons -->
+				<div class="flex items-center justify-between gap-4 mt-8 border-t pt-6">
+					<button type="button" class="prev-step px-6 py-3 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+							<path fill-rule="evenodd" d="M9.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L7.414 9H15a1 1 0 110 2H7.414l2.293 2.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+						</svg>
+						Previous
+					</button>
+
+					<div class="flex items-center gap-4">
+						<button type="button" class="next-step px-6 py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 transition-colors flex items-center gap-2">
+							Next
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+								<path fill-rule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+							</svg>
+						</button>
+						<button type="submit" class="submit-form hidden px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors flex items-center gap-2">
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+								<path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+							</svg>
+							Submit Application
+						</button>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<!-- Your custom application form JavaScript -->
+<script src="~/js/application_form.js" asp-append-version="true"></script>

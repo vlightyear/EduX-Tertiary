@@ -1,0 +1,299 @@
+﻿@model SIS.Models.Payments.StudentFinanceViewModel
+
+@{
+    ViewData["Title"] = "Fee Statement";
+}
+
+@if (!Model.Student.IsRegistered)
+{
+    <div class="min-h-screen bg-slate-50 p-6">
+        <div class="flex items-center gap-2 p-4 bg-amber-50 text-amber-800 rounded-lg mb-6">
+            <i class="material-icons">warning</i>
+            <p>Please complete your registration to view fee details.</p>
+        </div>
+    </div>
+    return;
+}
+
+<div class="min-h-screen bg-slate-50 p-6">
+    <!-- Header Card -->
+    <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div class="flex items-start gap-4">
+                <i class="material-icons text-3xl text-cyan-950">receipt_long</i>
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-800 mb-2">Fee Statement</h1>
+                    <div class="text-slate-600">
+                        <p><span class="font-medium">Student:</span> @Model.Student.FullName</p>
+                        <p><span class="font-medium">ID:</span> @Model.Student.StudentId_Number</p>
+                    </div>
+                </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-4 text-slate-600">
+                <div class="flex items-center gap-2">
+                    <i class="material-icons">calendar_month</i>
+                    <span>Academic Year: @Model.AcademicYear</span>
+                </div>
+                <span class="hidden md:block">|</span>
+                <div class="flex items-center gap-2">
+                    <i class="material-icons">bookmark</i>
+                    <span>@Model.YearOfStudy</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alerts -->
+    @* @if (Model.AmountPaid == 0)
+    {
+        <div class="flex items-center gap-2 p-4 bg-amber-50 text-amber-800 rounded-lg mb-6">
+            <i class="material-icons">warning</i>
+            <p>No payments have been recorded for this academic year. Please make payment arrangements as soon as possible.</p>
+        </div>
+    } *@
+
+    @if (Model.MinRegistrationPayment != 0)
+    {
+        <div class="flex items-center gap-2 p-4 bg-blue-50 text-blue-800 rounded-lg mb-6">
+            <i class="material-icons">info</i>
+            <p>Minimum payment required for registration: ZMW @Model.MinRegistrationPayment.ToString("N2")</p>
+        </div>
+    }
+
+    <!-- Summary Cards -->
+    <div class="grid md:grid-cols-3 gap-6 mb-6">
+        <!-- Outstanding Balance Card -->
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <div class="flex flex-col h-full">
+                <div class="flex items-center gap-2 mb-4">
+                    <i class="material-icons text-cyan-950">account_balance_wallet</i>
+                    <h2 class="text-lg font-semibold text-slate-800">Outstanding Balance</h2>
+                </div>
+                <h3 class="text-2xl font-bold text-red-600 mb-4">ZMW @Model.OutstandingBalance.ToString("N2")</h3>
+                <div class="flex flex-wrap gap-3 mt-auto">
+                    <span class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm">Payment Required</span>
+                    <a href="@Url.Action("ViewPayments", "Payments")"
+                       class="flex items-center gap-2 px-3 py-1 border border-cyan-950 text-cyan-950 rounded-full text-sm hover:bg-cyan-950 hover:text-white transition-colors">
+                        <i class="material-icons text-sm">history</i>
+                        <span>View Financial Statement</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Summary Card -->
+        <div class="md:col-span-2 bg-white rounded-xl shadow-sm p-6">
+            <div class="flex items-center gap-2 mb-6">
+                <i class="material-icons text-cyan-950">pie_chart</i>
+                <h2 class="text-lg font-semibold text-slate-800">Payment Summary (<i>All Time</i>)</h2>
+            </div>
+            <div class="grid md:grid-cols-2 gap-6">
+                <div id="paymentChart" class="h-48"></div>
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+                        <span class="text-slate-600">Total Fees:</span>
+                        <span class="font-semibold text-slate-800">ZMW @Model.TotalFees.ToString("N2")</span>
+                    </div>
+                    <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+                        <span class="text-slate-600">Amount Paid:</span>
+                        <span class="font-semibold text-slate-800">ZMW @Model.AmountPaid.ToString("N2")</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-600">Balance:</span>
+                        <span class="font-semibold text-red-600">ZMW @Model.OutstandingBalance.ToString("N2")</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fee Breakdown Card -->
+    <div class="bg-white rounded-xl shadow-sm">
+        <div class="p-6 border-b border-slate-100">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div class="flex items-center gap-2">
+                    <i class="material-icons text-cyan-950">format_list_bulleted</i>
+                    <h2 class="text-lg font-semibold text-slate-800">Current Invoice Fee Breakdown (Academic Year: @Model.AcademicYear | [@Model.Student.StudentCurrentYear,@Model.Student.CurrentSemester])</h2>
+                </div>
+                <div class="flex flex-wrap gap-3">
+                    <button onclick="generatePDF()"
+                            class="flex items-center gap-2 px-4 py-2 border border-cyan-950 text-cyan-950 rounded-lg hover:bg-cyan-950 hover:text-white transition-colors">
+                        <i class="material-icons">picture_as_pdf</i>
+                        <span>Print Invoice</span>
+                    </button>
+                    <a href="@Url.Action("StudentPaymentSelection", "Payments")"
+                       class="flex items-center gap-2 px-4 py-2 bg-cyan-950 text-white rounded-lg hover:bg-cyan-900 transition-colors">
+                        <i class="material-icons">credit_card</i>
+                        <span>Make Payment</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="p-6">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-slate-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-sm font-semibold text-slate-800">Fee Description</th>
+                            <th class="px-6 py-3 text-right text-sm font-semibold text-slate-800">Amount (ZMW)</th>
+                            @* <th class="px-6 py-3 text-right text-sm font-semibold text-slate-800">Paid (ZMW)</th>
+                            <th class="px-6 py-3 text-right text-sm font-semibold text-slate-800">Balance (ZMW)</th> *@
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @foreach (var fee in Model.FeeBreakdown)
+                        {
+                            <tr class="hover:bg-slate-50">
+                                <td class="px-6 py-4 text-sm text-slate-600">@fee.Description</td>
+                                <td class="px-6 py-4 text-sm text-slate-600 text-right">@fee.Amount.ToString("N2")</td>
+                                @* <td class="px-6 py-4 text-sm text-slate-600 text-right">@fee.Paid.ToString("N2")</td>
+                                <td class="px-6 py-4 text-sm text-red-600 text-right">@fee.Balance.ToString("N2")</td> *@
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot class="bg-slate-50 font-semibold">
+                        <tr>
+                            <td class="px-6 py-4 text-sm text-slate-800">Total</td>
+                            <td class="px-6 py-4 text-sm text-slate-800 text-right">@Model.CurrentTotalFees.ToString("N2")</td>
+                            @* <td class="px-6 py-4 text-sm text-slate-800 text-right">@Model.AmountPaid.ToString("N2")</td>
+                            <td class="px-6 py-4 text-sm text-red-600 text-right">@Model.OutstandingBalance.ToString("N2")</td> *@
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+        function generatePDF() {
+            window.jsPDF = window.jspdf.jsPDF;
+            const doc = new jsPDF();
+
+            // Add header with cyan-950 color
+            doc.setFontSize(18);
+            doc.setTextColor(8, 47, 73); // cyan-950
+            doc.text('Current Semester Fee Statement', 105, 15, { align: 'center' });
+
+            // Add student details
+            doc.setFontSize(12);
+            doc.setTextColor(51, 65, 85); // slate-700
+            doc.text(`Student: @Model.Student.FullName`, 15, 30);
+            doc.text(`ID: @Model.Student.StudentId_Number`, 15, 40);
+            doc.text(`Academic Year: @Model.AcademicYear | [@Model.Student.StudentCurrentYear,@Model.Student.CurrentSemester]`, 15, 50);
+
+            // Add fee breakdown table
+            const headers = [['Description', 'Amount (ZMW)']];
+            const data = @Html.Raw(Json.Serialize(Model.FeeBreakdown.Select(f =>
+            new[] {
+                f.Description,
+                f.Amount.ToString("N2")
+            })));
+
+            // Add totals
+            data.push([
+                'Total',
+                '@Model.CurrentTotalFees.ToString("N2")'
+            ]);
+
+            doc.autoTable({
+                head: headers,
+                body: data,
+                startY: 60,
+                theme: 'grid',
+                styles: {
+                    fontSize: 10,
+                    textColor: [51, 65, 85] // slate-700
+                },
+                headStyles: {
+                    fillColor: [8, 47, 73], // cyan-950
+                    textColor: [255, 255, 255]
+                },
+                alternateRowStyles: {
+                    fillColor: [241, 245, 249] // slate-100
+                }
+            });
+
+            // Add payment requirements if applicable
+            let yPos = doc.lastAutoTable.finalY + 15;
+            if (@Model.AmountPaid < @Model.MinRegistrationPayment) {
+                doc.setTextColor(220, 53, 69); // Red color for warning
+                doc.text(`Minimum payment required for registration: ZMW @Model.MinRegistrationPayment.ToString("N2")`, 15, yPos);
+            }
+
+            // Save the PDF
+            doc.save('FeeStatement_@(Model.Student.StudentId_Number).pdf');
+        }
+
+        // Chart initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            var totalFees = @Model.TotalFees;
+            var amountPaid = @Model.AmountPaid;
+            var percentagePaid = totalFees > 0 ? (amountPaid / totalFees) * 100 : 0;
+            var percentageUnpaid = 100 - percentagePaid;
+
+            var options = {
+                series: [percentagePaid, percentageUnpaid],
+                labels: ['Paid', 'Unpaid'],
+                chart: {
+                    type: 'donut',
+                    height: 200,
+                    fontFamily: 'Inter, sans-serif'
+                },
+                colors: ['#082f49', '#e2e8f0'], // cyan-950 for paid, slate-200 for unpaid
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        colors: '#475569' // slate-600
+                    }
+                },
+                plotOptions: {
+                    pie: {
+                        donut: {
+                            size: '75%',
+                            labels: {
+                                show: true,
+                                name: {
+                                    show: true,
+                                    fontSize: '14px',
+                                    color: '#475569' // slate-600
+                                },
+                                value: {
+                                    show: true,
+                                    fontSize: '16px',
+                                    fontWeight: 600,
+                                    color: '#082f49', // cyan-950
+                                    formatter: function(val) {
+                                        return val.toFixed(1) + '%';
+                                    }
+                                },
+                                total: {
+                                    show: true,
+                                    label: 'Paid',
+                                    fontSize: '14px',
+                                    color: '#475569', // slate-600
+                                    formatter: function(w) {
+                                        return percentagePaid.toFixed(1) + '%';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                stroke: {
+                    show: false
+                },
+                dataLabels: {
+                    enabled: false
+                }
+            };
+
+            var chart = new ApexCharts(document.querySelector("#paymentChart"), options);
+            chart.render();
+        });
+    </script>
+}

@@ -1,0 +1,949 @@
+﻿@model SIS.Controllers.AccomodationControllers.BlackListingIndexViewModel
+@{
+    ViewData["Title"] = "Accommodation Blacklist Management";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    console.log('=== Blacklist Management Scripts Loading ===');
+
+    // ===================================
+    // BLACKLIST MODAL
+    // ===================================
+
+    window.openBlacklistModal = function(studentId, studentName) {
+        console.log('Opening blacklist modal for student:', studentId);
+
+        Swal.fire({
+            title: 'Blacklist Student from Accommodation',
+            html: `
+                <div style="text-align: left;">
+                    <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin-bottom: 20px; border-radius: 4px;">
+                        <strong style="color: #856404;">⚠️ Warning:</strong>
+                        <p style="margin: 5px 0 0 0; color: #856404; font-size: 14px;">
+                            Blacklisting <strong>${studentName}</strong> will:
+                        </p>
+                        <ul style="margin: 10px 0 0 20px; color: #856404; font-size: 13px;">
+                            <li>Remove them from current accommodation (if allocated)</li>
+                            <li>Prevent them from applying for accommodation</li>
+                            <li>Cancel any pending applications</li>
+                        </ul>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Reason for Blacklisting *</label>
+                        <textarea id="blacklistReason" class="swal2-textarea" style="width: 100%; height: 120px;" placeholder="Enter detailed reason for blacklisting this student (e.g., damage to property, violation of hostel rules, etc.)"></textarea>
+                    </div>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: '<i class="fas fa-ban mr-2"></i>Blacklist Student',
+            cancelButtonText: '<i class="fas fa-times mr-2"></i>Cancel',
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            width: '600px',
+            preConfirm: () => {
+                const reason = document.getElementById('blacklistReason').value.trim();
+                if (!reason) {
+                    Swal.showValidationMessage('Please provide a reason for blacklisting');
+                    return false;
+                }
+                if (reason.length < 10) {
+                    Swal.showValidationMessage('Please provide a more detailed reason (minimum 10 characters)');
+                    return false;
+                }
+                return { studentId: studentId, reason: reason };
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.blacklistStudent(result.value.studentId, result.value.reason);
+            }
+        });
+    };
+
+    // ===================================
+    // UNBLACKLIST MODAL
+    // ===================================
+
+    window.openUnblacklistModal = function(studentId, studentName) {
+        console.log('Opening unblacklist modal for student:', studentId);
+
+        Swal.fire({
+            title: 'Remove Student from Blacklist',
+            html: `
+                <div style="text-align: left;">
+                    <div style="background: #d1ecf1; border-left: 4px solid #17a2b8; padding: 15px; margin-bottom: 20px; border-radius: 4px;">
+                        <strong style="color: #0c5460;">ℹ️ Information:</strong>
+                        <p style="margin: 5px 0 0 0; color: #0c5460; font-size: 14px;">
+                            Removing <strong>${studentName}</strong> from the blacklist will allow them to apply for accommodation again.
+                        </p>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Reason for Removal *</label>
+                        <textarea id="unblacklistReason" class="swal2-textarea" style="width: 100%; height: 100px;" placeholder="Enter reason for removing this student from the blacklist (e.g., issue resolved, appeal approved, etc.)"></textarea>
+                    </div>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: '<i class="fas fa-check-circle mr-2"></i>Remove from Blacklist',
+            cancelButtonText: '<i class="fas fa-times mr-2"></i>Cancel',
+            confirmButtonColor: '#28a745',
+            cancelButtonColor: '#6c757d',
+            width: '600px',
+            preConfirm: () => {
+                const reason = document.getElementById('unblacklistReason').value.trim();
+                if (!reason) {
+                    Swal.showValidationMessage('Please provide a reason for removal');
+                    return false;
+                }
+                return { studentId: studentId, reason: reason };
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.unblacklistStudent(result.value.studentId, result.value.reason);
+            }
+        });
+    };
+
+    // ===================================
+    // BLACKLIST ACTIONS
+    // ===================================
+
+    window.blacklistStudent = function(studentId, reason) {
+        console.log('Blacklisting student:', studentId, 'reason:', reason);
+
+        Swal.fire({
+            title: 'Processing...',
+            text: 'Blacklisting student from accommodation',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        const token = document.querySelector('input[name="__RequestVerificationToken"]');
+
+        fetch('@Url.Action("BlacklistStudent", "AccommodationBlackListing")', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': token ? token.value : ''
+            },
+            body: JSON.stringify({ studentId: studentId, reason: reason })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                let message = data.message;
+                if (data.data.wasAccommodated && data.data.previousBedLocation) {
+                    message += `<br><br><strong>Previous Accommodation:</strong> ${data.data.previousBedLocation}`;
+                }
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Student Blacklisted',
+                    html: `<p>${message}</p>`,
+                    confirmButtonColor: '#28a745'
+                }).then(() => {
+                    window.location.reload();
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: data.message,
+                    confirmButtonColor: '#dc3545'
+                });
+            }
+        })
+        .catch(error => {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Error: ' + error.message,
+                confirmButtonColor: '#dc3545'
+            });
+            console.error('Error:', error);
+        });
+    };
+
+    window.unblacklistStudent = function(studentId, reason) {
+        console.log('Unblacklisting student:', studentId, 'reason:', reason);
+
+        Swal.fire({
+            title: 'Processing...',
+            text: 'Removing student from blacklist',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        const token = document.querySelector('input[name="__RequestVerificationToken"]');
+
+        fetch('@Url.Action("UnblacklistStudent", "AccommodationBlackListing")', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': token ? token.value : ''
+            },
+            body: JSON.stringify({ studentId: studentId, reason: reason })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Blacklist Removed',
+                    text: data.message,
+                    confirmButtonColor: '#28a745'
+                }).then(() => {
+                    window.location.reload();
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: data.message,
+                    confirmButtonColor: '#dc3545'
+                });
+            }
+        })
+        .catch(error => {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Error: ' + error.message,
+                confirmButtonColor: '#dc3545'
+            });
+            console.error('Error:', error);
+        });
+    };
+
+    // ===================================
+    // STUDENT DETAILS LOADER
+    // ===================================
+
+    window.loadStudentDetails = function(studentId) {
+        console.log('Loading details for student:', studentId);
+
+        document.querySelectorAll('.student-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+
+        const clickedCard = document.querySelector(`[data-student-id="${studentId}"]`);
+        if (clickedCard) {
+            clickedCard.classList.add('selected');
+        }
+
+        fetch('@Url.Action("GetStudentDetails", "AccommodationBlackListing")?studentId=' + studentId)
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('studentDetailsContainer').innerHTML = html;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('studentDetailsContainer').innerHTML =
+                    '<div class="no-selection"><i class="fas fa-exclamation-triangle"></i><h3>Error</h3><p>Please try again</p></div>';
+            });
+    };
+
+    console.log('=== All functions defined successfully ===');
+</script>
+
+<style>
+    /* Use similar styles from BedAllocation Index */
+    .blacklist-container {
+        display: flex;
+        height: calc(100vh - 300px);
+        gap: 0;
+        background: #f5f5f5;
+        overflow: hidden;
+    }
+
+    .blacklist-header {
+        background: white;
+        padding: 20px 30px;
+        border-bottom: 1px solid #e0e0e0;
+        margin-bottom: 0;
+    }
+
+    .header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .header-title {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+        .header-title i {
+            font-size: 32px;
+            color: #dc3545;
+        }
+
+        .header-title h2 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+    .header-subtitle {
+        color: #7f8c8d;
+        font-size: 14px;
+        margin: 0;
+    }
+
+    .role-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: #f8d7da;
+        color: #721c24;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    /* Statistics Bar */
+    .statistics-bar {
+        background: white;
+        padding: 15px 30px;
+        border-bottom: 1px solid #e0e0e0;
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .stat-card {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 20px;
+        border-radius: 8px;
+        border: 1px solid #e0e0e0;
+    }
+
+        .stat-card.blue {
+            background: #e3f2fd;
+            border-color: #2196f3;
+        }
+
+        .stat-card.red {
+            background: #ffebee;
+            border-color: #f44336;
+        }
+
+        .stat-card.green {
+            background: #e8f5e9;
+            border-color: #4caf50;
+        }
+
+        .stat-card i {
+            font-size: 24px;
+        }
+
+        .stat-card.blue i {
+            color: #2196f3;
+        }
+
+        .stat-card.red i {
+            color: #f44336;
+        }
+
+        .stat-card.green i {
+            color: #4caf50;
+        }
+
+    .stat-info h6 {
+        margin: 0;
+        font-size: 12px;
+        color: #666;
+        font-weight: 500;
+    }
+
+    .stat-info p {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 700;
+        color: #2c3e50;
+    }
+
+    /* Search Section */
+    .search-section {
+        background: white;
+        padding: 20px 30px;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .search-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 15px;
+        color: #dc3545;
+        font-weight: 600;
+    }
+
+    .search-form {
+        display: grid;
+        grid-template-columns: 1fr 200px 100px 100px;
+        gap: 15px;
+        align-items: end;
+    }
+
+    .form-group {
+        margin-bottom: 0;
+    }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #555;
+            font-weight: 500;
+        }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 15px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 14px;
+    }
+
+    .search-btn, .clear-btn {
+        height: 42px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 0 20px;
+    }
+
+    .search-btn {
+        background: #dc3545;
+        color: white;
+    }
+
+        .search-btn:hover {
+            background: #c82333;
+        }
+
+    .clear-btn {
+        background: #6c757d;
+        color: white;
+    }
+
+        .clear-btn:hover {
+            background: #5a6268;
+        }
+
+    /* Filter Tabs */
+    .filter-tabs {
+        display: flex;
+        gap: 10px;
+        padding: 15px 30px;
+        background: white;
+        border-bottom: 1px solid #e0e0e0;
+        overflow-x: auto;
+    }
+
+    .filter-tab {
+        padding: 8px 20px;
+        border: 2px solid #e0e0e0;
+        border-radius: 20px;
+        background: white;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 14px;
+        color: #666;
+        white-space: nowrap;
+        transition: all 0.3s;
+        text-decoration: none;
+    }
+
+        .filter-tab:hover {
+            border-color: #dc3545;
+            color: #dc3545;
+        }
+
+        .filter-tab.active {
+            background: #dc3545;
+            border-color: #dc3545;
+            color: white;
+        }
+
+        .filter-tab .count {
+            display: inline-block;
+            background: rgba(0,0,0,0.1);
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-left: 8px;
+            font-size: 12px;
+        }
+
+        .filter-tab.active .count {
+            background: rgba(255,255,255,0.3);
+        }
+
+    /* Students Panel */
+    .students-panel {
+        flex: 0 0 450px;
+        background: white;
+        border-right: 1px solid #e0e0e0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        height: 100%;
+    }
+
+    .students-header {
+        padding: 20px;
+        border-bottom: 1px solid #e0e0e0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+    }
+
+        .students-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+    .students-count {
+        background: #dc3545;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .students-list {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 10px;
+    }
+
+    .student-card {
+        background: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+        .student-card:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-color: #dc3545;
+        }
+
+        .student-card.selected {
+            border-color: #dc3545;
+            background: #fff5f5;
+        }
+
+    .student-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 10px;
+    }
+
+    .student-name {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 3px;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+        .status-badge.blacklisted {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-badge.not-blacklisted {
+            background: #d4edda;
+            color: #155724;
+        }
+
+    .card-info {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 13px;
+        color: #666;
+        margin-top: 5px;
+    }
+
+        .card-info i {
+            font-size: 14px;
+            color: #999;
+            width: 16px;
+        }
+
+    /* Details Panel */
+    .details-panel {
+        flex: 1;
+        background: #fafafa;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        height: 100%;
+    }
+
+    .no-selection {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #999;
+    }
+
+        .no-selection i {
+            font-size: 80px;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+
+        .no-selection h3 {
+            color: #666;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+
+        .no-selection p {
+            color: #999;
+            font-size: 14px;
+        }
+
+    .details-content {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 0;
+        height: 100%;
+    }
+
+        /* Scrollbar styling */
+        .students-list::-webkit-scrollbar,
+        .details-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .students-list::-webkit-scrollbar-track,
+        .details-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .students-list::-webkit-scrollbar-thumb,
+        .details-content::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+            .students-list::-webkit-scrollbar-thumb:hover,
+            .details-content::-webkit-scrollbar-thumb:hover {
+                background: #555;
+            }
+
+    /* Responsive */
+    @@media (max-width: 1200px) {
+        .search-form {
+            grid-template-columns: 1fr;
+        }
+
+        .students-panel {
+            flex: 0 0 350px;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .blacklist-container {
+            flex-direction: column;
+            height: auto;
+        }
+
+        .students-panel {
+            flex: 0 0 auto;
+            max-height: 400px;
+        }
+
+        .statistics-bar {
+            flex-direction: column;
+        }
+    }
+</style>
+
+<!-- Header -->
+<div class="blacklist-header">
+    <div class="header-top">
+        <div class="header-title">
+            <i class="fas fa-ban"></i>
+            <div>
+                <h2>Accommodation Blacklist Management</h2>
+                <p class="header-subtitle">Manage students who are restricted from accommodation services</p>
+            </div>
+        </div>
+        <div>
+            <span class="role-badge">
+                <i class="fas fa-user-shield"></i>
+                Role: @(Model.IsAdmin ? "Admin" : Model.IsHostelManager ? "Hostel Manager" : "Staff")
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Bar -->
+<div class="statistics-bar">
+    <div class="stat-card blue">
+        <i class="fas fa-users"></i>
+        <div class="stat-info">
+            <h6>Total Students</h6>
+            <p>@(Model.BlacklistedCount + Model.NotBlacklistedCount)</p>
+        </div>
+    </div>
+    <div class="stat-card red">
+        <i class="fas fa-user-slash"></i>
+        <div class="stat-info">
+            <h6>Blacklisted</h6>
+            <p>@Model.BlacklistedCount</p>
+        </div>
+    </div>
+    <div class="stat-card green">
+        <i class="fas fa-user-check"></i>
+        <div class="stat-info">
+            <h6>Not Blacklisted</h6>
+            <p>@Model.NotBlacklistedCount</p>
+        </div>
+    </div>
+</div>
+
+<!-- Search Section -->
+<div class="search-section">
+    <div class="search-title">
+        <i class="fas fa-search"></i>
+        <span>Search Students</span>
+    </div>
+    <form asp-action="Index" method="get" class="search-form">
+        <div class="form-group">
+            <label for="searchTerm">Search Term</label>
+            <input type="text"
+                   class="form-control"
+                   id="searchTerm"
+                   name="searchTerm"
+                   placeholder="Search by student name, number, or email..."
+                   value="@Model.SearchTerm" />
+        </div>
+        <div class="form-group">
+            <label for="searchBy">Search By</label>
+            <select class="form-control" id="searchBy" name="searchBy">
+                <option value="AllFields" selected="@(Model.SearchBy == "AllFields")">All Fields</option>
+                <option value="StudentNumber" selected="@(Model.SearchBy == "StudentNumber")">Student Number</option>
+                <option value="StudentName" selected="@(Model.SearchBy == "StudentName")">Student Name</option>
+                <option value="Email" selected="@(Model.SearchBy == "Email")">Email</option>
+            </select>
+        </div>
+        <input type="hidden" name="filterStatus" value="@Model.FilterStatus" />
+        @if (Model.AssignedHostel != null)
+        {
+            <input type="hidden" name="selectedHostelId" value="@Model.AssignedHostel.HostelId" />
+        }
+        <button type="submit" class="search-btn">
+            <i class="fas fa-search"></i>
+            Search
+        </button>
+        <a asp-action="Index" class="clear-btn">
+            <i class="fas fa-times"></i>
+        </a>
+    </form>
+</div>
+
+<!-- Filter Tabs -->
+<div class="filter-tabs">
+    <a href="@Url.Action("Index", new { searchTerm = Model.SearchTerm, searchBy = Model.SearchBy, filterStatus = "Blacklisted", selectedHostelId = Model.AssignedHostel?.HostelId })"
+       class="filter-tab @(Model.FilterStatus == "Blacklisted" ? "active" : "")">
+        <i class="fas fa-ban"></i>
+        Blacklisted
+        <span class="count">@Model.BlacklistedCount</span>
+    </a>
+    <a href="@Url.Action("Index", new { searchTerm = Model.SearchTerm, searchBy = Model.SearchBy, filterStatus = "NotBlacklisted", selectedHostelId = Model.AssignedHostel?.HostelId })"
+       class="filter-tab @(Model.FilterStatus == "NotBlacklisted" ? "active" : "")">
+        <i class="fas fa-user-check"></i>
+        Not Blacklisted
+        <span class="count">@Model.NotBlacklistedCount</span>
+    </a>
+    <a href="@Url.Action("Index", new { searchTerm = Model.SearchTerm, searchBy = Model.SearchBy, filterStatus = "All", selectedHostelId = Model.AssignedHostel?.HostelId })"
+       class="filter-tab @(Model.FilterStatus == "All" ? "active" : "")">
+        <i class="fas fa-list"></i>
+        All Students
+        <span class="count">@(Model.BlacklistedCount + Model.NotBlacklistedCount)</span>
+    </a>
+</div>
+
+<!-- Main Container -->
+<div class="blacklist-container">
+    <!-- Students Panel -->
+    <div class="students-panel">
+        <div class="students-header">
+            <h3>Students</h3>
+            <span class="students-count">@Model.Students.Count results</span>
+        </div>
+        <div class="students-list">
+            @if (Model.Students.Any())
+            {
+                foreach (var student in Model.Students)
+                {
+                    var statusClass = student.IsBlackListedFromAccommodation ? "blacklisted" : "not-blacklisted";
+                    var statusText = student.IsBlackListedFromAccommodation ? "Blacklisted" : "Active";
+
+                    <div class="student-card"
+                         data-student-id="@student.Id">
+                        <div class="student-header">
+                            <div>
+                                <div class="student-name">@student.FullName</div>
+                                <div class="card-info">
+                                    <i class="fas fa-id-card"></i>
+                                    <span>@student.StudentId_Number</span>
+                                </div>
+                            </div>
+                            <span class="status-badge @statusClass">@statusText</span>
+                        </div>
+
+                        <div class="card-info">
+                            <i class="fas fa-graduation-cap"></i>
+                            <span>@student.Programme?.Name</span>
+                        </div>
+
+                        <div class="card-info">
+                            <i class="fas fa-school"></i>
+                            <span>@student.Programme?.Department?.School?.Name</span>
+                        </div>
+
+                        @if (student.BedSpace != null)
+                        {
+                            <div class="card-info" style="margin-top: 8px; color: #17a2b8;">
+                                <i class="fas fa-bed"></i>
+                                <span>@student.BedSpace.Room.Hostel.HostelName - Room @student.BedSpace.Room.RoomNumber</span>
+                            </div>
+                        }
+                    </div>
+                }
+            }
+            else
+            {
+                <div style="text-align: center; padding: 40px; color: #999;">
+                    <i class="fas fa-inbox" style="font-size: 48px; margin-bottom: 15px;"></i>
+                    <p>No students found</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Details Panel -->
+    <div class="details-panel">
+        <div id="studentDetailsContainer" class="details-content">
+            <div class="no-selection">
+                <i class="fas fa-user-circle"></i>
+                <h3>No Student Selected</h3>
+                <p>Select a student from the list to view details and manage blacklist status</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
+<script>
+    // ===================================
+    // EVENT DELEGATION FOR ALL CLICKS
+    // ===================================
+
+    document.addEventListener('click', function(e) {
+        // Handle Student Card clicks
+        const studentCard = e.target.closest('.student-card');
+        if (studentCard && !e.target.closest('.btn-blacklist') && !e.target.closest('.btn-unblacklist')) {
+            const studentId = parseInt(studentCard.dataset.studentId);
+            if (typeof window.loadStudentDetails === 'function') {
+                window.loadStudentDetails(studentId);
+            }
+            return;
+        }
+
+        // Handle Blacklist button clicks
+        const blacklistBtn = e.target.closest('.btn-blacklist');
+        if (blacklistBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            const studentId = parseInt(blacklistBtn.dataset.studentId);
+            const studentName = blacklistBtn.dataset.studentName;
+            if (typeof window.openBlacklistModal === 'function') {
+                window.openBlacklistModal(studentId, studentName);
+            }
+            return;
+        }
+
+        // Handle Unblacklist button clicks
+        const unblacklistBtn = e.target.closest('.btn-unblacklist');
+        if (unblacklistBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            const studentId = parseInt(unblacklistBtn.dataset.studentId);
+            const studentName = unblacklistBtn.dataset.studentName;
+            if (typeof window.openUnblacklistModal === 'function') {
+                window.openUnblacklistModal(studentId, studentName);
+            }
+            return;
+        }
+    }, true);
+
+    // ===================================
+    // PAGE INITIALIZATION
+    // ===================================
+
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('=== DOM Content Loaded ===');
+
+        // Load first student after a brief delay
+        setTimeout(function() {
+            const firstCard = document.querySelector('.student-card');
+            if (firstCard) {
+                const studentId = firstCard.getAttribute('data-student-id');
+                if (studentId && typeof window.loadStudentDetails === 'function') {
+                    window.loadStudentDetails(parseInt(studentId));
+                }
+            }
+        }, 200);
+    });
+
+    console.log('=== All initialization complete ===');
+</script>

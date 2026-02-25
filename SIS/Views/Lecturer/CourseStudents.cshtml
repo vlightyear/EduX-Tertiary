@@ -1,0 +1,258 @@
+﻿@model SIS.Models.Lecturer.CourseStudentsViewModel
+
+<div class="min-h-screen bg-slate-50 p-6">
+    <!-- Header Section -->
+    <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center">
+            <a asp-controller="Lecturer" asp-action="CourseContent" asp-route-id="@Model.CourseId"
+               class="text-slate-500 hover:text-slate-700 mr-3">
+                <i class="material-icons">arrow_back</i>
+            </a>
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800">Course Students</h1>
+                <p class="text-sm text-slate-600">@Model.CourseCode - @Model.CourseName</p>
+            </div>
+        </div>
+        <div class="flex items-center bg-blue-50 px-4 py-2 rounded-lg">
+            <i class="material-icons text-blue-500 mr-2">people</i>
+            <span class="text-blue-800 font-medium">@Model.TotalStudents Students</span>
+        </div>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="bg-white rounded-xl shadow-sm mb-6">
+        <div class="p-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <h2 class="text-lg font-semibold text-slate-800 mb-2 md:mb-0">Student Progress</h2>
+                <div class="w-full md:w-64 relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="material-icons text-gray-400 text-sm">search</i>
+                    </div>
+                    <input id="studentSearch" type="text" placeholder="Search by name or ID..."
+                           class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm"
+                           oninput="filterStudents()">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student List Tabs -->
+    <div class="bg-white rounded-xl shadow-sm">
+        <div class="border-b border-gray-200">
+            <nav class="flex flex-wrap -mb-px" aria-label="Tabs">
+                @{
+                    bool isFirstTab = true;
+                }
+                @foreach (var group in Model.StudentGroups)
+                {
+                    <button type="button"
+                            class="student-tab-button @(isFirstTab ? "active-tab" : "") inline-flex items-center px-4 py-2 border-b-2 @(isFirstTab ? "border-cyan-500 text-cyan-600" : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300")"
+                            data-tab-id="tab-@group.AcademicYearId-@group.SemesterId">
+                        @group.AcademicYear - @group.Semester (@group.Students.Count)
+                    </button>
+                    isFirstTab = false;
+                }
+            </nav>
+        </div>
+
+        @{
+            isFirstTab = true;
+        }
+        @foreach (var group in Model.StudentGroups)
+        {
+            <div id="tab-@group.AcademicYearId-@group.SemesterId"
+                 class="student-tab-content @(isFirstTab ? "block" : "hidden") p-4">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student Number</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mode of Study</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Enrollment Date</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Overall Progress</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            @foreach (var student in group.Students)
+                            {
+                                <tr class="student-row hover:bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="h-10 w-10 rounded-full bg-cyan-100 flex items-center justify-center text-cyan-600 uppercase font-bold">
+                                                @student.FirstName.Substring(0, 1)
+                                            </div>
+                                            <div class="ml-4">
+                                                <div class="text-sm font-medium text-gray-900 student-name">@student.FirstName</div>
+                                                <div class="text-sm text-gray-500">@student.Email</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 student-id">
+                                        @student.StudentNumber
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        @student.ModeOfStudy
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        @student.EnrollmentDate.ToString("MMM dd, yyyy")
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="relative w-full bg-gray-200 rounded-full h-3">
+                                            <div class="absolute top-0 left-0 h-3 rounded-full @(student.OverallProgress < 50 ? "bg-amber-500" : "bg-green-500")"
+                                                 style="width: @(student.OverallProgress)%"></div>
+                                        </div>
+                                        <span class="text-xs text-gray-500 mt-1 block">@student.OverallProgress% Complete</span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <button type="button" onclick="showProgressDetails('@student.StudentId')"
+                                                class="text-cyan-600 hover:text-cyan-900">
+                                            <i class="material-icons">analytics</i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <!-- Chapter Progress Details Panel (Hidden by default) -->
+                                <tr id="progress-details-@student.StudentId" class="hidden">
+                                    <td colspan="6" class="px-6 py-4 bg-gray-50">
+                                        <h4 class="text-sm font-medium text-gray-700 mb-3">Chapter Progress Details</h4>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                            @foreach (var chapterProgress in student.ChapterProgress.OrderBy(cp =>
+                                           Model.Chapters.FirstOrDefault(c => c.Id == cp.ChapterId)?.OrderIndex ?? 0))
+                                            {
+                                                <div class="bg-white border border-gray-200 rounded-lg p-3">
+                                                    <div class="flex items-center justify-between mb-2">
+                                                        <h5 class="text-sm font-medium text-gray-700">@chapterProgress.ChapterTitle</h5>
+                                                        @if (chapterProgress.IsCompleted)
+                                                        {
+                                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                                <i class="material-icons text-green-500 text-xs mr-1">check_circle</i>
+                                                                Completed
+                                                            </span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                                                                <i class="material-icons text-amber-500 text-xs mr-1">pending</i>
+                                                                In Progress
+                                                            </span>
+                                                        }
+                                                    </div>
+                                                    <div class="relative w-full bg-gray-200 rounded-full h-2 mb-2">
+                                                        <div class="absolute top-0 left-0 h-2 rounded-full @(chapterProgress.IsCompleted ? "bg-green-500" : "bg-amber-500")"
+                                                             style="width: @(chapterProgress.ProgressPercentage)%"></div>
+                                                    </div>
+                                                    <div class="flex justify-between text-xs text-gray-500">
+                                                        @if (chapterProgress.CreatedAt > DateTime.MinValue)
+                                                        {
+                                                            <span>Started: @chapterProgress.CreatedAt.ToString("MMM dd, yyyy")</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span>Not started</span>
+                                                        }
+                                                        @if (chapterProgress.CompletedDate.HasValue)
+                                                        {
+                                                            <span>Completed: @chapterProgress.CompletedDate.Value.ToString("MMM dd, yyyy")</span>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            isFirstTab = false;
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Tab navigation
+        document.addEventListener('DOMContentLoaded', function() {
+            const tabButtons = document.querySelectorAll('.student-tab-button');
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Hide all tab contents
+                    document.querySelectorAll('.student-tab-content').forEach(content => {
+                        content.classList.add('hidden');
+                    });
+
+                    // Remove active class from all buttons
+                    tabButtons.forEach(btn => {
+                        btn.classList.remove('active-tab', 'border-cyan-500', 'text-cyan-600');
+                        btn.classList.add('border-transparent', 'text-gray-500');
+                    });
+
+                    // Show the selected tab content
+                    const tabId = this.getAttribute('data-tab-id');
+                    document.getElementById(tabId).classList.remove('hidden');
+
+                    // Add active class to the clicked button
+                    this.classList.add('active-tab', 'border-cyan-500', 'text-cyan-600');
+                    this.classList.remove('border-transparent', 'text-gray-500');
+                });
+            });
+        });
+
+        // Toggle progress details
+        function showProgressDetails(studentId) {
+            const detailsRow = document.getElementById('progress-details-' + studentId);
+            if (detailsRow.classList.contains('hidden')) {
+                // Hide any other open details
+                document.querySelectorAll('[id^="progress-details-"]').forEach(row => {
+                    if (row.id !== 'progress-details-' + studentId) {
+                        row.classList.add('hidden');
+                    }
+                });
+
+                // Show this student's details
+                detailsRow.classList.remove('hidden');
+            } else {
+                // Hide details if already open
+                detailsRow.classList.add('hidden');
+            }
+        }
+
+        // Search/filter functionality
+        function filterStudents() {
+            const searchInput = document.getElementById('studentSearch');
+            const filter = searchInput.value.toLowerCase();
+            const rows = document.querySelectorAll('.student-row');
+
+            rows.forEach(row => {
+                const nameElement = row.querySelector('.student-name');
+                const idElement = row.querySelector('.student-id');
+
+                if (!nameElement || !idElement) return;
+
+                const name = nameElement.textContent || nameElement.innerText;
+                const id = idElement.textContent || idElement.innerText;
+
+                if (name.toLowerCase().indexOf(filter) > -1 || id.toLowerCase().indexOf(filter) > -1) {
+                    row.style.display = '';
+                    // Also show the corresponding progress details row if it was visible
+                    const detailsId = 'progress-details-' + row.id.split('-').pop();
+                    const detailsRow = document.getElementById(detailsId);
+                    if (detailsRow && !detailsRow.classList.contains('hidden')) {
+                        detailsRow.style.display = '';
+                    }
+                } else {
+                    row.style.display = 'none';
+                    // Hide the corresponding progress details row
+                    const detailsId = 'progress-details-' + row.id.split('-').pop();
+                    const detailsRow = document.getElementById(detailsId);
+                    if (detailsRow) {
+                        detailsRow.style.display = 'none';
+                    }
+                }
+            });
+        }
+    </script>
+}

@@ -1,0 +1,345 @@
+﻿@model SIS.Models.ViewModels.StudentResultsViewModel
+
+<div class="space-y-6">
+    <!-- Results Header -->
+    <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-6 text-white">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <div class="bg-white bg-opacity-20 rounded-full p-3 mr-4">
+                    <i class="material-icons text-2xl">assignment</i>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold">Academic Results</h2>
+                    <p class="text-blue-100 text-sm">@Model.StudentName (@Model.StudentNumber)</p>
+                    <p class="text-blue-100 text-sm">@Model.ProgrammeName</p>
+                </div>
+            </div>
+            <div class="text-right">
+                <div class="text-xs text-blue-100">Current Status</div>
+                <div class="text-lg font-semibold">Year @Model.CurrentYear, Semester @Model.CurrentSemester</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Access Status -->
+    @if (!Model.CanViewCompleteResults)
+    {
+        <div class="bg-amber-50 border border-amber-200 rounded-lg p-6">
+            <div class="flex items-center">
+                <i class="material-icons text-amber-500 text-xl mr-3">lock</i>
+                <div class="flex-1">
+                    <h4 class="text-lg font-semibold text-amber-800">Limited Results Access</h4>
+                    <p class="text-amber-700 mt-1">
+                        Complete results are not available due to outstanding fees of <strong>K @Model.OutstandingFees.ToString("N2")</strong>.
+                        Only basic course information and published assessment details are shown.
+                    </p>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Current Academic Year Results -->
+    @if (Model.AcademicYearResults.Any())
+    {
+        @foreach (var yearResult in Model.AcademicYearResults.OrderByDescending(y => y.AcademicYearId))
+        {
+            <div class="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-slate-800 flex items-center">
+                            <i class="material-icons text-primary-600 mr-2">school</i>
+                            Academic Year: @yearResult.AcademicYear
+                        </h3>
+                        @if (Model.CanViewCompleteResults)
+                        {
+                            <div class="flex items-center space-x-4 text-sm">
+                                <div class="text-center">
+                                    <div class="font-semibold text-slate-800">@yearResult.YearGPA.ToString("F2")</div>
+                                    <div class="text-slate-600">GPA</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="font-semibold text-slate-800">@yearResult.CreditsEarned/@yearResult.CreditsAttempted</div>
+                                    <div class="text-slate-600">Credits</div>
+                                </div>
+                                @if (!string.IsNullOrEmpty(yearResult.AcademicStanding))
+                                {
+                                    <div class="text-center">
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+                                               @(yearResult.AcademicStanding == "Proceed" ? "bg-green-100 text-green-800" :
+                                                 yearResult.AcademicStanding.Contains("Repeat") ? "bg-amber-100 text-amber-800" :
+                                                 yearResult.AcademicStanding.Contains("Probation") ? "bg-red-100 text-red-800" :
+                                                 "bg-slate-100 text-slate-800")">
+                                            @yearResult.AcademicStanding
+                                        </span>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Semesters -->
+                <div class="p-6">
+                    @foreach (var semester in yearResult.Semesters.OrderBy(s => s.Semester))
+                    {
+                        <div class="mb-6 @(semester != yearResult.Semesters.Last() ? "border-b border-slate-200 pb-6" : "")">
+                            <h4 class="text-md font-semibold text-slate-700 mb-4 flex items-center">
+                                <i class="material-icons text-slate-500 mr-2">book</i>
+                                Semester @semester.Semester
+                                <span class="ml-2 bg-slate-100 text-slate-600 text-xs font-medium px-2 py-1 rounded-full">
+                                    @semester.Courses.Count courses
+                                </span>
+                            </h4>
+
+                            @if (semester.Courses.Any())
+                            {
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-sm text-left text-slate-700">
+                                        <thead class="text-xs uppercase bg-slate-50">
+                                            <tr>
+                                                <th class="px-4 py-3">Course</th>
+                                                <th class="px-4 py-3">Credits</th>
+                                                @if (Model.CanViewCompleteResults)
+                                                {
+                                                    <th class="px-4 py-3">Assessments</th>
+                                                    <th class="px-4 py-3">Total</th>
+                                                    <th class="px-4 py-3">Grade</th>
+                                                    <th class="px-4 py-3">Status</th>
+                                                }
+                                                else
+                                                {
+                                                    <th class="px-4 py-3">Status</th>
+                                                }
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var course in semester.Courses)
+                                            {
+                                                <tr class="bg-white border-b hover:bg-slate-50">
+                                                    <td class="px-4 py-3">
+                                                        <div class="font-medium text-slate-800">@course.CourseCode</div>
+                                                        <div class="text-xs text-slate-600">@course.CourseName</div>
+                                                    </td>
+                                                    <td class="px-4 py-3">@course.Credits</td>
+                                                    @if (Model.CanViewCompleteResults)
+                                                    {
+                                                        <td class="px-4 py-3">
+                                                            @if (course.AssessmentScores.Any())
+                                                            {
+                                                                <div class="space-y-1">
+                                                                    @foreach (var assessment in course.AssessmentScores)
+                                                                    {
+                                                                        <div class="flex justify-between text-xs">
+                                                                            <span class="text-slate-600">@assessment.Key:</span>
+                                                                            <span class="font-medium">@assessment.Value.ToString("F1")</span>
+                                                                        </div>
+                                                                    }
+                                                                </div>
+                                                            }
+                                                            else
+                                                            {
+                                                                <span class="text-slate-400 text-xs">No assessments</span>
+                                                            }
+                                                        </td>
+                                                        <td class="px-4 py-3">
+                                                            @if (course.IsPublished)
+                                                            {
+                                                                <span class="font-semibold">@course.TotalScore.ToString("F1")%</span>
+                                                            }
+                                                            else
+                                                            {
+                                                                <span class="text-slate-400">-</span>
+                                                            }
+                                                        </td>
+                                                        <td class="px-4 py-3">
+                                                            @if (course.IsPublished && !string.IsNullOrEmpty(course.Grade))
+                                                            {
+                                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
+                                                                       @(course.IsPassed ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800")">
+                                                                    @course.Grade
+                                                                </span>
+                                                            }
+                                                            else
+                                                            {
+                                                                <span class="text-slate-400">-</span>
+                                                            }
+                                                        </td>
+                                                        <td class="px-4 py-3">
+                                                            @if (course.IsPublished)
+                                                            {
+                                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
+                                                                       @(course.IsPassed ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800")">
+                                                                    <i class="material-icons text-xs mr-1">@(course.IsPassed ? "check_circle" : "cancel")</i>
+                                                                    @(course.IsPassed ? "Pass" : "Fail")
+                                                                </span>
+                                                            }
+                                                            else
+                                                            {
+                                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-800">
+                                                                    <i class="material-icons text-xs mr-1">pending</i>
+                                                                    Pending
+                                                                </span>
+                                                            }
+                                                        </td>
+                                                    }
+                                                    else
+                                                    {
+                                                        <td class="px-4 py-3">
+                                                            @if (course.IsPublished)
+                                                            {
+                                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                                    <i class="material-icons text-xs mr-1">visibility</i>
+                                                                    Published
+                                                                </span>
+                                                            }
+                                                            else
+                                                            {
+                                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-800">
+                                                                    <i class="material-icons text-xs mr-1">pending</i>
+                                                                    Pending
+                                                                </span>
+                                                            }
+                                                        </td>
+                                                    }
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="text-center py-8 text-slate-500">
+                                    <i class="material-icons text-4xl text-slate-300 mb-2">book</i>
+                                    <p>No courses found for this semester</p>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    }
+
+    <!-- Performance History Archives -->
+    @if (Model.PerformanceArchives.Any())
+    {
+        <div class="bg-white rounded-lg border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h3 class="text-lg font-semibold text-slate-800 flex items-center">
+                    <i class="material-icons text-primary-600 mr-2">history</i>
+                    Academic Performance History
+                </h3>
+            </div>
+            <div class="p-6">
+                <div class="space-y-4">
+                    @foreach (var archive in Model.PerformanceArchives.OrderByDescending(a => a.AcademicYearId))
+                    {
+                        <div class="border border-slate-200 rounded-lg p-4">
+                            <div class="flex items-center justify-between mb-3">
+                                <div>
+                                    <h4 class="font-semibold text-slate-800">Year @archive.YearOfStudy Academic Performance</h4>
+                                    <p class="text-sm text-slate-600">Archived on @archive.CreatedAt.ToString("MMM dd, yyyy")</p>
+                                </div>
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+                                       @(archive.ProgressionStatus == "Proceed" ? "bg-green-100 text-green-800" :
+                                         archive.ProgressionStatus.Contains("Repeat") ? "bg-amber-100 text-amber-800" :
+                                         archive.ProgressionStatus.Contains("Probation") ? "bg-red-100 text-red-800" :
+                                         "bg-slate-100 text-slate-800")">
+                                    @archive.ProgressionStatus
+                                </span>
+                            </div>
+
+                            <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-3">
+                                <div class="text-center p-3 bg-blue-50 rounded-lg">
+                                    <div class="text-lg font-bold text-blue-600">@archive.TotalCoursesTaken</div>
+                                    <div class="text-xs text-blue-700">Courses Taken</div>
+                                </div>
+                                <div class="text-center p-3 bg-green-50 rounded-lg">
+                                    <div class="text-lg font-bold text-green-600">@archive.CoursesPassed</div>
+                                    <div class="text-xs text-green-700">Passed</div>
+                                </div>
+                                <div class="text-center p-3 bg-red-50 rounded-lg">
+                                    <div class="text-lg font-bold text-red-600">@archive.CoursesFailed</div>
+                                    <div class="text-xs text-red-700">Failed</div>
+                                </div>
+                                <div class="text-center p-3 bg-purple-50 rounded-lg">
+                                    <div class="text-lg font-bold text-purple-600">@archive.GPA.ToString("F2")</div>
+                                    <div class="text-xs text-purple-700">GPA</div>
+                                </div>
+                                <div class="text-center p-3 bg-amber-50 rounded-lg">
+                                    <div class="text-lg font-bold text-amber-600">@archive.OverallGrade</div>
+                                    <div class="text-xs text-amber-700">Overall Grade</div>
+                                </div>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(archive.Remarks))
+                            {
+                                <div class="bg-slate-50 rounded-lg p-3">
+                                    <p class="text-sm text-slate-700">
+                                        <strong>Remarks:</strong> @archive.Remarks
+                                    </p>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- No Results Message -->
+    @if (!Model.AcademicYearResults.Any() && !Model.PerformanceArchives.Any())
+    {
+        <div class="bg-white rounded-lg border border-slate-200 overflow-hidden">
+            <div class="p-6 text-center">
+                <i class="material-icons text-6xl text-slate-300 mb-4">assignment</i>
+                <p class="text-slate-500 text-lg font-medium">No Academic Results Found</p>
+                <p class="text-slate-400 text-sm mt-2">
+                    This student has no academic results or performance records available in the system.
+                </p>
+            </div>
+        </div>
+    }
+
+    <!-- Academic Summary -->
+    @if (Model.AcademicYearResults.Any() && Model.CanViewCompleteResults)
+    {
+        <div class="bg-white rounded-lg border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h3 class="text-lg font-semibold text-slate-800 flex items-center">
+                    <i class="material-icons text-primary-600 mr-2">analytics</i>
+                    Academic Summary
+                </h3>
+            </div>
+            <div class="p-6">
+                @{
+                    var totalCourses = Model.AcademicYearResults.SelectMany(y => y.Semesters).SelectMany(s => s.Courses).Count();
+                    var publishedCourses = Model.AcademicYearResults.SelectMany(y => y.Semesters).SelectMany(s => s.Courses).Where(c => c.IsPublished).ToList();
+                    var passedCourses = publishedCourses.Where(c => c.IsPassed).Count();
+                    var failedCourses = publishedCourses.Where(c => !c.IsPassed).Count();
+                    var overallGPA = publishedCourses.Any() ? publishedCourses.Average(c => c.TotalScore) / 100 * 4 : 0; // Rough GPA calculation
+                }
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="text-center p-4 bg-blue-50 rounded-lg">
+                        <div class="text-2xl font-bold text-blue-600">@totalCourses</div>
+                        <div class="text-sm text-blue-700">Total Courses</div>
+                    </div>
+                    <div class="text-center p-4 bg-green-50 rounded-lg">
+                        <div class="text-2xl font-bold text-green-600">@passedCourses</div>
+                        <div class="text-sm text-green-700">Courses Passed</div>
+                    </div>
+                    <div class="text-center p-4 bg-red-50 rounded-lg">
+                        <div class="text-2xl font-bold text-red-600">@failedCourses</div>
+                        <div class="text-sm text-red-700">Courses Failed</div>
+                    </div>
+                    <div class="text-center p-4 bg-purple-50 rounded-lg">
+                        <div class="text-2xl font-bold text-purple-600">@((publishedCourses.Any() ? (double)passedCourses / publishedCourses.Count * 100 : 0).ToString("F1"))%</div>
+                        <div class="text-sm text-purple-700">Success Rate</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>

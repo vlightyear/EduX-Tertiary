@@ -1,0 +1,133 @@
+﻿@using SIS.Models.Zoom
+@model ZoomMeetingJoinViewModel
+
+@{
+    ViewData["Title"] = "Join Meeting";
+    Layout = "_ZoomLayout"; // We'll create a special layout for the meeting page
+}
+
+<div class="container-fluid p-0">
+    <div class="row">
+        <div class="col-12">
+            <nav class="navbar navbar-light bg-light">
+                <div class="container-fluid">
+                    <span class="navbar-brand mb-0 h1">@Model.MeetingTopic</span>
+                    <div>
+                        <span class="badge bg-primary">Meeting ID: @Model.MeetingId</span>
+                        @if (Model.Role == 1)
+                        {
+                            <span class="badge bg-success ms-2">Host</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-info ms-2">Attendee</span>
+                        }
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12" style="height: calc(100vh - 56px);">
+            <!-- Zoom meeting container -->
+            <div id="zoom-meeting-container" style="width: 100%; height: 100%;"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Zoom Web SDK initialization and meeting joining
+        document.addEventListener('DOMContentLoaded', function() {
+          
+
+            // Initialize Zoom Web SDK
+            ZoomMtg.setZoomJSLib('https://source.zoom.us/3.13.1/lib', '/av');
+            ZoomMtg.preLoadWasm();
+            ZoomMtg.prepareWebSDK();
+
+            // Set language
+            ZoomMtg.i18n.load('en-US');
+            ZoomMtg.i18n.reload('en-US');
+
+
+      
+        var sdkKey = '1kPvTyE3Ty2oo1MhkCULpw'
+        var meetingNumber = '84234693428'
+        var passWord = '1234'
+        var role = 1
+        var userName = 'Samson'
+        var userEmail = ''
+        var registrantToken = ''
+        var zakToken = ''
+        var leaveUrl = 'https://zoom.us'
+
+        //var jwt="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcHBLZXkiOiJmS3JvTlp5dFR0bUFQeDlhV3JsUERBIiwic2RrS2V5IjoiZktyb05aeXRUdG1BUHg5YVdybFBEQSIsIm1uIjoiODQyMzQ2OTM0MjgiLCJyb2xlIjoxLCJ0b2tlbkV4cCI6MTc0NTg2NDYyMiwiaWF0IjoxNzQ1ODYxMDIyLCJleHAiOjE3NDU4NjQ2MjJ9.LVzWp4VlJif0n3zMtMv2qsnRl0Jf81mfbOHdlMtbv8U"
+        // var signature=""
+        // var jwtAttendee="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZGtLZXkiOiIxa1B2VHlFM1R5Mm9vMU1oa0NVTHB3IiwibW4iOiI4NDIzNDY5MzQyOCIsInJvbGUiOjAsImlhdCI6MTc0NTkxMDc4NSwiZXhwIjoxNzQ2MDgzNTg1LCJ0b2tlbkV4cCI6MTc0NjA4MzU4NX0.pGxiWOq6rV9XoyClaqrE41pS0u9tAP9DheDZccVLuwE"
+        // var jwtHost="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZGtLZXkiOiIxa1B2VHlFM1R5Mm9vMU1oa0NVTHB3IiwibW4iOiI4NDIzNDY5MzQyOCIsInJvbGUiOjEsImlhdCI6MTc0NTkxMDcwNCwiZXhwIjoxNzQ2MDgzNTA0LCJ0b2tlbkV4cCI6MTc0NjA4MzUwNH0.3JVmXEa4K7ee0h1wFGJnoWoYMYa4jNaI71aMTIxr9DI"
+
+        // if (zoomConfig.Role=='1')
+        // {
+        //     signature = jwtHost
+        // }else{
+        //     signature=jwtAttendee
+        // }
+
+        //   ZoomMtg.init({
+        //   leaveUrl: leaveUrl,
+        //   patchJsMedia: true,
+        //   success: (success) => {
+        //     console.log(success)
+        //     ZoomMtg.join({
+        //       signature: signature,
+        //       meetingNumber: meetingNumber,
+        //       userName: userName,
+        //       sdkKey: sdkKey,
+        //       userEmail: userEmail,
+        //       passWord: passWord,
+        //       success: (success) => {
+        //         console.log(success)
+        //       },
+        //       error: (error) => {
+        //         console.log(error)
+        //       }
+        //     })
+        //   },
+        //   error: (error) => {
+        //     console.log(error)
+        //   }
+        // });
+
+            // Initialize and join meeting
+            ZoomMtg.init({
+                leaveUrl: '@Url.Action("NotifyMeetingEnded", new { id = @Model.MeetingId })',
+                patchJsMedia: true,
+                success: (success) =>{
+                    console.log(success)                   
+                      ZoomMtg.join({
+                        signature:'@Model.Signature',// zoomConfig.signature,
+                        meetingNumber: '@Model.ZoomMeetingNumber',// "84234693428",//zoomConfig.meetingNumber,
+                        userName: '@Model.UserName',
+                        sdkKey : '@Model.SdkKey',//zoomConfig.sdkKey ,
+                        passWord:'@Model.MeetingPassword',//zoomConfig.passWord,
+                        success: function(res) {
+                            console.log('Join meeting success');
+                        },
+                        error: function(error) {
+                            console.log('Join meeting error:', error);
+                            alert('Failed to join the meeting: ' + JSON.stringify(error));
+                            window.location.href = '@Url.Action("Details", new { id = @Model.MeetingId })';
+                        }
+                    });
+                },
+                error: function(error) {
+                    console.log('Zoom init error:', error);
+                    alert('Failed to initialize Zoom: ' + JSON.stringify(error));
+                    window.location.href = '@Url.Action("Details", new { id = @Model.MeetingId })';
+                }
+            });
+        });
+    </script>
+}

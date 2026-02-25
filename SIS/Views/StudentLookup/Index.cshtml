@@ -1,0 +1,1600 @@
+﻿@model SIS.Models.ViewModels.StudentLookupIndexViewModel
+@{
+    ViewData["Title"] = "Student Lookup";
+}
+
+<div class="min-h-screen bg-slate-50 p-6">
+    @Html.AntiForgeryToken()
+
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+        <div class="flex items-center text-slate-800">
+            <i class="material-icons text-3xl mr-3 text-primary-600">people_alt</i>
+            <div>
+                <h1 class="text-2xl font-bold">Student Lookup</h1>
+                <p class="text-sm text-slate-600">@Model.JurisdictionInfo</p>
+            </div>
+        </div>
+        <div class="mt-4 md:mt-0 flex items-center space-x-4">
+            <div class="flex items-center bg-white rounded-lg px-4 py-2 shadow-sm border border-slate-200">
+                <i class="material-icons text-primary-600 mr-2">admin_panel_settings</i>
+                <span class="text-sm font-medium text-slate-700">Role: @Model.UserRole</span>
+            </div>
+            @if (User.IsInRole("Admin") || User.IsInRole("Registrar"))
+            {
+                <!-- ADD STUDENT BUTTON -->
+                @* <button type="button" id="openAddStudentModal"
+                        class="inline-flex items-center px-4 py-2 bg-secondary-600 text-white text-sm font-medium rounded-lg hover:bg-secondary-700 focus:ring-4 focus:ring-secondary-300 transition-colors">
+                    <i class="material-icons mr-2 text-sm">person_add</i>
+                    Add Student
+                </button> *@
+            }
+            <!-- STUDENTLIST BUTTON -->
+            <a href="@Url.Action("StudentLists", "StudentLookup")"
+               class="inline-flex items-center px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 transition-colors">
+                <i class="material-icons mr-2 text-sm">list_alt</i>
+                Student Lists
+            </a>
+        </div>
+    </div>
+
+    <!-- Search Section -->
+    <div class="bg-white rounded-xl shadow-sm mb-6 border border-slate-200">
+        <div class="p-6">
+            <div class="flex items-center mb-4">
+                <i class="material-icons text-primary-600 mr-2">search</i>
+                <h2 class="text-lg font-semibold text-slate-800">Search Students</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                <!-- Search Input -->
+                <div class="md:col-span-6">
+                    <label for="searchInput" class="block text-sm font-medium text-slate-700 mb-2">Search Term</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                            <i class="material-icons text-slate-400 text-sm">search</i>
+                        </div>
+                        <input type="text"
+                               id="searchInput"
+                               class="block w-full pl-10 pr-4 py-3 text-sm border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                               placeholder="Enter student number, name, NRC/passport, or email..."
+                               autocomplete="off">
+                    </div>
+                </div>
+
+                <!-- Search Type -->
+                <div class="md:col-span-3">
+                    <label for="searchType" class="block text-sm font-medium text-slate-700 mb-2">Search By</label>
+                    <select id="searchType"
+                            class="block w-full py-3 px-4 text-sm border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 transition-colors">
+                        <option value="">All Fields</option>
+                        <option value="StudentNumber">Student Number</option>
+                        <option value="Name">Full Name</option>
+                        <option value="NrcPassport">NRC/Passport</option>
+                        <option value="Email">Email Address</option>
+                    </select>
+                </div>
+
+                <!-- Search Button -->
+                <div class="md:col-span-2">
+                    <button type="button"
+                            id="searchButton"
+                            class="w-full inline-flex items-center justify-center px-4 py-3 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 transition-colors">
+                        <i class="material-icons mr-2 text-sm">search</i>
+                        Search
+                    </button>
+                </div>
+
+                <!-- Clear Button -->
+                <div class="md:col-span-1">
+                    <button type="button"
+                            id="clearButton"
+                            class="w-full inline-flex items-center justify-center px-4 py-3 bg-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-300 focus:ring-4 focus:ring-slate-300 transition-colors">
+                        <i class="material-icons text-sm">clear</i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Search Results Panel -->
+        <div class="lg:col-span-1">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col" style="height: calc(100vh - 320px);">
+                <div class="p-4 border-b border-slate-200 flex-shrink-0">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-slate-800">Search Results</h3>
+                        <span id="resultsCount" class="text-sm text-slate-600 bg-slate-100 px-2 py-1 rounded-full">0 results</span>
+                    </div>
+                </div>
+
+                <!-- Scrollable Results Container -->
+                <div class="flex-1 overflow-hidden">
+                    <div id="searchResults" class="h-full overflow-y-auto p-4">
+                        <div class="text-center py-12">
+                            <i class="material-icons text-6xl text-slate-300 mb-4">search</i>
+                            <p class="text-slate-500 text-lg font-medium">Start Your Search</p>
+                            <p class="text-slate-400 text-sm mt-2">Enter a search term to find students within your jurisdiction</p>
+                        </div>
+                    </div>
+
+                    <!-- Loading State -->
+                    <div id="searchLoading" class="hidden h-full flex items-center justify-center p-4">
+                        <div class="inline-flex items-center">
+                            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
+                            <span class="ml-2 text-slate-600">Searching...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Student Details Panel -->
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col" style="height: calc(100vh - 320px);">
+                <div class="p-4 border-b border-slate-200 flex-shrink-0">
+                    <h3 class="text-lg font-semibold text-slate-800">Student Details</h3>
+                </div>
+                <!-- Default "No Student Selected" Message -->
+                <div id="studentDetails" class="flex-1 flex items-center justify-center p-4 overflow-y-auto">
+                    <div class="text-center">
+                        <i class="material-icons text-6xl text-slate-300 mb-4">person</i>
+                        <p class="text-slate-500 text-lg font-medium">No Student Selected</p>
+                        <p class="text-slate-400 text-sm mt-2">Select a student from the search results to view their details</p>
+                    </div>
+                </div>
+                <!-- Student Detail Tabs -->
+                <div id="studentTabs" class="hidden flex flex-col flex-1 overflow-hidden">
+                    <div class="border-b border-slate-200 flex-shrink-0">
+                        <nav class="flex space-x-8 px-4" aria-label="Tabs">
+                            <button class="tab-button active py-2 px-1 border-b-2 border-primary-500 font-medium text-sm text-primary-600" data-tab="profile">
+                                <i class="material-icons text-sm mr-1">person</i>
+                                Profile
+                            </button>
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <button class="tab-button py-2 px-1 border-b-2 border-transparent font-medium text-sm text-slate-500 hover:text-slate-700 hover:border-slate-300" data-tab="photo">
+                                    <i class="material-icons text-sm mr-1">photo_camera</i>
+                                    Photo
+                                </button>
+                                <button class="tab-button py-2 px-1 border-b-2 border-transparent font-medium text-sm text-slate-500 hover:text-slate-700 hover:border-slate-300" data-tab="idcard">
+                                    <i class="material-icons text-sm mr-1">badge</i>
+                                    ID Card
+                                </button>
+                            }
+                            <button class="tab-button py-2 px-1 border-b-2 border-transparent font-medium text-sm text-slate-500 hover:text-slate-700 hover:border-slate-300" data-tab="financials">
+                                <i class="material-icons text-sm mr-1">account_balance</i>
+                                Financials
+                            </button>
+                            <button class="tab-button py-2 px-1 border-b-2 border-transparent font-medium text-sm text-slate-500 hover:text-slate-700 hover:border-slate-300" data-tab="results">
+                                <i class="material-icons text-sm mr-1">assignment</i>
+                                Results
+                            </button>
+                        </nav>
+                    </div>
+                    <!-- Admin Actions -->
+                    <div id="adminActions" class="hidden border-b border-slate-200 p-4 bg-slate-50 flex-shrink-0">
+                        <button id="studentAdminButton"
+                                class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 transition-colors">
+                            <i class="material-icons mr-2 text-sm">admin_panel_settings</i>
+                            Student Administration
+                        </button>
+                    </div>
+                    <!-- Tab Content -->
+                    <div id="tabContent" class="flex-1 overflow-y-auto p-4 min-h-0">
+                        <!-- Content will be loaded here via AJAX -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Student Modal -->
+<div id="addStudentModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <!-- Background overlay -->
+        <div class="fixed inset-0 transition-opacity bg-slate-500 bg-opacity-75" aria-hidden="true"></div>
+
+        <!-- Modal panel -->
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full relative z-10">
+            <form id="addStudentForm">
+                @Html.AntiForgeryToken()
+                <!-- Modal Header -->
+                <div class="bg-primary-600 px-6 py-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-white flex items-center">
+                            <i class="material-icons mr-2">person_add</i>
+                            Add Registered Student
+                        </h3>
+                        <button type="button" id="closeAddStudentModal" class="text-white hover:text-slate-200">
+                            <i class="material-icons">close</i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="px-6 py-4 max-h-[70vh] overflow-y-auto">
+                    <!-- Personal Information -->
+                    <div class="mb-6">
+                        <h4 class="text-md font-semibold text-slate-800 mb-3 border-b pb-2">Personal Information</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Full Name *</label>
+                                <input type="text" name="FullName" required
+                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Email *</label>
+                                <input type="email" name="Email" required
+                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Student ID Number *</label>
+                                <input type="text" name="StudentId_Number" required
+                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">NRC/Passport Number *</label>
+                                <input type="text" name="NrcOrPassportNumber" required
+                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Date of Birth (YYYY-MM-DD) *</label>
+                                <input type="date" name="DateOfBirth" required
+                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Gender *</label>
+                                <select name="Gender" required
+                                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                    <option value="">Select Gender</option>
+                                    <option value="M">Male</option>
+                                    <option value="F">Female</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Phone *</label>
+                                <input type="tel" name="Phone" required
+                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Marital Status</label>
+                                <select name="MaritalStatus"
+                                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                    <option value="Single">Single</option>
+                                    <option value="Married">Married</option>
+                                    <option value="Divorced">Divorced</option>
+                                    <option value="Widowed">Widowed</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Nationality *</label>
+                                <select name="Nationality" required
+                                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                    <option value="">Select Nationality</option>
+                                    <option value="Afghan">Afghan</option>
+                                    <option value="Albanian">Albanian</option>
+                                    <option value="Algerian">Algerian</option>
+                                    <option value="American">American</option>
+                                    <option value="Angolan">Angolan</option>
+                                    <option value="Argentinian">Argentinian</option>
+                                    <option value="Australian">Australian</option>
+                                    <option value="Austrian">Austrian</option>
+                                    <option value="Bangladeshi">Bangladeshi</option>
+                                    <option value="Belgian">Belgian</option>
+                                    <option value="Botswanan">Botswanan</option>
+                                    <option value="Brazilian">Brazilian</option>
+                                    <option value="British">British</option>
+                                    <option value="Burkinabe">Burkinabe</option>
+                                    <option value="Burundian">Burundian</option>
+                                    <option value="Cameroonian">Cameroonian</option>
+                                    <option value="Canadian">Canadian</option>
+                                    <option value="Central African">Central African</option>
+                                    <option value="Chadian">Chadian</option>
+                                    <option value="Chilean">Chilean</option>
+                                    <option value="Chinese">Chinese</option>
+                                    <option value="Colombian">Colombian</option>
+                                    <option value="Congolese">Congolese</option>
+                                    <option value="Costa Rican">Costa Rican</option>
+                                    <option value="Croatian">Croatian</option>
+                                    <option value="Cuban">Cuban</option>
+                                    <option value="Czech">Czech</option>
+                                    <option value="Danish">Danish</option>
+                                    <option value="Dominican">Dominican</option>
+                                    <option value="Dutch">Dutch</option>
+                                    <option value="Ecuadorian">Ecuadorian</option>
+                                    <option value="Egyptian">Egyptian</option>
+                                    <option value="Eritrean">Eritrean</option>
+                                    <option value="Ethiopian">Ethiopian</option>
+                                    <option value="Finnish">Finnish</option>
+                                    <option value="French">French</option>
+                                    <option value="Gabonese">Gabonese</option>
+                                    <option value="Gambian">Gambian</option>
+                                    <option value="German">German</option>
+                                    <option value="Ghanaian">Ghanaian</option>
+                                    <option value="Greek">Greek</option>
+                                    <option value="Guinean">Guinean</option>
+                                    <option value="Indian">Indian</option>
+                                    <option value="Indonesian">Indonesian</option>
+                                    <option value="Iranian">Iranian</option>
+                                    <option value="Iraqi">Iraqi</option>
+                                    <option value="Irish">Irish</option>
+                                    <option value="Israeli">Israeli</option>
+                                    <option value="Italian">Italian</option>
+                                    <option value="Ivorian">Ivorian</option>
+                                    <option value="Japanese">Japanese</option>
+                                    <option value="Jordanian">Jordanian</option>
+                                    <option value="Kenyan">Kenyan</option>
+                                    <option value="Korean">Korean</option>
+                                    <option value="Lebanese">Lebanese</option>
+                                    <option value="Lesotho">Lesotho</option>
+                                    <option value="Liberian">Liberian</option>
+                                    <option value="Libyan">Libyan</option>
+                                    <option value="Malagasy">Malagasy</option>
+                                    <option value="Malawian">Malawian</option>
+                                    <option value="Malaysian">Malaysian</option>
+                                    <option value="Malian">Malian</option>
+                                    <option value="Mauritanian">Mauritanian</option>
+                                    <option value="Mauritian">Mauritian</option>
+                                    <option value="Mexican">Mexican</option>
+                                    <option value="Moroccan">Moroccan</option>
+                                    <option value="Mozambican">Mozambican</option>
+                                    <option value="Namibian">Namibian</option>
+                                    <option value="Nigerian">Nigerian</option>
+                                    <option value="Norwegian">Norwegian</option>
+                                    <option value="Pakistani">Pakistani</option>
+                                    <option value="Palestinian">Palestinian</option>
+                                    <option value="Peruvian">Peruvian</option>
+                                    <option value="Philippine">Philippine</option>
+                                    <option value="Polish">Polish</option>
+                                    <option value="Portuguese">Portuguese</option>
+                                    <option value="Romanian">Romanian</option>
+                                    <option value="Russian">Russian</option>
+                                    <option value="Rwandan">Rwandan</option>
+                                    <option value="Saudi Arabian">Saudi Arabian</option>
+                                    <option value="Senegalese">Senegalese</option>
+                                    <option value="Serbian">Serbian</option>
+                                    <option value="Sierra Leonean">Sierra Leonean</option>
+                                    <option value="Singaporean">Singaporean</option>
+                                    <option value="Somali">Somali</option>
+                                    <option value="South African">South African</option>
+                                    <option value="South Sudanese">South Sudanese</option>
+                                    <option value="Spanish">Spanish</option>
+                                    <option value="Sri Lankan">Sri Lankan</option>
+                                    <option value="Sudanese">Sudanese</option>
+                                    <option value="Swedish">Swedish</option>
+                                    <option value="Swiss">Swiss</option>
+                                    <option value="Syrian">Syrian</option>
+                                    <option value="Tanzanian">Tanzanian</option>
+                                    <option value="Thai">Thai</option>
+                                    <option value="Togolese">Togolese</option>
+                                    <option value="Tunisian">Tunisian</option>
+                                    <option value="Turkish">Turkish</option>
+                                    <option value="Ugandan">Ugandan</option>
+                                    <option value="Ukrainian">Ukrainian</option>
+                                    <option value="Uruguayan">Uruguayan</option>
+                                    <option value="Venezuelan">Venezuelan</option>
+                                    <option value="Vietnamese">Vietnamese</option>
+                                    <option value="Yemeni">Yemeni</option>
+                                    <option value="Zambian">Zambian</option>
+                                    <option value="Zimbabwean">Zimbabwean</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Religion</label>
+                                <select name="Religion"
+                                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                    <option value="">Select Religion</option>
+                                    <option value="Christianity">Christianity</option>
+                                    <option value="Islam">Islam</option>
+                                    <option value="Hinduism">Hinduism</option>
+                                    <option value="Buddhism">Buddhism</option>
+                                    <option value="Judaism">Judaism</option>
+                                    <option value="Sikhism">Sikhism</option>
+                                    <option value="Bahai">Bahai</option>
+                                    <option value="Jainism">Jainism</option>
+                                    <option value="Shinto">Shinto</option>
+                                    <option value="Zoroastrianism">Zoroastrianism</option>
+                                    <option value="Traditional African Religion">Traditional African Religion</option>
+                                    <option value="Other">Other</option>
+                                    <option value="None">None</option>
+                                    <option value="Prefer not to say">Prefer not to say</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Is Foreigner</label>
+                                <select name="IsForeigner"
+                                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                    <option value="0">No</option>
+                                    <option value="1">Yes</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Academic Information -->
+                    <div class="mb-6">
+                        <h4 class="text-md font-semibold text-slate-800 mb-3 border-b pb-2">Academic Information</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">School *</label>
+                                <select name="SchoolId" required id="addStudentSchoolId"
+                                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                    <option value="">Select School</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Programme *</label>
+                                <select name="ProgrammeId" required id="addStudentProgrammeId"
+                                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                    <option value="">Select Programme</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Programme Level *</label>
+                                <select name="ProgrammeLevelId" required
+                                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                    <option value="">Select Level</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Mode of Study *</label>
+                                <select name="ModeOfStudyId" required
+                                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                    <option value="">Select Mode</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Academic Year *</label>
+                                <select name="AcademicYearId" required
+                                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                    <option value="">Select Academic Year</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Current Year *</label>
+                                <select name="StudentCurrentYear" required
+                                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                    <option value="">Select Year</option>
+                                    <option value="1">1st Year</option>
+                                    <option value="2">2nd Year</option>
+                                    <option value="3">3rd Year</option>
+                                    <option value="4">4th Year</option>
+                                    <option value="5">5th Year</option>
+                                    <option value="6">6th Year</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Current Semester *</label>
+                                <select name="CurrentSemester" required
+                                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                    <option value="">Select Semester</option>
+                                    <option value="1">Semester 1</option>
+                                    <option value="2">Semester 2</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Address Information -->
+                    <div class="mb-6">
+                        <h4 class="text-md font-semibold text-slate-800 mb-3 border-b pb-2">Address Information</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Address Line 1 *</label>
+                                <input type="text" name="AddressLine1" required
+                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">City *</label>
+                                <input type="text" name="City" required
+                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">State/Province *</label>
+                                <input type="text" name="State" required
+                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Postal Code</label>
+                                <input type="text" name="PostalCode"
+                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Country *</label>
+                                <input type="text" name="Country" required
+                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Next of Kin Information -->
+                    <div class="mb-6">
+                        <h4 class="text-md font-semibold text-slate-800 mb-3 border-b pb-2">Next of Kin Information</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Next of Kin Name *</label>
+                                <input type="text" name="NextOfKinName" required
+                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Relation *</label>
+                                <select name="NextOfKinRelation" required
+                                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                    <option value="">Select Relation</option>
+                                    <option value="Parent">Parent</option>
+                                    <option value="Father">Father</option>
+                                    <option value="Mother">Mother</option>
+                                    <option value="Spouse">Spouse</option>
+                                    <option value="Sibling">Sibling</option>
+                                    <option value="Brother">Brother</option>
+                                    <option value="Sister">Sister</option>
+                                    <option value="Guardian">Guardian</option>
+                                    <option value="Uncle">Uncle</option>
+                                    <option value="Aunt">Aunt</option>
+                                    <option value="Grandparent">Grandparent</option>
+                                    <option value="Cousin">Cousin</option>
+                                    <option value="Friend">Friend</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Next of Kin Phone *</label>
+                                <input type="tel" name="NextOfKinPhone" required
+                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Next of Kin Email</label>
+                                <input type="email" name="NextOfKinEmail"
+                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" />
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Next of Kin Address</label>
+                                <input type="text" name="NextOfKinAddress"
+                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="bg-slate-50 px-6 py-4 flex justify-end space-x-3">
+                    <button type="button" id="cancelAddStudent"
+                            class="px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-100 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
+                        <i class="material-icons text-sm mr-1">save</i>
+                        Add Student
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Success/Error Toast Notification -->
+<div id="toastNotification" class="hidden fixed bottom-4 right-4 p-4 rounded-lg shadow-lg max-w-sm z-50">
+    <div class="flex items-center">
+        <i id="toastIcon" class="material-icons mr-2"></i>
+        <p id="toastMessage"></p>
+    </div>
+</div>
+
+<!-- Student Created Success Modal -->
+<div id="studentCreatedModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-green-500 to-green-600 px-6 py-4 rounded-t-2xl">
+            <div class="flex items-center text-white">
+                <i class="material-icons text-3xl mr-3">check_circle</i>
+                <h3 class="text-xl font-semibold">Student Created Successfully!</h3>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="p-6">
+            <div class="space-y-4">
+                <!-- Student Name -->
+                <div class="bg-slate-50 rounded-lg p-4">
+                    <label class="text-sm font-medium text-slate-600 block mb-1">Student Name</label>
+                    <p id="createdStudentName" class="text-lg font-semibold text-slate-900"></p>
+                </div>
+
+                <!-- Student Number -->
+                <div class="bg-slate-50 rounded-lg p-4">
+                    <label class="text-sm font-medium text-slate-600 block mb-1">Student Number</label>
+                    <p id="createdStudentNumber" class="text-lg font-semibold text-slate-900"></p>
+                </div>
+
+                <!-- Default Password -->
+                <div class="bg-amber-50 border-2 border-amber-200 rounded-lg p-4">
+                    <div class="flex items-start">
+                        <i class="material-icons text-amber-600 mr-2">vpn_key</i>
+                        <div class="flex-1">
+                            <label class="text-sm font-medium text-amber-800 block mb-1">Default Password</label>
+                            <div class="flex items-center justify-between">
+                                <p id="createdStudentPassword" class="text-lg font-bold text-amber-900 font-mono"></p>
+                                <button type="button" onclick="copyPassword()" class="ml-2 p-2 hover:bg-amber-100 rounded-lg transition-colors" title="Copy password">
+                                    <i class="material-icons text-amber-700">content_copy</i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-xs text-amber-700 mt-2 flex items-center">
+                        <i class="material-icons text-xs mr-1">info</i>
+                        Please save this password and share it with the student
+                    </p>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="mt-6 flex gap-3">
+                <button type="button" onclick="printStudentCredentials()" class="flex-1 px-4 py-2.5 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors flex items-center justify-center">
+                    <i class="material-icons text-sm mr-1">print</i>
+                    Print
+                </button>
+                <button type="button" onclick="closeStudentCreatedModal()" class="flex-1 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center">
+                    <i class="material-icons text-sm mr-1">done</i>
+                    Done
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        console.log('=== Student Lookup page scripts loading... ===');
+
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('=== DOM fully loaded - Student Lookup ===');
+
+            // DOM Elements
+            const searchInput = document.getElementById('searchInput');
+            const searchType = document.getElementById('searchType');
+            const searchButton = document.getElementById('searchButton');
+            const clearButton = document.getElementById('clearButton');
+            const searchResults = document.getElementById('searchResults');
+            const searchLoading = document.getElementById('searchLoading');
+            const resultsCount = document.getElementById('resultsCount');
+            const studentDetails = document.getElementById('studentDetails');
+            const studentTabs = document.getElementById('studentTabs');
+            const tabContent = document.getElementById('tabContent');
+
+            // Add Student Modal Elements
+            const addStudentModal = document.getElementById('addStudentModal');
+            const openAddStudentModalBtn = document.getElementById('openAddStudentModal');
+            const closeAddStudentModalBtn = document.getElementById('closeAddStudentModal');
+            const cancelAddStudentBtn = document.getElementById('cancelAddStudent');
+            const addStudentForm = document.getElementById('addStudentForm');
+
+            // Debug logging
+            console.log('=== Modal Element Debug ===');
+            console.log('addStudentModal:', addStudentModal);
+            console.log('openAddStudentModalBtn:', openAddStudentModalBtn);
+            console.log('closeAddStudentModalBtn:', closeAddStudentModalBtn);
+
+            let currentStudentId = null;
+            let currentTab = 'profile';
+
+            // Add Student Modal Functions
+            function openAddStudentModal() {
+                console.log('=== openAddStudentModal function called ===');
+                console.log('Modal element exists:', !!addStudentModal);
+
+                if (addStudentModal) {
+                    console.log('Removing hidden class from modal');
+                    addStudentModal.classList.remove('hidden');
+                    console.log('Modal classList after removal:', addStudentModal.classList.toString());
+                    loadDropdownData();
+                } else {
+                    console.error('Add Student Modal element not found!');
+                    alert('Error: Modal element not found in the DOM');
+                }
+            }
+
+            function closeAddStudentModal() {
+                console.log('=== closeAddStudentModal called ===');
+                if (addStudentModal) {
+                    addStudentModal.classList.add('hidden');
+                    if (addStudentForm) {
+                        addStudentForm.reset();
+                    }
+                }
+            }
+
+            async function loadDropdownData() {
+                console.log('=== Loading dropdown data ===');
+                try {
+                    // Load Schools
+                    const schoolsResponse = await fetch('/StudentLookup/GetSchools');
+                    const schools = await schoolsResponse.json();
+                    const schoolSelect = document.querySelector('#addStudentSchoolId');
+                    const programmeLevelSelect = document.querySelector('select[name="ProgrammeLevelId"]');
+                    const modeOfStudySelect = document.querySelector('select[name="ModeOfStudyId"]');
+                    const academicYearSelect = document.querySelector('select[name="AcademicYearId"]');
+
+                    if (schoolSelect) {
+                        schoolSelect.innerHTML = '<option value="">Select School</option>';
+                        schools.forEach(school => {
+                            schoolSelect.innerHTML += `<option value="${school.id}">${school.name}</option>`;
+                        });
+                    }
+
+                    // Load Programme Levels
+                    const levelsResponse = await fetch('/StudentLookup/GetProgrammeLevels');
+                    const levels = await levelsResponse.json();
+                    if (programmeLevelSelect) {
+                        programmeLevelSelect.innerHTML = '<option value="">Select Level</option>';
+                        levels.forEach(level => {
+                            programmeLevelSelect.innerHTML += `<option value="${level.id}">${level.name}</option>`;
+                        });
+                    }
+
+                    // Load Modes of Study
+                    const modesResponse = await fetch('/StudentLookup/GetModesOfStudy');
+                    const modes = await modesResponse.json();
+                    if (modeOfStudySelect) {
+                        modeOfStudySelect.innerHTML = '<option value="">Select Mode</option>';
+                        modes.forEach(mode => {
+                            modeOfStudySelect.innerHTML += `<option value="${mode.modeId}">${mode.modeName}</option>`;
+                        });
+                    }
+
+                    // Load Academic Years
+                    const yearsResponse = await fetch('/StudentLookup/GetAcademicYears');
+                    const years = await yearsResponse.json();
+                    if (academicYearSelect) {
+                        academicYearSelect.innerHTML = '<option value="">Select Academic Year</option>';
+                        years.forEach(year => {
+                            academicYearSelect.innerHTML += `<option value="${year.yearId}">${year.yearName}</option>`;
+                        });
+                    }
+
+                    console.log('Dropdown data loaded successfully');
+                } catch (error) {
+                    console.error('Error loading dropdown data:', error);
+                    showToast('Failed to load form data', 'error');
+                }
+            }
+
+            // Handle School selection to load Programmes
+            const schoolDropdown = document.querySelector('#addStudentSchoolId');
+            if (schoolDropdown) {
+                schoolDropdown.addEventListener('change', async function() {
+                    const schoolId = this.value;
+                    const progSelect = document.querySelector('#addStudentProgrammeId');
+
+                    if (!schoolId) {
+                        if (progSelect) progSelect.innerHTML = '<option value="">Select Programme</option>';
+                        return;
+                    }
+
+                    try {
+                        // Load Programmes
+                        const progResponse = await fetch(`/StudentLookup/GetProgrammesForModal?schoolId=${schoolId}`);
+                        const programmes = await progResponse.json();
+                        if (progSelect) {
+                            progSelect.innerHTML = '<option value="">Select Programme</option>';
+                            programmes.forEach(prog => {
+                                progSelect.innerHTML += `<option value="${prog.id}">${prog.name}</option>`;
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Error loading school data:', error);
+                    }
+                });
+            }
+
+            // Handle Nationality selection to automatically set Is Foreigner field
+            const nationalityDropdown = document.querySelector('select[name="Nationality"]');
+            const isForeignerDropdown = document.querySelector('select[name="IsForeigner"]');
+            let isForeignerLocked = false;
+
+            if (nationalityDropdown && isForeignerDropdown) {
+                // Prevent changes when locked
+                isForeignerDropdown.addEventListener('mousedown', function(e) {
+                    if (isForeignerLocked) {
+                        e.preventDefault();
+                        return false;
+                    }
+                });
+
+                isForeignerDropdown.addEventListener('keydown', function(e) {
+                    if (isForeignerLocked) {
+                        e.preventDefault();
+                        return false;
+                    }
+                });
+
+                nationalityDropdown.addEventListener('change', function() {
+                    const selectedNationality = this.value;
+                    console.log('Nationality selected:', selectedNationality);
+
+                    // If Zambian, set Is Foreigner to "No" (0), otherwise set to "Yes" (1)
+                    if (selectedNationality === 'Zambian') {
+                        isForeignerDropdown.value = '0'; // No
+                        isForeignerDropdown.style.backgroundColor = '#f3f4f6'; // Gray background
+                        isForeignerDropdown.style.cursor = 'not-allowed';
+                        isForeignerDropdown.style.opacity = '0.6';
+                        isForeignerLocked = true;
+                        console.log('Set Is Foreigner to: No (Zambian) - field locked');
+                    } else if (selectedNationality !== '') {
+                        isForeignerDropdown.value = '1'; // Yes
+                        isForeignerDropdown.style.backgroundColor = '#f3f4f6'; // Gray background
+                        isForeignerDropdown.style.cursor = 'not-allowed';
+                        isForeignerDropdown.style.opacity = '0.6';
+                        isForeignerLocked = true;
+                        console.log('Set Is Foreigner to: Yes (Not Zambian) - field locked');
+                    } else {
+                        // If nationality is cleared, enable the field again
+                        isForeignerDropdown.style.backgroundColor = '';
+                        isForeignerDropdown.style.cursor = '';
+                        isForeignerDropdown.style.opacity = '';
+                        isForeignerLocked = false;
+                    }
+                });
+            }
+
+            // Handle Add Student Form Submit
+            if (addStudentForm) {
+                addStudentForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+
+                    const formData = new FormData(this);
+                    const submitButton = this.querySelector('button[type="submit"]');
+                    submitButton.disabled = true;
+                    submitButton.innerHTML = '<i class="material-icons text-sm mr-1 animate-spin">refresh</i> Saving...';
+
+                    try {
+                        const response = await fetch('/StudentLookup/AddStudent', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        const result = await response.json();
+                        console.log('=== Add student response ===');
+                        console.log('Full result:', result);
+                        console.log('Success:', result.success);
+                        console.log('Message:', result.message);
+
+                        if (result.success) {
+                            console.log('Student added successfully, showing modal');
+                            closeAddStudentModal();
+                            addStudentForm.reset();
+
+                            // Parse the response to extract student details
+                            const studentName = formData.get('FullName');
+                            const studentNumber = formData.get('StudentId_Number');
+
+                            console.log('Extracted from form - Name:', studentName, 'Number:', studentNumber);
+
+                            // Extract password from message (format: "Student X added successfully. Default login password: Y")
+                            const passwordMatch = result.message.match(/Default login password: (.+)/);
+                            const password = passwordMatch ? passwordMatch[1] : '';
+
+                            console.log('Password match:', passwordMatch);
+                            console.log('Extracted password:', password);
+
+                            if (!password) {
+                                console.warn('Password not found in message, showing toast instead');
+                                showToast(result.message, 'success');
+                                setTimeout(() => window.location.reload(), 3000);
+                                return;
+                            }
+
+                            // Show the success modal with credentials
+                            console.log('About to call showStudentCreatedModal');
+                            showStudentCreatedModal(studentName, studentNumber, password);
+                        } else {
+                            console.log('Failed to add student:', result.message);
+                            showToast(result.message || 'Failed to add student', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error adding student:', error);
+                        showToast('An error occurred while adding the student', 'error');
+                    } finally {
+                        submitButton.disabled = false;
+                        submitButton.innerHTML = '<i class="material-icons text-sm mr-1">save</i> Add Student';
+                    }
+                });
+            }
+
+            // Add Student Modal Event Listeners
+            console.log('=== Setting up Add Student button event listener ===');
+
+            if (openAddStudentModalBtn) {
+                console.log('Add Student button found, attaching click handler');
+                openAddStudentModalBtn.addEventListener('click', function(e) {
+                    console.log('=== Add Student button clicked ===');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openAddStudentModal();
+                });
+            } else {
+                console.log('Add Student button not found - user may not have required role (Admin or Registrar)');
+            }
+
+            if (closeAddStudentModalBtn) {
+                closeAddStudentModalBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    closeAddStudentModal();
+                });
+            }
+
+            if (cancelAddStudentBtn) {
+                cancelAddStudentBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    closeAddStudentModal();
+                });
+            }
+
+            // --- Auto-load student if query string present ---
+            const urlParams = new URLSearchParams(window.location.search);
+            const studentNumber = urlParams.get('studentNumber');
+            const studentIdParam = urlParams.get('studentId');
+
+            if (studentNumber || studentIdParam) {
+                console.log('Auto-loading student from URL:', studentNumber || studentIdParam);
+
+                if (studentIdParam) {
+                    // If a studentId is provided, directly load student details
+                    selectStudent(parseInt(studentIdParam));
+                } else if (studentNumber) {
+                    // If a student number is provided, search for that student first
+                    searchInput.value = studentNumber;
+                    searchType.value = 'StudentNumber';
+
+                    // Perform search
+                    performSearch();
+
+                    // Wait a moment for search results to load, then select automatically
+                    const observer = new MutationObserver(() => {
+                        const firstResult = document.querySelector('.student-result');
+                        if (firstResult) {
+                            const id = parseInt(firstResult.dataset.studentId);
+                            selectStudent(id);
+                            observer.disconnect();
+                        }
+                    });
+
+                    observer.observe(searchResults, { childList: true, subtree: true });
+                }
+            }
+
+            // Search functionality
+            function performSearch() {
+                const searchTerm = searchInput.value.trim();
+                if (!searchTerm) {
+                    showToast('Please enter a search term', 'warning');
+                    return;
+                }
+
+                // Show loading state
+                searchLoading.classList.remove('hidden');
+                searchResults.classList.add('hidden');
+
+                // Make AJAX request
+                fetch('/StudentLookup/SearchStudents', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    },
+                    body: `searchTerm=${encodeURIComponent(searchTerm)}&searchType=${encodeURIComponent(searchType.value)}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    searchLoading.classList.add('hidden');
+                    searchResults.classList.remove('hidden');
+
+                    if (data.success) {
+                        displaySearchResults(data.students);
+                    } else {
+                        showToast(data.message || 'Search failed', 'error');
+                        displaySearchResults([]);
+                    }
+                })
+                .catch(error => {
+                    console.error('Search error:', error);
+                    searchLoading.classList.add('hidden');
+                    searchResults.classList.remove('hidden');
+                    showToast('An error occurred while searching', 'error');
+                    displaySearchResults([]);
+                });
+            }
+
+            function displaySearchResults(students) {
+                resultsCount.textContent = `${students.length} result${students.length !== 1 ? 's' : ''}`;
+
+                if (students.length === 0) {
+                    searchResults.innerHTML = `
+                        <div class="text-center py-8">
+                            <i class="material-icons text-4xl text-slate-300 mb-2">search_off</i>
+                            <p class="text-slate-500 font-medium">No students found</p>
+                            <p class="text-slate-400 text-sm mt-1">Try adjusting your search terms</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let resultsHtml = '<div class="space-y-3">';
+                students.forEach(student => {
+                    const statusColor = getStatusColor(student.registrationStatus);
+                    const feeStatus = student.outstandingFees > 0 ? 'Outstanding' : 'Cleared';
+                    const feeStatusColor = student.outstandingFees > 0 ? 'text-red-600 bg-red-50' : 'text-green-600 bg-green-50';
+
+                    resultsHtml += `
+                        <div class="border border-slate-200 rounded-lg p-4 hover:bg-slate-50 cursor-pointer transition-colors student-result"
+                             data-student-id="${student.id}">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center mb-2">
+                                        <h4 class="font-semibold text-slate-800">${student.fullName}</h4>
+                                        <span class="ml-2 px-2 py-1 text-xs font-medium rounded-full ${statusColor}">
+                                            ${student.registrationStatus}
+                                        </span>
+                                    </div>
+                                    <p class="text-sm text-slate-600 mb-1">
+                                        <i class="material-icons text-xs mr-1">badge</i>
+                                        ${student.studentNumber}
+                                    </p>
+                                    <p class="text-sm text-slate-600 mb-1">
+                                        <i class="material-icons text-xs mr-1">school</i>
+                                        ${student.programmeName}
+                                    </p>
+                                    <p class="text-sm text-slate-600 mb-2">
+                                        <i class="material-icons text-xs mr-1">business</i>
+                                        ${student.schoolName}
+                                    </p>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-xs text-slate-500">Year ${student.currentYear} • ${student.academicYear}</span>
+                                        <span class="text-xs font-medium px-2 py-1 rounded-full ${feeStatusColor}">
+                                            ${feeStatus}
+                                        </span>
+                                    </div>
+                                </div>
+                                <i class="material-icons text-slate-400 ml-2">chevron_right</i>
+                            </div>
+                        </div>
+                    `;
+                });
+                resultsHtml += '</div>';
+
+                searchResults.innerHTML = resultsHtml;
+
+                // Attach click handlers
+                document.querySelectorAll('.student-result').forEach(element => {
+                    element.addEventListener('click', function() {
+                        const studentId = parseInt(this.dataset.studentId);
+                        selectStudent(studentId);
+                    });
+                });
+            }
+
+            function selectStudent(studentId) {
+                console.log('=== Student selected:', studentId, '===');
+                currentStudentId = studentId;
+
+                // Highlight selected student
+                document.querySelectorAll('.student-result').forEach(el => {
+                    el.classList.remove('bg-primary-50', 'border-primary-200');
+                });
+
+                const selectedElement = document.querySelector(`[data-student-id="${studentId}"]`);
+                if (selectedElement) {
+                    selectedElement.classList.add('bg-primary-50', 'border-primary-200');
+                }
+
+                // Hide the default "No Student Selected" message and show tabs
+                studentDetails.classList.add('hidden');
+                studentTabs.classList.remove('hidden');
+
+                // Show admin actions if user has appropriate role
+                showAdminActionsIfAuthorized();
+
+                // Load profile tab
+                loadStudentTab('profile');
+            }
+
+            function loadStudentTab(tabName) {
+                console.log('=== Loading tab:', tabName, 'for student:', currentStudentId, '===');
+
+                if (!currentStudentId) {
+                    console.log('No currentStudentId, returning early');
+                    return;
+                }
+
+                currentTab = tabName;
+
+                // Update tab buttons
+                document.querySelectorAll('.tab-button').forEach(button => {
+                    button.classList.remove('active', 'border-primary-500', 'text-primary-600');
+                    button.classList.add('border-transparent', 'text-slate-500');
+                });
+
+                const activeTab = document.querySelector(`[data-tab="${tabName}"]`);
+                if (activeTab) {
+                    activeTab.classList.add('active', 'border-primary-500', 'text-primary-600');
+                    activeTab.classList.remove('border-transparent', 'text-slate-500');
+                }
+
+                // Show loading state
+                tabContent.innerHTML = `
+                    <div class="text-center py-8">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
+                        <p class="text-slate-600 mt-2">Loading ${tabName}...</p>
+                    </div>
+                `;
+
+                // Load content
+                const endpoints = {
+                    'profile': `/StudentLookup/GetStudentProfile/${currentStudentId}`,
+                    'photo': `/StudentLookup/GetStudentPhoto/${currentStudentId}`,
+                    'idcard': `/StudentLookup/GetStudentIDCard/${currentStudentId}`,
+                    'financials': `/StudentLookup/GetStudentFinancials/${currentStudentId}`,
+                    'results': `/StudentResults/Results/${currentStudentId}`
+                };
+
+                const endpoint = endpoints[tabName];
+                console.log('Fetching from endpoint:', endpoint);
+
+                fetch(endpoint)
+                    .then(response => {
+                        console.log('Response received:', response.status, response.statusText);
+                        return response.text();
+                    })
+                    .then(html => {
+                        console.log('HTML content loaded, length:', html.length);
+
+                        // Create a temporary container to parse the HTML
+                        const temp = document.createElement('div');
+                        temp.innerHTML = html;
+
+                        // Extract scripts
+                        const scripts = temp.querySelectorAll('script');
+                        console.log('Found scripts:', scripts.length);
+
+                        // Remove scripts from the HTML (we'll execute them separately)
+                        scripts.forEach(script => script.remove());
+
+                        // Insert the HTML without scripts
+                        tabContent.innerHTML = temp.innerHTML;
+                        console.log('Tab content updated');
+
+                        // Now execute each script
+                        scripts.forEach((oldScript, index) => {
+                            console.log(`Executing script ${index + 1}/${scripts.length}`);
+                            const newScript = document.createElement('script');
+
+                            // Copy attributes
+                            Array.from(oldScript.attributes).forEach(attr => {
+                                newScript.setAttribute(attr.name, attr.value);
+                            });
+
+                            // Copy script content
+                            newScript.textContent = oldScript.textContent;
+
+                            // Append to document to execute
+                            document.body.appendChild(newScript);
+
+                            // Remove after execution
+                            setTimeout(() => {
+                                document.body.removeChild(newScript);
+                            }, 100);
+
+                            console.log(`Script ${index + 1} executed`);
+                        });
+
+                        console.log('All scripts executed successfully');
+                    })
+                    .catch(error => {
+                        console.error('Error loading tab content:', error);
+                        tabContent.innerHTML = `
+                            <div class="text-center py-8">
+                                <i class="material-icons text-4xl text-red-300 mb-2">error</i>
+                                <p class="text-slate-500">Error loading content</p>
+                                <p class="text-sm text-slate-400 mt-2">${error.message}</p>
+                                <button onclick="loadStudentTab('${tabName}')" class="mt-4 px-4 py-2 text-primary-600 hover:text-primary-700 border border-primary-600 rounded-lg">
+                                    Try Again
+                                </button>
+                            </div>
+                        `;
+                    });
+            }
+
+            function clearSearch() {
+                searchInput.value = '';
+                searchType.value = '';
+                searchResults.innerHTML = `
+                    <div class="text-center py-12">
+                        <i class="material-icons text-6xl text-slate-300 mb-4">search</i>
+                        <p class="text-slate-500 text-lg font-medium">Start Your Search</p>
+                        <p class="text-slate-400 text-sm mt-2">Enter a search term to find students within your jurisdiction</p>
+                    </div>
+                `;
+                resultsCount.textContent = '0 results';
+
+                // Show default message and hide tabs
+                studentDetails.classList.remove('hidden');
+                studentTabs.classList.add('hidden');
+
+                // Hide admin actions
+                const adminActions = document.getElementById('adminActions');
+                if (adminActions) {
+                    adminActions.classList.add('hidden');
+                }
+
+                currentStudentId = null;
+            }
+
+            function getStatusColor(status) {
+                const statusColors = {
+                    'Registered': 'text-green-600 bg-green-50',
+                    'Unregistered': 'text-amber-600 bg-amber-50',
+                    'Pending': 'text-blue-600 bg-blue-50',
+                    'Suspended': 'text-red-600 bg-red-50',
+                    'Excluded': 'text-red-600 bg-red-50',
+                    'Withdrawn': 'text-slate-600 bg-slate-50'
+                };
+                return statusColors[status] || 'text-slate-600 bg-slate-50';
+            }
+
+            function showToast(message, type = 'info') {
+                const toast = document.getElementById('toastNotification');
+                const toastMessage = document.getElementById('toastMessage');
+                const toastIcon = document.getElementById('toastIcon');
+
+                toastMessage.textContent = message;
+
+                const types = {
+                    'success': { class: 'bg-green-100 text-green-800', icon: 'check_circle' },
+                    'error': { class: 'bg-red-100 text-red-800', icon: 'error' },
+                    'warning': { class: 'bg-amber-100 text-amber-800', icon: 'warning' },
+                    'info': { class: 'bg-blue-100 text-blue-800', icon: 'info' }
+                };
+
+                const typeConfig = types[type] || types.info;
+                toast.className = `fixed bottom-4 right-4 p-4 rounded-lg shadow-lg max-w-md z-50 ${typeConfig.class}`;
+                toastIcon.textContent = typeConfig.icon;
+
+                toast.classList.remove('hidden');
+
+                // Show success messages longer (8 seconds) to allow time to read password
+                const displayTime = type === 'success' ? 8000 : 5000;
+                setTimeout(() => {
+                    toast.classList.add('hidden');
+                }, displayTime);
+            }
+
+            // Student Created Modal Functions
+            function showStudentCreatedModal(studentName, studentNumber, password) {
+                console.log('=== showStudentCreatedModal called ===');
+                console.log('Student Name:', studentName);
+                console.log('Student Number:', studentNumber);
+                console.log('Password:', password);
+
+                const modal = document.getElementById('studentCreatedModal');
+                console.log('Modal element:', modal);
+
+                if (!modal) {
+                    console.error('Student created modal not found!');
+                    alert(`Student created successfully!\n\nName: ${studentName}\nNumber: ${studentNumber}\nPassword: ${password}`);
+                    return;
+                }
+
+                const nameElement = document.getElementById('createdStudentName');
+                const numberElement = document.getElementById('createdStudentNumber');
+                const passwordElement = document.getElementById('createdStudentPassword');
+
+                if (nameElement) nameElement.textContent = studentName;
+                if (numberElement) numberElement.textContent = studentNumber;
+                if (passwordElement) passwordElement.textContent = password;
+
+                modal.classList.remove('hidden');
+                console.log('Modal should now be visible');
+            }
+
+            function closeStudentCreatedModal() {
+                const modal = document.getElementById('studentCreatedModal');
+                if (modal) {
+                    modal.classList.add('hidden');
+                }
+                // Reload the page to refresh the student list
+                window.location.reload();
+            }
+
+            function copyPassword() {
+                const passwordElement = document.getElementById('createdStudentPassword');
+                if (passwordElement) {
+                    const password = passwordElement.textContent;
+                    navigator.clipboard.writeText(password).then(() => {
+                        showToast('Password copied to clipboard!', 'success');
+                    }).catch(err => {
+                        console.error('Failed to copy password:', err);
+                        showToast('Failed to copy password', 'error');
+                    });
+                }
+            }
+
+            function printStudentCredentials() {
+                const studentName = document.getElementById('createdStudentName').textContent;
+                const studentNumber = document.getElementById('createdStudentNumber').textContent;
+                const password = document.getElementById('createdStudentPassword').textContent;
+
+                const printWindow = window.open('', '_blank');
+                printWindow.document.write(`
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Student Credentials</title>
+                        <style>
+                            body {
+                                font-family: Arial, sans-serif;
+                                padding: 40px;
+                                max-width: 600px;
+                                margin: 0 auto;
+                            }
+                            .header {
+                                text-align: center;
+                                margin-bottom: 30px;
+                                border-bottom: 3px solid #10b981;
+                                padding-bottom: 20px;
+                            }
+                            .header h1 {
+                                color: #10b981;
+                                margin: 0;
+                            }
+                            .credential-box {
+                                background: #f8f9fa;
+                                padding: 20px;
+                                border-radius: 8px;
+                                margin: 15px 0;
+                                border-left: 4px solid #10b981;
+                            }
+                            .label {
+                                font-weight: bold;
+                                color: #666;
+                                font-size: 14px;
+                                margin-bottom: 5px;
+                            }
+                            .value {
+                                font-size: 18px;
+                                color: #000;
+                                font-weight: 600;
+                            }
+                            .password-box {
+                                background: #fff3cd;
+                                border-left-color: #ffc107;
+                            }
+                            .footer {
+                                margin-top: 40px;
+                                text-align: center;
+                                color: #666;
+                                font-size: 12px;
+                            }
+                            @@media print {
+                                body { padding: 20px; }
+                            }
+                        <\/style>
+                    <\/head>
+                    <body>
+                        <div class="header">
+                            <h1>Student Login Credentials</h1>
+                            <p>Please keep this information secure</p>
+                        </div>
+                        <div class="credential-box">
+                            <div class="label">Student Name</div>
+                            <div class="value">${studentName}</div>
+                        </div>
+                        <div class="credential-box">
+                            <div class="label">Student Number</div>
+                            <div class="value">${studentNumber}</div>
+                        </div>
+                        <div class="credential-box password-box">
+                            <div class="label">Default Password</div>
+                            <div class="value">${password}</div>
+                        </div>
+                        <div class="footer">
+                            <p>Generated on ${new Date().toLocaleString()}</p>
+                            <p>Please change your password after first login</p>
+                        </div>
+                    <\/body>
+                    <\/html>
+                `);
+                printWindow.document.close();
+                printWindow.focus();
+                setTimeout(() => {
+                    printWindow.print();
+                }, 250);
+            }
+
+            // Make modal functions globally available
+            window.showStudentCreatedModal = showStudentCreatedModal;
+            window.closeStudentCreatedModal = closeStudentCreatedModal;
+            window.copyPassword = copyPassword;
+            window.printStudentCredentials = printStudentCredentials;
+
+            // Event listeners
+            if (searchButton) {
+                searchButton.addEventListener('click', performSearch);
+            }
+
+            if (clearButton) {
+                clearButton.addEventListener('click', clearSearch);
+            }
+
+            if (searchInput) {
+                searchInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        performSearch();
+                    }
+                });
+            }
+
+            // Tab click handlers
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('tab-button') || e.target.closest('.tab-button')) {
+                    const tabButton = e.target.classList.contains('tab-button') ? e.target : e.target.closest('.tab-button');
+                    const tabName = tabButton.dataset.tab;
+                    console.log('Tab button clicked:', tabName);
+                    loadStudentTab(tabName);
+                }
+            });
+
+            // Make functions globally available
+            window.loadStudentTab = loadStudentTab;
+            window.showToast = showToast;
+
+            // Check user role and show admin actions
+            function showAdminActionsIfAuthorized() {
+                const userRole = '@Model.UserRole';
+                const adminActions = document.getElementById('adminActions');
+                if (adminActions && (userRole === 'Admin' || userRole === 'Registrar' || userRole === 'VC' || userRole === 'DVC')) {
+                    adminActions.classList.remove('hidden');
+                }
+            }
+
+            // Handle student administration button click
+            const adminButton = document.getElementById('studentAdminButton');
+            if (adminButton) {
+                adminButton.addEventListener('click', function() {
+                    if (currentStudentId) {
+                        window.location.href = `/StudentAdministration/Index/${currentStudentId}`;
+                    }
+                });
+            }
+
+            console.log('=== Student Lookup initialization complete ===');
+        });
+
+        // Study Permit Modal functionality
+        $(document).ready(function () {
+            console.log('=== Study permit modal scripts loaded ===');
+
+            const modal = $('#studyPermitModal');
+
+            function openModal() {
+                console.log("Opening study permit modal");
+                const modalElement = document.getElementById('studyPermitModal');
+                if (modalElement) {
+                    modalElement.classList.remove('hidden');
+                    modalElement.classList.add('flex');
+                } else {
+                    console.log('Study permit modal not found on this page (will be loaded in profile tab)');
+                }
+            }
+
+            window.closeModal = function() {
+                const modalElement = document.getElementById('studyPermitModal');
+                if (modalElement) {
+                    modalElement.classList.remove('flex');
+                    modalElement.classList.add('hidden');
+                }
+            }
+
+            window.printIframe = function() {
+                const iframe = document.getElementById('idCardFrame');
+                if (iframe && iframe.contentWindow) {
+                    iframe.contentWindow.focus();
+                    iframe.contentWindow.print();
+                }
+            }
+
+            window.reprintIframe = async function(studentId) {
+                const iframe = document.getElementById('idCardFrame');
+
+                try {
+                    const response = await fetch(`/StudentLookup/ReprintIdCard/${studentId}`, {
+                        method: 'POST'
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        if (iframe && iframe.contentWindow) {
+                            iframe.contentWindow.focus();
+                            iframe.contentWindow.print();
+                        }
+                    } else {
+                        alert('Failed to prepare ID card for printing: ' + (result.message || 'Unknown error.'));
+                    }
+                } catch (error) {
+                    console.error('Error during reprint request:', error);
+                    alert('An error occurred while preparing the ID card.');
+                }
+            };
+
+            function loadPdf(url) {
+                const viewerBase = "/pdfjs/web/viewer.html";
+                const fullViewerUrl = `${viewerBase}?file=${url}`;
+                console.log('Loading PDF:', fullViewerUrl);
+
+                const pdfFrame = document.getElementById("pdfFrame");
+                if (pdfFrame) {
+                    pdfFrame.src = fullViewerUrl;
+                }
+            }
+
+            window.openPermitModal = function ()  {
+                const mode = $(this).data('mode');
+                const permitId = $(this).data('permit-id');
+                const form = $('#studyPermitForm')[0];
+
+                if (form) {
+                    form.reset();
+                }
+
+                $('#PermitId').val('');
+                $('#studyPermitLabel').text(mode === 'add' ? 'Add Study Permit' : 'Update Study Permit');
+                $('#savePermitBtn').text(mode === 'add' ? 'Add Permit' : 'Update Permit');
+
+                if (mode === 'edit' && permitId) {
+                    $.get(`/StudyPermit/Get/${permitId}`, function (data) {
+                        if (data) {
+                            $('#PermitId').val(data.id);
+                            $('#PermitNumber').val(data.permitNumber);
+                            $('#IssueDate').val(data.issueDate.split('T')[0]);
+                            $('#ExpiryDate').val(data.expiryDate.split('T')[0]);
+                            $('#IssuingAuthority').val(data.issuingAuthority);
+                        }
+                    }).fail(() => alert('Failed to load permit data.'));
+                }
+
+                openModal();
+            }
+
+            // Close modal buttons and backdrop click
+            $('#closePermitModal, #cancelPermitBtn').on('click', window.closeModal);
+            $(document).on('click', function (e) {
+                if ($(e.target).is('#studyPermitModal')) window.closeModal();
+            });
+
+            $(document).on('submit', '#studyPermitForm', function (e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+
+                $.ajax({
+                    url: '/StudyPermit/Save',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function () {
+                        window.closeModal();
+                        if (typeof loadStudentTab === 'function') {
+                            loadStudentTab('profile');
+                        }
+                    },
+                    error: function () {
+                        alert('Error saving study permit.');
+                    }
+                });
+            });
+        });
+    </script>
+}

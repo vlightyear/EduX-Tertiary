@@ -1,0 +1,211 @@
+﻿@model SIS.Models.Zoom.ZoomMeeting
+
+<div class="min-h-screen bg-slate-50 p-6">
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row justify-between items-center h-24 mb-4">
+        <div class="flex items-center text-slate-800">
+            <i class="material-icons text-3xl mr-2">videocam</i>
+            <div>
+                <h1 class="text-2xl font-bold">Meeting Details</h1>
+                <p class="text-sm text-slate-600">@Model.Topic</p>
+            </div>
+        </div>
+        <div class="mt-4 md:mt-0 flex items-center space-x-2">
+            <a asp-action="Index" class="inline-flex items-center px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors">
+                <i class="material-icons text-sm mr-1">arrow_back</i>
+                Back to Meetings
+            </a>
+
+            @if (User.IsInRole("Lecturer") && Model.CreatedById == User.Identity.Name)
+            {
+                @if (Model.Status == SIS.Enums.Status.Scheduled && DateTime.Now >= Model.StartTime.AddMinutes(-5))
+                {
+                    <a asp-action="StartMeeting" asp-route-id="@Model.Id" class="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
+                        <i class="material-icons text-sm mr-1">play_arrow</i>
+                        Start Meeting
+                    </a>
+                }
+                else if (Model.Status == SIS.Enums.Status.Active)
+                {
+                    <a asp-action="StartMeeting" asp-route-id="@Model.Id" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                        <i class="material-icons text-sm mr-1">login</i>
+                        Rejoin Meeting
+                    </a>
+                }
+            }
+            else if (!User.IsInRole("Lecturer") && Model.Status == SIS.Enums.Status.Active)
+            {
+                <a asp-action="JoinMeeting" asp-route-id="@Model.Id" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                    <i class="material-icons text-sm mr-1">login</i>
+                    Join Meeting
+                </a>
+            }
+        </div>
+    </div>
+
+    <!-- Meeting Details Card -->
+    <div class="bg-white rounded-xl shadow-sm mb-6">
+        <div class="p-6">
+            <div class="flex flex-col md:flex-row">
+                <!-- Left column with details -->
+                <div class="md:w-2/3 pr-0 md:pr-6">
+                    <h2 class="text-lg font-semibold text-slate-800 mb-4">Meeting Information</h2>
+
+                    <!-- Status Badge -->
+                    <div class="mb-6">
+                        <span class="text-sm font-medium text-slate-700">Status:</span>
+                        @if (Model.Status == SIS.Enums.Status.Scheduled)
+                        {
+                            <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                Scheduled
+                            </span>
+                        }
+                        else if (Model.Status == SIS.Enums.Status.Active)
+                        {
+                            <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <i class="material-icons text-xs mr-1">fiber_manual_record</i>
+                                Active
+                            </span>
+                        }
+                        else if (Model.Status == SIS.Enums.Status.Completed)
+                        {
+                            <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                Completed
+                            </span>
+                        }
+                    </div>
+
+                    <!-- Meeting details grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-sm font-medium text-slate-700">Topic</p>
+                            <p class="text-base text-slate-900">@Model.Topic</p>
+                        </div>
+
+                        <div>
+                            <p class="text-sm font-medium text-slate-700">Course</p>
+                            <p class="text-base text-slate-900">@Model.Course.CourseCode - @Model.Course.CourseName</p>
+                        </div>
+
+                        <div>
+                            <p class="text-sm font-medium text-slate-700">Host</p>
+                            <p class="text-base text-slate-900">@Model.CreatedBy.FullName</p>
+                        </div>
+
+                        <div>
+                            <p class="text-sm font-medium text-slate-700">Meeting ID</p>
+                            <p class="text-base text-slate-900">@Model.ZoomMeetingId</p>
+                        </div>
+
+                        <div>
+                            <p class="text-sm font-medium text-slate-700">Start Time</p>
+                            <p class="text-base text-slate-900">@Model.StartTime.ToString("MMMM dd, yyyy - hh:mm tt")</p>
+                        </div>
+
+                        <div>
+                            <p class="text-sm font-medium text-slate-700">Duration</p>
+                            <p class="text-base text-slate-900">@Model.Duration minutes</p>
+                        </div>
+
+                        <div>
+                            <p class="text-sm font-medium text-slate-700">Created On</p>
+                            <p class="text-base text-slate-900">@Model.CreatedAt.ToString("MMMM dd, yyyy")</p>
+                        </div>
+
+                        @if (Model.EndedAt.HasValue)
+                        {
+                            <div>
+                                <p class="text-sm font-medium text-slate-700">Ended At</p>
+                                <p class="text-base text-slate-900">@Model.EndedAt.Value.ToString("MMMM dd, yyyy - hh:mm tt")</p>
+                            </div>
+                        }
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Model.Agenda))
+                    {
+                        <div class="mt-6">
+                            <p class="text-sm font-medium text-slate-700 mb-2">Agenda</p>
+                            <div class="bg-slate-50 rounded-lg p-4 text-slate-800">
+                                @Model.Agenda
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- Right column with options -->
+                <div class="md:w-1/3 mt-8 md:mt-0 border-t md:border-t-0 md:border-l border-slate-200 pt-6 md:pt-0 md:pl-6">
+                    <h3 class="text-md font-semibold text-slate-800 mb-4">Meeting Options</h3>
+
+                    <!-- Actions for lecturers -->
+                    @if (User.IsInRole("Lecturer") && Model.CreatedById == User.Identity.Name)
+                    {
+                        @if (Model.Status == SIS.Enums.Status.Scheduled)
+                        {
+                            <div class="space-y-3 mb-6">
+                                <a href="#" class="flex items-center p-3 bg-slate-50 rounded-lg text-slate-700 hover:bg-slate-100 transition-colors">
+                                    <i class="material-icons text-slate-500 mr-3">edit</i>
+                                    <span>Edit Meeting Details</span>
+                                </a>
+
+                                <form asp-action="Delete" asp-route-id="@Model.Id" method="post" onsubmit="return confirm('Are you sure you want to delete this meeting?');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="flex items-center w-full p-3 bg-red-50 rounded-lg text-red-700 hover:bg-red-100 transition-colors">
+                                        <i class="material-icons text-red-500 mr-3">delete</i>
+                                        <span>Delete Meeting</span>
+                                    </button>
+                                </form>
+                            </div>
+                        }
+
+                        <!-- Meeting password if available -->
+                        @if (!string.IsNullOrEmpty(Model.Password))
+                        {
+                            <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+                                <p class="text-sm font-semibold text-blue-800 mb-1">Meeting Password</p>
+                                <div class="flex items-center">
+                                    <span class="text-blue-800 mr-2">@Model.Password</span>
+                                    <button type="button" onclick="copyToClipboard('@Model.Password')" class="text-blue-600 hover:text-blue-800">
+                                        <i class="material-icons text-sm">content_copy</i>
+                                    </button>
+                                </div>
+                                <p class="text-xs text-blue-600 mt-2">Share this password with your students if needed</p>
+                            </div>
+                        }
+                    }
+
+                    <!-- For students -->
+                    @if (!User.IsInRole("Lecturer"))
+                    {
+                        <div class="p-4 bg-slate-50 rounded-lg">
+                            <p class="text-sm font-medium text-slate-800 mb-2">
+                                <i class="material-icons text-slate-500 align-middle mr-1">info</i>
+                                Meeting Information
+                            </p>
+                            <ul class="space-y-2 text-sm text-slate-600">
+                                <li>• You will need to allow camera and microphone access</li>
+                                <li>• Please join the meeting on time</li>
+                                <li>• Use headphones for better audio quality</li>
+                                @if (!string.IsNullOrEmpty(Model.Password))
+                                {
+                                    <li>• Meeting password: <span class="font-medium">@Model.Password</span></li>
+                                }
+                            </ul>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(function() {
+                alert("Password copied to clipboard");
+            }, function() {
+                alert("Failed to copy password");
+            });
+        }
+    </script>
+}

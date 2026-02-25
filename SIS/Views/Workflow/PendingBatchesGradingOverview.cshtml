@@ -1,0 +1,784 @@
+﻿@model List<WorkflowController.PendingProgrammeGradingOverviewDto>
+
+@{
+    ViewData["Title"] = "Pending Batches - Grading Overview";
+
+    // Group programmes by Year of Study and Semester
+    var groupedByYear = Model
+        .GroupBy(p => new { p.YearOfStudy, p.Semester })
+        .OrderBy(g => g.Key.YearOfStudy)
+        .ThenBy(g => g.Key.Semester)
+        .ToList();
+}
+
+<div class="min-h-screen bg-gray-50 p-6">
+    <!-- Header Section -->
+    <div class="max-w-7xl mx-auto mb-6">
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 flex items-center">
+                    <i class="material-icons mr-3 text-purple-600">assessment</i>
+                    Pending Batches - Grading Overview
+                </h1>
+                <p class="text-gray-600 mt-2">
+                    Grade distribution organized by year of study and semester
+                </p>
+            </div>
+            <div class="flex space-x-2">
+                <button onclick="exportAllOverviews()"
+                        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center">
+                    <i class="material-icons mr-2">picture_as_pdf</i>
+                    Export All to PDF
+                </button>
+                <button onclick="location.href='@Url.Action("PendingApprovals", "Workflow")'"
+                        class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center">
+                    <i class="material-icons mr-2">arrow_back</i>
+                    Back to Approvals
+                </button>
+            </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+            <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-600">
+                <div class="flex items-center">
+                    <div class="p-3 bg-blue-100 rounded-lg">
+                        <i class="material-icons text-blue-600 text-2xl">school</i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-gray-600 text-sm font-medium">Total Programmes</p>
+                        <p class="text-3xl font-bold text-gray-900">@ViewBag.TotalProgrammes</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-purple-600">
+                <div class="flex items-center">
+                    <div class="p-3 bg-purple-100 rounded-lg">
+                        <i class="material-icons text-purple-600 text-2xl">menu_book</i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-gray-600 text-sm font-medium">Total Courses</p>
+                        <p class="text-3xl font-bold text-gray-900">@ViewBag.TotalCourses</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-indigo-600">
+                <div class="flex items-center">
+                    <div class="p-3 bg-indigo-100 rounded-lg">
+                        <i class="material-icons text-indigo-600 text-2xl">stairs</i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-gray-600 text-sm font-medium">Years of Study</p>
+                        <p class="text-3xl font-bold text-gray-900">@ViewBag.TotalYears</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-amber-600">
+                <div class="flex items-center">
+                    <div class="p-3 bg-amber-100 rounded-lg">
+                        <i class="material-icons text-amber-600 text-2xl">pending_actions</i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-gray-600 text-sm font-medium">Pending Batches</p>
+                        <p class="text-3xl font-bold text-gray-900">@ViewBag.TotalCourses</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Programme Cards Grouped by Year -->
+    <div class="max-w-7xl mx-auto space-y-8">
+        @foreach (var yearGroup in groupedByYear)
+        {
+            <!-- Year/Semester Section Header -->
+            <div class="mb-6">
+                <div class="flex items-center mb-4">
+                    <div class="flex-shrink-0">
+                        <div class="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center text-white shadow-lg">
+                            <span class="text-2xl font-bold">Y&nbsp;@yearGroup.Key.YearOfStudy</span>
+                        </div>
+                    </div>
+                    <div class="ml-4 flex-1">
+                        <h2 class="text-2xl font-bold text-gray-900">
+                            Year @yearGroup.Key.YearOfStudy - Semester @yearGroup.Key.Semester
+                        </h2>
+                        <p class="text-gray-600 mt-1">
+                            @yearGroup.Count() programme(s) with pending batch approvals
+                        </p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg font-semibold">
+                            @yearGroup.Sum(p => p.CoursesCount) Course(s)
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Programmes in this Year/Semester -->
+                <div class="space-y-6">
+                    @foreach (var programme in yearGroup)
+                    {
+                        <div class="bg-white rounded-lg shadow-lg overflow-hidden ml-20" id="programme-@programme.ProgrammeId-@programme.YearOfStudy-@programme.Semester">
+                            <!-- Programme Header -->
+                            <div class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-4">
+                                <div class="flex justify-between items-start">
+                                    <div class="flex-1">
+                                        <h3 class="text-xl font-bold mb-1">@programme.ProgrammeName</h3>
+                                        <div class="flex items-center space-x-4 text-sm">
+                                            <span class="flex items-center">
+                                                <i class="material-icons text-xs mr-1">tag</i>
+                                                @programme.ProgrammeCode
+                                            </span>
+                                            <span class="flex items-center">
+                                                <i class="material-icons text-xs mr-1">school</i>
+                                                @programme.ModeOfStudy
+                                            </span>
+                                            <span class="flex items-center">
+                                                <i class="material-icons text-xs mr-1">event</i>
+                                                @programme.AcademicYear
+                                            </span>
+                                            <span class="flex items-center">
+                                                <i class="material-icons text-xs mr-1">menu_book</i>
+                                                @programme.CoursesCount Course(s)
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <button onclick="loadProgrammeGrading(@programme.ProgrammeId, @programme.AcademicYearId, @programme.Semester, @programme.YearOfStudy)"
+                                            class="px-4 py-2 bg-white text-purple-600 rounded-lg hover:bg-purple-50 transition-colors flex items-center font-semibold">
+                                        <i class="material-icons mr-1">visibility</i>
+                                        Load Grading Data
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Programme Body -->
+                            <div class="p-6">
+                                <!-- Loading State -->
+                                <div id="loading-@programme.ProgrammeId-@programme.YearOfStudy-@programme.Semester" class="hidden text-center py-8">
+                                    <i class="material-icons animate-spin text-4xl text-purple-600 mb-2">refresh</i>
+                                    <p class="text-gray-600">Loading grading data...</p>
+                                </div>
+
+                                <!-- Courses List (Before Loading) -->
+                                <div id="courses-list-@programme.ProgrammeId-@programme.YearOfStudy-@programme.Semester">
+                                    <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                        <i class="material-icons mr-2 text-purple-600">list</i>
+                                        Courses with Pending Approvals
+                                    </h4>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                        @foreach (var course in programme.Courses)
+                                        {
+                                            <div class="border border-gray-200 rounded-lg p-4 hover:border-purple-400 hover:shadow-md transition-all">
+                                                <div class="flex items-start justify-between">
+                                                    <div class="flex-1">
+                                                        <p class="font-semibold text-gray-900">@course.CourseCode</p>
+                                                        <p class="text-sm text-gray-600 mt-1">@course.CourseName</p>
+                                                        <p class="text-xs text-gray-500 mt-2">
+                                                            <i class="material-icons text-xs align-middle">done</i>
+                                                            Pass Mark: @course.PassMark%
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                    <div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                        <p class="text-sm text-blue-800 flex items-center">
+                                            <i class="material-icons text-sm mr-2">info</i>
+                                            Click "Load Grading Data" to view detailed grade distribution for this programme
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <!-- Grading Overview Content (After Loading) -->
+                                <div id="grading-content-@programme.ProgrammeId-@programme.YearOfStudy-@programme.Semester" class="hidden">
+                                    <!-- Summary Cards -->
+                                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                                        <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                                            <div class="text-sm text-blue-600 mb-1">Total Courses</div>
+                                            <div class="text-2xl font-bold text-blue-900" id="summary-courses-@programme.ProgrammeId-@programme.YearOfStudy-@programme.Semester">0</div>
+                                        </div>
+                                        <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+                                            <div class="text-sm text-green-600 mb-1">Total Passed</div>
+                                            <div class="text-2xl font-bold text-green-900" id="summary-passed-@programme.ProgrammeId-@programme.YearOfStudy-@programme.Semester">0</div>
+                                        </div>
+                                        <div class="bg-red-50 p-4 rounded-lg border border-red-200">
+                                            <div class="text-sm text-red-600 mb-1">Total Failed</div>
+                                            <div class="text-2xl font-bold text-red-900" id="summary-failed-@programme.ProgrammeId-@programme.YearOfStudy-@programme.Semester">0</div>
+                                        </div>
+                                        <div class="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                                            <div class="text-sm text-purple-600 mb-1">Overall Pass Rate</div>
+                                            <div class="text-2xl font-bold text-purple-900" id="summary-passrate-@programme.ProgrammeId-@programme.YearOfStudy-@programme.Semester">0%</div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Grading Table -->
+                                    <div class="overflow-x-auto border rounded-lg">
+                                        <table class="w-full text-sm border-collapse">
+                                            <thead class="bg-gray-50 sticky top-0">
+                                                <tr>
+                                                    <th class="px-4 py-3 text-left font-semibold text-gray-700 border-b">CourseNo</th>
+                                                    <th class="px-4 py-3 text-left font-semibold text-gray-700 border-b">Course Name</th>
+                                                    <th class="px-3 py-3 text-center font-semibold text-gray-700 border-b border-l bg-purple-50">A+</th>
+                                                    <th class="px-3 py-3 text-center font-semibold text-gray-700 border-b bg-purple-50">A</th>
+                                                    <th class="px-3 py-3 text-center font-semibold text-gray-700 border-b bg-blue-50">B+</th>
+                                                    <th class="px-3 py-3 text-center font-semibold text-gray-700 border-b bg-blue-50">B</th>
+                                                    <th class="px-3 py-3 text-center font-semibold text-gray-700 border-b bg-green-50">C+</th>
+                                                    <th class="px-3 py-3 text-center font-semibold text-gray-700 border-b bg-green-50">C</th>
+                                                    <th class="px-3 py-3 text-center font-semibold text-gray-700 border-b bg-yellow-50">D+</th>
+                                                    <th class="px-3 py-3 text-center font-semibold text-gray-700 border-b bg-yellow-50">D</th>
+                                                    <th class="px-3 py-3 text-center font-semibold text-gray-700 border-b bg-orange-50">EXP</th>
+                                                    <th class="px-3 py-3 text-center font-semibold text-gray-700 border-b bg-gray-50">NE/INC</th>
+                                                    <th class="px-3 py-3 text-center font-semibold text-gray-700 border-b bg-gray-50">DEF</th>
+                                                    <th class="px-3 py-3 text-center font-semibold text-gray-700 border-b bg-teal-50">P</th>
+                                                    <th class="px-3 py-3 text-center font-semibold text-gray-700 border-b bg-red-50">F</th>
+                                                    <th class="px-4 py-3 text-center font-semibold text-gray-700 border-b border-l bg-red-100">Total<br>Failed</th>
+                                                    <th class="px-4 py-3 text-center font-semibold text-gray-700 border-b bg-green-100">Total<br>Passed</th>
+                                                    <th class="px-4 py-3 text-center font-semibold text-gray-700 border-b bg-blue-100">Pass<br>Rate</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="grading-tbody-@programme.ProgrammeId-@programme.YearOfStudy-@programme.Semester" class="divide-y divide-gray-200">
+                                                <!-- Populated by JavaScript -->
+                                            </tbody>
+                                            <tfoot class="bg-gray-100 font-semibold">
+                                                <tr id="grading-totals-@programme.ProgrammeId-@programme.YearOfStudy-@programme.Semester">
+                                                    <!-- Populated by JavaScript -->
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+
+                                    <!-- Export Button -->
+                                    <div class="mt-4 flex justify-end">
+                                        <button onclick="exportProgrammeGrading('@programme.ProgrammeId-@programme.YearOfStudy-@programme.Semester', '@Html.Raw(programme.ProgrammeName.Replace("'", "\\'"))', '@programme.ProgrammeCode', @programme.YearOfStudy, @programme.Semester)"
+                                                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center">
+                                            <i class="material-icons text-sm mr-1">picture_as_pdf</i>
+                                            Export This Programme to PDF
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <!-- jsPDF Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+    <script>
+        // Store loaded programme data with composite key
+        const loadedProgrammeData = {};
+
+        async function loadProgrammeGrading(programmeId, academicYearId, semester, yearOfStudy) {
+            const compositeId = `${programmeId}-${yearOfStudy}-${semester}`;
+            const loadingDiv = document.getElementById(`loading-${compositeId}`);
+            const coursesList = document.getElementById(`courses-list-${compositeId}`);
+            const gradingContent = document.getElementById(`grading-content-${compositeId}`);
+
+            // Show loading
+            coursesList.classList.add('hidden');
+            gradingContent.classList.add('hidden');
+            loadingDiv.classList.remove('hidden');
+
+            try {
+                const response = await fetch(
+                    `/SenateReport/GetProgrammeGradingOverview?programmeId=${programmeId}&academicYearId=${academicYearId}&semester=${semester}`
+                );
+
+                const result = await response.json();
+
+                if (result.success && result.data) {
+                    // Store with composite key and additional metadata
+                    loadedProgrammeData[compositeId] = {
+                        ...result.data,
+                        yearOfStudy: yearOfStudy,
+                        semester: semester
+                    };
+                    renderProgrammeGrading(compositeId, result.data);
+                    gradingContent.classList.remove('hidden');
+                } else {
+                    throw new Error(result.message || 'Failed to load grading data');
+                }
+            } catch (error) {
+                console.error('Error loading programme grading:', error);
+                alert('Failed to load grading data. Please try again.');
+                coursesList.classList.remove('hidden');
+            } finally {
+                loadingDiv.classList.add('hidden');
+            }
+        }
+
+        function renderProgrammeGrading(compositeId, data) {
+            const tbody = document.getElementById(`grading-tbody-${compositeId}`);
+            tbody.innerHTML = '';
+
+            const gradeOrder = ['A+', 'A', 'B+', 'B', 'C+', 'C', 'D+', 'D', 'EXP', 'NE/INC', 'DEF', 'P', 'F'];
+            const gradeColors = {
+                'A+': 'bg-purple-50', 'A': 'bg-purple-50',
+                'B+': 'bg-blue-50', 'B': 'bg-blue-50',
+                'C+': 'bg-green-50', 'C': 'bg-green-50',
+                'D+': 'bg-yellow-50', 'D': 'bg-yellow-50',
+                'EXP': 'bg-orange-50',
+                'NE/INC': 'bg-gray-50', 'DEF': 'bg-gray-50',
+                'P': 'bg-teal-50',
+                'F': 'bg-red-50'
+            };
+
+            // Initialize totals
+            const totals = {};
+            gradeOrder.forEach(grade => totals[grade] = 0);
+            let totalPassed = 0;
+            let totalFailed = 0;
+
+            // Render each course
+            data.courses.forEach(course => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
+
+                let rowHTML = `
+                    <td class="px-4 py-3 font-medium text-gray-900">${escapeHtml(course.courseNo)}</td>
+                    <td class="px-4 py-3 text-gray-900">${escapeHtml(course.courseName)}</td>
+                `;
+
+                gradeOrder.forEach((grade, index) => {
+                    const count = course.gradeDistribution[grade] || 0;
+                    totals[grade] += count;
+                    const borderClass = (index === 0 || index === 9 || index === 15) ? 'border-l' : '';
+                    const bgColor = gradeColors[grade] || '';
+
+                    rowHTML += `<td class="px-3 py-3 text-center ${borderClass} ${bgColor}">${count}</td>`;
+                });
+
+                rowHTML += `
+                    <td class="px-4 py-3 text-center font-semibold border-l bg-red-50">${course.totalFailed}</td>
+                    <td class="px-4 py-3 text-center font-semibold bg-green-50">${course.totalPassed}</td>
+                    <td class="px-4 py-3 text-center font-semibold bg-blue-50">${course.passRate}%</td>
+                `;
+
+                row.innerHTML = rowHTML;
+                tbody.appendChild(row);
+
+                totalPassed += course.totalPassed;
+                totalFailed += course.totalFailed;
+            });
+
+            // Render totals row
+            const totalsRow = document.getElementById(`grading-totals-${compositeId}`);
+            let totalsHTML = `
+                <td class="px-4 py-3 text-left">TOTALS</td>
+                <td class="px-4 py-3"></td>
+            `;
+
+            gradeOrder.forEach((grade, index) => {
+                const borderClass = (index === 0 || index === 9 || index === 15) ? 'border-l' : '';
+                totalsHTML += `<td class="px-3 py-3 text-center ${borderClass}">${totals[grade]}</td>`;
+            });
+
+            const totalStudents = totalPassed + totalFailed;
+            const overallPassRate = totalStudents > 0 ? Math.round((totalPassed / totalStudents) * 100) : 0;
+
+            totalsHTML += `
+                <td class="px-4 py-3 text-center border-l">${totalFailed}</td>
+                <td class="px-4 py-3 text-center">${totalPassed}</td>
+                <td class="px-4 py-3 text-center">${overallPassRate}%</td>
+            `;
+
+            totalsRow.innerHTML = totalsHTML;
+
+            // Update summary cards
+            document.getElementById(`summary-courses-${compositeId}`).textContent = data.courses.length;
+            document.getElementById(`summary-passed-${compositeId}`).textContent = totalPassed;
+            document.getElementById(`summary-failed-${compositeId}`).textContent = totalFailed;
+            document.getElementById(`summary-passrate-${compositeId}`).textContent = overallPassRate + '%';
+        }
+
+        function exportProgrammeGrading(compositeId, programmeName, programmeCode, yearOfStudy, semester) {
+            const data = loadedProgrammeData[compositeId];
+            if (!data) {
+                alert('Please load the grading data first');
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('l', 'mm', 'a4');
+
+            // Add title
+            doc.setFontSize(18);
+            doc.setFont(undefined, 'bold');
+            doc.text('Grading Overview Report', 148, 15, { align: 'center' });
+
+            // Add programme info with Year of Study
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'normal');
+            doc.text(`Programme: ${programmeName}`, 14, 25);
+            doc.text(`Year of Study: ${yearOfStudy} | Semester: ${semester}`, 14, 32);
+            doc.text(`Academic Year: ${data.academicYear} | Mode of Study: ${data.modeOfStudy}`, 14, 39);
+
+            // Calculate summary statistics
+            let totalPassed = 0;
+            let totalFailed = 0;
+            data.courses.forEach(course => {
+                totalPassed += course.totalPassed;
+                totalFailed += course.totalFailed;
+            });
+            const totalStudents = totalPassed + totalFailed;
+            const overallPassRate = totalStudents > 0 ? Math.round((totalPassed / totalStudents) * 100) : 0;
+
+            // Add summary box
+            doc.setFillColor(240, 240, 255);
+            doc.rect(14, 45, 270, 20, 'F');
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'bold');
+            doc.text(`Summary: ${data.courses.length} Courses | ${totalPassed} Passed | ${totalFailed} Failed | ${overallPassRate}% Pass Rate`, 148, 55, { align: 'center' });
+
+            // Prepare table data
+            const gradeOrder = ['A+', 'A', 'B+', 'B', 'C+', 'C', 'D+', 'D', 'EXP', 'NE/INC', 'DEF', 'P', 'F'];
+
+            const tableHeaders = [
+                'Course Code',
+                'Course Name',
+                ...gradeOrder,
+                'Failed',
+                'Passed',
+                'Pass %'
+            ];
+
+            const tableData = data.courses.map(course => [
+                course.courseNo,
+                course.courseName,
+                ...gradeOrder.map(grade => course.gradeDistribution[grade] || 0),
+                course.totalFailed,
+                course.totalPassed,
+                course.passRate + '%'
+            ]);
+
+            // Add totals row
+            const totals = {};
+            gradeOrder.forEach(grade => {
+                totals[grade] = data.courses.reduce((sum, course) => sum + (course.gradeDistribution[grade] || 0), 0);
+            });
+
+            tableData.push([
+                'TOTALS',
+                '',
+                ...gradeOrder.map(grade => totals[grade]),
+                totalFailed,
+                totalPassed,
+                overallPassRate + '%'
+            ]);
+
+            // Add table
+            doc.autoTable({
+                head: [tableHeaders],
+                body: tableData,
+                startY: 70,
+                theme: 'grid',
+                styles: {
+                    fontSize: 8,
+                    cellPadding: 2,
+                    overflow: 'linebreak',
+                    halign: 'center'
+                },
+                columnStyles: {
+                    0: { cellWidth: 20, halign: 'left', fontStyle: 'bold' },
+                    1: { cellWidth: 50, halign: 'left' },
+                    2: { cellWidth: 10, fillColor: [237, 233, 254] },
+                    3: { cellWidth: 10, fillColor: [237, 233, 254] },
+                    4: { cellWidth: 10, fillColor: [219, 234, 254] },
+                    5: { cellWidth: 10, fillColor: [219, 234, 254] },
+                    6: { cellWidth: 10, fillColor: [220, 252, 231] },
+                    7: { cellWidth: 10, fillColor: [220, 252, 231] },
+                    8: { cellWidth: 10, fillColor: [254, 249, 195] },
+                    9: { cellWidth: 10, fillColor: [254, 249, 195] },
+                    10: { cellWidth: 10, fillColor: [255, 237, 213] },
+                    11: { cellWidth: 10, fillColor: [243, 244, 246] },
+                    12: { cellWidth: 10, fillColor: [243, 244, 246] },
+                    13: { cellWidth: 10, fillColor: [204, 251, 241] },
+                    14: { cellWidth: 10, fillColor: [254, 226, 226] },
+                    15: { cellWidth: 13, fillColor: [254, 226, 226] },
+                    16: { cellWidth: 13, fillColor: [220, 252, 231] },
+                    17: { cellWidth: 13, fillColor: [219, 234, 254] }
+                },
+                headStyles: {
+                    fillColor: [79, 70, 229],
+                    textColor: 255,
+                    fontStyle: 'bold',
+                    fontSize: 8
+                },
+                didParseCell: function(data) {
+                    if (data.row.index === tableData.length - 1) {
+                        data.cell.styles.fontStyle = 'bold';
+                        data.cell.styles.fillColor = [229, 231, 235];
+                    }
+                }
+            });
+
+            // Add footer
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setFont(undefined, 'normal');
+                doc.text(
+                    `Generated on ${new Date().toLocaleString()} | Page ${i} of ${pageCount}`,
+                    148,
+                    205,
+                    { align: 'center' }
+                );
+            }
+
+            // Save the PDF
+            const fileName = `Grading_Overview_${programmeName}_Year${yearOfStudy}_Sem${semester}_${Date.now()}.pdf`;
+            doc.save(fileName);
+
+            showToast('PDF exported successfully!', 'success');
+        }
+
+        function exportAllOverviews() {
+            const compositeIds = Object.keys(loadedProgrammeData);
+
+            if (compositeIds.length === 0) {
+                alert('Please load at least one programme\'s grading data before exporting');
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('l', 'mm', 'a4');
+
+            // Add main title
+            doc.setFontSize(20);
+            doc.setFont(undefined, 'bold');
+            doc.text('All Programmes - Grading Overview', 148, 15, { align: 'center' });
+            doc.text('Organized by Year of Study', 148, 23, { align: 'center' });
+
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            doc.text(`Generated on: ${new Date().toLocaleString()}`, 148, 30, { align: 'center' });
+            doc.text(`Total Programmes: ${compositeIds.length}`, 148, 36, { align: 'center' });
+
+            let currentY = 43;
+
+            compositeIds.forEach((compositeId, index) => {
+                const data = loadedProgrammeData[compositeId];
+
+                // Add new page for each programme (except first)
+                if (index > 0) {
+                    doc.addPage();
+                    currentY = 15;
+                }
+
+                // Programme header with Year of Study
+                doc.setFontSize(14);
+                doc.setFont(undefined, 'bold');
+                doc.text(`${index + 1}. ${data.programmeName}`, 14, currentY);
+
+                currentY += 7;
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'normal');
+                doc.text(`Year ${data.yearOfStudy} | Semester ${data.semester} | Academic Year: ${data.academicYear} | Mode: ${data.modeOfStudy}`, 14, currentY);
+
+                // Calculate summary
+                let totalPassed = 0;
+                let totalFailed = 0;
+                data.courses.forEach(course => {
+                    totalPassed += course.totalPassed;
+                    totalFailed += course.totalFailed;
+                });
+                const totalStudents = totalPassed + totalFailed;
+                const overallPassRate = totalStudents > 0 ? Math.round((totalPassed / totalStudents) * 100) : 0;
+
+                currentY += 7;
+                doc.setFillColor(240, 240, 255);
+                doc.rect(14, currentY - 4, 270, 10, 'F');
+                doc.setFont(undefined, 'bold');
+                doc.text(`Summary: ${data.courses.length} Courses | ${totalPassed} Passed | ${totalFailed} Failed | ${overallPassRate}% Pass Rate`, 148, currentY, { align: 'center' });
+
+                // Prepare table data
+                const gradeOrder = ['A+', 'A', 'B+', 'B', 'C+', 'C', 'D+', 'D', 'EXP', 'NE/INC', 'DEF', 'P', 'F'];
+
+                const tableHeaders = [
+                    'Code',
+                    'Course Name',
+                    ...gradeOrder,
+                    'Failed',
+                    'Passed',
+                    'Pass %'
+                ];
+
+                const tableData = data.courses.map(course => [
+                    course.courseNo,
+                    course.courseName,
+                    ...gradeOrder.map(grade => course.gradeDistribution[grade] || 0),
+                    course.totalFailed,
+                    course.totalPassed,
+                    course.passRate + '%'
+                ]);
+
+                // Add totals row
+                const totals = {};
+                gradeOrder.forEach(grade => {
+                    totals[grade] = data.courses.reduce((sum, course) => sum + (course.gradeDistribution[grade] || 0), 0);
+                });
+
+                tableData.push([
+                    'TOTALS',
+                    '',
+                    ...gradeOrder.map(grade => totals[grade]),
+                    totalFailed,
+                    totalPassed,
+                    overallPassRate + '%'
+                ]);
+
+                // Add table
+                doc.autoTable({
+                    head: [tableHeaders],
+                    body: tableData,
+                    startY: currentY + 5,
+                    theme: 'grid',
+                    styles: {
+                        fontSize: 7,
+                        cellPadding: 1.5,
+                        overflow: 'linebreak',
+                        halign: 'center'
+                    },
+                    columnStyles: {
+                        0: { cellWidth: 18, halign: 'left', fontStyle: 'bold' },
+                        1: { cellWidth: 45, halign: 'left' },
+                        2: { cellWidth: 9, fillColor: [237, 233, 254] },
+                        3: { cellWidth: 9, fillColor: [237, 233, 254] },
+                        4: { cellWidth: 9, fillColor: [219, 234, 254] },
+                        5: { cellWidth: 9, fillColor: [219, 234, 254] },
+                        6: { cellWidth: 9, fillColor: [220, 252, 231] },
+                        7: { cellWidth: 9, fillColor: [220, 252, 231] },
+                        8: { cellWidth: 9, fillColor: [254, 249, 195] },
+                        9: { cellWidth: 9, fillColor: [254, 249, 195] },
+                        10: { cellWidth: 9, fillColor: [255, 237, 213] },
+                        11: { cellWidth: 9, fillColor: [243, 244, 246] },
+                        12: { cellWidth: 9, fillColor: [243, 244, 246] },
+                        13: { cellWidth: 9, fillColor: [204, 251, 241] },
+                        14: { cellWidth: 9, fillColor: [254, 226, 226] },
+                        15: { cellWidth: 12, fillColor: [254, 226, 226] },
+                        16: { cellWidth: 12, fillColor: [220, 252, 231] },
+                        17: { cellWidth: 12, fillColor: [219, 234, 254] }
+                    },
+                    headStyles: {
+                        fillColor: [79, 70, 229],
+                        textColor: 255,
+                        fontStyle: 'bold',
+                        fontSize: 7
+                    },
+                    didParseCell: function(data) {
+                        if (data.row.index === tableData.length - 1) {
+                            data.cell.styles.fontStyle = 'bold';
+                            data.cell.styles.fillColor = [229, 231, 235];
+                        }
+                    }
+                });
+            });
+
+            // Add footer to all pages
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setFont(undefined, 'normal');
+                doc.text(
+                    `Pending Batches - Grading Overview by Year | Page ${i} of ${pageCount}`,
+                    148,
+                    205,
+                    { align: 'center' }
+                );
+            }
+
+            // Save the PDF
+            const fileName = `All_Programmes_Grading_Overview_ByYear_${Date.now()}.pdf`;
+            doc.save(fileName);
+
+            showToast(`All ${compositeIds.length} programmes exported successfully!`, 'success');
+        }
+
+        function showToast(message, type = 'success') {
+            const bgColor = type === 'success' ? 'bg-green-600' : 'bg-red-600';
+            const icon = type === 'success' ? 'check_circle' : 'error';
+
+            const toast = document.createElement('div');
+            toast.className = `fixed bottom-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center`;
+            toast.innerHTML = `<i class="material-icons text-sm mr-2">${icon}</i>${message}`;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.5s';
+                setTimeout(() => toast.remove(), 500);
+            }, 3000);
+        }
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text ? text.replace(/[&<>"']/g, m => map[m]) : '';
+        }
+    </script>
+}
+
+@section Styles {
+    <style>
+        @@keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .bg-white {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .transition-all {
+            transition: all 0.3s ease;
+        }
+
+        thead {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .overflow-x-auto::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .overflow-x-auto::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .overflow-x-auto::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+
+            .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+                background: #555;
+            }
+    </style>
+}

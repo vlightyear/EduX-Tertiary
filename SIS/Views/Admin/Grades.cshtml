@@ -1,0 +1,91 @@
+﻿@model IEnumerable<SIS.Models.Registration.Grade>
+
+<div>
+    <div class="container mt-2">
+        <div class="pt-4 row" style="height: 10vh;">
+            <div class="col-10 text-black">
+                <h2>Grades List</h2>
+            </div>
+            <div class="col-2 d-flex justify-content-end">
+                <a asp-controller="Admin" asp-action="CreateGrade" class="btn btn-primary rounded-2" style="height: 40px; padding-top: 8px;">
+                    <i class="bi bi-plus-circle"></i>
+                    Create Grade
+                </a>
+            </div>
+        </div>
+
+        <div class="card shadow mt-2 ml-0" style="height: 75vh; overflow: auto;">
+            <div class="card-body" style="overflow-y: auto;">
+                <table class="table table-hover mb-0" id="gradesTable">
+                    <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Grad Value</th>
+                            <th scope="col">Grade Point</th>
+                            <th scope="col">Grade Code</th>
+                            <th scope="col">Grade Description</th>
+                            <th scope="col">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            int index = 1;
+                            foreach (var grade in Model)
+                            {
+                                <tr>
+                                    <th scope="row">@index</th>
+                                    <td>@grade.GradeValue</td>
+                                    <td>@grade.GradePoint</td>
+                                    <td>@grade.Code</td>
+                                    <td>@grade.Description</td>
+                                    <td>
+                                        <a asp-controller="Admin" asp-action="UpdateGrade" asp-route-id="@grade.GradeId" class="btn btn-sm btn-outline-secondary rounded-1 me-2">
+                                            <i class="bi bi-pencil-square"></i> Edit
+                                        </a>
+                                        <a asp-controller="Admin" asp-action="DeleteGrade" asp-route-id="@grade.GradeId" class="btn btn-sm btn-outline-danger rounded-1">
+                                            <i class="bi bi-trash"></i> Delete
+                                        </a>
+                                    </td>
+                                </tr>
+                                index++;
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="4" class="text-center">No Grades found.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- jQuery and DataTables JS -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $('#gradesTable').DataTable({
+            paging: true,         // Enable pagination
+            searching: true,      // Enable search box
+            ordering: true,       // Enable column sorting
+            lengthChange: true,   // Enable "Show entries" dropdown
+            info: true,           // Show table information
+            pageLength: 10,       // Default rows per page
+            columnDefs: [
+                { orderable: false, targets: -1 } // Disable sorting on the Actions column
+            ],
+            language: {
+                search: "Search grades:",  // Customize search box text
+                lengthMenu: "Show _MENU_ entries per page",
+                info: "Showing _START_ to _END_ of _TOTAL_ entries",
+                infoEmpty: "No grades available",
+                zeroRecords: "No grade records found"
+            }
+        });
+    });
+</script>
+

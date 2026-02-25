@@ -1,0 +1,198 @@
+@model SIS.Models.StudentAccommodation.Hostel
+
+@{
+    ViewData["Title"] = "Reports";
+}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<div class="container mx-auto px-4 py-6">
+    <!-- Header -->
+    <div class="mb-6">
+        <div class="bg-gradient-to-r from-purple-600 to-purple-500 rounded-xl shadow-lg p-6 text-white">
+            <div class="flex justify-between items-center flex-wrap gap-4">
+                <div>
+                    <h4 class="text-2xl font-bold mb-2">
+                        <i class="fas fa-chart-bar me-2"></i>Hostel Reports
+                    </h4>
+                    <p class="text-purple-100">@Model.HostelName - @Model.Campus.CampusName</p>
+                </div>
+                <div>
+                    <a href="@Url.Action("Index", "HostelManagement")" class="bg-white text-purple-700 hover:bg-purple-50 px-6 py-3 rounded-lg font-semibold shadow-md transition">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Occupancy Report -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div class="flex justify-between items-center mb-4">
+            <h5 class="text-lg font-bold text-gray-800">
+                <i class="fas fa-bed me-2 text-purple-600"></i>Room Occupancy Report
+            </h5>
+            <button onclick="exportToCSV()" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
+                <i class="fas fa-download me-2"></i>Export CSV
+            </button>
+        </div>
+        <div id="occupancyReportContainer" class="overflow-x-auto"></div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let occupancyData = [];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadOccupancyReport();
+        });
+
+        async function loadOccupancyReport() {
+            try {
+                const response = await fetch('/HostelManagement/GetOccupancyReport');
+                occupancyData = await response.json();
+
+                const container = document.getElementById('occupancyReportContainer');
+
+                if (occupancyData.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-12 text-gray-500">
+                            <i class="fas fa-inbox text-5xl mb-4 opacity-50"></i>
+                            <p class="text-lg">No data available</p>
+                        </div>
+                    `;
+                } else {
+                    // Calculate totals
+                    const totalBeds = occupancyData.reduce((sum, room) => sum + room.totalBeds, 0);
+                    const totalOccupied = occupancyData.reduce((sum, room) => sum + room.occupiedBeds, 0);
+                    const totalAvailable = occupancyData.reduce((sum, room) => sum + room.availableBeds, 0);
+                    const overallOccupancy = totalBeds > 0 ? (totalOccupied / totalBeds * 100).toFixed(1) : 0;
+
+                    container.innerHTML = `
+                        <!-- Summary Cards -->
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                            <div class="bg-blue-50 rounded-lg p-4">
+                                <p class="text-sm text-blue-600 font-medium">Total Beds</p>
+                                <p class="text-2xl font-bold text-blue-800">${totalBeds}</p>
+                            </div>
+                            <div class="bg-green-50 rounded-lg p-4">
+                                <p class="text-sm text-green-600 font-medium">Occupied</p>
+                                <p class="text-2xl font-bold text-green-800">${totalOccupied}</p>
+                            </div>
+                            <div class="bg-teal-50 rounded-lg p-4">
+                                <p class="text-sm text-teal-600 font-medium">Available</p>
+                                <p class="text-2xl font-bold text-teal-800">${totalAvailable}</p>
+                            </div>
+                            <div class="bg-purple-50 rounded-lg p-4">
+                                <p class="text-sm text-purple-600 font-medium">Occupancy Rate</p>
+                                <p class="text-2xl font-bold text-purple-800">${overallOccupancy}%</p>
+                            </div>
+                        </div>
+
+                        <!-- Detailed Table -->
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-purple-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-purple-800 uppercase">Room</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-purple-800 uppercase">Floor</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-purple-800 uppercase">Type</th>
+                                    <th class="px-6 py-3 text-center text-xs font-medium text-purple-800 uppercase">Capacity</th>
+                                    <th class="px-6 py-3 text-center text-xs font-medium text-purple-800 uppercase">Total Beds</th>
+                                    <th class="px-6 py-3 text-center text-xs font-medium text-purple-800 uppercase">Occupied</th>
+                                    <th class="px-6 py-3 text-center text-xs font-medium text-purple-800 uppercase">Available</th>
+                                    <th class="px-6 py-3 text-center text-xs font-medium text-purple-800 uppercase">Occupancy Rate</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                ${occupancyData.map(room => `
+                                    <tr class="hover:bg-gray-50 transition">
+                                        <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">Room ${room.roomNumber}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-gray-500">${room.floor}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-gray-500">${room.roomType}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-center text-gray-500">${room.capacity}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-center text-gray-900">${room.totalBeds}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                                            <span class="px-2 py-1 text-xs font-semibold rounded bg-green-100 text-green-800">
+                                                ${room.occupiedBeds}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                                            <span class="px-2 py-1 text-xs font-semibold rounded bg-teal-100 text-teal-800">
+                                                ${room.availableBeds}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                                            <div class="flex items-center justify-center gap-2">
+                                                <div class="w-16 bg-gray-200 rounded-full h-2">
+                                                    <div class="bg-purple-600 h-2 rounded-full" style="width: ${room.occupancyRate}%"></div>
+                                                </div>
+                                                <span class="text-sm font-medium text-gray-700">${room.occupancyRate.toFixed(1)}%</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading report:', error);
+                showNotification('Error loading report', 'error');
+            }
+        }
+
+        function exportToCSV() {
+            if (occupancyData.length === 0) {
+                showNotification('No data to export', 'error');
+                return;
+            }
+
+            const csv = [
+                ['Room', 'Floor', 'Type', 'Capacity', 'Total Beds', 'Occupied', 'Available', 'Occupancy Rate'],
+                ...occupancyData.map(room => [
+                    room.roomNumber,
+                    room.floor,
+                    room.roomType,
+                    room.capacity,
+                    room.totalBeds,
+                    room.occupiedBeds,
+                    room.availableBeds,
+                    room.occupancyRate.toFixed(1) + '%'
+                ])
+            ].map(row => row.join(',')).join('\n');
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `occupancy_report_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+
+            showNotification('Report exported successfully!', 'success');
+        }
+
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg transition-all transform ${
+                type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+            }`;
+            notification.innerHTML = `
+                <div class="flex items-center space-x-2">
+                    <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            document.body.appendChild(notification);
+            setTimeout(() => {
+                notification.style.transform = 'translateX(400px)';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        window.exportToCSV = exportToCSV;
+    </script>
+}

@@ -1,0 +1,44 @@
+﻿@model IEnumerable<SIS.Models.Registration.AcademicRequest>
+
+<h2>Academic Requests Dashboard</h2>
+
+@if (TempData["Message"] != null)
+{
+    <div class="alert alert-info">@TempData["Message"]</div>
+}
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Request ID</th>
+            <th>Student</th>
+            <th>Request Type</th>
+            <th>Status</th>
+            <th>Date</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var request in Model)
+        {
+            <tr>
+                <td>@request.Id</td>
+                <td>@request.Student.FullName</td>
+                <td>@request.RequestType</td>
+                <td>@request.Status</td>
+                <td>@request.RequestDate.ToShortDateString()</td>
+                <td>
+                    @if (request.Status == SIS.Enums.Status.Pending)
+                    {
+                        <a href="@Url.Action("Approve", "AcaedemicRequest", new { requestId = request.Id })">Approve</a>
+                    }
+                    else
+                    {
+                        < a href = "@Url.Action("Deny", "AcaedemicRequest", new { requestId = request.Id })" > Deny </ a >
+                        <span>@request.Status</span>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

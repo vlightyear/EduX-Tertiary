@@ -1,0 +1,196 @@
+﻿@model SIS.Models.Payments.CandidateApplicationPaymentViewModel
+
+@{
+    ViewData["Title"] = "Application Payment";
+}
+
+<div class="min-h-screen bg-slate-50 p-6">
+    <!-- Breadcrumb -->
+    <nav class="mb-6">
+        <ol class="flex items-center gap-2 text-sm">
+            <li><a href="@Url.Action("Index", "Home")" class="text-[#0082bb] hover:text-[#bed600]">Home</a></li>
+            <li class="text-slate-400">/</li>
+            <li class="text-slate-600">Application Payment</li>
+        </ol>
+    </nav>
+
+    <div class="flex flex-col lg:flex-row gap-6">
+        <!-- Payment Form Section -->
+        <div class="lg:flex-1">
+            <div class="bg-white rounded-xl shadow-sm">
+                <div class="p-6 border-b border-slate-100">
+                    <div class="flex items-center gap-2">
+                        <i class="material-icons text-[#0082bb]">credit_card</i>
+                        <h1 class="text-xl font-semibold text-slate-800">Application Fee Payment</h1>
+                    </div>
+                </div>
+
+                <div class="p-6">
+                    <form id="paymentForm" asp-action="ProcessApplicationPayment" method="post" class="space-y-6">
+                        <input type="hidden" name="applicationReference" value="@Model.ApplicationReference" />
+                        <input type="hidden" name="amount" value="@Model.Amount" />
+
+                        <!-- Amount Display -->
+                        <div class="max-w-md">
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Application Fee (ZMW)</label>
+                            <div class="relative rounded-lg shadow-sm">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <span class="text-slate-500">ZMW</span>
+                                </div>
+                                <input type="text"
+                                       class="block w-full pl-12 pr-4 py-2.5 border border-slate-200 rounded-lg bg-slate-50"
+                                       value="@Model.Amount.ToString("N2")"
+                                       readonly />
+                            </div>
+                        </div>
+
+                        <!-- Card Information -->
+                        <div class="space-y-6">
+                            <h2 class="text-lg font-medium text-slate-800">Card Information</h2>
+
+                            <div class="space-y-4">
+                                <!-- Card Number -->
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-2">Card Number</label>
+                                    <div class="relative">
+                                        <input type="text"
+                                               class="block w-full pr-10 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#0082bb]/20 focus:border-[#0082bb]"
+                                               placeholder="1234 5678 9012 3456"
+                                               pattern="\d{4}\s?\d{4}\s?\d{4}\s?\d{4}"
+                                               required />
+                                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                            <i class="material-icons text-slate-400">credit_card</i>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <!-- Expiry Date -->
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 mb-2">Expiry Date</label>
+                                        <input type="text"
+                                               class="block w-full py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#0082bb]/20 focus:border-[#0082bb]"
+                                               placeholder="MM/YY"
+                                               pattern="(0[1-9]|1[0-2])\/([0-9]{2})"
+                                               required />
+                                    </div>
+
+                                    <!-- CVV -->
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 mb-2">CVV</label>
+                                        <div class="relative">
+                                            <input type="text"
+                                                   class="block w-full pr-10 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#0082bb]/20 focus:border-[#0082bb]"
+                                                   placeholder="123"
+                                                   pattern="\d{3}"
+                                                   maxlength="3"
+                                                   required />
+                                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                                <i class="material-icons text-slate-400" title="3-digit security code">help</i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Cardholder Name -->
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-2">Card Holder Name</label>
+                                    <input type="text"
+                                           class="block w-full py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#0082bb]/20 focus:border-[#0082bb]"
+                                           placeholder="Name as it appears on card"
+                                           required />
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="space-y-3 pt-4">
+                            <button type="submit"
+                                    class="w-full bg-[#0082bb] text-white py-3 px-4 rounded-lg hover:bg-[#0082bb]/90 transition-colors flex items-center justify-center gap-2">
+                                <span>Pay ZMW @Model.Amount.ToString("N2")</span>
+                            </button>
+                            <a href="@Url.Action("Index", "Home")"
+                               class="block w-full text-center py-3 px-4 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition-colors">
+                                Cancel Payment
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Summary Section -->
+        <div class="lg:w-96 space-y-6">
+            <div class="bg-white rounded-xl shadow-sm">
+                <div class="p-6 border-b border-slate-100">
+                    <div class="flex items-center gap-2">
+                        <i class="material-icons text-[#0082bb]">info</i>
+                        <h2 class="text-lg font-semibold text-slate-800">Payment Summary</h2>
+                    </div>
+                </div>
+
+                <div class="p-6 space-y-4">
+                    <div class="space-y-3">
+                        <div class="flex justify-between">
+                            <span class="text-slate-600">Application Reference</span>
+                            <span class="font-medium text-slate-800">@Model.ApplicationReference</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-600">Applicant Name</span>
+                            <span class="font-medium text-slate-800">@Model.ApplicantName</span>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-slate-100 pt-4">
+                        <div class="flex justify-between items-center">
+                            <span class="font-medium text-slate-800">Application Fee</span>
+                            <span class="text-lg font-bold text-[#0082bb]">ZMW @Model.Amount.ToString("N2")</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Notice -->
+            <div class="bg-slate-50 rounded-xl p-6">
+                <div class="flex items-start gap-3">
+                    <div class="bg-[#0082bb]/5 p-2 rounded-lg">
+                        <i class="material-icons text-[#0082bb]">security</i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-medium text-slate-800 mb-1">Secure Payment</h3>
+                        <p class="text-sm text-slate-600">
+                            All payment information is encrypted and securely processed. Your card details are not stored on our servers.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Format card number with spaces
+        document.querySelector('input[pattern*="\\d{4}"]').addEventListener('input', function (e) {
+            e.target.value = e.target.value.replace(/[^\d]/g, '').replace(/(.{4})/g, '$1 ').trim();
+        });
+
+        // Handle form submission
+        document.getElementById('paymentForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const submitButton = this.querySelector('button[type="submit"]');
+            const originalText = submitButton.innerHTML;
+            submitButton.disabled = true;
+            submitButton.innerHTML = `
+                <svg class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Processing Payment...
+            `;
+            setTimeout(() => {
+                this.submit();
+            }, 2000);
+        });
+    </script>
+}

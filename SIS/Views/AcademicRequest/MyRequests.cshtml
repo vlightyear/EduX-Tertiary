@@ -1,0 +1,584 @@
+﻿@model List<SIS.Models.Registration.AcademicRequest>
+@{
+    ViewData["Title"] = "My Academic Requests";
+}
+
+<style>
+    @@keyframes pulse {
+        0%, 100%
+
+    {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: .5;
+    }
+
+    }
+
+    @@keyframes fadeIn {
+        from
+
+    {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    }
+
+    .animate-pulse {
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    .animate-fade-in {
+        animation: fadeIn 0.5s ease-out;
+    }
+
+    .status-badge {
+    @@apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+    }
+
+    .status-pending { @@apply
+        bg-amber-100 text-amber-800;
+    }
+
+    .status-inprogress { @@apply
+        bg-blue-100 text-blue-800;
+    }
+
+    .status-completed { @@apply
+        bg-green-100 text-green-800;
+    }
+
+    .status-rejected { @@apply
+        bg-red-100 text-red-800;
+    }
+
+    .request-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent;
+    }
+
+        .request-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .request-card.pending {
+            border-left-color: #f59e0b;
+        }
+
+        .request-card.inprogress {
+            border-left-color: #3b82f6;
+        }
+
+        .request-card.completed {
+            border-left-color: #10b981;
+        }
+
+        .request-card.rejected {
+            border-left-color: #ef4444;
+        }
+
+    .timeline-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        position: relative;
+    }
+
+        .timeline-dot.pending { @@apply
+            bg-amber-400;
+        }
+
+        .timeline-dot.inprogress { @@apply
+            bg-blue-500;
+            animation: pulse 2s infinite;
+        }
+
+        .timeline-dot.completed { @@apply
+            bg-green-500;
+        }
+
+        .timeline-dot.rejected { @@apply
+            bg-red-500;
+        }
+
+    @@media (max-width: 768px) {
+        .mobile-card-grid
+
+    {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .mobile-request-card {
+        padding: 1rem;
+        border-radius: 1rem;
+        background: white;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .mobile-status-header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: rgba(248, 250, 252, 0.95);
+        backdrop-filter: blur(10px);
+        padding: 1rem;
+        margin: 0 -1rem 1rem -1rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    }
+</style>
+
+<div class="min-h-screen bg-slate-50">
+    <!-- Modern Header -->
+    <div class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-6">
+                <div class="flex items-center space-x-3">
+                    <div class="flex-shrink-0">
+                        <div class="w-10 h-10 bg-gradient-to-br from-slate-500 to-slate-600 rounded-xl flex items-center justify-center">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-900">My Academic Requests</h1>
+                        <p class="text-sm text-slate-600">Track the status of your submitted requests</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-3">
+                    <a asp-action="Submit"
+                       class="inline-flex items-center px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        New Request
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        @if (!Model.Any())
+        {
+            <!-- Empty State -->
+            <div class="text-center py-12">
+                <div class="w-24 h-24 mx-auto mb-6 bg-slate-100 rounded-full flex items-center justify-center">
+                    <svg class="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold text-slate-900 mb-2">No requests yet</h3>
+                <p class="text-slate-600 mb-8 max-w-md mx-auto">
+                    You haven't submitted any academic requests yet. Start by submitting your first request.
+                </p>
+                <a asp-action="Submit"
+                   class="inline-flex items-center px-6 py-3 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Submit First Request
+                </a>
+            </div>
+        }
+        else
+        {
+            <!-- Statistics Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+                <!-- Existing Pending card -->
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-amber-100 rounded-lg">
+                            <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-2xl font-bold text-slate-900">@Model.Count(r => r.Status == SIS.Enums.Status.Pending)</p>
+                            <p class="text-sm text-slate-600">Pending</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Existing In Progress card -->
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-blue-100 rounded-lg">
+                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-2xl font-bold text-slate-900">@Model.Count(r => r.Status == SIS.Enums.Status.InProgress)</p>
+                            <p class="text-sm text-slate-600">In Progress</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NEW Approved card -->
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-green-100 rounded-lg">
+                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-2xl font-bold text-slate-900">@Model.Count(r => r.Status == SIS.Enums.Status.Approved)</p>
+                            <p class="text-sm text-slate-600">Approved</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Existing Completed card -->
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-green-100 rounded-lg">
+                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-2xl font-bold text-slate-900">@Model.Count(r => r.Status == SIS.Enums.Status.Completed)</p>
+                            <p class="text-sm text-slate-600">Completed</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Existing Rejected card -->
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-red-100 rounded-lg">
+                            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-2xl font-bold text-slate-900">@Model.Count(r => r.Status == SIS.Enums.Status.Rejected)</p>
+                            <p class="text-sm text-slate-600">Rejected</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Requests List -->
+            <div class="space-y-6">
+                @foreach (var request in Model)
+                {
+                    var statusClass = request.Status switch
+                    {
+                        SIS.Enums.Status.Pending => "pending",
+                        SIS.Enums.Status.InProgress => "inprogress",
+                        SIS.Enums.Status.Approved => "approved",
+                        SIS.Enums.Status.Completed => "completed",
+                        SIS.Enums.Status.Rejected => "rejected",
+                        _ => "pending"
+                    };
+
+                    <div class="request-card @statusClass bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden animate-fade-in">
+                        <div class="p-6">
+                            <!-- Header -->
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="flex items-start space-x-3">
+                                    <div class="timeline-dot @statusClass mt-1"></div>
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-slate-900">@request.RequestType</h3>
+                                        <p class="text-sm text-slate-600">
+                                            Submitted on @request.RequestDate.ToString("MMMM dd, yyyy")
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center space-x-3">
+                                    @if (request.Documents?.Any() == true)
+                                    {
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800">
+                                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                            </svg>
+                                            @request.Documents.Count file(s)
+                                        </span>
+                                    }
+
+                                    <span class="status-badge status-@statusClass.ToLower()">
+                                        @request.Status.ToString()
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Content -->
+                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                <!-- Description -->
+                                <div class="lg:col-span-2">
+                                    <h4 class="text-sm font-medium text-slate-900 mb-2">Request Description</h4>
+                                    <div class="bg-slate-50 rounded-lg p-4">
+                                        <p class="text-sm text-slate-700 leading-relaxed">@request.Description</p>
+                                    </div>
+
+                                    @if (request.RequestType == "Programme Change" && request.School != null && request.Programme != null)
+                                    {
+                                        <div class="mt-4">
+                                            <h4 class="text-sm font-medium text-slate-900 mb-2">Programme Change Details</h4>
+                                            <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                                                <div class="flex items-center space-x-2 text-sm">
+                                                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                                    </svg>
+                                                    <span class="text-blue-900">
+                                                        <strong>New School:</strong> @request.School.Name<br>
+                                                        <strong>New Programme:</strong> @request.Programme.Name
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+
+                                <!-- Status Timeline -->
+                                <div>
+                                    <h4 class="text-sm font-medium text-slate-900 mb-3">Request Timeline</h4>
+                                    <div class="space-y-3">
+                                        <!-- Submitted -->
+                                        <div class="flex items-center space-x-3">
+                                            <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                                            <div>
+                                                <p class="text-sm font-medium text-slate-900">Submitted</p>
+                                                <p class="text-xs text-slate-600">@request.RequestDate.ToString("MMM dd, yyyy")</p>
+                                            </div>
+                                        </div>
+
+                                        <!-- Under Review -->
+                                        <div class="flex items-center space-x-3">
+                                            @if (request.Status == SIS.Enums.Status.Pending)
+                                            {
+                                                <div class="w-3 h-3 bg-amber-400 rounded-full animate-pulse"></div>
+                                                <div>
+                                                    <p class="text-sm font-medium text-amber-700">Awaiting Review</p>
+                                                    <p class="text-xs text-slate-600">Pending admin review</p>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                                                <div>
+                                                    <p class="text-sm font-medium text-slate-900">Under Review</p>
+                                                    <p class="text-xs text-slate-600">Being processed</p>
+                                                </div>
+                                            }
+                                        </div>
+
+                                        <!-- Final Status -->
+                                        @if (request.Status == SIS.Enums.Status.Approved)
+                                        {
+                                            <div class="flex items-center space-x-3">
+                                                <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                                                <div>
+                                                    <p class="text-sm font-medium text-green-700">Approved</p>
+                                                    <p class="text-xs text-slate-600">
+                                                        @(request.UpdatedAt?.ToString("MMM dd, yyyy") ?? "Recently")
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        }
+                                        else if (request.Status == SIS.Enums.Status.Completed)
+                                        {
+                                            <div class="flex items-center space-x-3">
+                                                <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                                                <div>
+                                                    <p class="text-sm font-medium text-green-700">Completed</p>
+                                                    <p class="text-xs text-slate-600">
+                                                        @(request.UpdatedAt?.ToString("MMM dd, yyyy") ?? "Recently")
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        }
+                                        else if (request.Status == SIS.Enums.Status.Rejected)
+                                        {
+                                            <div class="flex items-center space-x-3">
+                                                <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                                                <div>
+                                                    <p class="text-sm font-medium text-red-700">Rejected</p>
+                                                    <p class="text-xs text-slate-600">
+                                                        @(request.UpdatedAt?.ToString("MMM dd, yyyy") ?? "Recently")
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        }
+                                        else if (request.Status == SIS.Enums.Status.InProgress)
+                                        {
+                                            <div class="flex items-center space-x-3">
+                                                <div class="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                                                <div>
+                                                    <p class="text-sm font-medium text-blue-700">In Progress</p>
+                                                    <p class="text-xs text-slate-600">Being processed</p>
+                                                </div>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="flex items-center space-x-3">
+                                                <div class="w-3 h-3 bg-slate-300 rounded-full"></div>
+                                                <div>
+                                                    <p class="text-sm text-slate-500">Awaiting completion</p>
+                                                    <p class="text-xs text-slate-400">Will be updated soon</p>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Admin Notes -->
+                            @if (!string.IsNullOrEmpty(request.AdminNotes))
+                            {
+                                <div class="mt-6 pt-6 border-t border-gray-200">
+                                    <h4 class="text-sm font-medium text-slate-900 mb-2">Admin Notes</h4>
+                                    <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                                        <p class="text-sm text-blue-900">@request.AdminNotes</p>
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- Documents -->
+                            @if (request.Documents?.Any() == true)
+                            {
+                                <div class="mt-6 pt-6 border-t border-gray-200">
+                                    <h4 class="text-sm font-medium text-slate-900 mb-3">Supporting Documents</h4>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        @foreach (var doc in request.Documents)
+                                        {
+                                            <div class="flex items-center justify-between bg-slate-50 rounded-lg p-3 border border-slate-200">
+                                                <div class="flex items-center space-x-3">
+                                                    <div class="w-8 h-8 bg-slate-200 rounded-lg flex items-center justify-center">
+                                                        <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                        </svg>
+                                                    </div>
+                                                    <div>
+                                                        <p class="text-sm font-medium text-slate-900">@doc.FileName</p>
+                                                        <p class="text-xs text-slate-600">
+                                                            @((doc.FileSize / 1024.0 / 1024.0).ToString("F2")) MB • @doc.UploadedAt.ToString("MMM dd")
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div class="flex space-x-2">
+                                                    <button onclick="viewDocumentInModal(@doc.Id, '@doc.FileName')"
+                                                            class="text-blue-600 hover:text-blue-800 transition-colors">
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Document Viewer Modal -->
+<div id="documentViewerModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-lg max-w-5xl w-full mx-4 max-h-screen overflow-hidden">
+        <div class="p-4 border-b flex justify-between items-center">
+            <h3 id="documentTitle" class="text-lg font-semibold">Document Viewer</h3>
+            <button onclick="closeDocumentModal()" class="text-gray-400 hover:text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <div id="documentViewer" class="h-96 overflow-auto">
+            <!-- Document content will be loaded here -->
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add staggered animation to cards
+            const cards = document.querySelectorAll('.request-card');
+            cards.forEach((card, index) => {
+                card.style.animationDelay = `${index * 0.1}s`;
+            });
+        });
+
+        function viewDocumentInModal(documentId, fileName) {
+            $('#documentTitle').text(fileName);
+            $('#documentViewer').html('<div class="flex items-center justify-center h-full"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-600"></div></div>');
+            $('#documentViewerModal').removeClass('hidden').addClass('flex');
+
+            $.get('/AcademicRequest/GetDocumentContent', { documentId: documentId })
+
+                .done(function(response) {
+                    if (response.success) {
+                        let content = '';
+                        if (response.contentType.includes('pdf')) {
+                            content = `<iframe src="data:${response.contentType};base64,${response.content}" class="w-full h-full"></iframe>`;
+                        } else if (response.contentType.includes('image')) {
+                            content = `<img src="data:${response.contentType};base64,${response.content}" class="max-w-full h-auto mx-auto">`;
+                        } else if (response.contentType.includes('text')) {
+                            const textContent = atob(response.content);
+                            content = `<pre class="p-4 text-sm overflow-auto">${textContent}</pre>`;
+                        } else {
+                            content = `<div class="p-4 text-center">
+                                        <p class="text-gray-500 mb-4">Preview not available for this file type.</p>
+                                        <button onclick="downloadDocument(${documentId}, '${fileName}')"
+                                                class="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors">
+                                            Download to view
+                                        </button>
+                                       </div>`;
+                        }
+                        $('#documentViewer').html(content);
+                    } else {
+                        $('#documentViewer').html('<div class="p-4 text-center text-red-600">Error loading document.</div>');
+                    }
+                })
+                .fail(function() {
+                    $('#documentViewer').html('<div class="p-4 text-center text-red-600">Error loading document.</div>');
+                });
+        }
+
+        function downloadDocument(documentId, fileName) {
+            // Create a temporary link element and trigger download
+            const link = document.createElement('a');
+            link.href = `/AcademicRequest/DownloadDocument/${documentId}`;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function closeDocumentModal() {
+            $('#documentViewerModal').addClass('hidden').removeClass('flex');
+        }
+
+        // Close modal when clicking outside
+        $(document).on('click', '#documentViewerModal', function(e) {
+            if (e.target === this) {
+                closeDocumentModal();
+            }
+        });
+    </script>
+}

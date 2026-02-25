@@ -1,0 +1,1518 @@
+﻿@model SIS.Models.StudentAccommodation.AccommodationApplication
+@{
+    var config = ViewBag.Config as SIS.Models.StudentAccommodation.AccomodationConfiguration;
+    var application = ViewBag.Application as SIS.Models.StudentAccommodation.AccommodationApplication;
+    var reservationExpiryTime = ViewBag.ReservationExpiryTime as DateTime?;
+    var isReservationExpired = ViewBag.IsReservationExpired as bool? ?? false;
+    var studentBalance = ViewBag.StudentBalance as decimal? ?? 0;
+
+    // Calculate fee based on payment type
+    var period = application?.Period;
+    decimal accommodationFee = 0;
+    string feeDisplay = "";
+    if (period != null)
+    {
+        if (period.TypeOfPayment == "PerDay")
+        {
+            var numberOfDays = application?.NumberOfDays ?? 1;
+            accommodationFee = period.TypeOfPaymentAmount * numberOfDays;
+            feeDisplay = $"K{period.TypeOfPaymentAmount:N2}/day × {numberOfDays} days";
+        }
+        else
+        {
+            accommodationFee = period.TypeOfPaymentAmount;
+            feeDisplay = $"K{accommodationFee:N2} ({period.TypeOfPayment})";
+        }
+    }
+
+    var hasSufficientBalance = studentBalance >= accommodationFee;
+
+    ViewData["Title"] = "Application Status";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!-- SweetAlert2 CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    .application-status-container {
+        min-height: calc(100vh - 80px);
+        padding: 1rem;
+    }
+
+    /* Header Section */
+    .status-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .status-header-left {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+        .status-header-left i {
+            font-size: 2rem;
+            color: #16697a;
+        }
+
+    .status-header-title h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    .status-header-title p {
+        font-size: 0.875rem;
+        color: #64748b;
+        margin: 0;
+    }
+
+    /* Main Layout */
+    .status-content {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    /* Desktop: Two columns */
+    @@media (min-width: 1024px) {
+        .status-content {
+            grid-template-columns: 2fr 1fr;
+        }
+
+        .application-status-container {
+            height: calc(100vh - 80px);
+            overflow: hidden;
+        }
+
+        .left-panel,
+        .right-panel {
+            overflow-y: auto;
+            max-height: calc(100vh - 180px);
+            padding-right: 0.5rem;
+        }
+    }
+
+    /* Mobile: Single column, everything stacks */
+    @@media (max-width: 1023px) {
+        .status-content {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .left-panel,
+        .right-panel {
+            width: 100%;
+        }
+    }
+
+    .left-panel,
+    .right-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .card {
+        background: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .card-header {
+        padding: 1rem;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .card-header i {
+            font-size: 1.25rem;
+            color: #16697a;
+        }
+
+        .card-header h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin: 0;
+        }
+
+    .card-body {
+        padding: 1rem;
+    }
+
+    /* Status Banner */
+    .status-banner {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        border: 2px solid;
+    }
+
+        .status-banner.pending {
+            background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%);
+            border-color: #f59e0b;
+        }
+
+        .status-banner.expired {
+            background: linear-gradient(135deg, #fee2e2 0%, #fca5a5 100%);
+            border-color: #ef4444;
+        }
+
+        .status-banner i {
+            font-size: 2.5rem;
+        }
+
+        .status-banner.pending i {
+            color: #f59e0b;
+        }
+
+        .status-banner.expired i {
+            color: #ef4444;
+        }
+
+    .status-banner-content h2 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin: 0 0 0.25rem 0;
+    }
+
+    .status-banner.pending h2 {
+        color: #92400e;
+    }
+
+    .status-banner.expired h2 {
+        color: #991b1b;
+    }
+
+    .status-banner-content p {
+        font-size: 0.875rem;
+        margin: 0;
+    }
+
+    .status-banner.pending p {
+        color: #78350f;
+    }
+
+    .status-banner.expired p {
+        color: #7f1d1d;
+    }
+
+    /* Payment Type Badge */
+    .payment-type-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+        .payment-type-badge.semester {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+
+        .payment-type-badge.year {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .payment-type-badge.perday {
+            background: #fff3e0;
+            color: #e65100;
+        }
+
+        .payment-type-badge.fixed {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+
+    /* Fee Summary Card */
+    .fee-summary-card {
+        background: linear-gradient(135deg, #fef9e7 0%, #fdebd0 100%);
+        border: 2px solid #f9e79f;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+        .fee-summary-card h4 {
+            color: #9a7b0a;
+            font-size: 0.875rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .fee-summary-card .fee-amount {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #7d6608;
+            margin-bottom: 0.25rem;
+        }
+
+        .fee-summary-card .fee-breakdown {
+            font-size: 0.875rem;
+            color: #9a7b0a;
+        }
+
+        .fee-summary-card .fee-details {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid #f9e79f;
+        }
+
+        .fee-summary-card .fee-detail-item {
+            text-align: center;
+        }
+
+            .fee-summary-card .fee-detail-item .label {
+                font-size: 0.625rem;
+                color: #9a7b0a;
+                text-transform: uppercase;
+                font-weight: 600;
+            }
+
+            .fee-summary-card .fee-detail-item .value {
+                font-size: 0.875rem;
+                color: #7d6608;
+                font-weight: 700;
+            }
+
+    /* Countdown Timer */
+    .countdown-timer {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        border: 2px solid #fbbf24;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        text-align: center;
+    }
+
+        .countdown-timer h4 {
+            color: #92400e;
+            font-size: 1rem;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+    .countdown-display {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-bottom: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .countdown-item {
+        background: white;
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        min-width: 80px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .countdown-value {
+        font-size: 1.875rem;
+        font-weight: 800;
+        color: #f59e0b;
+        display: block;
+        line-height: 1;
+    }
+
+    .countdown-label {
+        font-size: 0.75rem;
+        color: #78350f;
+        text-transform: uppercase;
+        font-weight: 600;
+        margin-top: 0.25rem;
+    }
+
+    .countdown-message {
+        color: #78350f;
+        font-size: 0.75rem;
+    }
+
+    /* Detail Grid */
+    .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 0.75rem;
+    }
+
+    .detail-item {
+        background: #f8fafc;
+        padding: 0.75rem;
+        border-radius: 0.375rem;
+        border: 1px solid #e2e8f0;
+    }
+
+    .detail-label {
+        font-size: 0.75rem;
+        color: #64748b;
+        font-weight: 600;
+        text-transform: uppercase;
+        margin-bottom: 0.25rem;
+        letter-spacing: 0.025em;
+    }
+
+    .detail-value {
+        font-size: 1rem;
+        color: #16697a;
+        font-weight: 700;
+    }
+
+        .detail-value.highlight {
+            color: #10b981;
+        }
+
+    /* Balance Display */
+    .balance-display {
+        text-align: center;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        border: 2px solid;
+    }
+
+        .balance-display.sufficient {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border-color: #86efac;
+        }
+
+        .balance-display.insufficient {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border-color: #fca5a5;
+        }
+
+    .balance-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        margin-bottom: 0.5rem;
+    }
+
+    .balance-display.sufficient .balance-label {
+        color: #064e3b;
+    }
+
+    .balance-display.insufficient .balance-label {
+        color: #7f1d1d;
+    }
+
+    .balance-amount {
+        font-size: 2rem;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+    }
+
+    .balance-display.sufficient .balance-amount {
+        color: #10b981;
+    }
+
+    .balance-display.insufficient .balance-amount {
+        color: #ef4444;
+    }
+
+    .balance-status {
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+
+    .balance-display.sufficient .balance-status {
+        color: #065f46;
+    }
+
+    .balance-display.insufficient .balance-status {
+        color: #991b1b;
+    }
+
+    /* Fee Comparison */
+    .fee-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .fee-item {
+        background: #f8fafc;
+        padding: 0.75rem;
+        border-radius: 0.375rem;
+        border: 1px solid #e2e8f0;
+        text-align: center;
+    }
+
+    .fee-item-label {
+        font-size: 0.75rem;
+        color: #64748b;
+        font-weight: 600;
+        text-transform: uppercase;
+        margin-bottom: 0.5rem;
+    }
+
+    .fee-item-value {
+        font-size: 1.25rem;
+        font-weight: 800;
+        color: #16697a;
+    }
+
+    /* Payment Methods */
+    .payment-method {
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        transition: all 0.2s ease;
+    }
+
+        .payment-method:hover:not(.disabled) {
+            border-color: #10b981;
+            box-shadow: 0 4px 6px rgba(16, 185, 129, 0.1);
+        }
+
+        .payment-method.disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .payment-method h4 {
+            color: #1e293b;
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+            .payment-method h4 i {
+                font-size: 1.25rem;
+                color: #10b981;
+            }
+
+        .payment-method.disabled h4 i {
+            color: #94a3b8;
+        }
+
+        .payment-method p {
+            color: #64748b;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            margin-bottom: 0.75rem;
+        }
+
+        /* Pay Later Method */
+        .payment-method.pay-later {
+            border-color: #e2e8f0;
+        }
+
+            .payment-method.pay-later:hover {
+                border-color: #f59e0b;
+                box-shadow: 0 4px 6px rgba(245, 158, 11, 0.1);
+            }
+
+            .payment-method.pay-later h4 i {
+                color: #f59e0b;
+            }
+
+    /* Instructions */
+    .instructions-box {
+        background: #dbeafe;
+        border: 2px solid #93c5fd;
+        border-radius: 0.5rem;
+        padding: 1rem;
+    }
+
+        .instructions-box i {
+            font-size: 1.5rem;
+            color: #2563eb;
+            margin-bottom: 0.5rem;
+        }
+
+        .instructions-box h4 {
+            color: #1e40af;
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .instructions-box p {
+            color: #1e40af;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        .instructions-box strong {
+            color: #1e3a8a;
+        }
+
+    /* Alert Box */
+    .alert-box {
+        padding: 1rem;
+        border-radius: 0.5rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        border: 2px solid;
+    }
+
+        .alert-box i {
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .alert-box p {
+            font-size: 0.875rem;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+    .alert-warning {
+        background: #fff7ed;
+        border-color: #fed7aa;
+    }
+
+        .alert-warning i {
+            color: #d97706;
+        }
+
+        .alert-warning p {
+            color: #92400e;
+        }
+
+    .alert-danger {
+        background: #fee2e2;
+        border-color: #fca5a5;
+    }
+
+        .alert-danger i {
+            color: #dc2626;
+        }
+
+        .alert-danger p {
+            color: #991b1b;
+            font-weight: 600;
+        }
+
+    /* Buttons */
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        border: none;
+        cursor: pointer;
+        width: 100%;
+    }
+
+        .btn i {
+            font-size: 1.125rem;
+        }
+
+    .btn-success {
+        background: #10b981;
+        color: white;
+    }
+
+        .btn-success:hover:not(:disabled) {
+            background: #059669;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);
+        }
+
+    .btn-warning {
+        background: #f59e0b;
+        color: white;
+    }
+
+        .btn-warning:hover:not(:disabled) {
+            background: #d97706;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px rgba(245, 158, 11, 0.3);
+        }
+
+    .btn-primary {
+        background: #16697a;
+        color: white;
+    }
+
+        .btn-primary:hover {
+            background: #0d4b56;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px rgba(22, 105, 122, 0.3);
+        }
+
+    .btn-secondary {
+        background: #e2e8f0;
+        color: #475569;
+    }
+
+        .btn-secondary:hover {
+            background: #cbd5e1;
+        }
+
+    .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+        .btn:disabled:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
+    .action-buttons {
+        display: flex;
+        gap: 0.75rem;
+        margin-top: 1rem;
+    }
+
+    /* Loading Overlay */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+    }
+
+        .loading-overlay.show {
+            display: flex;
+        }
+
+    .loading-spinner {
+        background: white;
+        padding: 2rem;
+        border-radius: 0.5rem;
+        text-align: center;
+    }
+
+    .spinner {
+        border: 4px solid #e2e8f0;
+        border-top: 4px solid #16697a;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 1rem;
+    }
+
+    @@keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .loading-spinner p {
+        color: #16697a;
+        font-size: 0.875rem;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    /* Scrollbar Styling - Desktop only */
+    @@media (min-width: 1024px) {
+        .left-panel::-webkit-scrollbar, .right-panel::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .left-panel::-webkit-scrollbar-track,
+        .right-panel::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 3px;
+        }
+
+        .left-panel::-webkit-scrollbar-thumb,
+        .right-panel::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+            .left-panel::-webkit-scrollbar-thumb:hover,
+            .right-panel::-webkit-scrollbar-thumb:hover {
+                background: #94a3b8;
+            }
+    }
+
+    /* Mobile Specific Adjustments */
+    @@media (max-width: 768px) {
+        .application-status-container {
+            padding: 0.75rem;
+        }
+
+        .status-header-left i {
+            font-size: 1.5rem;
+        }
+
+        .status-header-title h1 {
+            font-size: 1.25rem;
+        }
+
+        .status-header-title p {
+            font-size: 0.75rem;
+        }
+
+        .status-banner {
+            flex-direction: column;
+            text-align: center;
+            padding: 0.875rem;
+        }
+
+            .status-banner i {
+                font-size: 2rem;
+            }
+
+        .status-banner-content h2 {
+            font-size: 1.125rem;
+        }
+
+        .countdown-item {
+            min-width: 70px;
+            padding: 0.625rem;
+        }
+
+        .countdown-value {
+            font-size: 1.5rem;
+        }
+
+        .countdown-label {
+            font-size: 0.625rem;
+        }
+
+        .balance-amount {
+            font-size: 1.5rem;
+        }
+
+        .detail-grid,
+        .fee-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .action-buttons {
+            flex-direction: column;
+        }
+
+        .card-header {
+            padding: 0.875rem;
+        }
+
+        .card-body {
+            padding: 0.875rem;
+        }
+
+        .fee-summary-card .fee-details {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    /* Very Small Mobile */
+    @@media (max-width: 480px) {
+        .detail-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .countdown-display {
+            gap: 0.5rem;
+        }
+
+        .countdown-item {
+            min-width: 60px;
+            padding: 0.5rem;
+        }
+
+        .countdown-value {
+            font-size: 1.25rem;
+        }
+
+        .fee-summary-card .fee-details {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+    }
+</style>
+
+<div class="application-status-container">
+    <!-- Header Section -->
+    <div class="status-header">
+        <div class="status-header-left">
+            <i class="material-icons">assignment</i>
+            <div class="status-header-title">
+                <h1>Application Status</h1>
+                <p>Track your accommodation application and complete payment</p>
+            </div>
+        </div>
+    </div>
+
+    @if (isReservationExpired)
+    {
+        <!-- Expired Status View -->
+        <div class="card">
+            <div class="card-body">
+                <div class="status-banner expired">
+                    <i class="material-icons">error</i>
+                    <div class="status-banner-content">
+                        <h2>Reservation Expired</h2>
+                        <p>Your bed reservation has expired and the bed space has been released</p>
+                    </div>
+                </div>
+
+                <div class="alert-box alert-danger" style="margin-top: 1rem;">
+                    <i class="material-icons">warning</i>
+                    <p>
+                        <strong>Your application expired on @reservationExpiryTime?.ToString("MMMM dd, yyyy 'at' hh:mm tt").</strong><br />
+                        Payment was not received within the @config?.ReservationHoursValidity hour deadline, so your selected bed space has been released back to available inventory.
+                        You may submit a new application if the accommodation period is still open.
+                    </p>
+                </div>
+
+                <div class="action-buttons">
+                    <a href="@Url.Action("Index", "StudentAccommodationApplication")" class="btn btn-primary">
+                        <i class="material-icons">refresh</i>
+                        Submit New Application
+                    </a>
+                    <a href="/" class="btn btn-secondary">
+                        <i class="material-icons">home</i>
+                        Return to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Main Status Content -->
+        <div class="status-content">
+            <!-- Left Panel -->
+            <div class="left-panel">
+                <!-- Status Banner -->
+                <div class="status-banner pending">
+                    <i class="material-icons">hourglass_empty</i>
+                    <div class="status-banner-content">
+                        <h2>Application Pending</h2>
+                        <p>Your application is awaiting payment to complete the allocation</p>
+                    </div>
+                </div>
+
+                <!-- Fee Summary Card -->
+                @if (period != null && accommodationFee > 0)
+                {
+                    <div class="fee-summary-card">
+                        <h4>
+                            <i class="material-icons">receipt_long</i>
+                            Accommodation Fee Summary
+                        </h4>
+                        <div class="fee-amount">K @accommodationFee.ToString("N2")</div>
+                        <div class="fee-breakdown">@feeDisplay</div>
+                        @if (period.TypeOfPayment == "PerDay")
+                        {
+                            <div class="fee-details">
+                                <div class="fee-detail-item">
+                                    <div class="label">Rate/Day</div>
+                                    <div class="value">K @period.TypeOfPaymentAmount.ToString("N2")</div>
+                                </div>
+                                <div class="fee-detail-item">
+                                    <div class="label">Days</div>
+                                    <div class="value">@(application?.NumberOfDays ?? 1)</div>
+                                </div>
+                                <div class="fee-detail-item">
+                                    <div class="label">Total</div>
+                                    <div class="value">K @accommodationFee.ToString("N2")</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+
+                <!-- Countdown Timer -->
+                @if (reservationExpiryTime.HasValue)
+                {
+                    <div class="countdown-timer">
+                        <h4>
+                            <i class="material-icons">timer</i>
+                            Time Remaining to Complete Payment
+                        </h4>
+                        <div class="countdown-display">
+                            <div class="countdown-item">
+                                <span class="countdown-value" id="hoursLeft">--</span>
+                                <span class="countdown-label">Hours</span>
+                            </div>
+                            <div class="countdown-item">
+                                <span class="countdown-value" id="minutesLeft">--</span>
+                                <span class="countdown-label">Minutes</span>
+                            </div>
+                            <div class="countdown-item">
+                                <span class="countdown-value" id="secondsLeft">--</span>
+                                <span class="countdown-label">Seconds</span>
+                            </div>
+                        </div>
+                        <p class="countdown-message">
+                            <strong>Deadline:</strong> @reservationExpiryTime?.ToString("MMMM dd, yyyy 'at' hh:mm tt")
+                        </p>
+                    </div>
+                }
+
+                <!-- Application Details -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="material-icons">info</i>
+                        <h3>Application Details</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <div class="detail-label">Application ID</div>
+                                <div class="detail-value">#@application?.ApplicationId</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Application Date</div>
+                                <div class="detail-value">@application?.ApplicationDate.ToString("MMM dd, yyyy")</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Status</div>
+                                <div class="detail-value" style="color: #f59e0b;">@application?.Status</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Period Type</div>
+                                <div class="detail-value">@period?.Type</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Payment Type</div>
+                                <div class="detail-value">
+                                    <span class="payment-type-badge @period?.TypeOfPayment?.ToLower()">
+                                        @period?.TypeOfPayment
+                                    </span>
+                                </div>
+                            </div>
+                            @if (period?.TypeOfPayment == "PerDay" && application?.NumberOfDays.HasValue == true)
+                            {
+                                <div class="detail-item">
+                                    <div class="detail-label">Number of Days</div>
+                                    <div class="detail-value">@application.NumberOfDays days</div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reserved Bed Space -->
+                @if (application?.BedSpace != null)
+                {
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="material-icons">bed</i>
+                            <h3>Reserved Bed Space</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="detail-grid">
+                                <div class="detail-item">
+                                    <div class="detail-label">Campus</div>
+                                    <div class="detail-value highlight">@application.BedSpace.Room.Hostel.Campus.CampusName</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Hostel</div>
+                                    <div class="detail-value highlight">@application.BedSpace.Room.Hostel.HostelName</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Room</div>
+                                    <div class="detail-value">@application.BedSpace.Room.RoomNumber</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Bed</div>
+                                    <div class="detail-value">@application.BedSpace.BedIdentifier</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Room Type</div>
+                                    <div class="detail-value">@application.BedSpace.Room.RoomType</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Floor</div>
+                                    <div class="detail-value">Floor @application.BedSpace.Room.Floor</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Warning Alert -->
+                <div class="alert-box alert-warning">
+                    <i class="material-icons">schedule</i>
+                    <p>
+                        <strong>Important:</strong> Your bed reservation will expire on <strong>@reservationExpiryTime?.ToString("MMMM dd, yyyy 'at' hh:mm tt")</strong>.
+                        Complete your payment before this deadline to secure your accommodation.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Right Panel - Payment Options -->
+            <div class="right-panel">
+                <!-- Payment Options Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="material-icons">payment</i>
+                        <h3>Payment Options</h3>
+                    </div>
+                    <div class="card-body">
+                        <!-- Balance Display -->
+                        <div class="balance-display @(hasSufficientBalance ? "sufficient" : "insufficient")">
+                            <div class="balance-label">Your Available Balance</div>
+                            <div class="balance-amount">K @studentBalance.ToString("N2")</div>
+                            <div class="balance-status">
+                                @if (hasSufficientBalance)
+                                {
+                                    <i class="material-icons" style="vertical-align: middle; font-size: 1rem;">check_circle</i>
+                                    <span>Sufficient Balance</span>
+                                }
+                                else
+                                {
+                                    <i class="material-icons" style="vertical-align: middle; font-size: 1rem;">error</i>
+                                    <span>Insufficient Balance</span>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Fee Comparison -->
+                        <div class="fee-grid">
+                            <div class="fee-item">
+                                <div class="fee-item-label">Fee Required</div>
+                                <div class="fee-item-value">K @accommodationFee.ToString("N2")</div>
+                            </div>
+                            <div class="fee-item">
+                                <div class="fee-item-label">Your Balance</div>
+                                <div class="fee-item-value" style="color: @(hasSufficientBalance ? "#10b981" : "#ef4444")">
+                                    K @studentBalance.ToString("N2")
+                                </div>
+                            </div>
+                            @if (!hasSufficientBalance)
+                            {
+                                <div class="fee-item" style="border-color: #fca5a5;">
+                                    <div class="fee-item-label">Shortfall</div>
+                                    <div class="fee-item-value" style="color: #ef4444;">
+                                        K @((accommodationFee - studentBalance).ToString("N2"))
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Pay from Balance Method -->
+                        <div class="payment-method @(hasSufficientBalance ? "" : "disabled")">
+                            <h4>
+                                <i class="material-icons">account_balance_wallet</i>
+                                Pay from Balance
+                            </h4>
+                            <p>
+                                @if (hasSufficientBalance)
+                                {
+                                    <span>Use your existing student account balance to complete the payment immediately.</span>
+                                }
+                                else
+                                {
+                                    <span>Insufficient balance. Please make a payment to your student account first.</span>
+                                }
+                            </p>
+                            @if (hasSufficientBalance)
+                            {
+                                <button type="button" class="btn btn-success" onclick="payFromBalance()">
+                                    <i class="material-icons">check_circle</i>
+                                    Pay K @accommodationFee.ToString("N2") Now
+                                </button>
+                            }
+                            else
+                            {
+                                <button type="button" class="btn btn-secondary" disabled>
+                                    <i class="material-icons">block</i>
+                                    Insufficient Balance
+                                </button>
+                            }
+                        </div>
+
+                        <!-- Pay Later Method -->
+                        @* <div class="payment-method pay-later"> *@
+                        @*     <h4> *@
+                        @*         <i class="material-icons">schedule</i> *@
+                        @*         Get Bedspace and Pay Later *@
+                        @*     </h4> *@
+                        @*     <p> *@
+                        @*         Secure your bed space now and pay later. The accommodation fee will be added to your outstanding fees. *@
+                        @*     </p> *@
+                        @*     <button type="button" class="btn btn-warning" onclick="getBedspaceAndPayLater()"> *@
+                        @*         <i class="material-icons">bed</i> *@
+                        @*         Get Bedspace Now, Pay Later *@
+                        @*     </button> *@
+                        @* </div> *@
+                    </div>
+                </div>
+
+                <!-- Payment Instructions -->
+                <div class="instructions-box">
+                    <i class="material-icons">info</i>
+                    <h4>Payment Instructions</h4>
+                    <p>
+                        Ensure to pay the amount of <strong>K @accommodationFee.ToString("N2")</strong> accommodation fee from the system on the student payment page to complete this application.
+                        @if (period?.TypeOfPayment == "PerDay")
+                        {
+                            <br />
+
+                            <br />
+                            <strong>Fee breakdown:</strong> @feeDisplay
+                        }
+                    </p>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <button type="button" class="btn btn-primary" onclick="location.reload()">
+                        <i class="material-icons">refresh</i>
+                        Refresh Status
+                    </button>
+                    <a href="/" class="btn btn-secondary">
+                        <i class="material-icons">home</i>
+                        Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-spinner">
+        <div class="spinner"></div>
+        <p>Processing...</p>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        const applicationId = @(application?.ApplicationId ?? 0);
+        const reservationExpiryTime = new Date('@reservationExpiryTime?.ToString("yyyy-MM-ddTHH:mm:ss")');
+        const accommodationFee = @accommodationFee;
+        const isExpired = @isReservationExpired.ToString().ToLower();
+        const feeBreakdown = '@feeDisplay';
+        const paymentType = '@(period?.TypeOfPayment ?? "")';
+
+        // Countdown Timer
+        function updateCountdown() {
+            if (isExpired) {
+                return;
+            }
+
+            const now = new Date();
+            const timeLeft = reservationExpiryTime - now;
+
+            if (timeLeft <= 0) {
+                document.getElementById('hoursLeft').textContent = '00';
+                document.getElementById('minutesLeft').textContent = '00';
+                document.getElementById('secondsLeft').textContent = '00';
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Reservation Expired',
+                    text: 'Your bed reservation has expired. The page will reload to show updated status.',
+                    confirmButtonColor: '#16697a',
+                    allowOutsideClick: false
+                }).then(() => {
+                    location.reload();
+                });
+
+                return;
+            }
+
+            const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+
+            document.getElementById('hoursLeft').textContent = hours.toString().padStart(2, '0');
+            document.getElementById('minutesLeft').textContent = minutes.toString().padStart(2, '0');
+            document.getElementById('secondsLeft').textContent = seconds.toString().padStart(2, '0');
+
+            // Warning at 1 hour remaining
+            if (hours === 0 && minutes === 59 && seconds === 59) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'One Hour Remaining',
+                    text: 'You have less than one hour to complete your payment before your reservation expires.',
+                    confirmButtonColor: '#16697a',
+                    timer: 5000,
+                    timerProgressBar: true
+                });
+            }
+
+            // Final warning at 10 minutes
+            if (hours === 0 && minutes === 9 && seconds === 59) {
+                Swal.fire({
+                    icon: 'error',
+                    title: '10 Minutes Remaining!',
+                    text: 'Urgent: Only 10 minutes left before your reservation expires. Please complete payment immediately.',
+                    confirmButtonColor: '#16697a',
+                    timer: 8000,
+                    timerProgressBar: true
+                });
+            }
+        }
+
+        // Start countdown if not expired
+        if (!isExpired) {
+            updateCountdown();
+            setInterval(updateCountdown, 1000);
+        }
+
+        // Pay from Balance function
+        async function payFromBalance() {
+            let feeBreakdownHtml = '';
+            if (paymentType === 'PerDay') {
+                feeBreakdownHtml = `<p style="font-size: 0.75rem; color: #64748b; margin-top: 0.5rem;"><strong>Fee breakdown:</strong> ${feeBreakdown}</p>`;
+            }
+
+            const result = await Swal.fire({
+                title: 'Confirm Payment from Balance',
+                html: `
+                    <div style="text-align: left; padding: 1rem;">
+                        <p style="font-size: 0.875rem; margin-bottom: 1rem; color: #64748b;">
+                            You are about to pay the accommodation fee from your student account balance.
+                        </p>
+                        <div style="background: #f0fdf4; padding: 1rem; border-radius: 0.5rem; border: 2px solid #86efac; margin-bottom: 1rem; text-align: center;">
+                            <div style="font-size: 0.75rem; color: #065f46; margin-bottom: 0.25rem; font-weight: 600;">PAYMENT AMOUNT</div>
+                            <div style="font-size: 2rem; font-weight: 800; color: #10b981;">K ${accommodationFee.toFixed(2)}</div>
+                            ${feeBreakdownHtml}
+                        </div>
+                        <p style="color: #64748b; font-size: 0.75rem; margin: 0;">
+                            Upon successful payment, your bed space will be allocated immediately and you will receive confirmation.
+                        </p>
+                    </div>
+                `,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#94a3b8',
+                confirmButtonText: 'Yes, Proceed with Payment',
+                cancelButtonText: 'Cancel',
+                width: '500px'
+            });
+
+            if (!result.isConfirmed) {
+                return;
+            }
+
+            document.getElementById('loadingOverlay').classList.add('show');
+
+            try {
+                const formData = new FormData();
+                formData.append('applicationId', applicationId);
+                formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
+
+                const response = await fetch('@Url.Action("PayFromBalance", "StudentAccommodationApplication")', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                document.getElementById('loadingOverlay').classList.remove('show');
+
+                if (data.success) {
+                    await Swal.fire({
+                        icon: 'success',
+                        title: 'Payment Successful!',
+                        html: `
+                            <div style="text-align: center; padding: 1rem;">
+                                <p style="font-size: 0.875rem; margin-bottom: 1rem; color: #64748b;">${data.message}</p>
+                                <div style="background: #d1fae5; padding: 1rem; border-radius: 0.5rem; border: 2px solid #6ee7b7;">
+                                    <p style="color: #065f46; font-size: 0.875rem; margin: 0; font-weight: 600;">
+                                        ✅ Your bed space has been allocated!<br />
+                                        You will be redirected to view your accommodation details.
+                                    </p>
+                                </div>
+                            </div>
+                        `,
+                        confirmButtonColor: '#10b981',
+                        confirmButtonText: 'View My Allocation',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        width: '500px'
+                    });
+
+                    window.location.href = '@Url.Action("CurrentAllocation", "StudentAccommodationApplication")';
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Payment Failed',
+                        text: data.message,
+                        confirmButtonColor: '#16697a'
+                    });
+                }
+            } catch (error) {
+                document.getElementById('loadingOverlay').classList.remove('show');
+                console.error('Error processing payment:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Failed to process payment. Please try again or contact support.',
+                    confirmButtonColor: '#16697a'
+                });
+            }
+        }
+
+        // Get Bedspace and Pay Later function
+        async function getBedspaceAndPayLater() {
+            let feeBreakdownHtml = '';
+            if (paymentType === 'PerDay') {
+                feeBreakdownHtml = `<p style="font-size: 0.75rem; color: #78350f; margin-top: 0.5rem;"><strong>Fee breakdown:</strong> ${feeBreakdown}</p>`;
+            }
+
+            const result = await Swal.fire({
+                title: 'Confirm Bed Allocation with Payment Later',
+                html: `
+                    <div style="text-align: left; padding: 1rem;">
+                        <div style="background: #fff7ed; padding: 1rem; border-radius: 0.5rem; border: 2px solid #fed7aa; margin-bottom: 1rem;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                <i class="material-icons" style="color: #d97706;">warning</i>
+                                <strong style="color: #92400e;">Important Notice</strong>
+                            </div>
+                            <p style="font-size: 0.875rem; margin: 0; color: #78350f; line-height: 1.5;">
+                                <strong>This action cannot be reversed.</strong><br />
+                                The accommodation fee of <strong style="color: #d97706;">K ${accommodationFee.toFixed(2)}</strong> will be added to your total outstanding fees.
+                                ${feeBreakdownHtml}
+                            </p>
+                        </div>
+                        <div style="background: #fee2e2; padding: 1rem; border-radius: 0.5rem; border: 2px solid #fca5a5; margin-bottom: 1rem;">
+                            <p style="font-size: 0.875rem; margin: 0; color: #991b1b; line-height: 1.5;">
+                                ⚠️ <strong>Outstanding Fees Impact:</strong><br />
+                                You will be required to pay this fee along with your other fees before:
+                            </p>
+                            <ul style="margin: 0.5rem 0 0 1.5rem; color: #991b1b; font-size: 0.875rem;">
+                                <li>Sitting for examinations</li>
+                                <li>Receiving academic transcripts</li>
+                                <li>Graduation eligibility</li>
+                            </ul>
+                        </div>
+                        <p style="color: #64748b; font-size: 0.75rem; margin: 0;">
+                            By confirming, you acknowledge that you understand and accept the payment terms.
+                        </p>
+                    </div>
+                `,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#f59e0b',
+                cancelButtonColor: '#94a3b8',
+                confirmButtonText: 'Yes, Get Bedspace Now',
+                cancelButtonText: 'Cancel',
+                width: '550px'
+            });
+
+            if (!result.isConfirmed) {
+                return;
+            }
+
+            document.getElementById('loadingOverlay').classList.add('show');
+
+            try {
+                const formData = new FormData();
+                formData.append('applicationId', applicationId);
+                formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
+
+                const response = await fetch('@Url.Action("GetBedspaceAndPayLater", "StudentAccommodationApplication")', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                document.getElementById('loadingOverlay').classList.remove('show');
+
+                if (data.success) {
+                    await Swal.fire({
+                        icon: 'success',
+                        title: 'Bed Space Allocated!',
+                        html: `
+                            <div style="text-align: center; padding: 1rem;">
+                                <p style="font-size: 0.875rem; margin-bottom: 1rem; color: #64748b;">${data.message}</p>
+                                <div style="background: #d1fae5; padding: 1rem; border-radius: 0.5rem; border: 2px solid #6ee7b7; margin-bottom: 1rem;">
+                                    <p style="color: #065f46; font-size: 0.875rem; margin: 0; font-weight: 600;">
+                                        ✅ Your bed space has been allocated!
+                                    </p>
+                                </div>
+                                <div style="background: #fff7ed; padding: 1rem; border-radius: 0.5rem; border: 2px solid #fed7aa;">
+                                    <p style="color: #92400e; font-size: 0.75rem; margin: 0;">
+                                        📋 <strong>Payment Reminder:</strong><br />
+                                        K ${accommodationFee.toFixed(2)} has been added to your outstanding fees.<br />
+                                        Please pay this amount before examination period.
+                                    </p>
+                                </div>
+                            </div>
+                        `,
+                        confirmButtonColor: '#10b981',
+                        confirmButtonText: 'View My Allocation',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        width: '500px'
+                    });
+
+                    window.location.href = '@Url.Action("CurrentAllocation", "StudentAccommodationApplication")';
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Allocation Failed',
+                        text: data.message,
+                        confirmButtonColor: '#16697a'
+                    });
+                }
+            } catch (error) {
+                document.getElementById('loadingOverlay').classList.remove('show');
+                console.error('Error processing allocation:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Failed to process allocation. Please try again or contact support.',
+                    confirmButtonColor: '#16697a'
+                });
+            }
+        }
+    </script>
+
+    @Html.AntiForgeryToken()
+}

@@ -1,0 +1,500 @@
+﻿@model SIS.Controllers.ResultImportIndexViewModel
+
+@{
+    ViewData["Title"] = "Result Import";
+}
+
+<div class="min-h-[90vh] p-6 bg-gray-50">
+    <!-- Header -->
+    <div class="mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800 flex items-center">
+                    <i class="material-icons mr-3 text-primary-600">upload_file</i>
+                    Bulk Result Import
+                </h1>
+                <p class="text-gray-600 mt-2">Upload assessment scores for multiple students from Excel files</p>
+            </div>
+            <a asp-action="AssessmentManagement" asp-controller="StudentResults"
+               class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center">
+                <i class="material-icons mr-2">arrow_back</i>
+                Back to Assessment Management
+            </a>
+        </div>
+    </div>
+
+    <!-- Instructions Card -->
+    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 rounded-lg">
+        <div class="flex items-start">
+            <i class="material-icons text-blue-600 mr-3">info</i>
+            <div class="flex-1">
+                <h3 class="font-semibold text-blue-900 mb-2">How to Import Results:</h3>
+                <ol class="list-decimal list-inside space-y-1 text-blue-800 text-sm">
+                    <li>Select the course, academic year, and semester</li>
+                    <li>Download the pre-filled Excel template</li>
+                    <li>Enter assessment scores in the template (do NOT modify student information)</li>
+                    <li>Upload the completed file to preview and validate</li>
+                    <li>Review validation results and fix any errors if needed</li>
+                    <li>Confirm import to save results to the database</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    @if (Model.Courses == null || !Model.Courses.Any())
+    {
+        <!-- No Courses Message -->
+        <div class="bg-white rounded-lg shadow-sm p-8 text-center">
+            <i class="material-icons text-6xl text-gray-400 mb-4">assignment</i>
+            <h3 class="text-xl font-semibold text-gray-700 mb-2">No Courses Available</h3>
+            <p class="text-gray-600">You don't have any courses assigned for result import.</p>
+            <p class="text-gray-500 text-sm mt-2">Please contact the administrator if you believe this is an error.</p>
+        </div>
+    }
+    else
+    {
+        <!-- Main Import Card -->
+        <div class="bg-white rounded-lg shadow-sm">
+            <!-- Step 1: Course Selection -->
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center mb-4">
+                    <span class="flex items-center justify-center w-8 h-8 bg-primary-600 text-white rounded-full font-bold mr-3">1</span>
+                    <h2 class="text-xl font-semibold text-gray-800">Select Course and Semester</h2>
+                </div>
+
+                <form id="courseSelectionForm" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- Course Selection -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="material-icons text-sm align-middle">school</i>
+                                Course *
+                            </label>
+                            <select id="courseId"
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                    required>
+                                <option value="">Select a course...</option>
+                                @foreach (var course in Model.Courses)
+                                {
+                                    <option value="@course.CourseId"
+                                            data-code="@course.CourseCode"
+                                            data-name="@course.CourseName">
+                                        @course.CourseCode - @course.CourseName
+                                    </option>
+                                }
+                            </select>
+                        </div>
+
+                        <!-- Academic Year Selection -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="material-icons text-sm align-middle">calendar_today</i>
+                                Academic Year *
+                            </label>
+                            <select id="academicYearId"
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                    required>
+                                <option value="">Select academic year...</option>
+                                @foreach (var year in Model.AcademicYears)
+                                {
+                                    <option value="@year.YearId">@year.YearValue</option>
+                                }
+                            </select>
+                        </div>
+
+                        <!-- Semester Selection -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="material-icons text-sm align-middle">event_note</i>
+                                Semester *
+                            </label>
+                            <select id="semester"
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                    required>
+                                <option value="">Select semester...</option>
+                                <option value="1">Semester 1</option>
+                                <option value="2">Semester 2</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button type="button"
+                            id="btnValidateCourse"
+                            onclick="validateCourse()"
+                            class="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center">
+                        <i class="material-icons mr-2">check_circle</i>
+                        Validate Course
+                    </button>
+                </form>
+
+                <!-- Validation Results -->
+                <div id="validationResults" class="hidden mt-4"></div>
+
+                <!-- Course Statistics -->
+                <div id="courseStatistics" class="hidden mt-4"></div>
+            </div>
+
+            <!-- Step 2: Download Template -->
+            <div id="step2Container" class="p-6 border-b border-gray-200 bg-gray-50 hidden">
+                <div class="flex items-center mb-4">
+                    <span class="flex items-center justify-center w-8 h-8 bg-primary-600 text-white rounded-full font-bold mr-3">2</span>
+                    <h2 class="text-xl font-semibold text-gray-800">Download Template</h2>
+                </div>
+
+                <p class="text-gray-600 mb-4">
+                    Download the Excel template pre-filled with enrolled students. Enter assessment scores and upload the completed file.
+                </p>
+
+                <div class="flex items-center space-x-4">
+                    <button type="button"
+                            id="btnDownloadTemplate"
+                            onclick="downloadTemplate(false)"
+                            class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center">
+                        <i class="material-icons mr-2">download</i>
+                        Download Template
+                    </button>
+
+                    <button type="button"
+                            id="btnDownloadWithScores"
+                            onclick="downloadTemplate(true)"
+                            class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+                        <i class="material-icons mr-2">download</i>
+                        Download with Existing Scores
+                    </button>
+                </div>
+
+                <div class="mt-4 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded">
+                    <div class="flex items-start">
+                        <i class="material-icons text-yellow-600 mr-2">warning</i>
+                        <div class="text-sm text-yellow-800">
+                            <strong>Important:</strong> Do not modify the Student Number or Full Name columns.
+                            Only enter scores in the assessment columns. Leave cells blank for ungraded assessments.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Upload File -->
+            <div id="step3Container" class="p-6 hidden">
+                <div class="flex items-center mb-4">
+                    <span class="flex items-center justify-center w-8 h-8 bg-primary-600 text-white rounded-full font-bold mr-3">3</span>
+                    <h2 class="text-xl font-semibold text-gray-800">Upload Completed File</h2>
+                </div>
+
+                <form asp-action="UploadAndPreview"
+                      method="post"
+                      enctype="multipart/form-data"
+                      id="uploadForm">
+                    @Html.AntiForgeryToken()
+
+                    <input type="hidden" id="uploadCourseId" name="courseId" />
+                    <input type="hidden" id="uploadAcademicYearId" name="academicYearId" />
+                    <input type="hidden" id="uploadSemester" name="semester" />
+
+                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-primary-500 transition-colors">
+                        <i class="material-icons text-6xl text-gray-400 mb-4">cloud_upload</i>
+
+                        <label for="importFile" class="cursor-pointer">
+                            <span class="text-primary-600 hover:text-primary-700 font-medium">
+                                Click to select file
+                            </span>
+                            <span class="text-gray-600"> or drag and drop</span>
+                        </label>
+
+                        <input type="file"
+                               id="importFile"
+                               name="importFile"
+                               accept=".xlsx"
+                               class="hidden"
+                               required
+                               onchange="handleFileSelect(this)" />
+
+                        <p class="text-sm text-gray-500 mt-2">
+                            Excel files only (.xlsx) • Maximum @(Model.MaxFileSize / 1024 / 1024)MB
+                        </p>
+
+                        <div id="selectedFileName" class="hidden mt-4 p-3 bg-green-50 rounded-lg">
+                            <div class="flex items-center justify-center text-green-700">
+                                <i class="material-icons mr-2">insert_drive_file</i>
+                                <span id="fileName" class="font-medium"></span>
+                                <button type="button"
+                                        onclick="clearFileSelection()"
+                                        class="ml-3 text-red-600 hover:text-red-700">
+                                    <i class="material-icons text-sm">close</i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit"
+                            id="btnUpload"
+                            class="mt-4 px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled>
+                        <i class="material-icons mr-2">upload</i>
+                        Upload and Preview
+                    </button>
+                </form>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        let selectedCourse = null;
+        let selectedAcademicYear = null;
+        let selectedSemester = null;
+        let isValidated = false;
+
+        // Validate course context
+        async function validateCourse() {
+            const courseId = document.getElementById('courseId').value;
+            const academicYearId = document.getElementById('academicYearId').value;
+            const semester = document.getElementById('semester').value;
+
+            // Validation
+            if (!courseId || !academicYearId || !semester) {
+                showNotification('error', 'Please select course, academic year, and semester');
+                return;
+            }
+
+            // Show loading
+            const btn = document.getElementById('btnValidateCourse');
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = '<i class="material-icons animate-spin mr-2">sync</i> Validating...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch(
+                    `/ResultImport/ValidateCourse?courseId=${courseId}&academicYearId=${academicYearId}&semester=${semester}`
+                );
+                const data = await response.json();
+
+                if (data.success) {
+                    displayValidationResults(data.validation, data.statistics);
+
+                    // Store selections
+                    selectedCourse = courseId;
+                    selectedAcademicYear = academicYearId;
+                    selectedSemester = semester;
+                    isValidated = true;
+
+                    // Show next steps
+                    document.getElementById('step2Container').classList.remove('hidden');
+                    document.getElementById('step3Container').classList.remove('hidden');
+
+                    // Set hidden fields
+                    document.getElementById('uploadCourseId').value = courseId;
+                    document.getElementById('uploadAcademicYearId').value = academicYearId;
+                    document.getElementById('uploadSemester').value = semester;
+
+                    showNotification('success', 'Course validated successfully!');
+                } else {
+                    displayValidationResults(data.validation, null);
+                    showNotification('error', 'Course validation failed. Please check the errors below.');
+
+                    // Hide next steps
+                    document.getElementById('step2Container').classList.add('hidden');
+                    document.getElementById('step3Container').classList.add('hidden');
+                    isValidated = false;
+                }
+            } catch (error) {
+                console.error('Validation error:', error);
+                showNotification('error', 'Error validating course: ' + error.message);
+                isValidated = false;
+            } finally {
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
+            }
+        }
+
+        function displayValidationResults(validation, statistics) {
+            const container = document.getElementById('validationResults');
+            const statsContainer = document.getElementById('courseStatistics');
+
+            let html = '';
+
+            if (validation.isValid) {
+                html = `
+                    <div class="p-4 bg-green-50 border-l-4 border-green-500 rounded-lg">
+                        <div class="flex items-start">
+                            <i class="material-icons text-green-600 mr-2">check_circle</i>
+                            <div class="flex-1">
+                                <h4 class="font-semibold text-green-900">${validation.summary}</h4>
+                                <ul class="mt-2 space-y-1 text-sm text-green-800">
+                                    <li>• ${validation.assessmentCount} assessment(s) configured</li>
+                                    <li>• ${validation.enrolledStudentCount} student(s) enrolled</li>
+                                    <li>• Total weight: ${validation.totalWeight}%</li>
+                                </ul>
+                                ${validation.warnings.length > 0 ? `
+                                    <div class="mt-2 text-sm text-yellow-700">
+                                        <strong>Warnings:</strong>
+                                        <ul class="list-disc list-inside ml-2">
+                                            ${validation.warnings.map(w => `<li>${w}</li>`).join('')}
+                                        </ul>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                html = `
+                    <div class="p-4 bg-red-50 border-l-4 border-red-500 rounded-lg">
+                        <div class="flex items-start">
+                            <i class="material-icons text-red-600 mr-2">error</i>
+                            <div class="flex-1">
+                                <h4 class="font-semibold text-red-900">${validation.summary}</h4>
+                                ${validation.errors.length > 0 ? `
+                                    <ul class="mt-2 space-y-1 text-sm text-red-800 list-disc list-inside">
+                                        ${validation.errors.map(e => `<li>${e}</li>`).join('')}
+                                    </ul>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+            container.classList.remove('hidden');
+
+            // Display statistics if available
+            if (statistics && validation.isValid) {
+                const statsHtml = `
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <div class="text-center">
+                            <div class="text-3xl font-bold text-blue-600">${statistics.totalEnrolled}</div>
+                            <div class="text-sm text-blue-800">Total Enrolled</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-3xl font-bold text-green-600">${statistics.studentsWithCompleteScores}</div>
+                            <div class="text-sm text-green-800">Complete Scores</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-3xl font-bold text-yellow-600">${statistics.studentsWithPartialScores}</div>
+                            <div class="text-sm text-yellow-800">Partial Scores</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-3xl font-bold text-red-600">${statistics.studentsWithNoScores}</div>
+                            <div class="text-sm text-red-800">No Scores</div>
+                        </div>
+                    </div>
+                    ${statistics.lastImportDate ? `
+                        <div class="mt-2 text-sm text-gray-600 text-center">
+                            Last import: ${new Date(statistics.lastImportDate).toLocaleString()}
+                        </div>
+                    ` : ''}
+                `;
+                statsContainer.innerHTML = statsHtml;
+                statsContainer.classList.remove('hidden');
+            } else {
+                statsContainer.classList.add('hidden');
+            }
+        }
+
+        function downloadTemplate(includeExisting) {
+            if (!isValidated) {
+                showNotification('error', 'Please validate the course first');
+                return;
+            }
+
+            const url = `/ResultImport/DownloadTemplate?courseId=${selectedCourse}&academicYearId=${selectedAcademicYear}&semester=${selectedSemester}&includeExisting=${includeExisting}`;
+            window.location.href = url;
+
+            showNotification('info', 'Template download started...');
+        }
+
+        function handleFileSelect(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const maxSize = @Model.MaxFileSize;
+
+                if (file.size > maxSize) {
+                    showNotification('error', `File size exceeds maximum limit of ${maxSize / 1024 / 1024}MB`);
+                    input.value = '';
+                    return;
+                }
+
+                document.getElementById('fileName').textContent = file.name;
+                document.getElementById('selectedFileName').classList.remove('hidden');
+                document.getElementById('btnUpload').disabled = false;
+            }
+        }
+
+        function clearFileSelection() {
+            document.getElementById('importFile').value = '';
+            document.getElementById('selectedFileName').classList.add('hidden');
+            document.getElementById('btnUpload').disabled = true;
+        }
+
+        // Drag and drop support
+        const dropZone = document.querySelector('.border-dashed');
+        if (dropZone) {
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => {
+                    dropZone.classList.add('border-primary-500', 'bg-primary-50');
+                }, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => {
+                    dropZone.classList.remove('border-primary-500', 'bg-primary-50');
+                }, false);
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    document.getElementById('importFile').files = files;
+                    handleFileSelect(document.getElementById('importFile'));
+                }
+            }, false);
+        }
+
+        // Notification system
+        function showNotification(type, message) {
+            const iconMap = {
+                'success': 'check_circle',
+                'error': 'error',
+                'warning': 'warning',
+                'info': 'info'
+            };
+
+            const colorMap = {
+                'success': 'bg-green-100 border-green-500 text-green-700',
+                'error': 'bg-red-100 border-red-500 text-red-700',
+                'warning': 'bg-yellow-100 border-yellow-500 text-yellow-700',
+                'info': 'bg-blue-100 border-blue-500 text-blue-700'
+            };
+
+            const notification = document.createElement('div');
+            notification.className = `fixed bottom-4 right-4 ${colorMap[type]} border-l-4 p-4 rounded shadow-lg z-50 max-w-md`;
+            notification.innerHTML = `
+                <div class="flex items-center">
+                    <i class="material-icons mr-2">${iconMap[type]}</i>
+                    <p class="font-medium">${message}</p>
+                </div>
+            `;
+
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), type === 'error' ? 5000 : 3000);
+        }
+
+        // Form submission handling
+        document.getElementById('uploadForm')?.addEventListener('submit', function(e) {
+            const btn = document.getElementById('btnUpload');
+            btn.innerHTML = '<i class="material-icons animate-spin mr-2">sync</i> Uploading...';
+            btn.disabled = true;
+        });
+    </script>
+}

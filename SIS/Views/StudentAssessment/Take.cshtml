@@ -1,0 +1,516 @@
+﻿@model SIS.Models.Assessments.AssessmentTakeViewModel
+
+<div class="min-h-screen bg-slate-50 flex">
+    <!-- Main Content Area (75%) -->
+    <div class="w-3/4 p-4">
+        <!-- Header Section -->
+        <div class="bg-white rounded-xl shadow-sm mb-6 p-4">
+            <div class="flex items-center text-slate-800">
+                <i class="material-icons text-3xl mr-2">assignment</i>
+                <div>
+                    <h1 class="text-2xl font-bold">@Model.StudentAttempt.AssessmentConfiguration.Assessment.Name</h1>
+                    <p class="text-sm text-slate-600">@Model.StudentAttempt.AssessmentConfiguration.Course.CourseName</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Question Container -->
+        <div class="bg-white rounded-xl shadow-sm mb-6 overflow-hidden">
+            <div class="bg-slate-100 p-4 border-b border-slate-200">
+                <div class="flex justify-between items-center">
+                    <span class="font-medium">Question @(Model.CurrentIndex + 1) of @Model.TotalQuestions</span>
+                    <span class="px-2 py-1 rounded-full text-xs font-medium
+                        @(Model.CurrentQuestion.QuestionType == "MultipleChoice" ? "bg-green-100 text-green-800" :
+                          Model.CurrentQuestion.QuestionType == "TrueFalse" ? "bg-yellow-100 text-yellow-800" :
+                          Model.CurrentQuestion.QuestionType == "ShortAnswer" ? "bg-blue-100 text-blue-800" :
+                          "bg-purple-100 text-purple-800")">
+                        @(Model.CurrentQuestion.QuestionType switch
+                        {
+                            "MultipleChoice" => "Multiple Choice",
+                            "TrueFalse" => "True/False",
+                            "ShortAnswer" => "Short Answer",
+                            "LongText" => "Essay",
+                            _ => Model.CurrentQuestion.QuestionType
+                        })
+                    </span>
+                </div>
+            </div>
+
+            <div class="p-6">
+                <form id="question-form"
+                      data-response-id="@Model.CurrentResponse.Id"
+                      data-question-index="@Model.CurrentIndex"
+                      data-attempt-id="@Model.StudentAttempt.Id">
+
+                    <div class="mb-6">
+                        <!-- Display image above if configured that way -->
+                        @if (!string.IsNullOrEmpty(Model.CurrentQuestion.ImagePath) && 
+                             Model.CurrentQuestion.ImageDisplayPosition == "Above")
+                        {
+                            <div class="mb-4 text-center">
+                                <img src="@Model.CurrentQuestion.ImagePath" 
+                                     alt="@Model.CurrentQuestion.ImageDescription"
+                                     class="max-w-full h-auto rounded-lg border border-slate-200"
+                                     style="max-height: 300px;">
+                                @if (!string.IsNullOrEmpty(Model.CurrentQuestion.ImageDescription))
+                                {
+                                    <p class="text-sm text-slate-500 mt-2">@Model.CurrentQuestion.ImageDescription</p>
+                                }
+                            </div>
+                        }
+
+                        <h3 class="text-lg font-medium text-slate-800 mb-3">@Html.Raw(Model.CurrentQuestion.QuestionText)</h3>
+
+                        <!-- Display image below if configured that way -->
+                        @if (!string.IsNullOrEmpty(Model.CurrentQuestion.ImagePath) && 
+                             Model.CurrentQuestion.ImageDisplayPosition == "Below")
+                        {
+                            <div class="mt-4 mb-4 text-center">
+                                <img src="@Model.CurrentQuestion.ImagePath" 
+                                     alt="@Model.CurrentQuestion.ImageDescription"
+                                     class="max-w-full h-auto rounded-lg border border-slate-200"
+                                     style="max-height: 300px;">
+                                @if (!string.IsNullOrEmpty(Model.CurrentQuestion.ImageDescription))
+                                {
+                                    <p class="text-sm text-slate-500 mt-2">@Model.CurrentQuestion.ImageDescription</p>
+                                }
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(Model.CurrentQuestion.AdditionalInfo))
+                        {
+                            <div class="text-sm italic text-slate-600 mb-4">@Html.Raw(Model.CurrentQuestion.AdditionalInfo)</div>
+                        }
+                    </div>
+
+                    <!-- Question Type specific rendering -->
+                    <div class="mb-6">
+                        @if (Model.CurrentQuestion.QuestionType == "MultipleChoice")
+                        {
+                            <div class="space-y-3">
+                                @foreach (var option in Model.CurrentQuestion.Options)
+                                {
+                                    <div class="flex items-start p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
+                                        <input type="radio" name="responseText" value="@option.Id" id="option-@option.Id"
+                                               class="mt-1 h-4 w-4 text-primary-600 border-slate-300 focus:ring-primary-500 response-input"
+                                        @(Model.CurrentResponse.ResponseText == option.Id.ToString() ? "checked" : "") />
+                                        <label for="option-@option.Id" class="ml-2 text-slate-800 cursor-pointer w-full">@Html.Raw(option.OptionText)</label>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else if (Model.CurrentQuestion.QuestionType == "TrueFalse")
+                        {
+                            <div class="space-y-3">
+                                @foreach (var option in Model.CurrentQuestion.Options)
+                                {
+                                    <div class="flex items-start p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
+                                        <input type="radio" name="responseText" value="@option.Id" id="option-@option.Id"
+                                               class="mt-1 h-4 w-4 text-primary-600 border-slate-300 focus:ring-primary-500 response-input"
+                                        @(Model.CurrentResponse.ResponseText == option.Id.ToString() ? "checked" : "") />
+                                        <label for="option-@option.Id" class="ml-2 text-slate-800 cursor-pointer w-full">@option.OptionText</label>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else if (Model.CurrentQuestion.QuestionType == "ShortAnswer")
+                        {
+                            <input type="text" name="responseText" id="responseText"
+                                   class="w-full px-4 py-2 border border-slate-300 rounded-lg bg-white text-slate-800 focus:ring-primary-500 focus:border-primary-500 response-input"
+                                   value="@Model.CurrentResponse.ResponseText" />
+                        }
+                        else // LongText/Essay
+                        {
+                            <textarea name="responseText" id="responseText" rows="10"
+                                      class="w-full px-4 py-2 border border-slate-300 rounded-lg bg-white text-slate-800 focus:ring-primary-500 focus:border-primary-500 response-input">@Model.CurrentResponse.ResponseText</textarea>
+                        }
+                    </div>
+
+                    <div id="save-status" class="text-xs text-slate-500 mb-4"></div>
+
+                    <!-- Navigation Buttons -->
+                    <div class="flex justify-between mt-6">
+                        <div>
+                            @if (Model.CurrentIndex > 0)
+                            {
+                                <button type="button"
+                                        class="inline-flex items-center px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-100 transition-colors previous-btn">
+                                    <i class="material-icons text-sm mr-1">arrow_back</i>
+                                    <span>Previous</span>
+                                </button>
+                            }
+                        </div>
+                        <div>
+                            @if (Model.CurrentIndex < Model.TotalQuestions - 1)
+                            {
+                                <button type="button"
+                                        class="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors next-btn">
+                                    <span>Next</span>
+                                    <i class="material-icons text-sm ml-1">arrow_forward</i>
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar (25%) -->
+    <div class="w-1/4 p-4">
+        <div class="bg-white rounded-xl shadow-sm sticky top-4">
+            <!-- Timer Section -->
+            <div class="p-4 border-b border-slate-200">
+                <div id="timer-container" class="flex items-center space-x-3 p-3 rounded-lg bg-red-50">
+                    <i class="material-icons text-red-600">timer</i>
+                    <div>
+                        <div class="text-sm text-slate-600">Time Remaining</div>
+                        <div class="text-2xl font-bold text-red-600" id="timer"
+                             data-end="@Model.StudentAttempt.StartTime.AddMinutes(Model.StudentAttempt.AssessmentConfiguration.DurationMinutes).ToString("o")">
+                            @($"{Math.Floor(Model.TimeRemaining.TotalHours):00}:{Model.TimeRemaining.Minutes:00}:{Model.TimeRemaining.Seconds:00}")
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Question Navigation -->
+            <div class="p-4 border-b border-slate-200">
+                <h3 class="text-lg font-semibold text-slate-800 mb-3">Questions</h3>
+                <div class="grid grid-cols-5 gap-2">
+                    @for (int i = 0; i < Model.ResponsesNavigation.Count; i++)
+                    {
+                        var item = Model.ResponsesNavigation[i];
+                        <a href="#" 
+                           data-index="@i"
+                           class="question-nav-item w-8 h-8 flex items-center justify-center rounded-full font-medium text-sm
+                               @(item.IsCurrentQuestion
+                                   ? "bg-primary-600 text-white"
+                                   : item.HasResponse
+                                        ? "bg-green-100 text-green-800 border border-green-300"
+                                        : "bg-slate-100 text-slate-600 border border-slate-300")">
+                            @(i + 1)
+                        </a>
+                    }
+                </div>
+                <div class="mt-4 flex justify-center">
+                    <div class="flex items-center space-x-4 text-xs text-slate-500">
+                        <div class="flex items-center">
+                            <span class="inline-block w-3 h-3 rounded-full bg-slate-100 border border-slate-300 mr-1"></span>
+                            <span>Not Answered</span>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="inline-block w-3 h-3 rounded-full bg-green-100 border border-green-300 mr-1"></span>
+                            <span>Answered</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Section -->
+            <div class="p-4">
+                <button type="button"
+                        class="w-full py-3 px-4 bg-secondary-600 text-white rounded-lg hover:bg-secondary-700 transition-colors flex items-center justify-center open-submit-modal">
+                    <i class="material-icons mr-2">done_all</i>
+                    <span>Submit Assessment</span>
+                </button>
+                <p class="text-xs text-center text-slate-500 mt-2">
+                    Make sure you've answered all questions before submitting.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Auto-Save Status -->
+    <div class="fixed bottom-4 right-4 bg-white p-3 rounded-lg shadow-md hidden" id="auto-save-indicator">
+        <div class="flex items-center text-green-600">
+            <i class="material-icons text-sm mr-1">check_circle</i>
+            <span class="text-xs">Auto-saved at <span id="auto-save-time"></span></span>
+        </div>
+    </div>
+
+    <!-- Submission Confirmation Modal -->
+    <div id="submit-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-xl shadow-lg p-6 max-w-md mx-auto">
+            <h2 class="text-xl font-bold mb-4">Submit Assessment</h2>
+            <p class="mb-6">Are you sure you want to submit this assessment? Once submitted, you cannot make any further changes.</p>
+
+            <div class="flex justify-end gap-4">
+                <button id="cancel-submit" class="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-100 transition-colors">
+                    Cancel
+                </button>
+                <form asp-action="Submit" method="post">
+                    <input type="hidden" name="attemptId" value="@Model.StudentAttempt.Id" />
+                    <button type="submit" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
+                        Submit Assessment
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab Switch Warning Modal -->
+    <div id="tab-switch-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-xl shadow-lg p-6 max-w-md mx-auto">
+            <div class="text-center mb-4">
+                <i class="material-icons text-red-500 text-5xl">warning</i>
+            </div>
+            <h2 class="text-xl font-bold mb-4 text-center">Warning: Tab Switch Detected</h2>
+            <p class="mb-2">You have switched away from the assessment tab. This may be considered cheating.</p>
+            <p class="mb-6">Your assessment will be automatically submitted in <span id="tab-switch-countdown" class="font-bold text-red-600">15</span> seconds if you don't return to this tab.</p>
+            
+            <div class="flex justify-center">
+                <button id="continue-assessment" class="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
+                    Continue Assessment
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Setup CSRF token for AJAX requests
+            const token = $('input[name="__RequestVerificationToken"]').val();
+            $.ajaxSetup({
+                headers: {
+                    'RequestVerificationToken': token
+                }
+            });
+
+            // Timer functionality
+            function updateTimer() {
+                const $timer = $('#timer');
+                const endTime = new Date($timer.data('end'));
+                const now = new Date();
+                const diff = endTime - now;
+
+                if (diff <= 0) {
+                    // Time expired, submit the assessment
+                    $timer.text('00:00:00');
+                    $('#timer-container').addClass('bg-red-100');
+
+                    // Submit the form automatically
+                    submitAssessment();
+                    return;
+                }
+
+                // Calculate time components
+                const hours = Math.floor(diff / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+                // Format with leading zeros
+                const formattedHours = String(hours).padStart(2, '0');
+                const formattedMinutes = String(minutes).padStart(2, '0');
+                const formattedSeconds = String(seconds).padStart(2, '0');
+
+                // Update the display
+                $timer.text(`${formattedHours}:${formattedMinutes}:${formattedSeconds}`);
+
+                // Warning states
+                if (diff < 60000) { // Less than 1 minute
+                    $('#timer-container').removeClass('bg-yellow-50').addClass('bg-red-100');
+                    $('#timer').addClass('animate-pulse');
+                } else if (diff < 300000) { // Less than 5 minutes
+                    $('#timer-container').removeClass('bg-red-50').addClass('bg-yellow-50');
+                }
+            }
+
+            // Auto-save functionality
+            function autoSave() {
+                const responseId = $('#question-form').data('response-id');
+                const responseValue = getResponseValue();
+
+                if (responseValue !== null) {
+                    $.ajax({
+                        url: '@Url.Action("AutoSave")',
+                        type: 'POST',
+                        data: {
+                            responseId: responseId,
+                            responseText: responseValue
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                $('#auto-save-time').text(response.lastSaved);
+                                $('#auto-save-indicator').removeClass('hidden').fadeIn().delay(2000).fadeOut();
+                            }
+                        }
+                    });
+                }
+            }
+
+            // Get the current response value based on question type
+            function getResponseValue() {
+                const $form = $('#question-form');
+
+                // For radio buttons (multiple choice, true/false)
+                const $selectedRadio = $form.find('input[type="radio"]:checked');
+                if ($selectedRadio.length) {
+                    return $selectedRadio.val();
+                }
+
+                // For text input or textarea
+                const $textInput = $form.find('input[type="text"], textarea');
+                if ($textInput.length) {
+                    return $textInput.val();
+                }
+
+                return null;
+            }
+
+            // Submit the assessment
+            function submitAssessment() {
+                // Get the current form data
+                saveCurrentResponse(false, function() {
+                    // Submit the assessment form
+                    $('form[asp-action="Submit"]').submit();
+                });
+            }
+
+            // Save the current response
+            function saveCurrentResponse(navigateToNext = false, callback = null) {
+                const $form = $('#question-form');
+                const responseId = $form.data('response-id');
+                const questionIndex = $form.data('question-index');
+                const attemptId = $form.data('attempt-id');
+                const responseValue = getResponseValue();
+
+                if (responseValue !== null) {
+                    $.ajax({
+                        url: '@Url.Action("SubmitAnswer")',
+                        type: 'POST',
+                        data: {
+                            responseId: responseId,
+                            responseText: responseValue,
+                            questionIndex: questionIndex,
+                            attemptId: attemptId,
+                            navigateToNext: navigateToNext
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                if (navigateToNext) {
+                                    window.location.href = response.nextUrl;
+                                }
+                                if (callback) {
+                                    callback();
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    if (callback) {
+                        callback();
+                    }
+                }
+            }
+
+            // Navigate to a specific question
+            function navigateToQuestion(index) {
+                saveCurrentResponse(false, function() {
+                    window.location.href = '@Url.Action("Navigate")?attemptId=@Model.StudentAttempt.Id&questionIndex=' + index;
+                });
+            }
+
+            // Tab switching detection and countdown
+        @if (Model.StudentAttempt.AssessmentConfiguration.PreventTabSwitching)
+        {
+            @:let tabSwitchCount = 0;
+            @:let countdownInterval = null;
+            @:let secondsLeft = 15;
+
+            @:function startCountdown() {
+            @:    // Reset countdown
+            @:    secondsLeft = 15;
+            @:    $('#tab-switch-countdown').text(secondsLeft);
+            @:
+            @:    // Clear any existing interval
+            @:    if (countdownInterval) {
+            @:        clearInterval(countdownInterval);
+            @:    }
+            @:
+            @:    // Start new countdown
+            @:    countdownInterval = setInterval(function() {
+            @:        secondsLeft--;
+            @:        $('#tab-switch-countdown').text(secondsLeft);
+            @:
+            @:        if (secondsLeft <= 0) {
+            @:            clearInterval(countdownInterval);
+            @:            // Auto-submit the assessment
+            @:            submitAssessment();
+            @:        }
+            @:    }, 1000);
+            @:}
+
+            @:function stopCountdown() {
+            @:    if (countdownInterval) {
+            @:        clearInterval(countdownInterval);
+            @:        countdownInterval = null;
+            @:    }
+            @:}
+
+            @:document.addEventListener('visibilitychange', function() {
+            @:    if (document.visibilityState === 'hidden') {
+            @:        tabSwitchCount++;
+            @:        $('#save-status').text(`Warning: Tab switch detected (${tabSwitchCount}). These are recorded.`).addClass('text-red-500');
+            @:
+            @:        // Auto-save when tab is switched
+            @:        autoSave();
+            @:
+            @:        // Start countdown
+            @:        startCountdown();
+            @:        $('#tab-switch-modal').removeClass('hidden');
+            @:    } else if (document.visibilityState === 'visible') {
+            @:        // Stop countdown when tab is focused again
+            @:        stopCountdown();
+            @:        $('#tab-switch-modal').addClass('hidden');
+            @:    }
+            @:});
+
+            @:// Continue assessment button
+            @:$('#continue-assessment').on('click', function() {
+            @:    stopCountdown();
+            @:    $('#tab-switch-modal').addClass('hidden');
+            @:});
+        }
+
+            // Initialize
+            updateTimer();
+            setInterval(updateTimer, 1000);
+            setInterval(autoSave, 30000); // Auto-save every 30 seconds
+
+            // Event Handlers
+            $('.response-input').on('change input', function() {
+                $('#save-status').text('Unsaved changes').removeClass('text-green-500').addClass('text-yellow-500');
+            });
+
+            $('.next-btn').on('click', function() {
+                saveCurrentResponse(true);
+            });
+
+            $('.previous-btn').on('click', function() {
+                const prevIndex = @Model.CurrentIndex - 1;
+                navigateToQuestion(prevIndex);
+            });
+
+            $('.question-nav-item').on('click', function(e) {
+                e.preventDefault();
+                const index = $(this).data('index');
+                navigateToQuestion(index);
+            });
+
+            $('.open-submit-modal').on('click', function() {
+                // Save first
+                saveCurrentResponse(false, function() {
+                    $('#submit-modal').removeClass('hidden');
+                });
+            });
+
+            $('#cancel-submit').on('click', function() {
+                $('#submit-modal').addClass('hidden');
+            });
+        });
+    </script>
+}

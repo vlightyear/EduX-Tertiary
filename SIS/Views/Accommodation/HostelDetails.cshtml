@@ -1,0 +1,525 @@
+﻿@model SIS.Models.StudentAccommodation.Hostel
+@using SIS.Enums
+@using SIS.Models.StudentAccommodation
+@{
+    ViewData["Title"] = $"Hostel Details - {Model.HostelName}";
+}
+
+<style>
+    /* Custom scrollbar */
+    .custom-scroll::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .custom-scroll::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+
+    .custom-scroll::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 10px;
+    }
+
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+    /* Room card styles */
+    .room-card {
+        transition: all 0.3s ease;
+        cursor: default !important;
+        position: relative;
+    }
+
+        .room-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .room-card .status-indicator {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+    /* Floor section */
+    .floor-section {
+        margin-bottom: 2rem;
+    }
+
+    .floor-header {
+        background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
+        padding: 0.75rem 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+        color: white;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    /* Stat card animation */
+    .stat-card {
+        transition: transform 0.2s;
+    }
+
+        .stat-card:hover {
+            transform: scale(1.05);
+        }
+</style>
+
+<div class="min-h-screen bg-gray-50 p-4">
+    <!-- Header Section -->
+    <div class="mb-6">
+        <div class="bg-white rounded-xl shadow-md p-6">
+            <div class="flex justify-between items-start mb-4">
+                <div class="flex items-start gap-4">
+                    <div class="bg-gradient-to-br from-cyan-500 to-cyan-600 p-4 rounded-xl shadow-lg">
+                        <i class="material-icons text-4xl text-white">apartment</i>
+                    </div>
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-800 mb-2">@Model.HostelName</h1>
+                        <div class="flex items-center text-sm text-gray-600 gap-2">
+                            <a asp-controller="Hostel" asp-action="Hostels" class="hover:text-cyan-600 transition">
+                                <i class="material-icons text-sm align-middle">home</i> Hostels
+                            </a>
+                            <i class="material-icons text-xs">chevron_right</i>
+                            <span class="font-medium">@Model.HostelName</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <a asp-controller="Hostel" asp-action="Hostels"
+                       class="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2 shadow-sm">
+                        <i class="material-icons">arrow_back</i>
+                        <span>Back</span>
+                    </a>
+                </div>
+            </div>
+
+            @if (TempData["Success"] != null)
+            {
+                <div class="bg-green-50 border-l-4 border-green-500 text-green-800 p-4 rounded-lg mb-4 flex items-center gap-3" role="alert">
+                    <i class="material-icons text-green-600">check_circle</i>
+                    <p class="font-medium">@TempData["Success"]</p>
+                </div>
+            }
+
+            @if (TempData["Error"] != null)
+            {
+                <div class="bg-red-50 border-l-4 border-red-500 text-red-800 p-4 rounded-lg mb-4 flex items-center gap-3" role="alert">
+                    <i class="material-icons text-red-600">error</i>
+                    <p class="font-medium">@TempData["Error"]</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Main Content Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Left Column: Hostel Info (1/3) -->
+        <div class="lg:col-span-1 space-y-6">
+            <!-- Hostel Information Card -->
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                    <i class="material-icons text-cyan-600">info</i>
+                    Hostel Information
+                </h2>
+
+                <div class="space-y-4">
+                    <!-- Gender -->
+                    <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-lg border border-gray-200">
+                        <p class="text-xs text-gray-500 uppercase tracking-wider mb-2">Gender</p>
+                        <div class="flex items-center gap-2">
+                            @{
+                                var genderIcon = "people";
+                                var genderClass = "text-purple-600";
+                                var genderBg = "bg-purple-100";
+
+                                if (Model.Gender?.ToLower() == "male")
+                                {
+                                    genderIcon = "male";
+                                    genderClass = "text-blue-600";
+                                    genderBg = "bg-blue-100";
+                                }
+                                else if (Model.Gender?.ToLower() == "female")
+                                {
+                                    genderIcon = "female";
+                                    genderClass = "text-pink-600";
+                                    genderBg = "bg-pink-100";
+                                }
+                            }
+                            <div class="@genderBg p-2 rounded-lg">
+                                <i class="material-icons @genderClass">@genderIcon</i>
+                            </div>
+                            <p class="font-semibold text-lg text-gray-800">@Model.Gender</p>
+                        </div>
+                    </div>
+
+                    <!-- Status -->
+                    <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-lg border border-gray-200">
+                        <p class="text-xs text-gray-500 uppercase tracking-wider mb-2">Status</p>
+                        <div class="flex items-center gap-2">
+                            @if (Model.Status == Status.Active)
+                            {
+                                <div class="bg-green-100 p-2 rounded-lg">
+                                    <i class="material-icons text-green-600">check_circle</i>
+                                </div>
+                                <p class="font-semibold text-lg text-gray-800">Active</p>
+                            }
+                            else
+                            {
+                                <div class="bg-red-100 p-2 rounded-lg">
+                                    <i class="material-icons text-red-600">cancel</i>
+                                </div>
+                                <p class="font-semibold text-lg text-gray-800">Inactive</p>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Campus -->
+                    <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-lg border border-gray-200">
+                        <p class="text-xs text-gray-500 uppercase tracking-wider mb-2">Campus</p>
+                        <div class="flex items-center gap-2">
+                            <div class="bg-cyan-100 p-2 rounded-lg">
+                                <i class="material-icons text-cyan-600">location_city</i>
+                            </div>
+                            <p class="font-semibold text-lg text-gray-800">@(Model.Campus?.CampusName ?? "Not Assigned")</p>
+                        </div>
+                    </div>
+
+                    <!-- Warden -->
+                    <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-lg border border-gray-200">
+                        <p class="text-xs text-gray-500 uppercase tracking-wider mb-2">Warden</p>
+                        <div class="flex items-center gap-2">
+                            <div class="bg-gray-200 p-2 rounded-lg">
+                                <i class="material-icons text-gray-600">person</i>
+                            </div>
+                            <p class="font-semibold text-lg text-gray-800">@(Model.Warden?.UserName ?? "Not Assigned")</p>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    @if (!string.IsNullOrEmpty(Model.Description))
+                    {
+                        <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-lg border border-gray-200">
+                            <p class="text-xs text-gray-500 uppercase tracking-wider mb-2">Description</p>
+                            <p class="text-sm text-gray-700 leading-relaxed">@Model.Description</p>
+                        </div>
+                    }
+
+                    <!-- Room Generation Settings -->
+                    <div class="bg-gradient-to-br from-cyan-50 to-cyan-100 p-4 rounded-lg border border-cyan-200">
+                        <p class="text-xs text-cyan-700 uppercase tracking-wider mb-3 font-semibold">Room Generation Settings</p>
+                        <div class="grid grid-cols-2 gap-3 text-sm">
+                            <div class="bg-white p-2 rounded-lg">
+                                <span class="text-gray-500 text-xs block mb-1">Default Type</span>
+                                <span class="font-bold text-gray-800">@ViewBag.DefaultRoomType</span>
+                            </div>
+                            <div class="bg-white p-2 rounded-lg">
+                                <span class="text-gray-500 text-xs block mb-1">Capacity</span>
+                                <span class="font-bold text-gray-800">@ViewBag.DefaultCapacity</span>
+                            </div>
+                            <div class="bg-white p-2 rounded-lg">
+                                <span class="text-gray-500 text-xs block mb-1">Rooms/Floor</span>
+                                <span class="font-bold text-gray-800">@ViewBag.RoomsPerFloor</span>
+                            </div>
+                            <div class="bg-white p-2 rounded-lg">
+                                <span class="text-gray-500 text-xs block mb-1">Auto-Beds</span>
+                                <span class="font-bold text-gray-800">@(ViewBag.AutoGenerateBeds ? "Yes" : "No")</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Audit Info -->
+                    <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-lg border border-gray-200">
+                        <p class="text-xs text-gray-500 uppercase tracking-wider mb-3">Audit Information</p>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex items-center justify-between">
+                                <span class="text-gray-600">Created By:</span>
+                                <span class="font-semibold text-gray-800">@Model.CreatedBy</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-gray-600">Created At:</span>
+                                <span class="font-semibold text-gray-800">@Model.CreatedAt.ToString("MMM dd, yyyy")</span>
+                            </div>
+                            @if (!string.IsNullOrEmpty(Model.UpdatedBy))
+                            {
+                                <hr class="my-2 border-gray-300" />
+                                <div class="flex items-center justify-between">
+                                    <span class="text-gray-600">Updated By:</span>
+                                    <span class="font-semibold text-gray-800">@Model.UpdatedBy</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-gray-600">Updated At:</span>
+                                    <span class="font-semibold text-gray-800">@Model.UpdatedAt?.ToString("MMM dd, yyyy")</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics Card -->
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                    <i class="material-icons text-cyan-600">analytics</i>
+                    Statistics
+                </h2>
+
+                <div class="space-y-6">
+                    <!-- Rooms Statistics -->
+                    <div>
+                        <p class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                            <i class="material-icons text-sm text-cyan-600">meeting_room</i>
+                            Rooms Overview
+                        </p>
+                        <div class="grid grid-cols-3 gap-3">
+                            <div class="stat-card bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg text-center border border-blue-200">
+                                <i class="material-icons text-blue-600 mb-2">door_front</i>
+                                <p class="text-2xl font-bold text-blue-700">@ViewBag.TotalRooms</p>
+                                <p class="text-xs text-blue-600 font-medium">Total</p>
+                            </div>
+                            <div class="stat-card bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg text-center border border-green-200">
+                                <i class="material-icons text-green-600 mb-2">check_circle</i>
+                                <p class="text-2xl font-bold text-green-700">@ViewBag.AvailableRooms</p>
+                                <p class="text-xs text-green-600 font-medium">Available</p>
+                            </div>
+                            <div class="stat-card bg-gradient-to-br from-amber-50 to-amber-100 p-4 rounded-lg text-center border border-amber-200">
+                                <i class="material-icons text-amber-600 mb-2">build</i>
+                                <p class="text-2xl font-bold text-amber-700">@ViewBag.MaintenanceRooms</p>
+                                <p class="text-xs text-amber-600 font-medium">Maintenance</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Beds Statistics -->
+                    <div>
+                        <p class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                            <i class="material-icons text-sm text-cyan-600">bed</i>
+                            Bed Spaces Overview
+                        </p>
+                        <div class="grid grid-cols-3 gap-3">
+                            <div class="stat-card bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg text-center border border-blue-200">
+                                <i class="material-icons text-blue-600 mb-2">hotel</i>
+                                <p class="text-2xl font-bold text-blue-700">@ViewBag.TotalBeds</p>
+                                <p class="text-xs text-blue-600 font-medium">Total</p>
+                            </div>
+                            <div class="stat-card bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg text-center border border-green-200">
+                                <i class="material-icons text-green-600 mb-2">event_available</i>
+                                <p class="text-2xl font-bold text-green-700">@ViewBag.AvailableBeds</p>
+                                <p class="text-xs text-green-600 font-medium">Available</p>
+                            </div>
+                            <div class="stat-card bg-gradient-to-br from-red-50 to-red-100 p-4 rounded-lg text-center border border-red-200">
+                                <i class="material-icons text-red-600 mb-2">event_busy</i>
+                                <p class="text-2xl font-bold text-red-700">@ViewBag.OccupiedBeds</p>
+                                <p class="text-xs text-red-600 font-medium">Occupied</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Occupancy Rate -->
+                    <div>
+                        <p class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                            <i class="material-icons text-sm text-cyan-600">show_chart</i>
+                            Occupancy Rate
+                        </p>
+                        @{
+                            int totalBedsCount = ViewBag.TotalBeds ?? 0;
+                            int occupiedBedsCount = ViewBag.OccupiedBeds ?? 0;
+                            int occupancyRate = totalBedsCount > 0
+                            ? (int)((double)occupiedBedsCount / totalBedsCount * 100)
+                            : 0;
+                            string progressColor = occupancyRate < 50 ? "from-green-500 to-green-600"
+                            : occupancyRate < 80 ? "from-yellow-500 to-yellow-600"
+                            : "from-red-500 to-red-600";
+                        }
+                        <div class="w-full bg-gray-200 rounded-full h-8 shadow-inner">
+                            <div class="bg-gradient-to-r @progressColor h-8 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-md transition-all duration-500"
+                                 style="width: @(occupancyRate)%">
+                                @occupancyRate%
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2 text-center">
+                            @occupiedBedsCount out of @totalBedsCount beds occupied
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Rooms List (2/3) -->
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-xl shadow-md h-full flex flex-col">
+                <div class="p-6 border-b border-gray-200">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                            <i class="material-icons text-cyan-600">meeting_room</i>
+                            Rooms Directory
+                            <span class="bg-cyan-100 text-cyan-700 px-3 py-1 rounded-full text-sm font-semibold">@(ViewBag.TotalRooms ?? 0)</span>
+                        </h2>
+                        <div class="flex items-center gap-3">
+                            <div class="relative">
+                                <i class="material-icons absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">search</i>
+                                <input type="text" id="roomSearchInput"
+                                       class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                                       placeholder="Search rooms..." />
+                            </div>
+                            <a asp-controller="Room" asp-action="CreateRoom" asp-route-hostelId="@Model.HostelId"
+                               class="px-4 py-2 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg hover:from-cyan-700 hover:to-cyan-800 transition-all flex items-center gap-2 shadow-md">
+                                <i class="material-icons">add</i>
+                                <span>Add Room</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-6 overflow-y-auto flex-1 custom-scroll">
+                    @if (ViewBag.Rooms != null)
+                    {
+                        var rooms = ViewBag.Rooms as IEnumerable<Room>;
+                        if (rooms != null && rooms.Any())
+                        {
+                            int totalFloors = ViewBag.TotalFloors ?? 0;
+                            for (int floor = 0; floor < totalFloors; floor++)
+                            {
+                                var floorRooms = rooms.Where(r => r.Floor == floor).ToList();
+
+                                if (floorRooms.Any())
+                                {
+                                    <div class="floor-section">
+                                        <div class="floor-header shadow-md">
+                                            <i class="material-icons">layers</i>
+                                            <span class="font-bold text-lg">Floor @(floor + 1)</span>
+                                            <span class="bg-white bg-opacity-30 px-3 py-1 rounded-full text-sm">@floorRooms.Count rooms</span>
+                                        </div>
+
+                                        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                                            @foreach (var room in floorRooms)
+                                            {
+                                                int occupiedCount = 0;
+                                                int availableCount = 0;
+
+                                                if (room.BedSpaces != null)
+                                                {
+                                                    foreach (var bed in room.BedSpaces)
+                                                    {
+                                                        if (bed.Status == Status.Occupied)
+                                                        {
+                                                            occupiedCount++;
+                                                        }
+                                                        else if (bed.Status == Status.Available)
+                                                        {
+                                                            availableCount++;
+                                                        }
+                                                    }
+                                                }
+
+                                                var statusColor = room.Status == Status.Available ? "bg-green-500"
+                                                : room.Status == Status.Occupied ? "bg-red-500"
+                                                : room.Status == Status.Maintenance ? "bg-yellow-500"
+                                                : "bg-gray-500";
+
+                                                var statusText = room.Status == Status.Available ? "Available"
+                                                : room.Status == Status.Occupied ? "Occupied"
+                                                : room.Status == Status.Maintenance ? "Maintenance"
+                                                : "Other";
+
+                                                <div class="room-card bg-gradient-to-br from-white to-gray-50 border-2 border-gray-200 rounded-xl p-4 shadow-sm">
+                                                    <div class="status-indicator @statusColor" title="@statusText"></div>
+
+                                                    <div class="mb-3">
+                                                        <h3 class="font-bold text-lg text-gray-800 mb-1">@room.RoomNumber</h3>
+                                                        <p class="text-xs text-gray-500 uppercase tracking-wide">@room.RoomType</p>
+                                                    </div>
+
+                                                    <div class="space-y-2">
+                                                        <div class="flex items-center justify-between text-sm">
+                                                            <span class="text-gray-600 flex items-center gap-1">
+                                                                <i class="material-icons text-sm">hotel</i>
+                                                                Beds:
+                                                            </span>
+                                                            <span class="font-bold text-gray-800">
+                                                                <span class="text-red-600">@occupiedCount</span>/<span class="text-gray-500">@room.Capacity</span>
+                                                            </span>
+                                                        </div>
+
+                                                        @if (room.Capacity > 0)
+                                                        {
+                                                            var bedOccupancyRate = (double)occupiedCount / room.Capacity * 100;
+                                                            var bedBarColor = bedOccupancyRate == 0 ? "bg-green-500"
+                                                            : bedOccupancyRate < 100 ? "bg-yellow-500"
+                                                            : "bg-red-500";
+
+                                                            <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                                                                <div class="@bedBarColor h-2 transition-all duration-500 rounded-full"
+                                                                     style="width: @(bedOccupancyRate)%"></div>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        }
+                        else
+                        {
+                            <div class="flex flex-col items-center justify-center h-full text-gray-400">
+                                <div class="bg-gray-100 p-8 rounded-full mb-6">
+                                    <i class="material-icons text-6xl">meeting_room</i>
+                                </div>
+                                <p class="text-xl font-semibold text-gray-600 mb-2">No Rooms Found</p>
+                                <p class="text-sm text-gray-500 text-center max-w-md">
+                                    Rooms will be automatically generated when you create this hostel,<br />
+                                    or click "Add Room" to manually add rooms.
+                                </p>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="flex flex-col items-center justify-center h-full text-gray-400">
+                            <div class="bg-gray-100 p-8 rounded-full mb-6">
+                                <i class="material-icons text-6xl">meeting_room</i>
+                            </div>
+                            <p class="text-xl font-semibold text-gray-600 mb-2">No Rooms Available</p>
+                            <p class="text-sm text-gray-500 text-center max-w-md">
+                                Click "Add Room" to create rooms for this hostel.
+                            </p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/hostelDetails.js"></script>
+    <script>
+        // Room search functionality
+        document.getElementById('roomSearchInput').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const roomCards = document.querySelectorAll('.room-card');
+
+            roomCards.forEach(card => {
+                const roomNumber = card.querySelector('h3').textContent.toLowerCase();
+                const roomType = card.querySelector('.uppercase').textContent.toLowerCase();
+
+                if (roomNumber.includes(searchTerm) || roomType.includes(searchTerm)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    </script>
+}

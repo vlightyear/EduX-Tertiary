@@ -1,0 +1,941 @@
+﻿@model SIS.Models.StudentAccommodation.Allocation
+@{
+    var config = ViewBag.Config as SIS.Models.StudentAccommodation.AccomodationConfiguration;
+    var checkInOutStatus = ViewBag.CheckInOutStatus as string ?? "Not Checked In";
+    var checkInOut = ViewBag.CheckInOut as SIS.Models.StudentAccommodation.CheckInOut;
+    ViewData["Title"] = "Current Accommodation";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    // Calculate fee based on payment type
+    var period = Model.Application?.Period;
+    decimal accommodationFee = 0;
+    string feeDisplay = "";
+    if (period != null)
+    {
+        if (period.TypeOfPayment == "PerDay")
+        {
+            var numberOfDays = Model.Application?.NumberOfDays ?? 1;
+            accommodationFee = period.TypeOfPaymentAmount * numberOfDays;
+            feeDisplay = $"K{period.TypeOfPaymentAmount:N2}/day × {numberOfDays} days = K{accommodationFee:N2}";
+        }
+        else
+        {
+            accommodationFee = period.TypeOfPaymentAmount;
+            feeDisplay = $"K{accommodationFee:N2} ({period.TypeOfPayment})";
+        }
+    }
+}
+
+<!-- SweetAlert2 CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    .accommodation-container {
+        min-height: calc(100vh - 80px);
+        padding: 1rem;
+    }
+
+    /* Header Section */
+    .accommodation-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .accommodation-header-left {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+        .accommodation-header-left i {
+            font-size: 2rem;
+            color: #10b981;
+        }
+
+    .accommodation-header-title h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    .accommodation-header-title p {
+        font-size: 0.875rem;
+        color: #64748b;
+        margin: 0;
+    }
+
+    /* Main Content Grid */
+    .accommodation-content {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    @@media (min-width: 1024px) {
+        .accommodation-content {
+            grid-template-columns: 2fr 1fr;
+        }
+    }
+
+    .left-section,
+    .right-section {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    /* Card Styles */
+    .card {
+        background: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .card-header {
+        padding: 1rem;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .card-header i {
+            font-size: 1.25rem;
+            color: #16697a;
+        }
+
+        .card-header h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin: 0;
+        }
+
+    .card-body {
+        padding: 1rem;
+    }
+
+    /* Status Banner */
+    .status-banner {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        border: 2px solid #6ee7b7;
+        background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    }
+
+        .status-banner i {
+            font-size: 2.5rem;
+            color: #10b981;
+        }
+
+    .status-banner-content h2 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin: 0 0 0.25rem 0;
+        color: #065f46;
+    }
+
+    .status-banner-content p {
+        font-size: 0.875rem;
+        margin: 0;
+        color: #047857;
+    }
+
+    /* Payment Type Badge */
+    .payment-type-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+        .payment-type-badge.semester {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+
+        .payment-type-badge.year {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .payment-type-badge.perday {
+            background: #fff3e0;
+            color: #e65100;
+        }
+
+        .payment-type-badge.fixed {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+
+    /* Fee Summary Card */
+    .fee-summary-card {
+        background: linear-gradient(135deg, #fef9e7 0%, #fdebd0 100%);
+        border: 2px solid #f9e79f;
+        border-radius: 0.5rem;
+        padding: 1rem;
+    }
+
+        .fee-summary-card h4 {
+            color: #9a7b0a;
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .fee-summary-card .fee-amount {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #7d6608;
+            margin-bottom: 0.25rem;
+        }
+
+        .fee-summary-card .fee-breakdown {
+            font-size: 0.75rem;
+            color: #9a7b0a;
+        }
+
+    /* Detail Grid */
+    .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 0.75rem;
+    }
+
+    .detail-item {
+        background: #f8fafc;
+        padding: 0.75rem;
+        border-radius: 0.375rem;
+        border: 1px solid #e2e8f0;
+    }
+
+    .detail-label {
+        font-size: 0.75rem;
+        color: #64748b;
+        font-weight: 600;
+        text-transform: uppercase;
+        margin-bottom: 0.25rem;
+        letter-spacing: 0.025em;
+    }
+
+    .detail-value {
+        font-size: 1rem;
+        color: #16697a;
+        font-weight: 700;
+    }
+
+        .detail-value.highlight {
+            color: #10b981;
+        }
+
+    /* Check-In/Out Status Styles */
+    .status-badge-large {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1rem 1.5rem;
+        border-radius: 2rem;
+        font-size: 1.125rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        margin-bottom: 1rem;
+    }
+
+        .status-badge-large i {
+            font-size: 1.5rem;
+        }
+
+    .status-checked-in {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+    }
+
+    .status-checked-out {
+        background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+        color: white;
+    }
+
+    .status-pending {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+    }
+
+    .status-not-checked-in {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
+    }
+
+    /* Check-In/Out Details Grid */
+    .checkin-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .checkin-detail {
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 0.5rem;
+        padding: 0.875rem;
+    }
+
+        .checkin-detail.highlight {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border-color: #6ee7b7;
+        }
+
+        .checkin-detail h4 {
+            color: #64748b;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+            .checkin-detail h4 i {
+                font-size: 1rem;
+            }
+
+        .checkin-detail p {
+            font-size: 0.875rem;
+            color: #334155;
+            margin: 0.25rem 0;
+        }
+
+            .checkin-detail p.large {
+                font-size: 1rem;
+                font-weight: 700;
+                color: #16697a;
+            }
+
+            .checkin-detail p.damage-charge {
+                font-size: 1.5rem;
+                font-weight: 800;
+                color: #dc2626;
+            }
+
+    /* Alert Boxes */
+    .alert-box {
+        padding: 1rem;
+        border-radius: 0.5rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        border: 2px solid;
+    }
+
+        .alert-box i {
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .alert-box p {
+            font-size: 0.875rem;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+    .alert-info {
+        background: #dbeafe;
+        border-color: #93c5fd;
+    }
+
+        .alert-info i {
+            color: #2563eb;
+        }
+
+        .alert-info p {
+            color: #1e40af;
+        }
+
+    .alert-warning {
+        background: #fff7ed;
+        border-color: #fed7aa;
+    }
+
+        .alert-warning i {
+            color: #d97706;
+        }
+
+        .alert-warning p {
+            color: #92400e;
+        }
+
+    .alert-danger {
+        background: #fee2e2;
+        border-color: #fca5a5;
+    }
+
+        .alert-danger i {
+            color: #dc2626;
+        }
+
+        .alert-danger p {
+            color: #991b1b;
+            font-weight: 600;
+        }
+
+    /* Timeline */
+    .timeline-item {
+        display: flex;
+        gap: 1rem;
+        padding: 0.75rem 0;
+        border-left: 3px solid #10b981;
+        padding-left: 1rem;
+        margin-left: 0.5rem;
+        position: relative;
+    }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -7px;
+            top: 1rem;
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+            background: #10b981;
+            border: 3px solid white;
+            box-shadow: 0 0 0 2px #10b981;
+        }
+
+    .timeline-content h4 {
+        color: #16697a;
+        font-size: 0.875rem;
+        margin-bottom: 0.25rem;
+        font-weight: 600;
+    }
+
+    .timeline-content p {
+        color: #64748b;
+        font-size: 0.75rem;
+        margin: 0;
+    }
+
+    /* Buttons */
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        border: none;
+        cursor: pointer;
+        width: 100%;
+    }
+
+    .btn-primary {
+        background: #16697a;
+        color: white;
+    }
+
+        .btn-primary:hover {
+            background: #0d4b56;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px rgba(22, 105, 122, 0.3);
+        }
+
+    .action-buttons {
+        display: flex;
+        gap: 0.75rem;
+        margin-top: 1rem;
+    }
+
+    /* Mobile Responsive */
+    @@media (max-width: 768px) {
+        .accommodation-container {
+            padding: 0.75rem;
+        }
+
+        .accommodation-header-left i {
+            font-size: 1.5rem;
+        }
+
+        .accommodation-header-title h1 {
+            font-size: 1.25rem;
+        }
+
+        .accommodation-header-title p {
+            font-size: 0.75rem;
+        }
+
+        .status-banner {
+            flex-direction: column;
+            text-align: center;
+            padding: 0.875rem;
+        }
+
+            .status-banner i {
+                font-size: 2rem;
+            }
+
+        .status-banner-content h2 {
+            font-size: 1.125rem;
+        }
+
+        .detail-grid,
+        .checkin-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .status-badge-large {
+            font-size: 0.875rem;
+            padding: 0.75rem 1.25rem;
+        }
+
+            .status-badge-large i {
+                font-size: 1.25rem;
+            }
+
+        .card-header,
+        .card-body {
+            padding: 0.875rem;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .detail-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .checkin-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="accommodation-container">
+    <!-- Header Section -->
+    <div class="accommodation-header">
+        <div class="accommodation-header-left">
+            <i class="material-icons">check_circle</i>
+            <div class="accommodation-header-title">
+                <h1>Current Accommodation</h1>
+                <p>You currently have an active bed allocation</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Banner -->
+    <div class="status-banner">
+        <i class="material-icons">celebration</i>
+        <div class="status-banner-content">
+            <h2>Active Accommodation Status</h2>
+            <p>You have been successfully allocated accommodation</p>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="accommodation-content">
+        <!-- Left Section -->
+        <div class="left-section">
+            <!-- Student Information -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="material-icons">person</i>
+                    <h3>Student Information</h3>
+                </div>
+                <div class="card-body">
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <div class="detail-label">Student ID</div>
+                            <div class="detail-value">@Model.Application.Student.StudentId_Number</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Full Name</div>
+                            <div class="detail-value">@Model.Application.Student.FullName</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Programme</div>
+                            <div class="detail-value">@Model.Application.Student.Programme?.Name</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Email</div>
+                            <div class="detail-value">@Model.Application.Student.Email</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Accommodation Details -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="material-icons">bed</i>
+                    <h3>Your Accommodation Details</h3>
+                </div>
+                <div class="card-body">
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <div class="detail-label">Campus</div>
+                            <div class="detail-value highlight">@Model.Bed.Room.Hostel.Campus.CampusName</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Hostel</div>
+                            <div class="detail-value highlight">@Model.Bed.Room.Hostel.HostelName</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Room Number</div>
+                            <div class="detail-value">@Model.Bed.Room.RoomNumber</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Bed</div>
+                            <div class="detail-value">@Model.Bed.BedIdentifier</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Room Type</div>
+                            <div class="detail-value">@Model.Bed.Room.RoomType</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Floor</div>
+                            <div class="detail-value">Floor @Model.Bed.Room.Floor</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Allocation Date</div>
+                            <div class="detail-value">@Model.AllocationDate.ToString("MMM dd, yyyy")</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Start Date</div>
+                            <div class="detail-value">@Model.StartDate.ToString("MMM dd, yyyy")</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">End Date</div>
+                            <div class="detail-value">
+                                @if (Model.IsGraduationBased)
+                                {
+                                    <span>Until Graduation</span>
+                                }
+                                else if (Model.EndDate.HasValue)
+                                {
+                                    @Model.EndDate.Value.ToString("MMM dd, yyyy")
+                                }
+                                else
+                                {
+                                    <span>Not Specified</span>
+                                }
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Status</div>
+                            <div class="detail-value highlight">@Model.Status</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Period Type</div>
+                            <div class="detail-value">@period?.Type</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Payment Type</div>
+                            <div class="detail-value">
+                                <span class="payment-type-badge @period?.TypeOfPayment?.ToLower()">
+                                    @period?.TypeOfPayment
+                                </span>
+                            </div>
+                        </div>
+                        @if (period?.TypeOfPayment == "PerDay" && Model.Application?.NumberOfDays.HasValue == true)
+                        {
+                            <div class="detail-item">
+                                <div class="detail-label">Number of Days</div>
+                                <div class="detail-value">@Model.Application.NumberOfDays days</div>
+                            </div>
+                        }
+                        <div class="detail-item">
+                            <div class="detail-label">Allocated By</div>
+                            <div class="detail-value">@Model.AllocatedBy?.FullName</div>
+                        </div>
+                    </div>
+
+                    <!-- Fee Summary Card -->
+                    @if (period != null && accommodationFee > 0)
+                    {
+                        <div class="fee-summary-card" style="margin-top: 1rem;">
+                            <h4>
+                                <i class="material-icons">receipt_long</i>
+                                Accommodation Fee
+                            </h4>
+                            <div class="fee-amount">K @accommodationFee.ToString("N2")</div>
+                            <div class="fee-breakdown">@feeDisplay</div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Check-In/Out Status -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="material-icons">meeting_room</i>
+                    <h3>Check-In/Out Status</h3>
+                </div>
+                <div class="card-body">
+                    @if (checkInOutStatus == "Checked In")
+                    {
+                        <div class="status-badge-large status-checked-in">
+                            <i class="material-icons">check_circle</i>
+                            <span>CHECKED IN</span>
+                        </div>
+
+                        @if (checkInOut != null)
+                        {
+                            <div class="checkin-grid">
+                                <div class="checkin-detail highlight">
+                                    <h4><i class="material-icons">login</i> Check-In Date</h4>
+                                    <p class="large">@checkInOut.CheckInDate?.ToString("MMM dd, yyyy")</p>
+                                    <p>@checkInOut.CheckInDate?.ToString("hh:mm tt")</p>
+                                </div>
+                                <div class="checkin-detail">
+                                    <h4><i class="material-icons">description</i> Room Condition</h4>
+                                    <p>@(checkInOut.CheckInCondition ?? "Not Specified")</p>
+                                </div>
+                                <div class="checkin-detail">
+                                    <h4><i class="material-icons">person</i> Checked In By</h4>
+                                    <p>@(checkInOut.CheckInStaff?.FullName ?? "N/A")</p>
+                                </div>
+                            </div>
+
+                            <div class="alert-box alert-info">
+                                <i class="material-icons">info</i>
+                                <p>
+                                    <strong>You are currently checked in to your accommodation.</strong>
+                                    Please maintain the room in good condition. Any damages may result in charges during check-out.
+                                </p>
+                            </div>
+                        }
+                    }
+                    else if (checkInOutStatus == "Checked Out")
+                    {
+                        <div class="status-badge-large status-checked-out">
+                            <i class="material-icons">logout</i>
+                            <span>CHECKED OUT</span>
+                        </div>
+
+                        @if (checkInOut != null)
+                        {
+                            <div class="checkin-grid">
+                                <div class="checkin-detail">
+                                    <h4><i class="material-icons">login</i> Check-In Date</h4>
+                                    <p class="large">@checkInOut.CheckInDate?.ToString("MMM dd, yyyy")</p>
+                                    <p>@checkInOut.CheckInDate?.ToString("hh:mm tt")</p>
+                                </div>
+                                <div class="checkin-detail">
+                                    <h4><i class="material-icons">description</i> Condition (In)</h4>
+                                    <p>@(checkInOut.CheckInCondition ?? "Not Specified")</p>
+                                </div>
+                                <div class="checkin-detail highlight">
+                                    <h4><i class="material-icons">logout</i> Check-Out Date</h4>
+                                    <p class="large">@checkInOut.CheckOutDate?.ToString("MMM dd, yyyy")</p>
+                                    <p>@checkInOut.CheckOutDate?.ToString("hh:mm tt")</p>
+                                </div>
+                                <div class="checkin-detail">
+                                    <h4><i class="material-icons">description</i> Condition (Out)</h4>
+                                    <p>@(checkInOut.CheckOutCondition ?? "Not Specified")</p>
+                                </div>
+                                <div class="checkin-detail">
+                                    <h4><i class="material-icons">person</i> Checked Out By</h4>
+                                    <p>@(checkInOut.CheckOutStaff?.FullName ?? "N/A")</p>
+                                </div>
+                                <div class="checkin-detail @(checkInOut.DamageCharges > 0 ? "" : "highlight")">
+                                    <h4><i class="material-icons">@(checkInOut.DamageCharges > 0 ? "warning" : "check_circle")</i> Damage Charges</h4>
+                                    @if (checkInOut.DamageCharges > 0)
+                                    {
+                                        <p class="damage-charge">K @checkInOut.DamageCharges.ToString("N2")</p>
+                                    }
+                                    else
+                                    {
+                                        <p class="large" style="color: #059669;">K 0.00 - No Charges</p>
+                                    }
+                                </div>
+                            </div>
+
+                            @if (checkInOut.DamageCharges > 0)
+                            {
+                                <div class="alert-box alert-danger">
+                                    <i class="material-icons">warning</i>
+                                    <p>
+                                        <strong>Damage charges of K @checkInOut.DamageCharges.ToString("N2") have been assessed.</strong>
+                                        Please contact the accommodation office to settle this amount.
+                                    </p>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="alert-box alert-info">
+                                    <i class="material-icons">check_circle</i>
+                                    <p>
+                                        <strong>You have successfully checked out with no damage charges.</strong>
+                                        Thank you for maintaining the room in good condition.
+                                    </p>
+                                </div>
+                            }
+                        }
+                    }
+                    else if (checkInOutStatus == "Pending Check-In")
+                    {
+                        <div class="status-badge-large status-pending">
+                            <i class="material-icons">pending</i>
+                            <span>PENDING CHECK-IN</span>
+                        </div>
+
+                        <div class="alert-box alert-warning">
+                            <i class="material-icons">schedule</i>
+                            <p>
+                                <strong>Your accommodation has been allocated but you have not yet checked in.</strong>
+                                Please visit the accommodation office with your student ID to complete the check-in process.
+                                Check-in location: @(Model.Bed.Room.Hostel.HostelName), @(Model.Bed.Room.Hostel.Campus.CampusName) Campus.
+                            </p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="status-badge-large status-not-checked-in">
+                            <i class="material-icons">block</i>
+                            <span>NOT CHECKED IN</span>
+                        </div>
+
+                        <div class="alert-box alert-danger">
+                            <i class="material-icons">error</i>
+                            <p>
+                                <strong>You have an allocated bed space but no check-in record exists.</strong>
+                                Please visit the accommodation office immediately at @(Model.Bed.Room.Hostel.HostelName),
+                                @(Model.Bed.Room.Hostel.Campus.CampusName) Campus to complete your check-in process.
+                            </p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Section -->
+        <div class="right-section">
+            <!-- Period Information -->
+            @if (period != null)
+            {
+                <div class="card">
+                    <div class="card-header">
+                        <i class="material-icons">date_range</i>
+                        <h3>Period Information</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <div class="detail-label">Period Type</div>
+                                <div class="detail-value">@period.Type</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Payment Type</div>
+                                <div class="detail-value">
+                                    <span class="payment-type-badge @period.TypeOfPayment?.ToLower()">
+                                        @period.TypeOfPayment
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Period Start</div>
+                                <div class="detail-value">@period.StartDate.ToString("MMM dd, yyyy")</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Period End</div>
+                                <div class="detail-value">
+                                    @(period.EndDate != null ? period.EndDate.Value.ToString("MMM dd, yyyy") : "Graduation")
+                                </div>
+                            </div>
+                            @if (period.TypeOfPayment == "PerDay" && Model.Application?.NumberOfDays.HasValue == true)
+                            {
+                                <div class="detail-item">
+                                    <div class="detail-label">Days Booked</div>
+                                    <div class="detail-value highlight">@Model.Application.NumberOfDays days</div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Timeline -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="material-icons">timeline</i>
+                    <h3>Accommodation Timeline</h3>
+                </div>
+                <div class="card-body">
+                    <div class="timeline-item">
+                        <div class="timeline-content">
+                            <h4>Application Submitted</h4>
+                            <p>@Model.Application.ApplicationDate.ToString("MMM dd, yyyy 'at' hh:mm tt")</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-content">
+                            <h4>Bed Allocated</h4>
+                            <p>@Model.AllocationDate.ToString("MMM dd, yyyy 'at' hh:mm tt")</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-content">
+                            <h4>Accommodation Period Started</h4>
+                            <p>@Model.StartDate.ToString("MMM dd, yyyy")</p>
+                        </div>
+                    </div>
+                    @if (Model.EndDate.HasValue && !Model.IsGraduationBased)
+                    {
+                        <div class="timeline-item">
+                            <div class="timeline-content">
+                                <h4>Accommodation Period Ends</h4>
+                                <p>@Model.EndDate.Value.ToString("MMM dd, yyyy")</p>
+                            </div>
+                        </div>
+                    }
+                    else if (Model.IsGraduationBased)
+                    {
+                        <div class="timeline-item">
+                            <div class="timeline-content">
+                                <h4>Valid Until Graduation</h4>
+                                <p>Your accommodation is valid until you complete your studies</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <a href="/" class="btn btn-primary">
+                    <i class="material-icons">home</i>
+                    Return to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+}

@@ -1,0 +1,456 @@
+﻿@model SIS.Models.ViewModels.StudentFinancialViewModel
+
+<div class="space-y-6">
+    <!-- Financial Summary -->
+    <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-lg p-6 text-white">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <div class="bg-white bg-opacity-20 rounded-full p-3 mr-4">
+                    <i class="material-icons text-2xl">account_balance</i>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold">Financial Summary</h2>
+                    <p class="text-green-100 text-sm">@Model.StudentName (@Model.StudentNumber)</p>
+                </div>
+            </div>
+            <div class="text-right">
+                <div class="text-xs text-green-100">Academic Year</div>
+                <div class="text-lg font-semibold">@Model.AcademicYear</div>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="grid grid-cols-3 gap-4 mt-6">
+            <div class="bg-white bg-opacity-20 rounded-lg p-4 text-center">
+                <div class="text-2xl font-bold">K @Model.TotalFees.ToString("N2")</div>
+                <div class="text-xs text-green-100">Total Fees</div>
+            </div>
+            <div class="bg-white bg-opacity-20 rounded-lg p-4 text-center">
+                <div class="text-2xl font-bold">K @Model.AmountPaid.ToString("N2")</div>
+                <div class="text-xs text-green-100">Amount Paid</div>
+            </div>
+            <div class="bg-white bg-opacity-20 rounded-lg p-4 text-center">
+                <div class="text-2xl font-bold">K @Model.OutstandingBalance.ToString("N2")</div>
+                <div class="text-xs text-green-100">Outstanding</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Status Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Registration Status -->
+        <div class="bg-white rounded-lg border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h3 class="text-lg font-semibold text-slate-800 flex items-center">
+                    <i class="material-icons text-primary-600 mr-2">how_to_reg</i>
+                    Registration Status
+                </h3>
+            </div>
+            <div class="p-6">
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-slate-600">Required Amount:</span>
+                        <span class="font-semibold text-slate-800">K @Model.MinRegistrationPayment.ToString("N2")</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-slate-600">Amount Paid:</span>
+                        <span class="font-semibold text-slate-800">K @Model.AmountPaid.ToString("N2")</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-slate-600">Status:</span>
+                        @if (Model.CanRegister)
+                        {
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                                <i class="material-icons text-sm mr-1">check_circle</i>
+                                Can Register
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                                <i class="material-icons text-sm mr-1">cancel</i>
+                                Cannot Register
+                            </span>
+                        }
+                    </div>
+                    @if (!Model.CanRegister)
+                    {
+                        <div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                            <p class="text-sm text-amber-800">
+                                <i class="material-icons text-sm mr-1">info</i>
+                                Need K @((Model.MinRegistrationPayment - Model.AmountPaid).ToString("N2")) more to register
+                            </p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Examination Status -->
+        <div class="bg-white rounded-lg border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h3 class="text-lg font-semibold text-slate-800 flex items-center">
+                    <i class="material-icons text-primary-600 mr-2">assignment</i>
+                    Examination Status
+                </h3>
+            </div>
+            <div class="p-6">
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-slate-600">Required Amount:</span>
+                        <span class="font-semibold text-slate-800">K @Model.MinExamPayment.ToString("N2")</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-slate-600">Amount Paid:</span>
+                        <span class="font-semibold text-slate-800">K @Model.AmountPaid.ToString("N2")</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-slate-600">Status:</span>
+                        @if (Model.CanTakeExams)
+                        {
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                                <i class="material-icons text-sm mr-1">check_circle</i>
+                                Can Take Exams
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                                <i class="material-icons text-sm mr-1">cancel</i>
+                                Cannot Take Exams
+                            </span>
+                        }
+                    </div>
+                    @if (!Model.CanTakeExams)
+                    {
+                        <div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                            <p class="text-sm text-amber-800">
+                                <i class="material-icons text-sm mr-1">info</i>
+                                Need K @((Model.MinExamPayment - Model.AmountPaid).ToString("N2")) more for exams
+                            </p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* <!-- Fee Breakdown -->
+    @if (Model.FeeBreakdown.Any())
+    {
+        <div class="bg-white rounded-lg border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h3 class="text-lg font-semibold text-slate-800 flex items-center">
+                    <i class="material-icons text-primary-600 mr-2">receipt_long</i>
+                    Fee Breakdown
+                </h3>
+            </div>
+            <div class="p-6">
+                <div class="space-y-4">
+                    @foreach (var fee in Model.FeeBreakdown)
+                    {
+                        <div class="border border-slate-200 rounded-lg p-4">
+                            <div class="flex items-center justify-between mb-3">
+                                <h4 class="font-medium text-slate-800">@fee.Description</h4>
+                                <span class="text-sm text-slate-600">@fee.PercentagePaid.ToString("F1")% paid</span>
+                            </div>
+
+                            <!-- Progress Bar -->
+                            <div class="w-full bg-slate-200 rounded-full h-2 mb-3">
+                                <div class="bg-green-500 h-2 rounded-full transition-all duration-300"
+                                     style="width: @(fee.PercentagePaid)%"></div>
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-4 text-sm">
+                                <div class="text-center">
+                                    <div class="font-semibold text-slate-800">K @fee.Amount.ToString("N2")</div>
+                                    <div class="text-slate-600">Total</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="font-semibold text-green-600">K @fee.Paid.ToString("N2")</div>
+                                    <div class="text-slate-600">Paid</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="font-semibold text-red-600">K @fee.Balance.ToString("N2")</div>
+                                    <div class="text-slate-600">Balance</div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Invoice Information -->
+    @if (!string.IsNullOrEmpty(Model.InvoiceReference) && Model.InvoiceReference != "N/A")
+    {
+        <div class="bg-white rounded-lg border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h3 class="text-lg font-semibold text-slate-800 flex items-center">
+                    <i class="material-icons text-primary-600 mr-2">description</i>
+                    Invoice Information
+                </h3>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600 mb-1">Invoice Reference</label>
+                        <p class="text-slate-800 font-mono">@Model.InvoiceReference</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600 mb-1">Invoice Date</label>
+                        <p class="text-slate-800">@Model.InvoiceDate.ToString("MMM dd, yyyy")</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+ *@
+
+    <!-- Payment History -->
+    @if (Model.FinancialStatement.Any())
+    {
+        <div class="bg-white rounded-lg border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h3 class="text-lg font-semibold text-slate-800 flex items-center">
+                    <i class="material-icons text-primary-600 mr-2">history</i>
+                    Financial Statement
+                </h3>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left text-slate-700">
+                    <thead class="text-xs uppercase bg-slate-50">
+                        <tr>
+                            <th class="px-6 py-3">Date</th>
+                            <th class="px-6 py-3">Transaction Reference</th>
+                            <th class="px-6 py-3">Credit</th>
+                            <th class="px-6 py-3">Debit</th>
+                            <th class="px-6 py-3">Running Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            decimal runningBalance = 0;
+                        }
+                        @foreach (var payment in Model.FinancialStatement)
+                        {
+                            if (payment.Credit)
+                            {
+                                runningBalance -= payment.Amount.Value;
+                            }
+                            else
+                            {
+                                runningBalance += payment.Amount.Value;
+                            }
+                            <tr class="bg-white border-b hover:bg-slate-50">
+                                <td class="px-6 py-4">
+                                    @payment.CreatedAt.ToString("MMM dd, yyyy")
+                                    <div class="text-xs text-slate-500">@payment.CreatedAt.ToString("HH:mm")</div>
+                                </td>
+                                <td class="px-6 py-4 font-mono text-xs">@payment.Reference</td>
+                                <td class="px-6 py-4 font-semibold text-green-600">
+                                    @if (payment.Credit)
+                                    {
+                                        <span>K @payment.Amount.Value.ToString("N2")</span>
+                                    }
+                                    else
+                                    {
+                                        <span>K0</span>
+                                    }
+                                </td>
+                                <td class="px-6 py-4 font-semibold text-red-600">
+                                    @if (!payment.Credit)
+                                    {
+                                        <span>K @payment.Amount.Value.ToString("N2")</span>
+                                    }
+                                    else
+                                    {
+                                        <span>K0</span>
+                                    }
+                                </td>
+                                @if (runningBalance < 0)
+                                {
+                                    <td class="px-6 py-4 font-semibold text-green-600">
+                                        @((runningBalance < 0 ? $"({Math.Abs(runningBalance).ToString("N2")})" : runningBalance.ToString("N2")))
+                                    </td>
+                                }
+                                else
+                                {
+                                    <td class="px-6 py-4 font-semibold text-red-600">
+                                        @runningBalance.ToString("N2")
+                                    </td>
+                                }
+                                @* <td class="px-6 py-4">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                        @payment.AccountingSystemPostStatus
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 font-semibold text-slate-800">K @payment.OutstandingAmount.ToString("N2")</td> *@
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            @if (Model.PaymentHistory.Count > 10)
+            {
+                <div class="bg-slate-50 px-6 py-3 text-center">
+                    <p class="text-sm text-slate-600">Showing latest 10 of @Model.PaymentHistory.Count payments</p>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="bg-white rounded-lg border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h3 class="text-lg font-semibold text-slate-800 flex items-center">
+                    <i class="material-icons text-primary-600 mr-2">history</i>
+                    Payment History
+                </h3>
+            </div>
+            <div class="p-6 text-center">
+                <i class="material-icons text-6xl text-slate-300 mb-4">payment</i>
+                <p class="text-slate-500 text-lg font-medium">No Payment History</p>
+                <p class="text-slate-400 text-sm mt-2">No payments have been made for this academic year</p>
+            </div>
+        </div>
+    }
+
+
+    @* <!-- Payment History -->
+    @if (Model.PaymentHistory.Any())
+    {
+        <div class="bg-white rounded-lg border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h3 class="text-lg font-semibold text-slate-800 flex items-center">
+                    <i class="material-icons text-primary-600 mr-2">history</i>
+                    Payment History
+                </h3>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left text-slate-700">
+                    <thead class="text-xs uppercase bg-slate-50">
+                        <tr>
+                            <th class="px-6 py-3">Date</th>
+                            <th class="px-6 py-3">Transaction Reference</th>
+                            <th class="px-6 py-3">Amount Paid</th>
+                            <th class="px-6 py-3">Payment Method</th>
+                            <th class="px-6 py-3">Outstanding After</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var payment in Model.PaymentHistory.Take(10))
+                        {
+                            <tr class="bg-white border-b hover:bg-slate-50">
+                                <td class="px-6 py-4">
+                                    @payment.PaymentDate.ToString("MMM dd, yyyy")
+                                    <div class="text-xs text-slate-500">@payment.PaymentDate.ToString("HH:mm")</div>
+                                </td>
+                                <td class="px-6 py-4 font-mono text-xs">@payment.TransactionReference</td>
+                                <td class="px-6 py-4 font-semibold text-green-600">K @payment.AmountPaid.ToString("N2")</td>
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                        @payment.PaymentMethod
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 font-semibold text-slate-800">K @payment.OutstandingAmount.ToString("N2")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            @if (Model.PaymentHistory.Count > 10)
+            {
+                <div class="bg-slate-50 px-6 py-3 text-center">
+                    <p class="text-sm text-slate-600">Showing latest 10 of @Model.PaymentHistory.Count payments</p>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="bg-white rounded-lg border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h3 class="text-lg font-semibold text-slate-800 flex items-center">
+                    <i class="material-icons text-primary-600 mr-2">history</i>
+                    Payment History
+                </h3>
+            </div>
+            <div class="p-6 text-center">
+                <i class="material-icons text-6xl text-slate-300 mb-4">payment</i>
+                <p class="text-slate-500 text-lg font-medium">No Payment History</p>
+                <p class="text-slate-400 text-sm mt-2">No payments have been made for this academic year</p>
+            </div>
+        </div>
+    } *@
+
+    <!-- Payment Summary Statistics -->
+    <div class="bg-white rounded-lg border border-slate-200 overflow-hidden">
+        <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+            <h3 class="text-lg font-semibold text-slate-800 flex items-center">
+                <i class="material-icons text-primary-600 mr-2">analytics</i>
+                Payment Statistics
+            </h3>
+        </div>
+        <div class="p-6">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="text-center p-4 bg-blue-50 rounded-lg">
+                    <div class="text-2xl font-bold text-blue-600">@Model.PaymentHistory.Count</div>
+                    <div class="text-sm text-blue-700">Total Payments</div>
+                </div>
+                <div class="text-center p-4 bg-green-50 rounded-lg">
+                    <div class="text-2xl font-bold text-green-600">@((Model.AmountPaid / Math.Max(Model.TotalFees, 1) * 100).ToString("F1"))%</div>
+                    <div class="text-sm text-green-700">Completion Rate</div>
+                </div>
+                <div class="text-center p-4 bg-purple-50 rounded-lg">
+                    <div class="text-2xl font-bold text-purple-600">K@(Model.PaymentHistory.Any() ? Model.PaymentHistory.Average(p => p.AmountPaid).ToString("N2") : "0.00")</div>
+                    <div class="text-sm text-purple-700">Average Payment</div>
+                </div>
+                <div class="text-center p-4 bg-amber-50 rounded-lg">
+                    <div class="text-2xl font-bold text-amber-600">@(Model.PaymentHistory.Any() ? Model.PaymentHistory.GroupBy(p => p.PaymentMethod).OrderByDescending(g => g.Count()).First().Key : "N/A")</div>
+                    <div class="text-sm text-amber-700">Preferred Method</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Outstanding Balance Alert -->
+    @if (Model.OutstandingBalance > 0)
+    {
+        <div class="bg-red-50 border border-red-200 rounded-lg p-6">
+            <div class="flex items-center">
+                <i class="material-icons text-red-500 text-xl mr-3">warning</i>
+                <div class="flex-1">
+                    <h4 class="text-lg font-semibold text-red-800">Outstanding Balance</h4>
+                    <p class="text-red-700 mt-1">
+                        This student has an outstanding balance of <strong>K @Model.OutstandingBalance.ToString("N2")</strong>.
+                        @if (!Model.CanRegister)
+                        {
+                            <span>Registration is not permitted until minimum payment requirements are met.</span>
+                        }
+                        @if (!Model.CanTakeExams)
+                        {
+                            <span>Examination access is restricted until payment requirements are satisfied.</span>
+                        }
+                    </p>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="bg-green-50 border border-green-200 rounded-lg p-6">
+            <div class="flex items-center">
+                <i class="material-icons text-green-500 text-xl mr-3">check_circle</i>
+                <div class="flex-1">
+                    <h4 class="text-lg font-semibold text-green-800">Fees Fully Paid</h4>
+                    <p class="text-green-700 mt-1">
+                        This student has cleared all outstanding fees for the current academic year.
+                        All academic services are available.
+                    </p>
+                </div>
+            </div>
+        </div>
+    }
+</div>

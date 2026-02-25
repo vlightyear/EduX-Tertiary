@@ -1,0 +1,771 @@
+﻿@model IEnumerable<SIS.Models.Admin.AcademicEventType>
+@{
+    ViewData["Title"] = "Manage Event Types";
+}
+
+<div class="min-h-screen bg-slate-50 p-6">
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row justify-between items-center h-24 mb-4">
+        <div class="flex items-center text-slate-800">
+            <i class="material-icons text-3xl mr-2">category</i>
+            <div>
+                <h1 class="text-2xl font-bold">Academic Event Types</h1>
+                <p class="text-sm text-slate-600">Manage categories, colors, and icons for calendar events</p>
+            </div>
+        </div>
+        <div class="mt-4 md:mt-0">
+            <button onclick="openCreateModal()" 
+                    class="inline-flex items-center px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors">
+                <i class="material-icons text-sm mr-1">add</i>
+                <span>Add Event Type</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Event Types Card -->
+    <div class="bg-white rounded-xl shadow-sm mb-6">
+        <div class="p-6">
+            <h2 class="text-lg font-semibold text-slate-800 mb-4">Event Types</h2>
+            
+            @if (!Model.Any())
+            {
+                <div class="p-4 bg-slate-100 rounded-lg text-center">
+                    <div class="flex flex-col items-center mb-4">
+                        <i class="material-icons text-4xl text-slate-400 mb-2">category</i>
+                        <h3 class="text-lg font-medium text-slate-700">No Event Types Found</h3>
+                    </div>
+                    <p class="text-slate-600 mb-4">Create your first event type to start organizing your academic calendar.</p>
+                    <button onclick="openCreateModal()" class="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors">
+                        <i class="material-icons text-sm align-text-bottom mr-1">add</i>
+                        Add Event Type
+                    </button>
+                </div>
+            }
+            else
+            {
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-slate-200">
+                        <thead class="bg-slate-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Event Type</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Preview</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Color</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Icon</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Events</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-slate-200">
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-medium text-slate-900">@item.Name</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="w-32 h-7 rounded-md flex items-center px-2" style="background-color: @item.DefaultColor; color: #ffffff;">
+                                                <i class="material-icons text-sm mr-1">@item.IconName</i>
+                                                <span class="text-xs truncate">Sample Event</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="w-6 h-6 rounded-full mr-2" style="background-color: @item.DefaultColor"></div>
+                                            <span class="text-sm text-slate-600">@item.DefaultColor</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center mr-2">
+                                                <i class="material-icons" style="color: @item.DefaultColor">@item.IconName</i>
+                                            </div>
+                                            <span class="text-sm text-slate-600">@item.IconName</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-cyan-100 text-cyan-800">
+                                            @(ViewBag.EventCounts?.ContainsKey(item.Id) == true ? ViewBag.EventCounts[item.Id] : 0)
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                                        <div class="flex space-x-2">
+                                            <button onclick="openEditModal(@item.Id)" class="text-amber-600 hover:text-amber-900" title="Edit">
+                                                <i class="material-icons">edit</i>
+                                            </button>
+                                            @if (ViewBag.EventCounts?.ContainsKey(item.Id) != true || ViewBag.EventCounts[item.Id] == 0)
+                                            {
+                                                <button onclick="confirmDelete(@item.Id, '@item.Name')" class="text-red-600 hover:text-red-900" title="Delete">
+                                                    <i class="material-icons">delete</i>
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button class="text-slate-400 cursor-not-allowed" title="Cannot delete - in use">
+                                                    <i class="material-icons">delete</i>
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+    
+    <!-- Icon Gallery Card -->
+    <div class="bg-white rounded-xl shadow-sm">
+        <div class="p-6">
+            <h2 class="text-lg font-semibold text-slate-800 mb-4">Available Icons</h2>
+            <div class="text-sm text-slate-600 mb-4">
+                Google Material Icons are available for use with event types. Click an icon to copy its name.
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4" id="iconGallery">
+                <!-- Icons will be populated via JavaScript -->
+                <div class="p-4 border border-slate-200 rounded-lg flex flex-col items-center animate-pulse">
+                    <div class="w-10 h-10 bg-slate-200 rounded-full mb-2"></div>
+                    <div class="h-4 bg-slate-200 rounded w-20"></div>
+                </div>
+                <div class="p-4 border border-slate-200 rounded-lg flex flex-col items-center animate-pulse">
+                    <div class="w-10 h-10 bg-slate-200 rounded-full mb-2"></div>
+                    <div class="h-4 bg-slate-200 rounded w-16"></div>
+                </div>
+                <div class="p-4 border border-slate-200 rounded-lg flex flex-col items-center animate-pulse">
+                    <div class="w-10 h-10 bg-slate-200 rounded-full mb-2"></div>
+                    <div class="h-4 bg-slate-200 rounded w-24"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create/Edit Modal -->
+<div id="eventTypeModal" class="hidden fixed inset-0 bg-slate-900 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white">
+        <div class="flex justify-between items-center border-b pb-3">
+            <h3 id="modalTitle" class="text-lg font-medium text-slate-900">Add Event Type</h3>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-500">
+                <i class="material-icons">close</i>
+            </button>
+        </div>
+        
+        <form id="eventTypeForm" class="mt-4 space-y-4">
+            <input type="hidden" id="eventTypeId" name="Id" value="0">
+            
+            <!-- Event Type Name -->
+            <div>
+                <label for="eventTypeName" class="block text-sm font-medium text-slate-700 mb-1">Event Type Name*</label>
+                <input type="text" id="eventTypeName" name="Name" required
+                       class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm">
+            </div>
+            
+            <!-- Color Picker -->
+            <div>
+                <label for="eventTypeColor" class="block text-sm font-medium text-slate-700 mb-1">Color*</label>
+                <div class="flex items-center">
+                    <input type="color" id="eventTypeColor" name="DefaultColor" value="#3788d8"
+                           class="h-8 w-8 border-slate-300 rounded mr-2">
+                    <input type="text" id="eventTypeColorHex" 
+                           class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm"
+                           placeholder="#RRGGBB" pattern="^#[0-9A-Fa-f]{6}$">
+                </div>
+                <div class="flex flex-wrap gap-2 mt-2">
+                    <div class="h-6 w-6 rounded cursor-pointer" style="background-color: #4285F4;" onclick="setColor('#4285F4')"></div>
+                    <div class="h-6 w-6 rounded cursor-pointer" style="background-color: #0F9D58;" onclick="setColor('#0F9D58')"></div>
+                    <div class="h-6 w-6 rounded cursor-pointer" style="background-color: #DB4437;" onclick="setColor('#DB4437')"></div>
+                    <div class="h-6 w-6 rounded cursor-pointer" style="background-color: #F4B400;" onclick="setColor('#F4B400')"></div>
+                    <div class="h-6 w-6 rounded cursor-pointer" style="background-color: #673AB7;" onclick="setColor('#673AB7')"></div>
+                    <div class="h-6 w-6 rounded cursor-pointer" style="background-color: #3F51B5;" onclick="setColor('#3F51B5')"></div>
+                    <div class="h-6 w-6 rounded cursor-pointer" style="background-color: #009688;" onclick="setColor('#009688')"></div>
+                    <div class="h-6 w-6 rounded cursor-pointer" style="background-color: #FF5722;" onclick="setColor('#FF5722')"></div>
+                </div>
+            </div>
+            
+            <!-- Icon Selector -->
+            <div>
+                <label for="eventTypeIcon" class="block text-sm font-medium text-slate-700 mb-1">Icon*</label>
+                <div class="relative">
+                    <input type="text" id="eventTypeIcon" name="IconName" required
+                           class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm pr-10">
+                    <button type="button" id="iconSelectorBtn" class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                        <i class="material-icons text-slate-400">expand_more</i>
+                    </button>
+                </div>
+                <div id="iconPreview" class="mt-2 p-3 border border-slate-200 rounded-md flex items-center justify-center">
+                    <div class="bg-slate-100 rounded-full p-3 flex items-center justify-center">
+                        <i id="previewIcon" class="material-icons text-2xl">event</i>
+                    </div>
+                </div>
+                
+                <!-- Icon Selector Dropdown (hidden by default) -->
+                <div id="iconDropdown" class="hidden absolute z-50 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base overflow-auto focus:outline-none sm:text-sm">
+                    <div class="sticky top-0 bg-white p-2 border-b">
+                        <input type="text" id="iconSearch" placeholder="Search icons..." class="w-full p-2 border rounded-md">
+                    </div>
+                    <div id="iconList" class="grid grid-cols-4 gap-1 p-2">
+                        <!-- Icons will be populated via JavaScript -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Preview -->
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Preview</label>
+                <div class="flex items-center mt-2">
+                    <div id="eventPreview" class="w-32 h-7 rounded-md flex items-center px-2 text-white" style="background-color: #3788d8;">
+                        <i id="previewEventIcon" class="material-icons text-sm mr-1">event</i>
+                        <span class="text-xs truncate">Sample Event</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex justify-end gap-3 pt-4">
+                <button type="button" onclick="closeModal()"
+                        class="px-4 py-2 bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300">
+                    Cancel
+                </button>
+                <button type="submit"
+                        class="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700">
+                    <span id="submitButtonText">Save</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div id="confirmationModal" class="hidden fixed inset-0 bg-slate-900 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+        <div class="flex justify-between items-center border-b pb-3">
+            <h3 class="text-lg font-medium text-slate-900">Confirm Delete</h3>
+            <button onclick="closeConfirmationModal()" class="text-slate-400 hover:text-slate-500">
+                <i class="material-icons">close</i>
+            </button>
+        </div>
+        
+        <div class="mt-4">
+            <p id="confirmationMessage" class="text-sm text-slate-600 mb-4">
+                Are you sure you want to delete this event type? This action cannot be undone.
+            </p>
+            
+            <div class="flex justify-end gap-3 mt-6">
+                <button type="button" onclick="closeConfirmationModal()"
+                        class="px-4 py-2 bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300">
+                    Cancel
+                </button>
+                <button type="button" id="confirmDeleteButton"
+                        class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                    Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success/Error Toast Notification -->
+<div id="toastNotification" class="hidden fixed bottom-4 right-4 p-4 rounded-lg shadow-lg max-w-xs z-50">
+    <div class="flex items-center">
+        <i id="toastIcon" class="material-icons mr-2"></i>
+        <p id="toastMessage"></p>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Constants and globals
+        let availableIcons = [];
+        let currentIconPage = 0;
+        const iconsPerPage = 48;
+        const csrfToken = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+        
+        // Initialize the page when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Fetch available icons
+            fetchIcons();
+            
+            // Set up event listeners
+            setupEventListeners();
+            
+            // Set up form handlers
+            setupFormHandlers();
+        });
+        
+        // Fetch available icons
+        function fetchIcons() {
+            fetch('/AcademicEventType/GetIcons')
+                .then(response => response.json())
+                .then(data => {
+                    availableIcons = data;
+                    populateIconGallery();
+                    populateIconDropdown();
+                })
+                .catch(error => {
+                    console.error('Error fetching icons:', error);
+                    console.log('Error fetching icons:', error);
+                    showToast('Error loading icons. Please try again.', 'error');
+                });
+        }
+
+               // Populate icon gallery
+        function populateIconGallery() {
+            const gallery = document.getElementById('iconGallery');
+            gallery.innerHTML = '';
+
+            // Use a subset of icons for the gallery (first 36)
+            const galleryIcons = availableIcons.slice(0, 36);
+
+            galleryIcons.forEach(icon => {
+                const iconDiv = document.createElement('div');
+                iconDiv.className = 'p-4 border border-slate-200 rounded-lg flex flex-col items-center cursor-pointer hover:bg-slate-50 transition-colors';
+                iconDiv.onclick = function() {
+                    copyIconName(icon);
+                };
+
+                iconDiv.innerHTML = `
+                    <i class="material-icons text-2xl text-slate-700 mb-2">${icon}</i>
+                    <span class="text-xs text-slate-500">${icon}</span>
+                `;
+
+                gallery.appendChild(iconDiv);
+            });
+
+            // Add a "View All" button that opens Google Icons in a new tab
+            const viewAllDiv = document.createElement('div');
+            viewAllDiv.className = 'p-4 border border-slate-200 rounded-lg flex flex-col items-center cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors';
+            viewAllDiv.onclick = function() {
+                window.open('https://fonts.google.com/icons', '_blank');
+            };
+
+            viewAllDiv.innerHTML = `
+                <i class="material-icons text-2xl text-cyan-600 mb-2">open_in_new</i>
+                <span class="text-xs text-cyan-600 font-medium">View All Icons</span>
+            `;
+
+            gallery.appendChild(viewAllDiv);
+        }
+        
+        // Populate icon dropdown
+        function populateIconDropdown(searchTerm = '') {
+            const iconList = document.getElementById('iconList');
+            iconList.innerHTML = '';
+            
+            let filteredIcons = availableIcons;
+            if (searchTerm) {
+                filteredIcons = availableIcons.filter(icon => 
+                    icon.toLowerCase().includes(searchTerm.toLowerCase())
+                );
+            }
+            
+            const startIndex = currentIconPage * iconsPerPage;
+            const endIndex = startIndex + iconsPerPage;
+            const pageIcons = filteredIcons.slice(startIndex, endIndex);
+            
+            pageIcons.forEach(icon => {
+                const iconDiv = document.createElement('div');
+                iconDiv.className = 'p-2 flex flex-col items-center cursor-pointer hover:bg-slate-50 rounded';
+                iconDiv.onclick = function() {
+                    selectIcon(icon);
+                };
+                
+                iconDiv.innerHTML = `
+                    <i class="material-icons text-2xl">${icon}</i>
+                    <span class="text-xs mt-1 text-center">${icon}</span>
+                `;
+                
+                iconList.appendChild(iconDiv);
+            });
+            
+            // Add pagination if needed
+            if (filteredIcons.length > iconsPerPage) {
+                const paginationDiv = document.createElement('div');
+                paginationDiv.className = 'col-span-full flex justify-between p-2 mt-2 border-t';
+                
+                const totalPages = Math.ceil(filteredIcons.length / iconsPerPage);
+                
+                paginationDiv.innerHTML = `
+                    <button type="button" class="text-sm text-cyan-600 ${currentIconPage === 0 ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}" 
+                            ${currentIconPage === 0 ? 'disabled' : 'onclick="prevIconPage()"'}>
+                        <i class="material-icons align-text-bottom text-sm">chevron_left</i> Previous
+                    </button>
+                    <span class="text-sm text-slate-600">Page ${currentIconPage + 1} of ${totalPages}</span>
+                    <button type="button" class="text-sm text-cyan-600 ${currentIconPage >= totalPages - 1 ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}" 
+                            ${currentIconPage >= totalPages - 1 ? 'disabled' : 'onclick="nextIconPage()"'}>
+                        Next <i class="material-icons align-text-bottom text-sm">chevron_right</i>
+                    </button>
+                `;
+                
+                iconList.appendChild(paginationDiv);
+            }
+        }
+        
+        // Setup event listeners
+        function setupEventListeners() {
+            // Color picker sync
+            document.getElementById('eventTypeColor').addEventListener('input', function() {
+                const color = this.value;
+                document.getElementById('eventTypeColorHex').value = color;
+                updatePreview();
+            });
+            
+            document.getElementById('eventTypeColorHex').addEventListener('input', function() {
+                const color = this.value;
+                if (/^#[0-9A-Fa-f]{6}$/.test(color)) {
+                    document.getElementById('eventTypeColor').value = color;
+                    updatePreview();
+                }
+            });
+            
+            // Icon input sync with preview
+            document.getElementById('eventTypeIcon').addEventListener('input', function() {
+                updatePreview();
+            });
+            
+            // Icon selector button
+            document.getElementById('iconSelectorBtn').addEventListener('click', function() {
+                const dropdown = document.getElementById('iconDropdown');
+                dropdown.classList.toggle('hidden');
+                
+                if (!dropdown.classList.contains('hidden')) {
+                    document.getElementById('iconSearch').focus();
+                }
+            });
+            
+            // Icon search
+            document.getElementById('iconSearch').addEventListener('input', function() {
+                currentIconPage = 0; // Reset to first page on search
+                populateIconDropdown(this.value);
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(event) {
+                const dropdown = document.getElementById('iconDropdown');
+                const selectorBtn = document.getElementById('iconSelectorBtn');
+                const iconInput = document.getElementById('eventTypeIcon');
+                
+                if (!dropdown.contains(event.target) && event.target !== selectorBtn && event.target !== iconInput) {
+                    dropdown.classList.add('hidden');
+                }
+            });
+        }
+        
+        // Setup form handlers
+        function setupFormHandlers() {
+            document.getElementById('eventTypeForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveEventType();
+            });
+        }
+        
+        // Update preview based on current values
+        function updatePreview() {
+            const color = document.getElementById('eventTypeColor').value;
+            const icon = document.getElementById('eventTypeIcon').value || 'event';
+            
+            // Update icon preview
+            document.getElementById('previewIcon').textContent = icon;
+            document.getElementById('previewIcon').style.color = color;
+            
+            // Update event preview
+            document.getElementById('eventPreview').style.backgroundColor = color;
+            document.getElementById('previewEventIcon').textContent = icon;
+        }
+        
+        // Set color for color picker
+        function setColor(color) {
+            document.getElementById('eventTypeColor').value = color;
+            document.getElementById('eventTypeColorHex').value = color;
+            updatePreview();
+        }
+        
+        // Copy icon name to clipboard
+        function copyIconName(icon) {
+            // Copy to clipboard
+            navigator.clipboard.writeText(icon).then(function() {
+                showToast(`Copied "${icon}" to clipboard`, 'success');
+            }, function() {
+                // Fallback
+                document.getElementById('eventTypeIcon').value = icon;
+                updatePreview();
+                showToast(`Selected "${icon}" (copy failed)`, 'info');
+            });
+        }
+        
+        // Select icon from dropdown
+        function selectIcon(icon) {
+            document.getElementById('eventTypeIcon').value = icon;
+            document.getElementById('iconDropdown').classList.add('hidden');
+            updatePreview();
+        }
+        
+        // Navigate to previous page of icons
+        function prevIconPage() {
+            if (currentIconPage > 0) {
+                currentIconPage--;
+                populateIconDropdown(document.getElementById('iconSearch').value);
+            }
+        }
+        
+        // Navigate to next page of icons
+        function nextIconPage() {
+            const searchTerm = document.getElementById('iconSearch').value;
+            let filteredIcons = availableIcons;
+            if (searchTerm) {
+                filteredIcons = availableIcons.filter(icon => 
+                    icon.toLowerCase().includes(searchTerm.toLowerCase())
+                );
+            }
+            
+            const totalPages = Math.ceil(filteredIcons.length / iconsPerPage);
+            
+            if (currentIconPage < totalPages - 1) {
+                currentIconPage++;
+                populateIconDropdown(searchTerm);
+            }
+        }
+        
+        // Open create modal
+        function openCreateModal() {
+            // Reset form
+            document.getElementById('eventTypeForm').reset();
+            
+            // Set modal title and button text
+            document.getElementById('modalTitle').textContent = 'Add Event Type';
+            document.getElementById('submitButtonText').textContent = 'Create';
+            
+            // Set default values
+            document.getElementById('eventTypeId').value = '0';
+            document.getElementById('eventTypeColor').value = '#3788d8';
+            document.getElementById('eventTypeColorHex').value = '#3788d8';
+            document.getElementById('eventTypeIcon').value = 'event';
+            
+            // Update preview
+            updatePreview();
+            
+            // Show modal
+            document.getElementById('eventTypeModal').classList.remove('hidden');
+        }
+        
+        // Open edit modal
+        function openEditModal(id) {
+            console.log(`Opening edit modal for ID: ${id}`);
+
+            // Show loading state
+            const modalTitle = document.getElementById('modalTitle');
+            const originalTitleText = modalTitle.textContent;
+            modalTitle.textContent = "Loading...";
+
+            // Fetch event type details
+            fetch(`/AcademicEventType/GetEventType/${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Event type data received:", data);
+
+                    if (!data.success) {
+                        showToast(data.message || 'Error loading event type', 'error');
+                        modalTitle.textContent = originalTitleText;
+                        return;
+                    }
+
+                    const eventType = data.eventType;
+                    console.log("Event type object:", eventType);
+
+                    // Set modal title and button text
+                    modalTitle.textContent = 'Edit Event Type';
+                    document.getElementById('submitButtonText').textContent = 'Update';
+
+                    // Fill form with event type data - ensure id is properly set
+                    document.getElementById('eventTypeId').value = eventType.id.toString();
+                    document.getElementById('eventTypeName').value = eventType.name;
+                    document.getElementById('eventTypeColor').value = eventType.defaultColor;
+                    document.getElementById('eventTypeColorHex').value = eventType.defaultColor;
+                    document.getElementById('eventTypeIcon').value = eventType.iconName;
+
+                    // Update preview
+                    updatePreview();
+
+                    // Show modal
+                    document.getElementById('eventTypeModal').classList.remove('hidden');
+                })
+                .catch(error => {
+                    console.error('Error fetching event type:', error);
+                    modalTitle.textContent = originalTitleText;
+                    showToast('Error loading event type. Please try again.', 'error');
+                });
+        }
+        
+        // Close modal
+        function closeModal() {
+            document.getElementById('eventTypeModal').classList.add('hidden');
+            document.getElementById('iconDropdown').classList.add('hidden');
+        }
+        
+        // Save event type
+        function saveEventType() {
+            // Get form data
+            const form = document.getElementById('eventTypeForm');
+            const formData = new FormData(form);
+
+            // Convert to JSON with better logging
+            const data = {};
+            formData.forEach((value, key) => {
+                data[key] = value;
+                console.log(`Form field: ${key} = ${value}`);
+            });
+
+            // Add the color from the color picker
+            data.DefaultColor = document.getElementById('eventTypeColor').value;
+            console.log(`Color value: ${data.DefaultColor}`);
+
+            // Log the full data object
+            console.log("Data to be sent:", JSON.stringify(data, null, 2));
+
+            // Determine if this is create or update
+            const isNew = data.Id === '0';
+            const url = isNew ? '/AcademicEventType/Create' : '/AcademicEventType/UpdateEventType';
+
+            // Send request
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': csrfToken
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    console.error("Server returned an error:", response.status, response.statusText);
+                    return response.text().then(text => {
+                        console.error("Server response text:", text);
+                        throw new Error(`Server error: ${response.status}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(result => {
+                console.log("Success response:", result);
+                if (result.success) {
+                    showToast(isNew ? 'Event type created successfully' : 'Event type updated successfully', 'success');
+                    closeModal();
+
+                    // Reload the page after a short delay
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    showToast(result.message || 'Error saving event type', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error saving event type:', error);
+                showToast('Error saving event type. Please try again.', 'error');
+            });
+        }
+
+        // Confirm delete event type
+        function confirmDelete(id, name) {
+            // Set confirmation message
+            document.getElementById('confirmationMessage').textContent = `Are you sure you want to delete the event type "${name}"? This action cannot be undone.`;
+
+            // Set up the confirm button
+            const confirmButton = document.getElementById('confirmDeleteButton');
+            confirmButton.onclick = function() {
+                deleteEventType(id);
+            };
+
+            // Show confirmation modal
+            document.getElementById('confirmationModal').classList.remove('hidden');
+        }
+
+        // Delete event type
+        function deleteEventType(id) {
+            fetch('/AcademicEventType/DeleteEventType', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': csrfToken
+                },
+                body: JSON.stringify({ id: id })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    showToast('Event type deleted successfully', 'success');
+                    closeConfirmationModal();
+
+                    // Reload the page after a short delay
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    showToast(result.message || 'Error deleting event type', 'error');
+                    closeConfirmationModal();
+                }
+            })
+            .catch(error => {
+                console.error('Error deleting event type:', error);
+                showToast('Error deleting event type. Please try again.', 'error');
+                closeConfirmationModal();
+            });
+        }
+
+        // Close confirmation modal
+        function closeConfirmationModal() {
+            document.getElementById('confirmationModal').classList.add('hidden');
+        }
+
+        // Show toast notification
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toastNotification');
+            const toastMessage = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+
+            // Set message
+            toastMessage.textContent = message;
+
+            // Set colors and icon based on type
+            if (type === 'error') {
+                toast.className = 'fixed bottom-4 right-4 p-4 rounded-lg shadow-lg max-w-xs z-50 bg-red-100 text-red-800';
+                toastIcon.textContent = 'error';
+                toastIcon.className = 'material-icons mr-2 text-red-500';
+            } else if (type === 'info') {
+                toast.className = 'fixed bottom-4 right-4 p-4 rounded-lg shadow-lg max-w-xs z-50 bg-blue-100 text-blue-800';
+                toastIcon.textContent = 'info';
+                toastIcon.className = 'material-icons mr-2 text-blue-500';
+            } else {
+                toast.className = 'fixed bottom-4 right-4 p-4 rounded-lg shadow-lg max-w-xs z-50 bg-green-100 text-green-800';
+                toastIcon.textContent = 'check_circle';
+                toastIcon.className = 'material-icons mr-2 text-green-500';
+            }
+
+            // Show toast
+            toast.classList.remove('hidden');
+
+            // Hide after 3 seconds
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 5000);
+        }
+
+        // Click outside modal to close it
+        window.addEventListener('click', function(event) {
+            const eventTypeModal = document.getElementById('eventTypeModal');
+            const confirmationModal = document.getElementById('confirmationModal');
+
+            if (event.target === eventTypeModal) {
+                closeModal();
+            }
+
+            if (event.target === confirmationModal) {
+                closeConfirmationModal();
+            }
+        });
+
+        console.log('Academic Events');
+    </script>
+}

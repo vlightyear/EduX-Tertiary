@@ -1,0 +1,700 @@
+﻿@model SIS.Models.Payments.StudentPaymentSelectionViewModel
+
+@{
+    ViewData["Title"] = "Student Fee Payment";
+
+    // Use the model properties directly since they're not nullable
+    var totalPaid = Model.TotalPaid > 0 ? Model.TotalPaid : 0;
+    var totalFees = Model.TotalFees > 0 ? Model.TotalFees : Model.Amount;
+    var outstandingBalance = Model.OutstandingBalance > 0 ? Model.OutstandingBalance : Model.Amount;
+    var remainingForRegistration = Model.RemainingForRegistration > 0 ? Model.RemainingForRegistration : Math.Max(0, Model.MinRegistrationPayment - totalPaid);
+
+    var registrationProgress = totalFees > 0 ? (totalPaid / Model.MinRegistrationPayment * 100) : 0;
+    var isRegistrationComplete = totalPaid >= Model.MinRegistrationPayment;
+
+    var outstandingBalanceFormatted = outstandingBalance.ToString("F2");
+    var outstandingBalanceCurrency = outstandingBalance.ToString("C2", new System.Globalization.CultureInfo("en-ZM"));
+}
+
+<style>
+@@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+.payment-button {
+    min-width: 160px;
+    transition: all 0.3s ease;
+}
+
+.payment-button:disabled {
+    background-color: #6b7280; /* gray-500 */
+    cursor: not-allowed;
+}
+
+.payment-button:disabled:hover {
+    background-color: #6b7280; /* gray-500 */
+}
+</style>
+
+<div class="bg-slate-50 min-h-screen py-8">
+    <div class="mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h2 class="text-3xl font-bold text-slate-800">Student Fee Payment</h2>
+            <p class="text-slate-600 text-lg">Make a payment towards your student fees</p>
+        </div>
+
+        <!-- Payment Progress Card -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
+            <h3 class="text-xl font-semibold text-slate-800 border-b border-slate-200 pb-4 mb-4">Payment Progress</h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-blue-600">@totalPaid.ToString("C2", new System.Globalization.CultureInfo("en-ZM"))</div>
+                    <div class="text-sm text-slate-600">Total Paid</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-amber-600">@outstandingBalance.ToString("C2", new System.Globalization.CultureInfo("en-ZM"))</div>
+                    <div class="text-sm text-slate-600">Outstanding Balance</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-green-600">@totalFees.ToString("C2", new System.Globalization.CultureInfo("en-ZM"))</div>
+                    <div class="text-sm text-slate-600">Total Fees</div>
+                </div>
+            </div>
+
+            <!-- Registration Progress Bar -->
+            <div class="mb-4">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm font-medium text-slate-700">Registration Progress</span>
+                    <span class="text-sm text-slate-600">@registrationProgress.ToString("F1")%</span>
+                </div>
+                <div class="w-full bg-slate-200 rounded-full h-3">
+                    <div class="bg-gradient-to-r from-blue-500 to-green-500 h-3 rounded-full transition-all duration-300"
+                         style="width: @Math.Min(registrationProgress, 100)%"></div>
+                </div>
+                <div class="flex justify-between text-xs text-slate-600 mt-1">
+                    <span>K0</span>
+                    <span class="font-medium">Registration: @Model.MinRegistrationPayment.ToString("C2", new System.Globalization.CultureInfo("en-ZM"))</span>
+                    <span>@totalFees.ToString("C2", new System.Globalization.CultureInfo("en-ZM"))</span>
+                </div>
+            </div>
+
+            @if (isRegistrationComplete)
+            {
+                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span class="text-green-800 font-medium">Registration Complete! You can continue making payments to reduce your outstanding balance.</span>
+                    </div>
+                </div>
+            }
+            else if (remainingForRegistration > 0)
+            {
+                <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 text-amber-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span class="text-amber-800">You need @remainingForRegistration.ToString("C2", new System.Globalization.CultureInfo("en-ZM")) more to complete registration.</span>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Student Summary Card -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
+            <h3 class="text-xl font-semibold text-slate-800 border-b border-slate-200 pb-4 mb-4">Student Information</h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <dl class="space-y-4">
+                        <div>
+                            <dt class="text-sm font-medium text-slate-500">Student ID</dt>
+                            <dd class="text-base font-semibold text-slate-900">@Model.StudentId</dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm font-medium text-slate-500">Student Name</dt>
+                            <dd class="text-base font-semibold text-slate-900">@Model.StudentName</dd>
+                        </div>
+                    </dl>
+                </div>
+                <div>
+                    <dl class="space-y-4">
+                        <div>
+                            <dt class="text-sm font-medium text-slate-500">Programme</dt>
+                            <dd class="text-base font-semibold text-slate-900">@Model.ProgrammeName</dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm font-medium text-slate-500">School</dt>
+                            <dd class="text-base font-semibold text-slate-900">@Model.SchoolName</dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fee Breakdown Card -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
+            <h3 class="text-xl font-semibold text-slate-800 border-b border-slate-200 pb-4 mb-4">Fee Breakdown</h3>
+
+            <div class="overflow-hidden">
+                <table class="min-w-full divide-y divide-slate-200">
+                    <thead>
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Description</th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-200">
+                        @foreach (var fee in Model.FeeDetails)
+                        {
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800">
+                                    <div class="font-medium">@fee.FeeName</div>
+                                    <div class="text-slate-500">@fee.Description</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-slate-800">
+                                    @fee.Amount.ToString("C2", new System.Globalization.CultureInfo("en-ZM"))
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr class="bg-slate-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-800">Total Outstanding Amount</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-right text-slate-800">@outstandingBalance.ToString("C2", new System.Globalization.CultureInfo("en-ZM"))</td>
+                        </tr>
+                        <tr class="bg-green-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-800">Minimum Payment for Registration</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-right text-green-800">@Model.MinRegistrationPayment.ToString("C2", new System.Globalization.CultureInfo("en-ZM"))</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- Payment Methods Card -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <h3 class="text-xl font-semibold text-slate-800 border-b border-slate-200 pb-4 mb-6">Select Payment Method</h3>
+
+            @if (true)
+            {
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Credit Card Option -->
+                @*
+                <div class="border border-slate-200 hover:border-cyan-500 rounded-lg p-6 cursor-pointer transition-all hover:shadow-md"
+                     onclick="showPaymentForm('card-payment-modal')">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="text-lg font-medium text-slate-800">Credit Card</h4>
+                        <div class="flex space-x-2">
+                            <img src="https://placehold.co/40x25" alt="Visa" class="h-6">
+                            <img src="https://placehold.co/40x25" alt="MasterCard" class="h-6">
+                        </div>
+                    </div>
+                    <p class="text-sm text-slate-600 mb-4">Pay securely using your credit card</p>
+                    <button type="button" class="w-full px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 transition-colors">
+                        Pay with Credit Card
+                    </button>
+                </div>
+                *@
+
+                    <!-- Mobile Money Option -->
+                    <div class="border border-slate-200 hover:border-cyan-500 rounded-lg p-6 cursor-pointer transition-all hover:shadow-md"
+                         onclick="showPaymentForm('mobile-payment-modal')">
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="text-lg font-medium text-slate-800">Mobile Money/Card</h4>
+                            <div class="flex space-x-2">
+                                <img src="https://placehold.co/40x25" alt="Airtel" class="h-6">
+                                <img src="https://placehold.co/40x25" alt="MTN" class="h-6">
+                                <img src="https://placehold.co/40x25" alt="Zamtel" class="h-6">
+                            </div>
+                        </div>
+                        <p class="text-sm text-slate-600 mb-4">Pay using your Mobile money org Debit Card </p>
+                        <button type="button" class="w-full px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 transition-colors">
+                            Pay with Mobile Money/Card
+                        </button>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-8">
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-6">
+                        <svg class="w-12 h-12 text-green-600 mx-auto mb-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                        </svg>
+                        <h4 class="text-lg font-medium text-green-800 mb-2">All Fees Paid!</h4>
+                        <p class="text-green-600">You have no outstanding balance. All your fees have been paid in full.</p>
+                    </div>
+                </div>
+            }
+
+            <div class="mt-8 text-center">
+                <a href="@Url.Action("StudentFinance", "Payments")" class="text-cyan-600 hover:text-cyan-800 hover:underline transition-colors">
+                    Back to Finance Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Credit Card Payment Modal -->
+<div id="card-payment-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-lg max-w-lg w-full mx-4 p-6 shadow-xl">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-semibold text-slate-800">Credit Card Payment</h3>
+            <button type="button" class="text-slate-500 hover:text-slate-700" onclick="hidePaymentForm('card-payment-modal')">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <form id="card-payment-form" action="@Url.Action("ProcessStudentCardPayment", "Payments")" method="post">
+            <input type="hidden" name="TransactionReference" value="@Model.TransactionReference">
+
+            <!-- Payment Amount Section -->
+            <div class="mb-6 p-4 bg-slate-50 rounded-lg">
+                <label for="Amount" class="block text-sm font-medium text-slate-700 mb-2">Payment Amount</label>
+                <div class="relative">
+                    <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">K</span>
+                    <input type="number" id="Amount" name="Amount"
+                           class="w-full pl-8 pr-4 py-2 rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500"
+                           placeholder="0.00" step="0.01" min="1" max="@outstandingBalance" required>
+                </div>
+                <div class="flex justify-between text-xs text-slate-600 mt-1">
+                    <span>Minimum: K1.00</span>
+                    <span>Maximum: K @outstandingBalanceFormatted</span>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label for="CardholderName" class="block text-sm font-medium text-slate-700 mb-2">Cardholder Name</label>
+                <input type="text" id="CardholderName" name="CardholderName"
+                       class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500"
+                       placeholder="Name as it appears on card" required>
+            </div>
+
+            <div class="mb-4">
+                <label for="CardNumber" class="block text-sm font-medium text-slate-700 mb-2">Card Number</label>
+                <input type="text" id="CardNumber" name="CardNumber"
+                       class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500"
+                       placeholder="1234 5678 9012 3456" pattern="\d{16}" maxlength="16" required>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div>
+                    <label for="ExpiryMonth" class="block text-sm font-medium text-slate-700 mb-2">Expiry Month</label>
+                    <select id="ExpiryMonth" name="ExpiryMonth"
+                            class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500" required>
+                        <option value="" disabled selected>Month</option>
+                        @for (int i = 1; i <= 12; i++)
+                        {
+                            <option value="@i">@i.ToString("00")</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label for="ExpiryYear" class="block text-sm font-medium text-slate-700 mb-2">Expiry Year</label>
+                    <select id="ExpiryYear" name="ExpiryYear"
+                            class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500" required>
+                        <option value="" disabled selected>Year</option>
+                        @for (int i = DateTime.Now.Year; i <= DateTime.Now.Year + 10; i++)
+                        {
+                            <option value="@i">@i</option>
+                        }
+                    </select>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <label for="Cvv" class="block text-sm font-medium text-slate-700 mb-2">CVV</label>
+                <input type="text" id="Cvv" name="Cvv"
+                       class="w-full max-w-[100px] rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500"
+                       placeholder="123" pattern="\d{3,4}" maxlength="4" required>
+                <p class="text-xs text-slate-500 mt-1">The 3 or 4 digit security code on the back of your card</p>
+            </div>
+
+            <div class="border-t border-slate-200 pt-4">
+                <button type="submit" id="card-payment-btn" 
+                        class="payment-button w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-green-600">
+                    <!-- Normal state icon -->
+                    <i id="card-submit-icon" class="material-icons text-sm mr-1 hidden">credit_card</i>
+                    <!-- Loading spinner (hidden by default) -->
+                    <svg id="card-loading-spinner" class="animate-spin h-4 w-4 mr-2 hidden inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span id="card-pay-button-text">Complete Payment</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Mobile Money Payment Modal -->
+<div id="mobile-payment-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-lg max-w-lg w-full mx-4 p-6 shadow-xl">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-semibold text-slate-800">Mobile Money/Card Payment</h3>
+            <button type="button" class="text-slate-500 hover:text-slate-700" onclick="hidePaymentForm('mobile-payment-modal')">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <form id="mobile-payment-form" action="@Url.Action("ProcessStudentMobilePayment", "Payments")" method="post">
+            <input type="hidden" name="TransactionReference" value="@Model.TransactionReference">
+
+            <!-- Payment Amount Section -->
+            <div class="mb-6 p-4 bg-slate-50 rounded-lg">
+                <label for="MobileAmount" class="block text-sm font-medium text-slate-700 mb-2">Payment Amount</label>
+                <div class="relative">
+                    <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">K</span>
+                    <input type="number" id="MobileAmount" name="Amount"
+                           class="w-full pl-8 pr-4 py-2 rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500"
+                           placeholder="0.00" step="0.01" min="1" max="@outstandingBalance" required>
+                </div>
+                <div class="flex justify-between text-xs text-slate-600 mt-1">
+                    <span>Minimum: K1.00</span>
+                    <span>Maximum: K @outstandingBalanceFormatted</span>
+                </div>
+            </div>
+
+<!-- Hidden dropdown, no required -->
+<div style="display:none;">
+    <label for="Provider" class="block text-sm font-medium text-slate-700 mb-2">Mobile Provider</label>
+    <select id="Provider" name="Provider"
+            class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500">
+        <option value="" disabled selected>Select Provider</option>
+        <option value="Airtel">Airtel Money</option>
+        <option value="MTN">MTN Mobile Money</option>
+        <option value="Zamtel">Zamtel Kwacha</option>
+    </select>
+</div>
+
+<!-- Hardcode the value -->
+<input type="hidden" name="Provider" value="Payment">
+
+
+            <div class="mb-6">
+                <label for="PhoneNumber" class="block text-sm font-medium text-slate-700 mb-2">Phone Number</label>
+                <input type="tel" id="PhoneNumber" name="PhoneNumber"
+                       class="w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500"
+                       placeholder="e.g. 0971234567" pattern="\d{10}" maxlength="10" required>
+                <p class="text-xs text-slate-500 mt-1">Enter the phone number registered with your mobile money account</p>
+            </div>
+
+            <div class="border-t border-slate-200 pt-4">
+                <button type="submit" id="mobile-payment-btn"
+                        class="payment-button w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-green-600">
+                    <!-- Normal state icon -->
+                    <i id="mobile-submit-icon" class="material-icons text-sm mr-1 hidden">phone_android</i>
+                    <!-- Loading spinner (hidden by default) -->
+                    <svg id="mobile-loading-spinner" class="animate-spin h-4 w-4 mr-2 hidden inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span id="mobile-pay-button-text">Complete Payment</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const maxAmount = @outstandingBalance;
+
+        function showPaymentForm(modalId) {
+            document.getElementById(modalId).classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function hidePaymentForm(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        function setPaymentAmount(amount) {
+            document.getElementById('Amount').value = amount.toFixed(2);
+            document.getElementById('MobileAmount').value = amount.toFixed(2);
+            updatePaymentButtonText(amount);
+        }
+
+        function updatePaymentButtonText(amount) {
+            const formatter = new Intl.NumberFormat('en-ZM', { style: 'currency', currency: 'ZMW' });
+            const formattedAmount = formatter.format(amount);
+            document.getElementById('card-pay-button-text').textContent = `Pay ${formattedAmount}`;
+            document.getElementById('mobile-pay-button-text').textContent = `Pay ${formattedAmount}`;
+        }
+
+        // Payment button loading state management
+        function setCardLoadingState(isLoading) {
+            const btn = document.getElementById('card-payment-btn');
+            const icon = document.getElementById('card-submit-icon');
+            const spinner = document.getElementById('card-loading-spinner');
+            const text = document.getElementById('card-pay-button-text');
+
+            if (isLoading) {
+                btn.disabled = true;
+                icon.classList.add('hidden');
+                spinner.classList.remove('hidden');
+                text.textContent = 'Processing Payment...';
+                btn.classList.add('cursor-not-allowed');
+            } else {
+                btn.disabled = false;
+                icon.classList.remove('hidden');
+                spinner.classList.add('hidden');
+                text.textContent = 'Complete Payment';
+                btn.classList.remove('cursor-not-allowed');
+            }
+        }
+
+        function setMobileLoadingState(isLoading) {
+            const btn = document.getElementById('mobile-payment-btn');
+            const icon = document.getElementById('mobile-submit-icon');
+            const spinner = document.getElementById('mobile-loading-spinner');
+            const text = document.getElementById('mobile-pay-button-text');
+
+            if (isLoading) {
+                btn.disabled = true;
+                icon.classList.add('hidden');
+                spinner.classList.remove('hidden');
+                text.textContent = 'Processing Payment...';
+                btn.classList.add('cursor-not-allowed');
+            } else {
+                btn.disabled = false;
+                icon.classList.remove('hidden');
+                spinner.classList.add('hidden');
+                text.textContent = 'Complete Payment';
+                btn.classList.remove('cursor-not-allowed');
+            }
+        }
+
+        // Update button text when amount changes
+        document.addEventListener('DOMContentLoaded', function() {
+            const paymentInputs = ['Amount', 'MobileAmount'];
+
+            paymentInputs.forEach(inputId => {
+                const input = document.getElementById(inputId);
+                 if (input) {
+                    input.addEventListener('input', function() {
+                        const amount = parseFloat(this.value) || 0;
+                        updatePaymentButtonText(amount);
+                    });
+                }
+            });
+
+            // Add form submission handlers with loading states
+            document.getElementById('card-payment-form').addEventListener('submit', function(e) {
+                const amountInput = this.querySelector('input[name="Amount"]');
+                const amount = parseFloat(amountInput.value);
+
+                // Validate amount
+                if (amount <= 0) {
+                    e.preventDefault();
+                    alert('Please enter a valid payment amount.');
+                    return;
+                }
+
+                if (amount > maxAmount) {
+                    e.preventDefault();
+                    alert(`Payment amount cannot exceed your outstanding balance of K${maxAmount.toFixed(2)}.`);
+                    return;
+                }
+
+                // Set loading state
+                setCardLoadingState(true);
+
+                // Disable modal close buttons during processing
+                document.querySelectorAll('#card-payment-modal button[onclick*="hidePaymentForm"]').forEach(btn => {
+                    btn.disabled = true;
+                });
+            });
+
+            document.getElementById('mobile-payment-form').addEventListener('submit', function(e) {
+                const amountInput = this.querySelector('input[name="Amount"]');
+                const amount = parseFloat(amountInput.value);
+
+                // Validate amount
+                if (amount <= 0) {
+                    e.preventDefault();
+                    alert('Please enter a valid payment amount.');
+                    return;
+                }
+
+                if (amount > maxAmount) {
+                    e.preventDefault();
+                    alert(`Payment amount cannot exceed your outstanding balance of K${maxAmount.toFixed(2)}.`);
+                    return;
+                }
+
+                // Set loading state
+                setMobileLoadingState(true);
+
+                // Disable modal close buttons during processing
+                document.querySelectorAll('#mobile-payment-modal button[onclick*="hidePaymentForm"]').forEach(btn => {
+                    btn.disabled = true;
+                });
+            });
+        });
+
+        // Close modal when clicking outside (only if not processing)
+        document.querySelectorAll('#card-payment-modal, #mobile-payment-modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    const cardBtn = document.getElementById('card-payment-btn');
+                    const mobileBtn = document.getElementById('mobile-payment-btn');
+
+                    // Only allow closing if neither button is disabled (processing)
+                    if (!cardBtn.disabled && !mobileBtn.disabled) {
+                        hidePaymentForm(modal.id);
+                    }
+                }
+            });
+        });
+
+        // Prevent modal close during processing
+        function hidePaymentForm(modalId) {
+            const cardBtn = document.getElementById('card-payment-btn');
+            const mobileBtn = document.getElementById('mobile-payment-btn');
+
+            // Don't allow closing if payment is being processed
+            if (cardBtn.disabled || mobileBtn.disabled) {
+                return;
+            }
+
+            document.getElementById(modalId).classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Amount validation on input
+        document.getElementById('Amount').addEventListener('input', function() {
+            const amount = parseFloat(this.value);
+            if (amount > maxAmount) {
+                this.setCustomValidity(`Amount cannot exceed K${maxAmount.toFixed(2)}`);
+            } else {
+                this.setCustomValidity('');
+            }
+        });
+
+        document.getElementById('MobileAmount').addEventListener('input', function() {
+            const amount = parseFloat(this.value);
+            if (amount > maxAmount) {
+                this.setCustomValidity(`Amount cannot exceed K${maxAmount.toFixed(2)}`);
+            } else {
+                this.setCustomValidity('');
+            }
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(event) {
+            // Escape key to close modals (only if not processing)
+            if (event.key === 'Escape') {
+                const cardBtn = document.getElementById('card-payment-btn');
+                const mobileBtn = document.getElementById('mobile-payment-btn');
+
+                if (!cardBtn.disabled && !mobileBtn.disabled) {
+                    const cardModal = document.getElementById('card-payment-modal');
+                    const mobileModal = document.getElementById('mobile-payment-modal');
+
+                    if (!cardModal.classList.contains('hidden')) {
+                        hidePaymentForm('card-payment-modal');
+                    } else if (!mobileModal.classList.contains('hidden')) {
+                        hidePaymentForm('mobile-payment-modal');
+                    }
+                }
+            }
+        });
+
+        // Auto-focus amount input when modal opens
+        function showPaymentForm(modalId) {
+            document.getElementById(modalId).classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+
+            // Auto-focus the amount input
+            setTimeout(() => {
+                if (modalId === 'card-payment-modal') {
+                    document.getElementById('Amount').focus();
+                } else if (modalId === 'mobile-payment-modal') {
+                    document.getElementById('MobileAmount').focus();
+                }
+            }, 100);
+        }
+
+        // Format card number input
+        document.getElementById('CardNumber').addEventListener('input', function() {
+            let value = this.value.replace(/\D/g, '');
+            if (value.length > 16) {
+                value = value.slice(0, 16);
+            }
+            this.value = value;
+        });
+
+        // Format phone number input
+        document.getElementById('PhoneNumber').addEventListener('input', function() {
+            let value = this.value.replace(/\D/g, '');
+            if (value.length > 10) {
+                value = value.slice(0, 10);
+            }
+            this.value = value;
+        });
+
+        // Format CVV input
+        document.getElementById('Cvv').addEventListener('input', function() {
+            let value = this.value.replace(/\D/g, '');
+            if (value.length > 4) {
+                value = value.slice(0, 4);
+            }
+            this.value = value;
+        });
+
+        // Quick amount buttons (if you want to add them back)
+        function setQuickAmount(amount) {
+            const validAmount = Math.min(amount, maxAmount);
+            setPaymentAmount(validAmount);
+        }
+
+        // Show success message after successful payment
+        @if (TempData["Success"] != null)
+        {
+            <text>
+                setTimeout(() => {
+                    alert('@TempData["Success"]');
+                }, 500);
+            </text>
+        }
+
+        // Show error message after failed payment
+        @if (TempData["Error"] != null)
+        {
+            <text>
+                setTimeout(() => {
+                    alert('@TempData["Error"]');
+                    // Reset loading states in case of error
+                    setCardLoadingState(false);
+                    setMobileLoadingState(false);
+
+                    // Re-enable close buttons
+                    document.querySelectorAll('button[onclick*="hidePaymentForm"]').forEach(btn => {
+                        btn.disabled = false;
+                    });
+                }, 500);
+            </text>
+        }
+    </script>
+}

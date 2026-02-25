@@ -1,0 +1,619 @@
+﻿@model SIS.Models.ViewModels.StudentPhotoViewModel
+
+@{
+    var photoUrl = Model.HasExistingPhoto
+        ? $"/uploads/student-photos/{Model.StudentNumber}.png?v={DateTime.Now.Ticks}"
+        : string.Empty;
+    var studentIdAttr = $"data-student-id=\"{Model.StudentId}\"";
+    var studentNumberAttr = $"data-student-number=\"{Model.StudentNumber}\"";
+}
+
+<div class="space-y-6" @Html.Raw(studentIdAttr) @Html.Raw(studentNumberAttr)>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2" style="display: none;"></div>
+
+    <!-- Current Photo Display -->
+    <div class="bg-white rounded-lg border border-slate-200 overflow-hidden">
+        <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+            <h3 class="text-lg font-semibold text-slate-800 flex items-center">
+                <i class="material-icons text-primary-600 mr-2">photo_camera</i>
+                Student Photo Management
+            </h3>
+        </div>
+        <div class="p-6">
+            <div class="text-center mb-4">
+                <p class="text-sm text-slate-600 mb-2">
+                    <strong>Student:</strong> @Model.StudentName (@Model.StudentNumber)
+                </p>
+            </div>
+
+            <!-- Current Photo Preview -->
+            <div class="mb-6">
+                <h4 class="text-md font-semibold text-slate-700 mb-3">Current Photo</h4>
+                <div class="flex justify-center">
+                    <div id="currentPhotoContainer" class="w-64 h-80 rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden border-2 border-slate-300">
+                        @if (Model.HasExistingPhoto)
+                        {
+                            <img id="currentPhoto"
+                                 src="@photoUrl"
+                                 alt="@Model.StudentName Photo"
+                                 class="w-full h-full object-cover">
+                        }
+                        else
+                        {
+                            <div class="flex flex-col items-center justify-center">
+                                <i class="material-icons text-6xl text-slate-400">person</i>
+                                <p class="text-slate-500 mt-2">No Photo Available</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+                @if (Model.HasExistingPhoto)
+                {
+                    <div class="text-center mt-4">
+                        <button type="button"
+                                data-action="delete-photo"
+                        @Html.Raw(studentIdAttr)
+                                class="inline-flex items-center px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 focus:ring-4 focus:ring-red-300 transition-colors">
+                            <i class="material-icons text-sm mr-2">delete</i>
+                            Delete Current Photo
+                        </button>
+                    </div>
+                }
+            </div>
+
+            <!-- Camera Section -->
+            <div class="border-t pt-6">
+                <h4 class="text-md font-semibold text-slate-700 mb-3">Take New Photo</h4>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Camera Preview -->
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600 mb-2">Camera Preview</label>
+                        <div class="relative flex justify-center">
+                            <div class="relative w-64">
+                                <video id="cameraVideo_@Model.StudentId"
+                                       class="w-64 h-80 bg-slate-900 rounded-lg border-2 border-slate-300 object-cover"
+                                       autoplay
+                                       playsinline
+                                       muted></video>
+                                <div id="cameraError_@Model.StudentId"
+                                     class="hidden absolute inset-0 bg-slate-100 rounded-lg flex flex-col items-center justify-center p-4">
+                                    <i class="material-icons text-4xl text-red-500 mb-2">error_outline</i>
+                                    <p class="text-red-600 text-sm text-center font-semibold" id="cameraErrorMessage_@Model.StudentId"></p>
+                                    <p class="text-red-500 text-xs text-center mt-2" id="cameraErrorDetails_@Model.StudentId"></p>
+                                </div>
+
+                                <!-- Camera Switch Button (Top Right) -->
+                                <div class="absolute top-4 right-4">
+                                    <button type="button"
+                                            id="switchCameraBtn_@Model.StudentId"
+                                            data-action="switch-camera"
+                                    @Html.Raw(studentIdAttr)
+                                            style="display: none;"
+                                            class="bg-white bg-opacity-90 hover:bg-opacity-100 text-slate-700 p-2 rounded-full shadow-lg transition-all"
+                                            title="Switch Camera">
+                                        <i class="material-icons">flip_camera_ios</i>
+                                    </button>
+                                </div>
+
+                                <!-- Floating Controls -->
+                                <div class="absolute bottom-4 left-0 right-0 px-4">
+                                    <button type="button"
+                                            id="startCameraBtn_@Model.StudentId"
+                                            data-action="start-camera"
+                                    @Html.Raw(studentIdAttr)
+                                            class="w-full inline-flex items-center justify-center px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 transition-colors shadow-lg">
+                                        <i class="material-icons text-sm mr-2">videocam</i>
+                                        Start Camera
+                                    </button>
+                                    <div class="flex gap-2" id="cameraControls_@Model.StudentId" style="display: none;">
+                                        <button type="button"
+                                                id="stopCameraBtn_@Model.StudentId"
+                                                data-action="stop-camera"
+                                        @Html.Raw(studentIdAttr)
+                                                class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 transition-colors shadow-lg">
+                                            <i class="material-icons text-xs mr-1">videocam_off</i>
+                                            Stop
+                                        </button>
+                                        <button type="button"
+                                                id="capturePhotoBtn_@Model.StudentId"
+                                                data-action="capture-photo"
+                                        @Html.Raw(studentIdAttr)
+                                                class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 transition-colors shadow-lg">
+                                            <i class="material-icons text-xs mr-1">camera_alt</i>
+                                            Capture
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Captured Photo Preview -->
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600 mb-2">Captured Photo</label>
+                        <div class="relative flex justify-center">
+                            <div class="relative w-64">
+                                <canvas id="photoCanvas_@Model.StudentId"
+                                        class="w-64 h-80 bg-slate-100 rounded-lg border-2 border-slate-300"></canvas>
+
+                                <!-- Save Button (Shown after capture) -->
+                                <div class="absolute bottom-4 left-0 right-0 flex justify-center px-4">
+                                    <button type="button"
+                                            id="savePhotoBtn_@Model.StudentId"
+                                            data-action="save-photo"
+                                    @Html.Raw(studentIdAttr)
+                                    @Html.Raw(studentNumberAttr)
+                                            class="hidden w-full inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 transition-colors shadow-lg">
+                                        <i class="material-icons text-sm mr-2">save</i>
+                                        Save Photo
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Instructions -->
+                <div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div class="flex items-start">
+                        <i class="material-icons text-blue-600 mr-2">info</i>
+                        <div class="text-sm text-blue-800">
+                            <p class="font-semibold mb-1">Instructions:</p>
+                            <ol class="list-decimal list-inside space-y-1">
+                                <li>Click "Start Camera" to activate your camera (front camera by default)</li>
+                                <li>Allow camera access when prompted by your browser</li>
+                                <li>Use the camera switch button (top-right) to toggle between front and back cameras</li>
+                                <li>Position the student in front of the camera</li>
+                                <li>Click "Capture Photo" to take the picture</li>
+                                <li>Review the captured photo and click "Save Photo" to store it</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        console.log('🎬 Photo tab script STARTED executing...');
+
+        // Initialize global storage
+        if (!window.studentPhotoState) {
+            window.studentPhotoState = {
+                streams: {},
+                capturedImages: {},
+                currentFacingMode: {}, // Track current camera mode per student
+                eventListenerAttached: false
+            };
+            console.log('✅ Created window.studentPhotoState');
+        }
+
+        // Tailwind Toast Notification System
+        function showToast(message, type) {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+
+            container.style.display = 'block';
+
+            const toast = document.createElement('div');
+            toast.className = 'transform transition-all duration-300 ease-in-out translate-x-0';
+
+            let bgColor = 'bg-blue-500';
+            let icon = 'info';
+
+            if (type === 'success') {
+                bgColor = 'bg-green-500';
+                icon = 'check_circle';
+            } else if (type === 'error') {
+                bgColor = 'bg-red-500';
+                icon = 'error';
+            } else if (type === 'warning') {
+                bgColor = 'bg-yellow-500';
+                icon = 'warning';
+            }
+
+            toast.innerHTML = '<div class="' + bgColor + ' text-white px-6 py-4 rounded-lg shadow-lg flex items-center space-x-3 min-w-[300px] max-w-md">' +
+                '<i class="material-icons">' + icon + '</i>' +
+                '<span class="flex-1">' + message + '</span>' +
+                '<button class="ml-2 hover:bg-white hover:bg-opacity-20 rounded p-1 transition" onclick="this.parentElement.parentElement.remove()">' +
+                '<i class="material-icons text-sm">close</i>' +
+                '</button>' +
+                '</div>';
+
+            container.appendChild(toast);
+
+            // Auto remove after 4 seconds
+            setTimeout(function() {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(function() {
+                    if (toast.parentElement) {
+                        toast.remove();
+                    }
+                    if (container.children.length === 0) {
+                        container.style.display = 'none';
+                    }
+                }, 300);
+            }, 4000);
+        }
+
+        // Attach event listener ONLY ONCE
+        if (!window.studentPhotoState.eventListenerAttached) {
+            document.addEventListener('click', async function(e) {
+                const button = e.target.closest('[data-action]');
+                if (!button) return;
+
+                const action = button.dataset.action;
+                const studentId = button.dataset.studentId;
+
+                console.log('🎯 Button clicked:', action, 'for student:', studentId);
+
+                if (!studentId) {
+                    console.error('No studentId found on button');
+                    return;
+                }
+
+                switch(action) {
+                    case 'start-camera':
+                        await handleStartCamera(studentId);
+                        break;
+                    case 'stop-camera':
+                        handleStopCamera(studentId);
+                        break;
+                    case 'switch-camera':
+                        await handleSwitchCamera(studentId);
+                        break;
+                    case 'capture-photo':
+                        handleCapturePhoto(studentId);
+                        break;
+                    case 'save-photo':
+                        await handleSavePhoto(studentId, button.dataset.studentNumber);
+                        break;
+                    case 'delete-photo':
+                        await handleDeletePhoto(studentId);
+                        break;
+                }
+            });
+
+            window.studentPhotoState.eventListenerAttached = true;
+            console.log('✅ Event listener attached');
+        } else {
+            console.log('ℹ️ Event listener already attached, skipping...');
+        }
+
+        // Handler functions
+        async function handleStartCamera(studentId, facingMode) {
+            console.log('🎥 Starting camera for student:', studentId);
+
+            // Use provided facingMode or default to 'user' (front camera)
+            if (!facingMode) {
+                facingMode = window.studentPhotoState.currentFacingMode[studentId] || 'user';
+            }
+
+            const video = document.getElementById('cameraVideo_' + studentId);
+            const errorDiv = document.getElementById('cameraError_' + studentId);
+            const errorMsg = document.getElementById('cameraErrorMessage_' + studentId);
+            const errorDetails = document.getElementById('cameraErrorDetails_' + studentId);
+            const startBtn = document.getElementById('startCameraBtn_' + studentId);
+            const cameraControls = document.getElementById('cameraControls_' + studentId);
+            const switchBtn = document.getElementById('switchCameraBtn_' + studentId);
+
+            if (!video) {
+                console.error('❌ Video element not found');
+                showToast('Video element not found', 'error');
+                return;
+            }
+
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                console.error('❌ Camera API not supported');
+                showToast('Camera API is not supported in your browser', 'error');
+                return;
+            }
+
+            try {
+                console.log('📷 Requesting camera permissions with facingMode:', facingMode);
+
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: { ideal: 640 },
+                        height: { ideal: 480 },
+                        facingMode: facingMode
+                    },
+                    audio: false
+                });
+
+                console.log('✅ Camera access granted!');
+
+                // Store the stream and current facing mode
+                window.studentPhotoState.streams[studentId] = stream;
+                window.studentPhotoState.currentFacingMode[studentId] = facingMode;
+
+                video.srcObject = stream;
+
+                video.onloadedmetadata = function() {
+                    console.log('📹 Video metadata loaded');
+                    video.play().then(function() {
+                        console.log('▶️ Video playing');
+
+                        startBtn.style.display = 'none';
+                        if (cameraControls) cameraControls.style.display = 'flex';
+                        if (switchBtn) switchBtn.style.display = 'block';
+                        if (errorDiv) errorDiv.classList.add('hidden');
+                        if (video) video.classList.remove('hidden');
+
+                        const cameraType = facingMode === 'user' ? 'Front' : 'Back';
+                        showToast(cameraType + ' camera started successfully', 'success');
+                    }).catch(function(err) {
+                        console.error('❌ Error playing video:', err);
+                        showToast('Error playing video: ' + err.message, 'error');
+                    });
+                };
+
+            } catch (error) {
+                console.error('❌ Camera error:', error.name, error.message);
+
+                if (errorDiv) errorDiv.classList.remove('hidden');
+                if (video) video.classList.add('hidden');
+
+                const errorMap = {
+                    'NotAllowedError': ['Camera access denied', 'Please allow camera access in browser settings'],
+                    'NotFoundError': ['No camera found', 'Please connect a camera device'],
+                    'NotReadableError': ['Camera in use', 'Camera is being used by another application'],
+                    'SecurityError': ['Security error', 'Camera requires HTTPS or localhost'],
+                    'OverconstrainedError': ['Camera not available', 'The requested camera (front/back) is not available on this device']
+                };
+
+                const errorInfo = errorMap[error.name] || ['Camera error', error.message];
+                const msg = errorInfo[0];
+                const details = errorInfo[1];
+
+                if (errorMsg) errorMsg.textContent = msg;
+                if (errorDetails) errorDetails.textContent = details;
+
+                showToast(msg + ': ' + details, 'error');
+            }
+        }
+
+        function handleStopCamera(studentId) {
+            console.log('⏹️ Stopping camera for student:', studentId);
+
+            const stream = window.studentPhotoState.streams[studentId];
+            const video = document.getElementById('cameraVideo_' + studentId);
+            const startBtn = document.getElementById('startCameraBtn_' + studentId);
+            const cameraControls = document.getElementById('cameraControls_' + studentId);
+            const switchBtn = document.getElementById('switchCameraBtn_' + studentId);
+
+            if (stream) {
+                stream.getTracks().forEach(function(track) {
+                    track.stop();
+                });
+                delete window.studentPhotoState.streams[studentId];
+            }
+
+            if (video) video.srcObject = null;
+
+            if (startBtn) startBtn.style.display = 'flex';
+            if (cameraControls) cameraControls.style.display = 'none';
+            if (switchBtn) switchBtn.style.display = 'none';
+
+            showToast('Camera stopped', 'info');
+        }
+
+        async function handleSwitchCamera(studentId) {
+            console.log('🔄 Switching camera for student:', studentId);
+
+            // Stop current camera
+            const stream = window.studentPhotoState.streams[studentId];
+            if (stream) {
+                stream.getTracks().forEach(function(track) {
+                    track.stop();
+                });
+                delete window.studentPhotoState.streams[studentId];
+            }
+
+            // Toggle facing mode
+            const currentMode = window.studentPhotoState.currentFacingMode[studentId] || 'user';
+            const newMode = currentMode === 'user' ? 'environment' : 'user';
+
+            console.log('Switching from', currentMode, 'to', newMode);
+
+            // Start camera with new facing mode
+            await handleStartCamera(studentId, newMode);
+        }
+
+        function handleCapturePhoto(studentId) {
+            console.log('📸 Capturing photo for student:', studentId);
+
+            const video = document.getElementById('cameraVideo_' + studentId);
+            const canvas = document.getElementById('photoCanvas_' + studentId);
+            const saveBtn = document.getElementById('savePhotoBtn_' + studentId);
+            const captureBtn = document.getElementById('capturePhotoBtn_' + studentId);
+
+            if (!window.studentPhotoState.streams[studentId]) {
+                showToast('Please start the camera first', 'warning');
+                return;
+            }
+
+            if (!canvas) {
+                console.error('❌ Canvas element not found');
+                showToast('Canvas element not found. Please refresh the page.', 'error');
+                return;
+            }
+
+            const context = canvas.getContext('2d');
+            if (!context) {
+                console.error('❌ Could not get canvas context');
+                showToast('Unable to initialize canvas context', 'error');
+                return;
+            }
+
+            const videoWidth = video.videoWidth;
+            const videoHeight = video.videoHeight;
+
+            console.log('Video dimensions:', videoWidth, 'x', videoHeight);
+
+            if (videoWidth === 0 || videoHeight === 0) {
+                showToast('Please wait for the camera to initialize', 'warning');
+                return;
+            }
+
+            canvas.width = 320;
+            canvas.height = 400;
+
+            const videoAspect = videoWidth / videoHeight;
+            const canvasAspect = canvas.width / canvas.height;
+
+            let sourceX = 0, sourceY = 0, sourceWidth = videoWidth, sourceHeight = videoHeight;
+
+            if (videoAspect > canvasAspect) {
+                sourceWidth = videoHeight * canvasAspect;
+                sourceX = (videoWidth - sourceWidth) / 2;
+            } else {
+                sourceHeight = videoWidth / canvasAspect;
+                sourceY = (videoHeight - sourceHeight) / 2;
+            }
+
+            context.drawImage(video, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, canvas.width, canvas.height);
+
+            window.studentPhotoState.capturedImages[studentId] = canvas.toDataURL('image/png');
+
+            if (saveBtn) saveBtn.classList.remove('hidden');
+            if (captureBtn) captureBtn.innerHTML = '<i class="material-icons text-xs mr-1">camera_alt</i>Retake';
+
+            showToast('Photo captured! Click "Save Photo" to store it.', 'success');
+        }
+
+        async function handleSavePhoto(studentId, studentNumber) {
+            console.log('💾 Saving photo for student:', studentId);
+
+            const imageData = window.studentPhotoState.capturedImages[studentId];
+            if (!imageData) {
+                showToast('Please capture a photo first', 'warning');
+                return;
+            }
+
+            const saveBtn = document.getElementById('savePhotoBtn_' + studentId);
+            const originalContent = saveBtn.innerHTML;
+
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2 inline-block"></div>Saving...';
+
+            try {
+                const token = document.querySelector('input[name="__RequestVerificationToken"]');
+                const tokenValue = token ? token.value : '';
+
+                const response = await fetch('/StudentLookup/SaveStudentPhoto', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': tokenValue
+                    },
+                    body: JSON.stringify({
+                        studentId: parseInt(studentId),
+                        imageData: imageData
+                    })
+                });
+
+                const result = await response.json();
+                console.log('Server response:', result);
+
+                if (result.success) {
+                    showToast('Photo saved successfully!', 'success');
+
+                    const photoContainer = document.getElementById('currentPhotoContainer');
+                    if (photoContainer) {
+                        const timestamp = Date.now();
+                        const photoPath = result.photoPath;
+
+                        const newImg = document.createElement('img');
+                        newImg.id = 'currentPhoto';
+                        newImg.src = photoPath + '?v=' + timestamp;
+                        newImg.alt = 'Student Photo';
+                        newImg.className = 'w-full h-full object-cover';
+
+                        photoContainer.innerHTML = '';
+                        photoContainer.appendChild(newImg);
+
+                        console.log('Photo updated successfully');
+                    }
+
+                    delete window.studentPhotoState.capturedImages[studentId];
+
+                    const canvas = document.getElementById('photoCanvas_' + studentId);
+                    if (canvas) {
+                        const ctx = canvas.getContext('2d');
+                        if (ctx) {
+                            ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        }
+                    }
+
+                    if (saveBtn) saveBtn.classList.add('hidden');
+
+                    const captureBtn = document.getElementById('capturePhotoBtn_' + studentId);
+                    if (captureBtn) {
+                        captureBtn.innerHTML = '<i class="material-icons text-xs mr-1">camera_alt</i>Capture';
+                    }
+
+                    handleStopCamera(studentId);
+
+                    setTimeout(function() {
+                        if (typeof window.loadStudentTab === 'function') {
+                            window.loadStudentTab('photo');
+                        }
+                    }, 1500);
+                } else {
+                    console.error('Save failed:', result.message);
+                    showToast('Failed to save: ' + (result.message || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                console.error('❌ Save error:', error);
+                showToast('Error saving photo: ' + error.message, 'error');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = originalContent;
+            }
+        }
+
+        async function handleDeletePhoto(studentId) {
+            console.log('🗑️ Deleting photo for student:', studentId);
+
+            try {
+                const token = document.querySelector('input[name="__RequestVerificationToken"]');
+                const tokenValue = token ? token.value : '';
+
+                const response = await fetch('/StudentLookup/DeleteStudentPhoto', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'RequestVerificationToken': tokenValue
+                    },
+                    body: 'studentId=' + studentId
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showToast('Photo deleted successfully!', 'success');
+
+                    setTimeout(function() {
+                        if (typeof window.loadStudentTab === 'function') {
+                            window.loadStudentTab('photo');
+                        }
+                    }, 1000);
+                } else {
+                    showToast(data.message || 'Failed to delete photo', 'error');
+                }
+            } catch (error) {
+                console.error('❌ Delete error:', error);
+                showToast('Error deleting photo: ' + error.message, 'error');
+            }
+        }
+
+        console.log('✅ Photo tab script loaded');
+    })();
+</script>

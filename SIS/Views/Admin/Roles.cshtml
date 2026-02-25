@@ -1,0 +1,79 @@
+﻿@model IEnumerable<Microsoft.AspNetCore.Identity.IdentityRole>
+
+<div>
+    <div class="container mt-2">
+        <!-- Header -->
+        <div class="pt-4 row" style="height: 10vh;">
+            <div class="col-10 text-black">
+                <h2>Roles List</h2>
+            </div>
+            <div class="col-2 d-flex justify-content-end">
+                <a asp-controller="Admin" asp-action="CreateRole" class="btn btn-primary rounded-2" style="height: 40px; padding-top: 8px;">
+                    <i class="bi bi-plus-circle"></i>
+                    Create Role
+                </a>
+            </div>
+        </div>
+
+        <!-- Card Wrapper -->
+        <div class="card shadow mt-2 ml-0" style="height: 75vh; overflow: auto;">
+            <div class="card-body" style="overflow-y: auto;">
+                <table id="roleTable" class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Role Name</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            int index = 1;
+                            foreach (var role in Model)
+                            {
+                                <tr>
+                                    <th scope="row">@index</th>
+                                    <td>@role.Name</td>
+                                </tr>
+                                index++;
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="2" class="text-center">No roles found.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- jQuery and DataTables JS -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $('#roleTable').DataTable({
+            paging: true,         // Enable pagination
+            searching: true,      // Enable search box
+            ordering: true,       // Enable column sorting
+            lengthChange: true,   // Enable "Show entries" dropdown
+            info: true,           // Show table information
+            pageLength: 10,       // Default rows per page
+            columnDefs: [
+                { orderable: false, targets: -1 } // Disable sorting on the Actions column
+            ],
+            language: {
+                search: "Search roles:",  // Customize search box text
+                lengthMenu: "Show _MENU_ entries per page",
+                info: "Showing _START_ to _END_ of _TOTAL_ entries",
+                infoEmpty: "No roles available",
+                zeroRecords: "No matching records found"
+            }
+        });
+    });
+</script>
+
+

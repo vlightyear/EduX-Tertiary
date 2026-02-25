@@ -1,0 +1,956 @@
+@model SIS.Controllers.AccomodationControllers.CheckInOutViewModel
+@{
+    ViewData["Title"] = "Check-In/Out Management";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+<style>
+    /* CRITICAL: Fixed heights for proper scrolling */
+    .checkinout-container {
+        display: flex;
+        height: calc(100vh - 300px); /* Adjust based on header height */
+        gap: 0;
+        background: #f5f5f5;
+        overflow: hidden; /* Prevent container from scrolling */
+    }
+
+    .checkinout-header {
+        background: white;
+        padding: 20px 30px;
+        border-bottom: 1px solid #e0e0e0;
+        margin-bottom: 0;
+    }
+
+    .header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .header-title {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+        .header-title i {
+            font-size: 32px;
+            color: #17a2b8;
+        }
+
+        .header-title h2 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+    .header-subtitle {
+        color: #7f8c8d;
+        font-size: 14px;
+        margin: 0;
+    }
+
+    .role-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: #d1ecf1;
+        color: #0c5460;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    /* Configuration Notice Styles */
+    .config-notice {
+        background: white;
+        padding: 15px 30px;
+        border-bottom: 1px solid #e0e0e0;
+        border-left: 4px solid #17a2b8;
+    }
+
+        .config-notice.enabled {
+            border-left-color: #17a2b8;
+            background: #f8fdff;
+        }
+
+        .config-notice.disabled {
+            border-left-color: #6c757d;
+            background: #f8f9fa;
+        }
+
+    .config-notice-content {
+        display: flex;
+        align-items: start;
+        gap: 12px;
+    }
+
+        .config-notice-content i {
+            font-size: 20px;
+            margin-top: 2px;
+        }
+
+    .config-notice.enabled i {
+        color: #17a2b8;
+    }
+
+    .config-notice.disabled i {
+        color: #6c757d;
+    }
+
+    .config-notice-text {
+        flex: 1;
+    }
+
+        .config-notice-text h6 {
+            margin: 0 0 5px 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .config-notice-text p {
+            margin: 0;
+            font-size: 13px;
+            color: #6c757d;
+            line-height: 1.5;
+        }
+
+        .config-notice-text ul {
+            margin: 8px 0 0 0;
+            padding-left: 20px;
+            font-size: 12px;
+            color: #6c757d;
+        }
+
+            .config-notice-text ul li {
+                margin-bottom: 3px;
+            }
+
+    .search-section {
+        background: white;
+        padding: 20px 30px;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .search-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 15px;
+        color: #17a2b8;
+        font-weight: 600;
+    }
+
+    .search-form {
+        display: grid;
+        grid-template-columns: 1fr 300px 150px 100px;
+        gap: 15px;
+        align-items: end;
+    }
+
+    .form-group {
+        margin-bottom: 0;
+    }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #555;
+            font-weight: 500;
+        }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 15px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 14px;
+    }
+
+    .search-btn {
+        background: #17a2b8;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        height: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+        .search-btn:hover {
+            background: #138496;
+        }
+
+    .clear-btn {
+        background: #6c757d;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        height: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .clear-btn:hover {
+            background: #5a6268;
+        }
+
+    .filter-tabs {
+        display: flex;
+        gap: 10px;
+        padding: 15px 30px;
+        background: white;
+        border-bottom: 1px solid #e0e0e0;
+        overflow-x: auto;
+    }
+
+    .filter-tab {
+        padding: 8px 20px;
+        border: 2px solid #e0e0e0;
+        border-radius: 20px;
+        background: white;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 14px;
+        color: #666;
+        white-space: nowrap;
+        transition: all 0.3s;
+        text-decoration: none;
+    }
+
+        .filter-tab:hover {
+            border-color: #17a2b8;
+            color: #17a2b8;
+        }
+
+        .filter-tab.active {
+            background: #17a2b8;
+            border-color: #17a2b8;
+            color: white;
+        }
+
+        .filter-tab .count {
+            display: inline-block;
+            background: rgba(0,0,0,0.1);
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-left: 8px;
+            font-size: 12px;
+        }
+
+        .filter-tab.active .count {
+            background: rgba(255,255,255,0.3);
+        }
+
+    /* FIXED: Results panel with proper height and scrolling */
+    .results-panel {
+        flex: 0 0 450px;
+        background: white;
+        border-right: 1px solid #e0e0e0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden; /* Prevent panel itself from scrolling */
+        height: 100%; /* Take full height of container */
+    }
+
+    .results-header {
+        padding: 20px;
+        border-bottom: 1px solid #e0e0e0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0; /* Don't shrink header */
+    }
+
+        .results-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+    .results-count {
+        background: #17a2b8;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    /* FIXED: Scrollable list */
+    .results-list {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 10px;
+    }
+
+    .student-card {
+        background: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+        .student-card:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-color: #17a2b8;
+        }
+
+        .student-card.selected {
+            border-color: #17a2b8;
+            background: #f8fbfc;
+        }
+
+    .student-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 10px;
+    }
+
+    .student-name {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 3px;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+        .status-badge.not-checked-in {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-badge.checked-in {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .status-badge.checked-out {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+    .card-info {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 13px;
+        color: #666;
+        margin-top: 5px;
+    }
+
+        .card-info i {
+            font-size: 14px;
+            color: #999;
+            width: 16px;
+        }
+
+    .accommodation-info {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid #f0f0f0;
+    }
+
+    .info-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: #f8f9fa;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 12px;
+        color: #666;
+    }
+
+        .info-chip i {
+            font-size: 12px;
+            color: #17a2b8;
+        }
+
+    /* FIXED: Details panel with proper height and scrolling */
+    .details-panel {
+        flex: 1;
+        background: #fafafa;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden; /* Prevent panel itself from scrolling */
+        height: 100%; /* Take full height of container */
+    }
+
+    .no-selection {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #999;
+    }
+
+        .no-selection i {
+            font-size: 80px;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+
+        .no-selection h3 {
+            color: #666;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+
+        .no-selection p {
+            color: #999;
+            font-size: 14px;
+        }
+
+    /* FIXED: Details content with proper scrolling */
+    .details-content {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 0;
+        height: 100%; /* Critical for scrolling */
+    }
+
+        /* Scrollbar styling */
+        .results-list::-webkit-scrollbar,
+        .details-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .results-list::-webkit-scrollbar-track,
+        .details-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .results-list::-webkit-scrollbar-thumb,
+        .details-content::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+            .results-list::-webkit-scrollbar-thumb:hover,
+            .details-content::-webkit-scrollbar-thumb:hover {
+                background: #555;
+            }
+
+    /* Responsive */
+    @@media (max-width: 1200px) {
+        .search-form {
+            grid-template-columns: 1fr;
+        }
+
+        .results-panel {
+            flex: 0 0 350px;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .checkinout-container {
+            flex-direction: column;
+            height: auto;
+        }
+
+        .results-panel {
+            flex: 0 0 auto;
+            max-height: 400px;
+        }
+
+        .config-notice-content {
+            flex-direction: column;
+        }
+    }
+</style>
+
+<!-- Header -->
+<div class="checkinout-header">
+    <div class="header-top">
+        <div class="header-title">
+            <i class="fas fa-door-open"></i>
+            <div>
+                <h2>Check-In/Out Management</h2>
+                <p class="header-subtitle">Manage student check-ins and check-outs for accommodation</p>
+            </div>
+        </div>
+        <div>
+            <span class="role-badge">
+                <i class="fas fa-user-shield"></i>
+                Role: @(User.IsInRole("Admin") ? "Admin" : User.IsInRole("HostelManager") ? "Hostel Manager" : "Accommodation Staff")
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Configuration Notice -->
+@if (Model.DeAllocateBedSpaceUponCheckOut)
+{
+    <div class="config-notice enabled">
+        <div class="config-notice-content">
+            <i class="fas fa-info-circle"></i>
+            <div class="config-notice-text">
+                <h6>Auto-Deallocation Enabled</h6>
+                <p>When checking out a student, the system will automatically:</p>
+                <ul>
+                    <li>Remove the student from their allocated bed space</li>
+                    <li>Remove the "AccommodatedStudent" role from the student</li>
+                    <li>Mark the bed space as available for new allocations</li>
+                    <li>Update the student's accommodation clearance status</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="config-notice disabled">
+        <div class="config-notice-content">
+            <i class="fas fa-lock"></i>
+            <div class="config-notice-text">
+                <h6>Auto-Deallocation Disabled</h6>
+                <p>Students will remain in their allocated spaces after check-out until manually deallocated.</p>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Search Section -->
+<div class="search-section">
+    <div class="search-title">
+        <i class="fas fa-search"></i>
+        <span>Search Students</span>
+    </div>
+    <form asp-action="Index" method="get" class="search-form">
+        <div class="form-group">
+            <label for="searchTerm">Search Term</label>
+            <input type="text"
+                   class="form-control"
+                   id="searchTerm"
+                   name="searchTerm"
+                   placeholder="Search by student name, number, room, or hostel..."
+                   value="@Model.SearchTerm" />
+        </div>
+        <div class="form-group">
+            <label for="searchBy">Search By</label>
+            <select class="form-control" id="searchBy" name="searchBy">
+                <option value="AllFields" selected="@(Model.SearchBy == "AllFields")">All Fields</option>
+                <option value="StudentNumber" selected="@(Model.SearchBy == "StudentNumber")">Student Number</option>
+                <option value="StudentName" selected="@(Model.SearchBy == "StudentName")">Student Name</option>
+                <option value="RoomNumber" selected="@(Model.SearchBy == "RoomNumber")">Room Number</option>
+                <option value="HostelName" selected="@(Model.SearchBy == "HostelName")">Hostel Name</option>
+            </select>
+        </div>
+        <input type="hidden" name="filterStatus" value="@Model.FilterStatus" />
+        <button type="submit" class="search-btn">
+            <i class="fas fa-search"></i>
+            Search
+        </button>
+        <a asp-action="Index" class="clear-btn">
+            <i class="fas fa-times"></i>
+        </a>
+    </form>
+</div>
+
+<!-- Filter Tabs -->
+<div class="filter-tabs">
+    <a href="@Url.Action("Index", new { searchTerm = Model.SearchTerm, searchBy = Model.SearchBy, filterStatus = "All" })"
+       class="filter-tab @(Model.FilterStatus == "All" ? "active" : "")">
+        All Students
+        <span class="count">@Model.TotalAllocations</span>
+    </a>
+    <a href="@Url.Action("Index", new { searchTerm = Model.SearchTerm, searchBy = Model.SearchBy, filterStatus = "NotCheckedIn" })"
+       class="filter-tab @(Model.FilterStatus == "NotCheckedIn" ? "active" : "")">
+        <i class="fas fa-clock"></i>
+        Not Checked In
+        <span class="count">@Model.NotCheckedInCount</span>
+    </a>
+    <a href="@Url.Action("Index", new { searchTerm = Model.SearchTerm, searchBy = Model.SearchBy, filterStatus = "CheckedIn" })"
+       class="filter-tab @(Model.FilterStatus == "CheckedIn" ? "active" : "")">
+        <i class="fas fa-check-circle"></i>
+        Checked In
+        <span class="count">@Model.CheckedInCount</span>
+    </a>
+    <a href="@Url.Action("Index", new { searchTerm = Model.SearchTerm, searchBy = Model.SearchBy, filterStatus = "CheckedOut" })"
+       class="filter-tab @(Model.FilterStatus == "CheckedOut" ? "active" : "")">
+        <i class="fas fa-sign-out-alt"></i>
+        Checked Out
+        <span class="count">@Model.CheckedOutCount</span>
+    </a>
+</div>
+
+<!-- Main Container -->
+<div class="checkinout-container">
+    <!-- Results Panel -->
+    <div class="results-panel">
+        <div class="results-header">
+            <h3>Accommodated Students</h3>
+            <span class="results-count">@Model.Allocations.Count results</span>
+        </div>
+        <div class="results-list">
+            @if (Model.Allocations.Any())
+            {
+                foreach (var item in Model.Allocations)
+                {
+                    var student = item.Allocation.Application.Student;
+                    var bed = item.Allocation.Bed;
+                    var checkInOut = item.Allocation.CheckInOut;
+                    var statusClass = item.CheckInOutStatus.ToLower().Replace(" ", "-");
+
+                    <div class="student-card"
+                         data-allocation-id="@item.Allocation.AllocationId"
+                         onclick="loadAllocationDetails(@item.Allocation.AllocationId)">
+                        <div class="student-header">
+                            <div>
+                                <div class="student-name">@student.FullName</div>
+                                <div class="card-info">
+                                    <i class="fas fa-id-card"></i>
+                                    <span>@student.StudentId_Number</span>
+                                </div>
+                            </div>
+                            <span class="status-badge @statusClass">@item.CheckInOutStatus</span>
+                        </div>
+
+                        <div class="card-info">
+                            <i class="fas fa-graduation-cap"></i>
+                            <span>@student.Programme?.Name</span>
+                        </div>
+
+                        <div class="card-info">
+                            <i class="fas fa-school"></i>
+                            <span>@student.Programme?.Department?.School?.Name</span>
+                        </div>
+
+                        <div class="accommodation-info">
+                            <div class="info-chip">
+                                <i class="fas fa-building"></i>
+                                <span>@bed?.Room?.Hostel?.Campus?.CampusName</span>
+                            </div>
+                            <div class="info-chip">
+                                <i class="fas fa-hotel"></i>
+                                <span>@bed?.Room?.Hostel?.HostelName</span>
+                            </div>
+                            <div class="info-chip">
+                                <i class="fas fa-door-closed"></i>
+                                <span>Room @bed?.Room?.RoomNumber</span>
+                            </div>
+                            <div class="info-chip">
+                                <i class="fas fa-bed"></i>
+                                <span>Bed @bed?.BedIdentifier</span>
+                            </div>
+                        </div>
+
+                        @if (checkInOut != null)
+                        {
+                            <div class="card-info" style="margin-top: 8px; font-size: 12px; color: #999;">
+                                @if (checkInOut.CheckInDate.HasValue)
+                                {
+                                    <span>
+                                        <i class="fas fa-sign-in-alt"></i>
+                                        In: @checkInOut.CheckInDate.Value.ToString("MMM dd, yyyy")
+                                    </span>
+                                }
+                                @if (checkInOut.CheckOutDate.HasValue)
+                                {
+                                    <span style="margin-left: 10px;">
+                                        <i class="fas fa-sign-out-alt"></i>
+                                        Out: @checkInOut.CheckOutDate.Value.ToString("MMM dd, yyyy")
+                                    </span>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            }
+            else
+            {
+                <div style="text-align: center; padding: 40px; color: #999;">
+                    <i class="fas fa-inbox" style="font-size: 48px; margin-bottom: 15px;"></i>
+                    <p>No students found</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Details Panel -->
+    <div class="details-panel">
+        <div id="allocationDetailsContainer" class="details-content">
+            <div class="no-selection">
+                <i class="fas fa-user-circle"></i>
+                <h3>No Student Selected</h3>
+                <p>Select a student from the list to view check-in/out details</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // Check if SweetAlert2 is loaded
+        console.log('SweetAlert2 loaded:', typeof Swal !== 'undefined');
+
+        // CRITICAL: Explicitly attach to window object
+        window.checkInStudent = function(allocationId) {
+            const condition = document.getElementById('checkInCondition');
+
+            if (!condition) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Form elements not found',
+                    confirmButtonColor: '#17a2b8'
+                });
+                return;
+            }
+
+            const conditionValue = condition.value.trim();
+
+            if (!conditionValue) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Required Field',
+                    text: 'Please describe the room/bed condition',
+                    confirmButtonColor: '#17a2b8'
+                });
+                return;
+            }
+
+            Swal.fire({
+                title: 'Confirm Check-In',
+                text: 'Are you sure you want to check in this student?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#17a2b8',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="fas fa-check me-2"></i>Yes, Check In',
+                cancelButtonText: '<i class="fas fa-times me-2"></i>Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Show loading
+                    Swal.fire({
+                        title: 'Processing...',
+                        text: 'Checking in student',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    const requestData = {
+                        allocationId: allocationId,
+                        condition: conditionValue
+                    };
+
+                    const token = document.querySelector('input[name="__RequestVerificationToken"]');
+
+                    fetch('@Url.Action("CheckInStudent", "CheckInOut")', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': token ? token.value : ''
+                        },
+                        body: JSON.stringify(requestData)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Success!',
+                                text: data.message,
+                                confirmButtonColor: '#17a2b8'
+                            }).then(() => {
+                                window.location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: data.message,
+                                confirmButtonColor: '#17a2b8'
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Error: ' + error.message,
+                            confirmButtonColor: '#17a2b8'
+                        });
+                        console.error('Error:', error);
+                    });
+                }
+            });
+        };
+
+        window.checkOutStudent = function(allocationId) {
+            const condition = document.getElementById('checkOutCondition');
+            const damageChargesInput = document.getElementById('damageCharges');
+
+            if (!condition || !damageChargesInput) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Form elements not found',
+                    confirmButtonColor: '#dc3545'
+                });
+                return;
+            }
+
+            const conditionValue = condition.value.trim();
+            const damageCharges = parseFloat(damageChargesInput.value) || 0;
+
+            if (!conditionValue) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Required Field',
+                    text: 'Please describe the room/bed condition',
+                    confirmButtonColor: '#dc3545'
+                });
+                return;
+            }
+
+            let confirmHtml = '<p style="font-size: 16px; margin-bottom: 10px;">Are you sure you want to check out this student?</p>';
+
+            if (damageCharges > 0) {
+                confirmHtml += `
+                    <div style="background: #fff3cd; border: 2px solid #ffc107; border-radius: 6px; padding: 12px; margin-top: 15px;">
+                        <i class="fas fa-exclamation-triangle" style="color: #856404; margin-right: 8px;"></i>
+                        <strong style="color: #856404; font-size: 16px;">Damage Charges: K${damageCharges.toFixed(2)}</strong>
+                    </div>
+                `;
+            }
+
+            Swal.fire({
+                title: 'Confirm Check-Out',
+                html: confirmHtml,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="fas fa-sign-out-alt me-2"></i>Yes, Check Out',
+                cancelButtonText: '<i class="fas fa-times me-2"></i>Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Show loading
+                    Swal.fire({
+                        title: 'Processing...',
+                        text: 'Checking out student',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    const requestData = {
+                        allocationId: allocationId,
+                        condition: conditionValue,
+                        damageCharges: damageCharges
+                    };
+
+                    const token = document.querySelector('input[name="__RequestVerificationToken"]');
+
+                    fetch('@Url.Action("CheckOutStudent", "CheckInOut")', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': token ? token.value : ''
+                        },
+                        body: JSON.stringify(requestData)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Success!',
+                                html: `<p style="font-size: 16px;">${data.message}</p>`,
+                                confirmButtonColor: '#28a745'
+                            }).then(() => {
+                                window.location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: data.message,
+                                confirmButtonColor: '#dc3545'
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Error: ' + error.message,
+                            confirmButtonColor: '#dc3545'
+                        });
+                        console.error('Error:', error);
+                    });
+                }
+            });
+        };
+
+        window.loadAllocationDetails = function(allocationId) {
+            document.querySelectorAll('.student-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+
+            const clickedCard = document.querySelector(`[data-allocation-id="${allocationId}"]`);
+            if (clickedCard) {
+                clickedCard.classList.add('selected');
+            }
+
+            fetch('@Url.Action("GetAllocationDetails", "CheckInOut")?allocationId=' + allocationId)
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('allocationDetailsContainer').innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('allocationDetailsContainer').innerHTML =
+                        '<div class="no-selection"><i class="fas fa-exclamation-triangle"></i><h3>Error</h3><p>Please try again</p></div>';
+                });
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const firstCard = document.querySelector('.student-card');
+            if (firstCard) {
+                const allocationId = firstCard.getAttribute('data-allocation-id');
+                if (allocationId) {
+                    loadAllocationDetails(parseInt(allocationId));
+                }
+            }
+        });
+    </script>
+}

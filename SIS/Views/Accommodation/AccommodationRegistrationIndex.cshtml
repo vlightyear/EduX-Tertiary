@@ -1,0 +1,553 @@
+@model IEnumerable<SIS.Models.StudentAccommodation.AccommodationApplication>
+@using Microsoft.AspNetCore.Mvc.Rendering
+
+@{
+    ViewData["Title"] = "Student Accommodation Portal";
+    var config = ViewBag.Config as SIS.Models.StudentAccommodation.AccomodationConfiguration;
+    var period = ViewBag.Period as SIS.Models.StudentAccommodation.AccommodationPeriod;
+    var student = ViewBag.Student as SIS.Models.StudentApplication.Student;
+}
+
+<style>
+    #loadingIndicator {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        z-index: 9999 !important;
+    }
+    
+    #applicationModal, #confirmModal {
+        position: fixed !important;
+        inset: 0 !important;
+        z-index: 9998 !important;
+    }
+</style>
+
+<div class="min-h-screen bg-gray-50 p-4">
+    <!-- Header -->
+    <div class="max-w-7xl mx-auto mb-6">
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center mb-4">
+                <i class="material-icons text-4xl text-cyan-600 mr-3">home</i>
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800">Student Accommodation Portal</h1>
+                    <p class="text-gray-600">Apply for on-campus accommodation</p>
+                </div>
+            </div>
+
+            @if (period != null)
+            {
+                <div class="bg-cyan-50 border-l-4 border-cyan-500 p-4 mt-4">
+                    <div class="flex items-center">
+                        <i class="material-icons text-cyan-600 mr-2">info</i>
+                        <div>
+                            <p class="font-semibold text-cyan-900">Active Period: @period.Type</p>
+                            <p class="text-sm text-cyan-700">
+                                @period.StartDate.ToString("MMM dd, yyyy") - @(period.EndDate?.ToString("MMM dd, yyyy") ?? "Until Graduation")
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Important Information -->
+    <div class="max-w-7xl mx-auto mb-6">
+        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-yellow-900 mb-3 flex items-center">
+                <i class="material-icons mr-2">warning</i>
+                Important Information
+            </h3>
+            <ul class="space-y-2 text-yellow-800">
+                <li class="flex items-start">
+                    <i class="material-icons text-sm mr-2 mt-1">check_circle</i>
+                    <span><strong>Accommodation Fee:</strong> ZMW @(config?.AccommodationFee.ToString("N2") ?? "0.00")</span>
+                </li>
+                <li class="flex items-start">
+                    <i class="material-icons text-sm mr-2 mt-1">schedule</i>
+                    <span><strong>Payment Deadline:</strong> You have <strong>@(config?.ReservationHoursValidity ?? 24) hours</strong> after application to make payment</span>
+                </li>
+                <li class="flex items-start">
+                    <i class="material-icons text-sm mr-2 mt-1">receipt</i>
+                    <span><strong>Receipt Submission:</strong> Submit payment receipts to the Accommodation Office</span>
+                </li>
+                <li class="flex items-start">
+                    <i class="material-icons text-sm mr-2 mt-1">error_outline</i>
+                    <span class="text-red-700 font-semibold">If payment is not made within @(config?.ReservationHoursValidity ?? 24) hours, your reservation will be cancelled and the bed space will be made available to other students.</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="max-w-7xl mx-auto mb-6">
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Filter Available Accommodation</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label for="campusFilter" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="material-icons text-sm align-middle mr-1">location_city</i>
+                        Campus
+                    </label>
+                    <select id="campusFilter" class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500">
+                        <option value="">All Campuses</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="hostelFilter" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="material-icons text-sm align-middle mr-1">apartment</i>
+                        Hostel
+                    </label>
+                    <select id="hostelFilter" class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500" disabled>
+                        <option value="">Select Hostel</option>
+                    </select>
+                </div>
+                <div class="flex items-end">
+                    <button type="button" id="searchBtn" onclick="searchAvailableRooms()" class="w-full px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors flex items-center justify-center">
+                        <i class="material-icons mr-2">search</i>
+                        Search Available Rooms
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Available Rooms Grid -->
+    <div class="max-w-7xl mx-auto">
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-800">Available Bed Spaces</h3>
+                <span id="bedCount" class="text-sm text-gray-600">0 beds available</span>
+            </div>
+
+            <div id="emptyState" class="flex flex-col items-center justify-center py-16 text-gray-500">
+                <i class="material-icons text-6xl mb-4 text-gray-300">bed</i>
+                <p class="text-lg font-medium">No Rooms to Display</p>
+                <p class="text-sm">Use the filters above to search for available accommodation</p>
+            </div>
+
+            <div id="roomsGrid" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Rooms will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Indicator -->
+<div id="loadingIndicator" style="display: none;">
+    <div style="display: flex; align-items: center; justify-content: center; height: 100vh; background: rgba(0,0,0,0.5);">
+        <div class="bg-white rounded-lg p-6 flex items-center space-x-4 shadow-2xl">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600"></div>
+            <span class="text-slate-700 font-medium">Loading...</span>
+        </div>
+    </div>
+</div>
+
+<!-- Application Confirmation Modal -->
+<div id="applicationModal" class="hidden">
+    <div style="display: flex; align-items: center; justify-center; min-height: 100vh; background: rgba(0,0,0,0.5); padding: 20px;">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="px-6 py-4 bg-cyan-600 text-white sticky top-0">
+                <h3 class="text-xl font-semibold flex items-center">
+                    <i class="material-icons mr-2">assignment</i>
+                    Confirm Accommodation Application
+                </h3>
+            </div>
+
+            <div class="p-6">
+                <!-- Room Details -->
+                <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                    <h4 class="font-semibold text-gray-800 mb-3">Selected Accommodation</h4>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Campus:</span>
+                            <span class="font-medium" id="modalCampus"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Hostel:</span>
+                            <span class="font-medium" id="modalHostel"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Room:</span>
+                            <span class="font-medium" id="modalRoom"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Bed:</span>
+                            <span class="font-medium" id="modalBed"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Room Type:</span>
+                            <span class="font-medium" id="modalRoomType"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Information -->
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                    <h4 class="font-semibold text-yellow-900 mb-3 flex items-center">
+                        <i class="material-icons mr-2 text-sm">warning</i>
+                        Payment Requirements
+                    </h4>
+                    <div class="space-y-2 text-sm text-yellow-800">
+                        <div class="flex justify-between">
+                            <span>Amount to Pay:</span>
+                            <span class="font-bold text-lg">ZMW @(config?.AccommodationFee.ToString("N2"))</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Payment Deadline:</span>
+                            <span class="font-semibold">@(config?.ReservationHoursValidity) hours from now</span>
+                        </div>
+                        <div class="mt-3 pt-3 border-t border-yellow-300">
+                            <p class="font-semibold text-red-700">
+                                ⚠️ Your bed reservation will be cancelled if payment is not received within @(config?.ReservationHoursValidity) hours!
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notes -->
+                <div class="mb-6">
+                    <label for="applicationNotes" class="block text-sm font-medium text-gray-700 mb-2">
+                        Additional Notes (Optional)
+                    </label>
+                    <textarea id="applicationNotes" rows="3" 
+                              class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500"
+                              placeholder="Any special requests or information..."></textarea>
+                </div>
+
+                <!-- Confirmation Checkbox -->
+                <div class="mb-6">
+                    <label class="flex items-start">
+                        <input type="checkbox" id="confirmCheckbox" class="mt-1 mr-3 h-4 w-4 text-cyan-600 border-gray-300 rounded focus:ring-cyan-500">
+                        <span class="text-sm text-gray-700">
+                            I understand that I must make payment within <strong>@(config?.ReservationHoursValidity) hours</strong> 
+                            and submit the receipt to the Accommodation Office, or my reservation will be cancelled.
+                        </span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="px-6 py-4 bg-gray-50 flex justify-end gap-3 sticky bottom-0">
+                <button onclick="closeApplicationModal()" class="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors">
+                    Cancel
+                </button>
+                <button onclick="submitApplication()" id="submitBtn" class="px-6 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors flex items-center" disabled>
+                    <i class="material-icons mr-2">check_circle</i>
+                    Submit Application
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div id="successModal" class="hidden">
+    <div style="display: flex; align-items: center; justify-center; min-height: 100vh; background: rgba(0,0,0,0.5); padding: 20px;">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-md">
+            <div class="px-6 py-4 bg-green-600 text-white">
+                <h3 class="text-xl font-semibold flex items-center">
+                    <i class="material-icons mr-2">check_circle</i>
+                    Application Successful!
+                </h3>
+            </div>
+
+            <div class="p-6">
+                <div class="text-center mb-6">
+                    <i class="material-icons text-6xl text-green-500 mb-4">celebration</i>
+                    <p class="text-lg text-gray-800 mb-2">Your accommodation application has been submitted!</p>
+                    <p class="text-sm text-gray-600" id="successRoomDetails"></p>
+                </div>
+
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                    <h4 class="font-semibold text-red-900 mb-2">⏰ Payment Deadline</h4>
+                    <p class="text-sm text-red-800 mb-2">
+                        You must make payment by: <strong id="paymentDeadline"></strong>
+                    </p>
+                    <p class="text-sm text-red-800">
+                        Failure to pay within this time will result in automatic cancellation.
+                    </p>
+                </div>
+
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h4 class="font-semibold text-blue-900 mb-2">💳 Payment Details</h4>
+                    <div class="text-sm text-blue-800 space-y-1">
+                        <p>Amount: <strong>ZMW <span id="successFee"></span></strong></p>
+                        <p>Account: <strong id="successAccount"></strong></p>
+                        <p class="mt-2 pt-2 border-t border-blue-300">
+                            Submit your payment receipt to the Accommodation Office
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-6 py-4 bg-gray-50 flex justify-center">
+                <button onclick="location.href='/Allocation/ApplicationStatus?id=' + currentApplicationId" class="px-6 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors">
+                    View Application Status
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let selectedBedId = null;
+        let selectedBedDetails = null;
+        let currentApplicationId = null;
+        const studentGender = '@student?.Gender';
+        const reservationHours = @(config?.ReservationHoursValidity ?? 24);
+        const accommodationFee = @(config?.AccommodationFee ?? 0);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadCampuses();
+
+            document.getElementById('campusFilter').addEventListener('change', async (e) => {
+                const campusId = e.target.value;
+                const hostelFilter = document.getElementById('hostelFilter');
+                
+                hostelFilter.innerHTML = '<option value="">Select Hostel</option>';
+                hostelFilter.disabled = !campusId;
+
+                if (campusId) {
+                    await loadHostels(campusId);
+                }
+            });
+
+            document.getElementById('confirmCheckbox').addEventListener('change', (e) => {
+                document.getElementById('submitBtn').disabled = !e.target.checked;
+            });
+        });
+
+        async function loadCampuses() {
+            try {
+                const response = await fetch('/Allocation/GetCampusesWithAvailability');
+                const campuses = await response.json();
+
+                const select = document.getElementById('campusFilter');
+                campuses.forEach(campus => {
+                    const option = document.createElement('option');
+                    option.value = campus.id;
+                    option.textContent = `${campus.name} (${campus.availableBeds} beds)`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading campuses:', error);
+            }
+        }
+
+        async function loadHostels(campusId) {
+            try {
+                const response = await fetch(`/Allocation/GetHostelsByCampusWithAvailability?campusId=${campusId}&gender=${studentGender}`);
+                const hostels = await response.json();
+
+                const select = document.getElementById('hostelFilter');
+                hostels.forEach(hostel => {
+                    const option = document.createElement('option');
+                    option.value = hostel.id;
+                    option.textContent = `${hostel.name} (${hostel.availableBeds} beds)`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading hostels:', error);
+            }
+        }
+
+        async function searchAvailableRooms() {
+            const campusId = document.getElementById('campusFilter').value;
+            const hostelId = document.getElementById('hostelFilter').value;
+            const loadingIndicator = document.getElementById('loadingIndicator');
+
+            loadingIndicator.style.display = 'block';
+
+            try {
+                const params = new URLSearchParams({
+                    gender: studentGender
+                });
+                if (campusId) params.append('campusId', campusId);
+                if (hostelId) params.append('hostelId', hostelId);
+
+                const response = await fetch(`/Allocation/GetAvailableRooms?${params}`);
+                const beds = await response.json();
+
+                displayRooms(beds);
+            } catch (error) {
+                console.error('Error searching rooms:', error);
+                showNotification('Error loading available rooms', 'error');
+            } finally {
+                loadingIndicator.style.display = 'none';
+            }
+        }
+
+        function displayRooms(beds) {
+            const grid = document.getElementById('roomsGrid');
+            const emptyState = document.getElementById('emptyState');
+            const bedCount = document.getElementById('bedCount');
+
+            grid.innerHTML = '';
+
+            if (beds.length === 0) {
+                emptyState.classList.remove('hidden');
+                grid.classList.add('hidden');
+                bedCount.textContent = '0 beds available';
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            grid.classList.remove('hidden');
+            bedCount.textContent = `${beds.length} bed${beds.length !== 1 ? 's' : ''} available`;
+
+            beds.forEach(bed => {
+                const card = createBedCard(bed);
+                grid.appendChild(card);
+            });
+        }
+
+        function createBedCard(bed) {
+            const card = document.createElement('div');
+            card.className = 'bg-white border-2 border-gray-200 rounded-lg p-4 hover:border-cyan-500 hover:shadow-lg transition-all';
+
+            const occupancyRate = bed.capacity > 0 ? Math.round((bed.occupiedBeds / bed.capacity) * 100) : 0;
+
+            card.innerHTML = `
+                <div class="flex justify-between items-start mb-3">
+                    <div>
+                        <h4 class="text-lg font-semibold text-gray-800">${bed.hostelName}</h4>
+                        <p class="text-sm text-gray-600">${bed.campusName}</p>
+                    </div>
+                    <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
+                        Available
+                    </span>
+                </div>
+
+                <div class="space-y-2 mb-4">
+                    <div class="flex items-center text-sm text-gray-700">
+                        <i class="material-icons text-sm mr-2">meeting_room</i>
+                        <span>Room ${bed.roomNumber} - Floor ${bed.floor}</span>
+                    </div>
+                    <div class="flex items-center text-sm text-gray-700">
+                        <i class="material-icons text-sm mr-2">bed</i>
+                        <span>Bed ${bed.bedIdentifier} (${bed.roomType})</span>
+                    </div>
+                    <div class="flex items-center text-sm text-gray-700">
+                        <i class="material-icons text-sm mr-2">people</i>
+                        <span>${bed.gender} - ${bed.occupiedBeds}/${bed.capacity} occupied</span>
+                    </div>
+                </div>
+
+                <div class="w-full bg-gray-200 rounded-full h-2 mb-4">
+                    <div class="bg-cyan-600 h-2 rounded-full" style="width: ${occupancyRate}%"></div>
+                </div>
+
+                <button onclick='applyForBed(${JSON.stringify(bed)})' 
+                        class="w-full px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors flex items-center justify-center">
+                    <i class="material-icons mr-2 text-sm">how_to_reg</i>
+                    Apply for This Bed
+                </button>
+            `;
+
+            return card;
+        }
+
+        function applyForBed(bed) {
+            selectedBedId = bed.bedId;
+            selectedBedDetails = bed;
+
+            document.getElementById('modalCampus').textContent = bed.campusName;
+            document.getElementById('modalHostel').textContent = bed.hostelName;
+            document.getElementById('modalRoom').textContent = `Room ${bed.roomNumber}`;
+            document.getElementById('modalBed').textContent = `Bed ${bed.bedIdentifier}`;
+            document.getElementById('modalRoomType').textContent = bed.roomType;
+
+            document.getElementById('applicationNotes').value = '';
+            document.getElementById('confirmCheckbox').checked = false;
+            document.getElementById('submitBtn').disabled = true;
+
+            document.getElementById('applicationModal').classList.remove('hidden');
+        }
+
+        function closeApplicationModal() {
+            document.getElementById('applicationModal').classList.add('hidden');
+        }
+
+        async function submitApplication() {
+            const notes = document.getElementById('applicationNotes').value;
+            const submitBtn = document.getElementById('submitBtn');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="animate-spin rounded-full h-5 w-5 border-b-2 border-white inline-block mr-2"></span>Submitting...';
+            loadingIndicator.style.display = 'block';
+
+            try {
+                const formData = new FormData();
+                formData.append('bedId', selectedBedId);
+                formData.append('notes', notes);
+
+                const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                formData.append('__RequestVerificationToken', token);
+
+                const response = await fetch('/Allocation/ApplyForAccommodation', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    closeApplicationModal();
+                    showSuccessModal(result);
+                } else {
+                    showNotification(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error submitting application:', error);
+                showNotification('Error submitting application', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="material-icons mr-2">check_circle</i>Submit Application';
+                loadingIndicator.style.display = 'none';
+            }
+        }
+
+        function showSuccessModal(result) {
+            currentApplicationId = result.applicationId;
+            document.getElementById('successRoomDetails').textContent = result.roomDetails;
+            document.getElementById('paymentDeadline').textContent = result.expiryTime;
+            document.getElementById('successFee').textContent = result.accommodationFee.toFixed(2);
+            document.getElementById('successAccount').textContent = result.accountCode;
+            document.getElementById('successModal').classList.remove('hidden');
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 10000;
+                padding: 16px 24px;
+                border-radius: 8px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                ${type === 'success' ? 'background: #10b981; color: white;' : 'background: #ef4444; color: white;'}
+            `;
+            notification.innerHTML = `
+                <i class="material-icons">${type === 'success' ? 'check_circle' : 'error'}</i>
+                <span>${message}</span>
+            `;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.style.transform = 'translateX(400px)';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+    </script>
+
+    @Html.AntiForgeryToken()
+}

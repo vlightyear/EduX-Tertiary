@@ -1,0 +1,190 @@
+﻿@model SIS.Models.TimeTabling.TimetableViewModel
+@{
+    ViewData["Title"] = "View Timetable";
+}
+
+<div class="container mx-auto px-4 py-6">
+    <div class="mb-6">
+        <div class="flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-800">
+                Timetable: @Model.AcademicYearValue (@Model.ModeOfStudyName)
+            </h1>
+            <div class="space-x-2">
+                <a href="@Url.Action("TimetableManagement")" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    Back
+                </a>
+                <button id="exportPdfBtn" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Export PDF
+                @* </button> *@
+                @* <button id="printBtn" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"> *@
+                @*     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"> *@
+                @*         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /> *@
+                @*     </svg> *@
+                @*     Print *@
+                @* </button> *@
+            </div>
+        </div>
+        <p class="text-gray-600 mt-1">
+            Showing timetable for all venues
+        </p>
+    </div>
+
+    <div class="my-4">
+        <div class="w-full overflow-x-auto">
+            <div class="my-6" id="timetableContent">
+                <!-- Tabs for navigating between venues -->
+                <div class="mb-4 border-b border-gray-200">
+                    <ul class="flex flex-wrap -mb-px text-sm font-medium text-center" id="venueTabs" role="tablist">
+                        @for (var i = 0; i < Model.VenueSchedules.Count; i++)
+                        {
+                            var venue = Model.VenueSchedules[i];
+                            <li class="mr-2" role="presentation">
+                                <button class="inline-block p-4 rounded-t-lg border-b-2 @(i == 0 ? "border-blue-600 text-blue-600" : "border-transparent hover:text-gray-600 hover:border-gray-300")"
+                                        id="venue-tab-@venue.VenueId"
+                                        data-tabs-target="#venue-@venue.VenueId"
+                                        type="button"
+                                        role="tab"
+                                        aria-controls="venue-@venue.VenueId"
+                                        aria-selected="@(i == 0 ? "true" : "false")">
+                                    @venue.VenueName
+                                </button>
+                            </li>
+                        }
+                    </ul>
+                </div>
+
+                <!-- Venue timetable panels -->
+                <div id="venueTabContent">
+                    @for (var i = 0; i < Model.VenueSchedules.Count; i++)
+                    {
+                        var venue = Model.VenueSchedules[i];
+                        <div class="p-4 rounded-lg bg-white @(i == 0 ? "block" : "hidden")"
+                             id="venue-@venue.VenueId"
+                             role="tabpanel"
+                             aria-labelledby="venue-tab-@venue.VenueId">
+                            <h2 class="text-xl font-semibold mb-4">@venue.VenueName</h2>
+
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full bg-white border border-gray-200">
+                                    <thead>
+                                        <tr class="bg-gray-100">
+                                            <th class="py-3 px-4 border-b border-r text-left">Day</th>
+                                            @foreach (var period in Model.Periods.Where(p => p.Type.Equals("Regular", StringComparison.OrdinalIgnoreCase)))
+                                            {
+                                                <th class="py-3 px-4 border-b border-r">
+                                                    <div class="text-xs font-medium text-gray-500">Period @period.PeriodNumber</div>
+                                                    <div class="text-sm">@period.StartTime - @period.EndTime</div>
+                                                </th>
+                                            }
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var day in Model.WorkingDays)
+                                        {
+                                            <tr>
+                                                <td class="py-3 px-4 border-b border-r font-medium">@day</td>
+                                                @foreach (var period in Model.Periods.Where(p => p.Type.Equals("Regular", StringComparison.OrdinalIgnoreCase)))
+                                                {
+                                                    <td class="py-2 px-2 border-b border-r align-top">
+                                                        @if (venue.DayPeriodSessions.ContainsKey(day) &&
+                                                       venue.DayPeriodSessions[day].ContainsKey(period.PeriodNumber) &&
+                                                       venue.DayPeriodSessions[day][period.PeriodNumber].Any())
+                                                        {
+                                                            foreach (var session in venue.DayPeriodSessions[day][period.PeriodNumber])
+                                                            {
+                                                                <div class="p-2 mb-1 rounded text-xs @(session.Status == "Published" ? "bg-green-100" : "bg-yellow-100")">
+                                                                    <div class="font-semibold">@session.CourseCode</div>
+                                                                    <div>@session.CourseName</div>
+                                                                    <div class="mt-1 text-xs text-gray-600">@session.InstructorName</div>
+                                                                    <div class="mt-1 text-xs text-gray-600">@(session.IsRecurring ? "Weekly" : "One-time")</div>
+                                                                    <div class="mt-1 text-xs font-medium">@session.ProgrammeName</div>
+                                                                </div>
+                                                            }
+                                                        }
+                                                    </td>
+                                                }
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="mt-6 p-4 bg-white rounded-lg shadow">
+        <h3 class="text-lg font-medium mb-2">Legend</h3>
+        <div class="flex flex-wrap items-center gap-4">
+            <div class="flex items-center">
+                <div class="w-4 h-4 rounded bg-yellow-100 mr-2"></div>
+                <span class="text-sm">Draft</span>
+            </div>
+            <div class="flex items-center">
+                <div class="w-4 h-4 rounded bg-green-100 mr-2"></div>
+                <span class="text-sm">Published</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tab functionality
+            const tabs = document.querySelectorAll('[data-tabs-target]');
+            const tabContents = document.querySelectorAll('[role="tabpanel"]');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const target = document.querySelector(tab.dataset.tabsTarget);
+
+                    // Hide all tab contents
+                    tabContents.forEach(tabContent => {
+                        tabContent.classList.add('hidden');
+                    });
+
+                    // Remove active classes from tabs
+                    tabs.forEach(t => {
+                        t.classList.remove('border-blue-600', 'text-blue-600');
+                        t.classList.add('border-transparent');
+                        t.setAttribute('aria-selected', false);
+                    });
+
+                    // Show the selected tab content
+                    tab.classList.add('border-blue-600', 'text-blue-600');
+                    tab.classList.remove('border-transparent');
+                    tab.setAttribute('aria-selected', true);
+                    target.classList.remove('hidden');
+                });
+            });
+
+            // Print functionality
+            document.getElementById('printBtn').addEventListener('click', function() {
+                window.print();
+            });
+
+            // Export to PDF functionality (would require a PDF library like jsPDF in a real implementation)
+            document.getElementById('exportPdfBtn').addEventListener('click', function() {
+                alert('PDF export would be implemented here with a library like jsPDF');
+                // In a real implementation, you would use a library like jsPDF to create a PDF
+                // For example:
+                // const pdf = new jsPDF();
+                // pdf.html(document.getElementById('timetableContent'), {
+                //     callback: function() {
+                //         pdf.save('timetable.pdf');
+                //     }
+                // });
+            });
+        });
+    </script>
+}

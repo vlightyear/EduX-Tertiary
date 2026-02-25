@@ -1,0 +1,232 @@
+﻿@model List<SIS.Models.ProgramCoordinator.LecturerViewModel>
+
+<!-- Grid View -->
+<div class="lecturer-grid">
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        @foreach (var lecturer in Model)
+        {
+            <div class="lecturer-card bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+                <!-- Card Header with Avatar -->
+                <div class="p-6 pb-4">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0">
+                            @if (!string.IsNullOrEmpty(lecturer.ProfileImageUrl))
+                            {
+                                <img src="@lecturer.ProfileImageUrl" alt="@lecturer.FullName"
+                                     class="w-16 h-16 rounded-full object-cover border-2 border-slate-200">
+                            }
+                            else
+                            {
+                                <div class="w-16 h-16 rounded-full bg-primary-100 flex items-center justify-center border-2 border-slate-200">
+                                    <span class="text-primary-600 font-semibold text-lg">
+                                        @(lecturer.FullName?.Split(' ').Select(n => n.FirstOrDefault()).Take(2).Aggregate("", (acc, c) => acc + c))
+                                    </span>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="flex-1 min-w-0">
+                            <h3 class="text-lg font-semibold text-slate-800 truncate">@lecturer.FullName</h3>
+                            <p class="text-sm text-slate-600 mt-1">@lecturer.Department</p>
+
+                            <!-- Status Badge -->
+                            <div class="mt-2">
+                                @if (lecturer.Status == "Active")
+                                {
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <i class="material-icons text-xs mr-1">check_circle</i>
+                                        Active
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-800">
+                                        <i class="material-icons text-xs mr-1">pause_circle</i>
+                                        @lecturer.Status
+                                    </span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Content -->
+                <div class="px-6 pb-4">
+                    <!-- Contact Info -->
+                    <div class="space-y-2 mb-4">
+                        <div class="flex items-center text-sm text-slate-600">
+                            <i class="material-icons text-xs mr-2">email</i>
+                            <span class="truncate">@lecturer.Email</span>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(lecturer.PhoneNumber))
+                        {
+                            <div class="flex items-center text-sm text-slate-600">
+                                <i class="material-icons text-xs mr-2">phone</i>
+                                <span>@lecturer.PhoneNumber</span>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Teaching Load -->
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-sm text-slate-600">Teaching Load</span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg font-semibold text-slate-800">@lecturer.CourseCount</span>
+                            <span class="text-sm text-slate-600">courses</span>
+                        </div>
+                    </div>
+
+                    <!-- Teaching Load Bar -->
+                    <div class="mb-4">
+                        @{
+                            var loadPercentage = Math.Min((lecturer.CourseCount / 8.0) * 100, 100); // Assuming 8 is max load
+                            var barColor = loadPercentage > 75 ? "bg-red-500" : loadPercentage > 50 ? "bg-amber-500" : "bg-green-500";
+                        }
+                        <div class="w-full bg-slate-200 rounded-full h-2">
+                            <div class="@barColor h-2 rounded-full transition-all duration-300"
+                                 style="width: @(loadPercentage)%"></div>
+                        </div>
+                        <div class="flex justify-between text-xs text-slate-500 mt-1">
+                            <span>Light</span>
+                            <span>Heavy</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Actions -->
+                <div class="px-6 py-4 bg-slate-50 border-t border-slate-100">
+                    <div class="flex gap-2">
+                        <a href="@Url.Action("LecturerDetails", new { id = lecturer.Id })"
+                           class="flex-1 bg-primary-600 hover:bg-primary-700 text-white text-center py-2 px-4 rounded-lg text-sm transition-colors">
+                            View Details
+                        </a>
+                        <a href="mailto:@lecturer.Email"
+                           class="flex-shrink-0 bg-slate-200 hover:bg-slate-300 text-slate-700 p-2 rounded-lg transition-colors">
+                            <i class="material-icons text-sm">email</i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- List View -->
+<div class="lecturer-list hidden">
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200">
+                <thead class="bg-slate-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                            Lecturer
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                            Department
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                            Contact
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                            Teaching Load
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                            Status
+                        </th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
+                            Actions
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-slate-200">
+                    @foreach (var lecturer in Model)
+                    {
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 h-10 w-10">
+                                        @if (!string.IsNullOrEmpty(lecturer.ProfileImageUrl))
+                                        {
+                                            <img src="@lecturer.ProfileImageUrl" alt="@lecturer.FullName"
+                                                 class="h-10 w-10 rounded-full object-cover">
+                                        }
+                                        else
+                                        {
+                                            <div class="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
+                                                <span class="text-primary-600 font-medium text-sm">
+                                                    @(lecturer.FullName?.Split(' ').Select(n => n.FirstOrDefault()).Take(2).Aggregate("", (acc, c) => acc + c))
+                                                </span>
+                                            </div>
+                                        }
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="text-sm font-medium text-slate-900">@lecturer.FullName</div>
+                                        <div class="text-sm text-slate-500">ID: @lecturer.Id.Substring(0, 8)...</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-slate-900">@lecturer.Department</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-slate-900">@lecturer.Email</div>
+                                @if (!string.IsNullOrEmpty(lecturer.PhoneNumber))
+                                {
+                                    <div class="text-sm text-slate-500">@lecturer.PhoneNumber</div>
+                                }
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="text-sm font-medium text-slate-900 mr-2">@lecturer.CourseCount courses</div>
+                                    @{
+                                        var loadPercentage = Math.Min((lecturer.CourseCount / 8.0) * 100, 100);
+                                        var barColor = loadPercentage > 75 ? "bg-red-500" : loadPercentage > 50 ? "bg-amber-500" : "bg-green-500";
+                                    }
+                                    <div class="w-16 bg-slate-200 rounded-full h-2">
+                                        <div class="@barColor h-2 rounded-full" style="width: @(loadPercentage)%"></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                @if (lecturer.Status == "Active")
+                                {
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        Active
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-800">
+                                        @lecturer.Status
+                                    </span>
+                                }
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <div class="flex justify-end gap-2">
+                                    <a href="@Url.Action("LecturerDetails", new { id = lecturer.Id })"
+                                       class="text-primary-600 hover:text-primary-900 transition-colors">
+                                        View Details
+                                    </a>
+                                    <a href="mailto:@lecturer.Email"
+                                       class="text-slate-600 hover:text-slate-900 transition-colors">
+                                        <i class="material-icons text-sm">email</i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="bg-white rounded-xl shadow-sm p-8 text-center">
+        <i class="material-icons text-4xl text-slate-400 mb-4">person_search</i>
+        <h3 class="text-lg font-medium text-slate-800 mb-2">No lecturers found</h3>
+        <p class="text-slate-600">No lecturers match your current filter criteria.</p>
+    </div>
+}

@@ -1,0 +1,1262 @@
+@model IEnumerable<SIS.Models.Payments.OnlinePayments>
+
+@{
+    ViewData["Title"] = "Manual Payment Entry";
+}
+
+<div class="min-h-screen p-4 bg-gray-50">
+    <!-- Header Section -->
+    <div class="flex justify-between items-center mb-4">
+        <h1 class="text-2xl font-bold text-primary-800 flex items-center">
+            <i class="material-icons mr-2 text-primary-600">payment</i>
+            Manual Payment Entry
+        </h1>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="mb-6">
+        <div class="border-b border-gray-200">
+            <nav class="-mb-px flex space-x-8">
+                <button onclick="switchTab('entry')" id="entryTab" class="tab-button active border-b-2 border-primary-600 py-4 px-1 text-sm font-medium text-primary-600">
+                    <i class="material-icons text-sm align-middle mr-1">person</i>
+                    New Entry
+                </button>
+                <button onclick="switchTab('group')" id="groupTab" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                    <i class="material-icons text-sm align-middle mr-1">group</i>
+                    Group Entry
+                </button>
+                <button onclick="switchTab('recent')" id="recentTab" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                    <i class="material-icons text-sm align-middle mr-1">receipt_long</i>
+                    Recent Submissions
+                </button>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Entry Tab -->
+    <div id="entryContent" class="tab-content">
+        <div class="flex gap-4">
+            <!-- Payment Form Section (2/3 width) -->
+            <div class="w-2/3">
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-100">
+                    <div class="p-6">
+                        @if (TempData["SuccessMessage"] != null)
+                        {
+                            <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start">
+                                <i class="material-icons text-green-600 mr-3">check_circle</i>
+                                <div class="flex-1">
+                                    <p class="text-green-800 font-medium">Success!</p>
+                                    <p class="text-green-700 text-sm">@TempData["SuccessMessage"]</p>
+                                </div>
+                                @if (TempData["LastPaymentData"] != null)
+                                {
+                                    <button onclick='printReceipt(@Html.Raw(TempData["LastPaymentData"]))' class="ml-3 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+                                        <i class="material-icons text-sm mr-2">print</i>
+                                        Print Receipt
+                                    </button>
+                                }
+                            </div>
+                        }
+
+                        @if (TempData["ErrorMessage"] != null)
+                        {
+                            <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start">
+                                <i class="material-icons text-red-600 mr-3">error</i>
+                                <div>
+                                    <p class="text-red-800 font-medium">Error!</p>
+                                    <p class="text-red-700 text-sm">@TempData["ErrorMessage"]</p>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Student Verification Alert -->
+                        <div id="studentVerification" class="hidden mb-4"></div>
+
+                        <form method="post" asp-controller="Admin" asp-action="ProcessPayment" enctype="multipart/form-data" id="paymentForm">
+                            @Html.AntiForgeryToken()
+
+                            <div class="grid grid-cols-2 gap-6">
+                                <!-- Student Number with Verification -->
+                                <div class="relative z-0 w-full group">
+                                    <div class="flex items-center gap-2">
+                                        <div class="flex-1">
+                                            <input type="text" name="StudentNumber" id="studentNumber"
+                                                   class="block py-3 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
+                                                   placeholder=" " required onblur="verifyStudent()" />
+                                            <label for="studentNumber" class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                                Student Number *
+                                            </label>
+                                        </div>
+                                        <button type="button" onclick="verifyStudent()" class="mt-2 p-2 text-primary-600 hover:bg-primary-50 rounded-full transition-colors" title="Verify Student">
+                                            <i class="material-icons">search</i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Student Name -->
+                                <div class="relative z-0 w-full group">
+                                    <input type="text" name="ConsumerName" id="consumerName"
+                                           class="block py-3 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
+                                           placeholder=" " required />
+                                    <label for="consumerName" class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                        Student Name *
+                                    </label>
+                                </div>
+
+                                <!-- Amount -->
+                                <div class="relative z-0 w-full group">
+                                    <input type="number" name="Amount" id="amount" step="0.01" min="0"
+                                           class="block py-3 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
+                                           placeholder=" " required />
+                                    <label for="amount" class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                        Amount (ZMW) *
+                                    </label>
+                                </div>
+
+                                <!-- Reference Number -->
+                                <div class="relative z-0 w-full group">
+                                    <input type="text" name="ReferenceNumber" id="referenceNumber"
+                                           class="block py-3 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
+                                           placeholder=" " required />
+                                    <label for="referenceNumber" class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                        Payment Reference Number *
+                                    </label>
+                                </div>
+
+                                <!-- Payment Method (Bank Selection) -->
+                                <div class="relative z-0 w-full group">
+                                    <select name="PaymentMethod" id="paymentMethod"
+                                            class="block py-3 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
+                                            required>
+                                        <option value="" selected disabled>Select Bank</option>
+                                        <option value="Scholarship">Scholarship</option>
+                                        <option value="Zanaco Permit Account">Zanaco Permit Account</option>
+                                        <option value="Indo Zambia Bank">Indo Zambia Bank</option>
+                                        <option value="Zanaco Cash Deposit">Zanaco</option>
+                                        <option value="Zanaco Cash Deposit Medical">Zanaco (Medical)</option>
+                                        <option value="ZICB Cash Deposit">ZICB(Zambia Industrial Commercial Bank)</option>
+                                        <option value="ZNBS Cash Deposit">ZNBS(Zambia National Building Society)</option>
+                                        <option value="ABSA Cash Deposit">ABSA Bank</option>
+                                        <option value="Access Bank Cash Deposit">Access Bank</option>
+                                        <option value="UBA Cash Deposit">UBA</option>
+                                        <option value="ECOBANK Cash Deposit">ECOBANK BANK</option>
+                                        <option value="ATLASMARA Cash Deposit">ATLASMARA</option>
+                                        <option value="Zanaco Bill Master">Zanaco Bill Master(Only use this if you have confirmed that the transaction is not in the system)</option>
+                                    </select>
+                                    <label for="paymentMethod" class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600">
+                                        Payment Method (Bank) *
+                                    </label>
+                                </div>
+
+                                <!-- Transaction Date -->
+                                <div class="relative z-0 w-full group">
+                                    <input type="date" name="TransactionDate" id="transactionDate"
+                                           value="@DateTime.Now.ToString("yyyy-MM-dd")"
+                                           max="@DateTime.Now.ToString("yyyy-MM-dd")"
+                                           class="block py-3 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
+                                           required />
+                                    <label for="transactionDate" class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                        Transaction Date *
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Proof of Payment Upload -->
+                            <div class="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                <h4 class="text-md font-semibold text-gray-800 mb-2 flex items-center">
+                                    <i class="material-icons text-primary-600 mr-2">attach_file</i>
+                                    Proof of Payment
+                                    <span class="ml-2 text-xs font-normal text-gray-500">(Optional)</span>
+                                </h4>
+                                <div class="space-y-3">
+                                    <div class="flex items-center justify-center w-full">
+                                        <label for="proofOfPayment" class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-white hover:bg-gray-50 transition-colors">
+                                            <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                                <i class="material-icons text-4xl text-gray-400 mb-2">cloud_upload</i>
+                                                <p class="mb-2 text-sm text-gray-500">
+                                                    <span class="font-semibold">Click to upload</span> or drag and drop
+                                                </p>
+                                                <p class="text-xs text-gray-500">PDF, JPG, PNG (MAX. 5MB) - Optional</p>
+                                            </div>
+                                            <input id="proofOfPayment" name="ProofOfPayment" type="file" class="hidden" accept=".pdf,.jpg,.jpeg,.png" onchange="displayFileName(this)" />
+                                        </label>
+                                    </div>
+                                    <div id="fileNameDisplay" class="hidden">
+                                        <div class="flex items-center p-3 bg-primary-50 border border-primary-200 rounded-lg">
+                                            <i class="material-icons text-primary-600 mr-2">description</i>
+                                            <span id="fileName" class="text-sm text-gray-700 font-medium"></span>
+                                            <button type="button" onclick="clearFile()" class="ml-auto text-red-600 hover:text-red-800">
+                                                <i class="material-icons text-sm">close</i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Submit Buttons -->
+                            <div class="mt-6 flex space-x-3">
+                                <button type="submit" id="submitBtn" class="flex-1 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center justify-center shadow-md hover:shadow-lg">
+                                    <i class="material-icons mr-2">check_circle</i>
+                                    Submit Payment
+                                </button>
+                                <a href="@Url.Action("Index", "Home")" class="px-6 py-3 text-gray-700 bg-white hover:bg-gray-100 rounded-lg transition-colors flex items-center border border-gray-300">
+                                    <i class="material-icons mr-2">close</i>
+                                    Cancel
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Instructions Sidebar (1/3 width) -->
+            <div class="w-1/3 space-y-4">
+                <!-- Instructions Card -->
+                <div class="bg-white rounded-lg shadow-lg p-6 border border-gray-100">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                        <i class="material-icons text-primary-600 mr-2">info</i>
+                        Payment Instructions
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0">
+                                <div class="flex items-center justify-center w-8 h-8 bg-primary-100 rounded-full">
+                                    <span class="text-primary-700 font-bold text-sm">1</span>
+                                </div>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-gray-700">Enter student number - system will verify if student exists</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0">
+                                <div class="flex items-center justify-center w-8 h-8 bg-primary-100 rounded-full">
+                                    <span class="text-primary-700 font-bold text-sm">2</span>
+                                </div>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-gray-700">Enter the exact amount paid in ZMW</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0">
+                                <div class="flex items-center justify-center w-8 h-8 bg-primary-100 rounded-full">
+                                    <span class="text-primary-700 font-bold text-sm">3</span>
+                                </div>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-gray-700">Select the bank where payment was made</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0">
+                                <div class="flex items-center justify-center w-8 h-8 bg-primary-100 rounded-full">
+                                    <span class="text-primary-700 font-bold text-sm">4</span>
+                                </div>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-gray-700">Upload a clear copy of the payment receipt (optional)</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0">
+                                <div class="flex items-center justify-center w-8 h-8 bg-primary-100 rounded-full">
+                                    <span class="text-primary-700 font-bold text-sm">5</span>
+                                </div>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-gray-700">Print the receipt after successful submission</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Important Notice -->
+                <div class="bg-amber-50 border border-amber-200 rounded-lg p-6">
+                    <div class="flex items-start">
+                        <i class="material-icons text-amber-600 mr-3 text-2xl">warning</i>
+                        <div>
+                            <h4 class="text-amber-900 font-semibold mb-2">Important Notice</h4>
+                            <ul class="text-sm text-amber-800 space-y-1">
+                                <li>• Most fields are required</li>
+                                <li>• Student must exist in system</li>
+                                <li>• Proof of payment is optional</li>
+                                <li>• File size must not exceed 5MB</li>
+                                <li>• Accepted formats: PDF, JPG, PNG</li>
+                                <li>• Processing may take a few moments</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Support Card -->
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                    <div class="flex items-start">
+                        <i class="material-icons text-blue-600 mr-3 text-2xl">help</i>
+                        <div>
+                            <h4 class="text-blue-900 font-semibold mb-2">Need Help?</h4>
+                            <p class="text-sm text-blue-800 mb-3">Contact the Finance Office for assistance with payment processing.</p>
+                            <a href="mailto:finance@edenuniversity.edu.zm" class="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center">
+                                <i class="material-icons text-sm mr-1">email</i>
+                                finance@edenuniversity.edu.zm
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Group Entry Tab -->
+    <div id="groupContent" class="tab-content hidden">
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-100">
+            <div class="p-6">
+                <h3 class="text-xl font-semibold text-gray-900 mb-4">Submit Group Payment</h3>
+
+                <form method="post" asp-action="ProcessGroupPayment" enctype="multipart/form-data" id="groupForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="StudentNumbers" id="hiddenStudentNumbers" />
+                    <input type="hidden" name="StudentAmounts" id="hiddenStudentAmounts" />
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Group Payment Reference (Optional)</label>
+                            <input type="text" name="GroupPaymentReference" id="groupRef" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Auto-generated if empty">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Payment Method <span class="text-red-500">*</span></label>
+                            <select name="PaymentMethod" id="groupMethod" required class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                                <option value="" selected disabled>Select Bank</option>
+                                <option value="Zanaco Cash Deposit">Zanaco</option>
+                                <option value="Indo Zambia Bank">Indo Zambia Bank</option>
+                                <option value="ZICB Cash Deposit">ZICB(Zambia Industrial Commercial Bank)</option>
+                                <option value="ZNBS Cash Deposit">ZNBS(Zambia National Building Society)</option>
+                                <option value="ABSA Cash Deposit">ABSA Bank</option>
+                                <option value="Access Bank Cash Deposit">Access Bank</option>
+                                <option value="UBA Cash Deposit">UBA</option>
+                                <option value="ECOBANK Cash Deposit">ECOBANK BANK</option>
+                                <option value="ATLASMARA Cash Deposit">ATLASMARA</option>
+                                <option value="Zanaco Bill Master">Zanaco Bill Master(Only use this if you have confirmed that the transaction is not in the system)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Transaction Date <span class="text-red-500">*</span></label>
+                            <input type="date" name="TransactionDate" id="groupDate" required class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="material-icons text-sm align-middle mr-1">attach_file</i>
+                            Proof of Payment (Optional - PDF, JPG, PNG, Max 5MB)
+                        </label>
+                        <label class="flex items-center px-4 py-3 bg-white border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary-400 transition-colors">
+                            <i class="material-icons text-gray-400 mr-2">cloud_upload</i>
+                            <span class="text-sm text-gray-600">Choose file or drag here</span>
+                            <input type="file" name="ProofOfPayment" id="groupProofOfPayment"
+                                   class="hidden" accept=".pdf,.jpg,.jpeg,.png"
+                                   onchange="displayGroupFileName(this)" />
+                        </label>
+                        <div id="groupFileNameDisplay" class="hidden mt-2 p-3 bg-blue-50 rounded-lg flex items-center justify-between">
+                            <div class="flex items-center">
+                                <i class="material-icons text-blue-600 mr-2">description</i>
+                                <span id="groupFileName" class="text-sm text-blue-800"></span>
+                            </div>
+                            <button type="button" onclick="clearGroupFile()" class="text-red-600 hover:text-red-800">
+                                <i class="material-icons text-sm">close</i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="border-t pt-4">
+                        <div class="flex justify-between items-center mb-3">
+                            <h4 class="text-lg font-semibold text-gray-800">Students</h4>
+                            <button type="button" onclick="addStudentRow()" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                                <i class="material-icons text-sm align-middle mr-1">add</i> Add Student
+                            </button>
+                        </div>
+                        <div id="studentsBox" class="space-y-3 max-h-96 overflow-y-auto"></div>
+                    </div>
+
+                    <div class="mt-4 p-3 bg-gray-50 rounded-md">
+                        <div class="flex justify-between items-center">
+                            <span class="text-lg font-semibold text-gray-700">Total Amount:</span>
+                            <span id="groupTotal" class="text-2xl font-bold text-blue-600">K 0.00</span>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end space-x-3 mt-6 pt-4 border-t">
+                        <button type="button" onclick="resetGroupForm()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Reset</button>
+                        <button type="submit" id="groupSubmitBtn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                            <i class="material-icons text-sm align-middle mr-1">check</i> Submit Group Payment
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Submissions Tab -->
+    <div id="recentContent" class="tab-content hidden">
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-100">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900 flex items-center mb-4">
+                    <i class="material-icons mr-2 text-primary-600">today</i>
+                    Recent Submissions
+                </h3>
+
+                <!-- Filters -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                        <input type="text" id="searchBox" placeholder="Student number, name..." class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                        <input type="date" id="dateStart" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                        <input type="date" id="dateEnd" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                        <select id="statusBox" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                            <option value="">All</option>
+                            <option value="Paid">Paid</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Failed">Failed</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center">
+                    <div class="flex space-x-2">
+                        <button onclick="applyFilters()" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                            <i class="material-icons text-sm align-middle mr-1">search</i> Apply
+                        </button>
+                        <button onclick="clearFilters()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300">
+                            <i class="material-icons text-sm align-middle mr-1">clear</i> Clear
+                        </button>
+                    </div>
+                    <span id="countText" class="text-sm text-gray-600">Loading...</span>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Submitted At</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transaction Date</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transaction ID</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bank</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reference</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Posted By</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="paymentTableBody" class="bg-white divide-y divide-gray-200">
+                        @if (Model != null && Model.Any())
+                        {
+                            @foreach (var payment in Model)
+                            {
+                                <tr class="hover:bg-gray-50 transition-colors">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        <div>
+                                            <div class="font-medium">@payment.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy")</div>
+                                            <div class="text-gray-500 text-xs">@payment.CreatedAt.ToLocalTime().ToString("hh:mm tt")</div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        @if (payment.TransactionDate.HasValue)
+                                        {
+                                            <div>
+                                                <div class="font-medium">@payment.TransactionDate.Value.ToString("MMM dd, yyyy")</div>
+                                                <div class="text-gray-500 text-xs">@payment.TransactionDate.Value.ToString("hh:mm tt")</div>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-gray-400">N/A</span>
+                                        }
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 py-1 text-xs font-mono bg-purple-100 text-purple-800 rounded">
+                                            @payment.MerchantTransactionId
+                                        </span>
+                                        @if (payment.IsGroupPayment == "1")
+                                        {
+                                            <div class="text-xs text-purple-600 mt-1 flex items-center">
+                                                <i class="material-icons text-xs mr-1">group</i>
+                                                @payment.GroupPaymentReference
+                                            </div>
+                                        }
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm">
+                                            <div class="font-medium text-gray-900">@payment.FullName</div>
+                                            <div class="text-gray-500">@payment.AccountNumber</div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">
+                                            @(payment.PaymentMethod?.Replace(" Cash Deposit", ""))
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="text-sm font-semibold text-green-600">
+                                            K @payment.Amount?.ToString("N2")
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        @payment.ReferenceNumber
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center text-sm text-gray-900">
+                                            <i class="material-icons text-sm mr-1 text-gray-500">person</i>
+                                            @payment.PostedBy
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <div class="flex gap-2">
+                                            <button onclick='printReceipt(@Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(new { 
+                                                studentName = payment.FullName, 
+                                                studentNumber = payment.AccountNumber, 
+                                                amount = payment.Amount, 
+                                                reference = payment.ReferenceNumber, 
+                                                transactionId = payment.MerchantTransactionId, 
+                                                bank = payment.PaymentMethod, 
+                                                date = payment.TransactionDate, 
+                                                postedBy = payment.PostedBy 
+                                            })))' 
+                                                    class="inline-flex items-center px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                                                <i class="material-icons text-sm mr-1">print</i>
+                                                Print
+                                            </button>
+                                            @if (!string.IsNullOrWhiteSpace(payment.ProofOfPaymentPath))
+                                            {
+                                                <button onclick="viewReceipt('@payment.ProofOfPaymentPath', '@payment.MerchantTransactionId')" 
+                                                        class="inline-flex items-center px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                                    <i class="material-icons text-sm mr-1">visibility</i>
+                                                    View
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="9" class="px-6 py-12 text-center">
+                                    <div class="flex flex-col items-center justify-center">
+                                        <i class="material-icons text-6xl text-gray-400 mb-4">inbox</i>
+                                        <p class="text-gray-500 text-lg">No manual payments submitted today</p>
+                                        <p class="text-gray-400 text-sm mt-2">Switch to the "New Entry" tab to submit a payment</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="bg-gray-50 px-6 py-3 border-t border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <label class="text-sm text-gray-700 mr-2">Rows per page:</label>
+                        <select id="pageSizeBox" onchange="changePageSize()" class="px-3 py-1 border border-gray-300 rounded-md text-sm">
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span id="paginationInfo" class="text-sm text-gray-700">Page 1 of 1</span>
+                        <button onclick="goToPrevPage()" id="prevBtn" class="px-3 py-1 border border-gray-300 rounded-md text-sm hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <i class="material-icons text-sm align-middle">chevron_left</i>
+                        </button>
+                        <button onclick="goToNextPage()" id="nextBtn" class="px-3 py-1 border border-gray-300 rounded-md text-sm hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <i class="material-icons text-sm align-middle">chevron_right</i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Receipt Modal -->
+<div id="receiptModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 max-w-5xl shadow-lg rounded-lg bg-white">
+        <div class="flex items-center justify-between pb-3 border-b border-gray-200">
+            <h3 class="text-xl font-semibold text-gray-900 flex items-center">
+                <i class="material-icons mr-2 text-primary-600">receipt</i>
+                Proof of Payment - <span id="modalTxnId" class="text-primary-600 font-mono"></span>
+            </h3>
+            <button onclick="closeReceiptModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                <i class="material-icons">close</i>
+            </button>
+        </div>
+        
+        <div class="mt-4">
+            <div id="receiptContent" class="flex items-center justify-center bg-gray-100 rounded-lg" style="min-height: 600px;">
+                <div class="text-center">
+                    <i class="material-icons text-6xl text-gray-400 animate-spin">refresh</i>
+                    <p class="text-gray-500 mt-4">Loading receipt...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex justify-end pt-4 border-t border-gray-200 mt-4">
+            <a id="downloadReceiptBtn" href="#" target="_blank" download class="mr-3 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center">
+                <i class="material-icons text-sm mr-2">download</i>
+                Download
+            </a>
+            <button onclick="closeReceiptModal()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Print Receipt Template (Hidden) -->
+<div id="printReceiptTemplate" style="display: none;">
+    <div style="width: 210mm; min-height: 297mm; padding: 20mm; font-family: Arial, sans-serif; background: white;">
+        <!-- University Header -->
+        <div style="text-align: center; margin-bottom: 30px; border-bottom: 3px solid #1e3a8a; padding-bottom: 20px;">
+            <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 10px;">
+                <img src="/images/institution-logo.png" alt="Eden University Logo" style="width: 100px; height: 100px; object-fit: contain; margin-right: 20px;" />
+                <div style="text-align: left;">
+                    <h1 style="margin: 0; color: #1e3a8a; font-size: 28px;">Receipt</h1>
+                    <h2 style="margin: 5px 0; color: #3b82f6; font-size: 22px;">Eden University</h2>
+                    <p style="margin: 0; font-size: 12px; color: #666;">Barlastone Park, Lusaka, Zambia</p>
+                    <p style="margin: 0; font-size: 12px; color: #666;">P.O Box 37787</p>
+                    <p style="margin: 0; font-size: 12px; color: #666;">TEL:0979079400/0979079480/0966686666</p>
+                    <p style="margin: 0; font-size: 12px; color: #666;">WEBSITE: www.edenuniversity.net</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Receipt Details -->
+        <div style="margin-bottom: 30px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                <div>
+                    <strong>No:</strong> <span id="print-receipt-id"></span>
+                </div>
+                <div>
+                    <strong>Date:</strong> <span id="print-date"></span>
+                </div>
+            </div>
+            
+            <div style="border: 2px solid #3b82f6; padding: 15px; margin: 20px 0; background: #eff6ff;">
+                <div style="margin-bottom: 10px;">
+                    <strong>To:</strong> <span id="print-student-name" style="font-size: 16px;"></span>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <strong>Amount:</strong> K <span id="print-amount" style="font-size: 18px; color: #059669;"></span>
+                </div>
+                <div>
+                    <strong>Amount in words:</strong> <span id="print-amount-words" style="font-style: italic;"></span>
+                </div>
+            </div>
+
+            <!-- Payment Details Table -->
+            <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                <thead>
+                    <tr style="background: #f3f4f6; border-bottom: 2px solid #3b82f6;">
+                        <th style="padding: 10px; text-align: left; border: 1px solid #e5e7eb;">Student Name</th>
+                        <th style="padding: 10px; text-align: left; border: 1px solid #e5e7eb;">Student Number</th>
+                        <th style="padding: 10px; text-align: right; border: 1px solid #e5e7eb;">Amount</th>
+                        <th style="padding: 10px; text-align: right; border: 1px solid #e5e7eb;">Outstanding Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #e5e7eb;" id="print-table-name"></td>
+                        <td style="padding: 10px; border: 1px solid #e5e7eb;" id="print-table-number"></td>
+                        <td style="padding: 10px; text-align: right; border: 1px solid #e5e7eb;" id="print-table-amount"></td>
+                        <td style="padding: 10px; text-align: right; border: 1px solid #e5e7eb;">-</td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr style="background: #f3f4f6; font-weight: bold;">
+                        <td colspan="2" style="padding: 10px; border: 1px solid #e5e7eb;">Home Currency Total</td>
+                        <td style="padding: 10px; text-align: right; border: 1px solid #e5e7eb;" id="print-footer-amount"></td>
+                        <td style="padding: 10px; border: 1px solid #e5e7eb;"></td>
+                    </tr>
+                    <tr style="font-weight: bold;">
+                        <td colspan="2" style="padding: 10px; border: 1px solid #e5e7eb;">Total</td>
+                        <td style="padding: 10px; text-align: right; border: 1px solid #e5e7eb; color: #059669;" id="print-total-amount"></td>
+                        <td style="padding: 10px; border: 1px solid #e5e7eb;"></td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <!-- Additional Info -->
+            <div style="margin: 30px 0; border-top: 1px solid #e5e7eb; padding-top: 20px;">
+                <p style="margin: 5px 0;"><strong>Bank:</strong> <span id="print-bank"></span></p>
+                <p style="margin: 5px 0;"><strong>Reference Number:</strong> <span id="print-reference"></span></p>
+                <p style="margin: 5px 0; font-size: 12px; color: #666;"><strong>Receipt Voucher:</strong> <span id="print-voucher"></span></p>
+            </div>
+        </div>
+
+        <!-- Signatures -->
+        <div style="margin-top: 60px; display: flex; justify-content: space-between;">
+            <div style="width: 45%; border-top: 1px solid #000; padding-top: 10px;">
+                <p style="margin: 0;"><strong>Prepared by:</strong> <span id="print-prepared-by"></span></p>
+                <p style="margin: 5px 0 0 0; font-size: 12px; color: #666;">Cashier Signature:</p>
+            </div>
+            <div style="width: 45%; border-top: 1px solid #000; padding-top: 10px;">
+                <p style="margin: 0; font-size: 12px; color: #666;">Customer Signature:</p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="margin-top: 40px; text-align: center; font-size: 11px; color: #666; border-top: 1px solid #e5e7eb; padding-top: 15px;">
+            <p style="margin: 0;">This is a computer-generated receipt and does not require a signature.</p>
+            <p style="margin: 5px 0 0 0;">For inquiries, please contact finance@edenuniversity.edu.zm</p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let studentRowCounter = 0;
+        let currentPage = 1;
+        let currentPageSize = 10;
+
+        document.addEventListener('DOMContentLoaded', function () {
+            setTodayDate();
+            addStudentRow();
+        });
+
+        function setTodayDate() {
+            const now = new Date();
+            const today = now.toISOString().split('T')[0];
+            
+            if (document.getElementById('transactionDate')) {
+                document.getElementById('transactionDate').value = today;
+            }
+            if (document.getElementById('groupDate')) {
+                document.getElementById('groupDate').value = today;
+            }
+            document.getElementById('dateStart').value = today;
+            document.getElementById('dateEnd').value = today;
+        }
+
+        // Number to words conversion
+        function numberToWords(num) {
+            const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+            const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+            const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+
+            if (num === 0) return 'Zero';
+
+            let words = '';
+
+            if (Math.floor(num / 1000000) > 0) {
+                words += numberToWords(Math.floor(num / 1000000)) + ' Million ';
+                num %= 1000000;
+            }
+
+            if (Math.floor(num / 1000) > 0) {
+                words += numberToWords(Math.floor(num / 1000)) + ' Thousand ';
+                num %= 1000;
+            }
+
+            if (Math.floor(num / 100) > 0) {
+                words += ones[Math.floor(num / 100)] + ' Hundred ';
+                num %= 100;
+            }
+
+            if (num > 0) {
+                if (num < 10) {
+                    words += ones[num];
+                } else if (num >= 10 && num < 20) {
+                    words += teens[num - 10];
+                } else {
+                    words += tens[Math.floor(num / 10)];
+                    if (num % 10 > 0) {
+                        words += ' ' + ones[num % 10];
+                    }
+                }
+            }
+
+            return words.trim();
+        }
+
+        function formatAmountInWords(amount) {
+            const integerPart = Math.floor(amount);
+            const decimalPart = Math.round((amount - integerPart) * 100);
+
+            let result = numberToWords(integerPart);
+            
+            if (decimalPart > 0) {
+                result += ' and ' + decimalPart + '/100';
+            }
+
+            return result + ' Only.';
+        }
+
+        // Print receipt function
+        function printReceipt(paymentData) {
+            const printWindow = window.open('', '', 'height=800,width=800');
+            const template = document.getElementById('printReceiptTemplate').innerHTML;
+            
+            printWindow.document.write('<html><head><title>Receipt - ' + paymentData.transactionId + '</title>');
+            printWindow.document.write('</head><body>');
+            printWindow.document.write(template);
+            printWindow.document.write('</body></html>');
+            
+            printWindow.document.close();
+
+            // Format date
+            const date = paymentData.date ? new Date(paymentData.date) : new Date();
+            const formattedDate = date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+
+            // Populate receipt data
+            setTimeout(() => {
+                printWindow.document.getElementById('print-receipt-id').textContent = paymentData.transactionId || 'N/A';
+                printWindow.document.getElementById('print-date').textContent = formattedDate;
+                printWindow.document.getElementById('print-student-name').textContent = paymentData.studentName || '';
+                printWindow.document.getElementById('print-amount').textContent = parseFloat(paymentData.amount).toFixed(2);
+                printWindow.document.getElementById('print-amount-words').textContent = formatAmountInWords(paymentData.amount);
+                
+                printWindow.document.getElementById('print-table-name').textContent = paymentData.studentName || '';
+                printWindow.document.getElementById('print-table-number').textContent = paymentData.studentNumber || '';
+                printWindow.document.getElementById('print-table-amount').textContent = parseFloat(paymentData.amount).toFixed(2);
+                printWindow.document.getElementById('print-footer-amount').textContent = parseFloat(paymentData.amount).toFixed(2);
+                printWindow.document.getElementById('print-total-amount').textContent = parseFloat(paymentData.amount).toFixed(2);
+                
+                printWindow.document.getElementById('print-bank').textContent = (paymentData.bank || '').replace(' Cash Deposit', '');
+                printWindow.document.getElementById('print-reference').textContent = paymentData.reference || '';
+                printWindow.document.getElementById('print-voucher').textContent = paymentData.bank || '';
+                printWindow.document.getElementById('print-prepared-by').textContent = paymentData.postedBy || '';
+
+                printWindow.print();
+                printWindow.close();
+            }, 250);
+        }
+
+        function switchTab(tab) {
+            const entryTab = document.getElementById('entryTab');
+            const groupTab = document.getElementById('groupTab');
+            const recentTab = document.getElementById('recentTab');
+            const entryContent = document.getElementById('entryContent');
+            const groupContent = document.getElementById('groupContent');
+            const recentContent = document.getElementById('recentContent');
+
+            entryTab.classList.remove('active', 'border-primary-600', 'text-primary-600');
+            groupTab.classList.remove('active', 'border-primary-600', 'text-primary-600');
+            recentTab.classList.remove('active', 'border-primary-600', 'text-primary-600');
+            entryTab.classList.add('border-transparent', 'text-gray-500');
+            groupTab.classList.add('border-transparent', 'text-gray-500');
+            recentTab.classList.add('border-transparent', 'text-gray-500');
+
+            entryContent.classList.add('hidden');
+            groupContent.classList.add('hidden');
+            recentContent.classList.add('hidden');
+
+            if (tab === 'entry') {
+                entryTab.classList.add('active', 'border-primary-600', 'text-primary-600');
+                entryTab.classList.remove('border-transparent', 'text-gray-500');
+                entryContent.classList.remove('hidden');
+            } else if (tab === 'group') {
+                groupTab.classList.add('active', 'border-primary-600', 'text-primary-600');
+                groupTab.classList.remove('border-transparent', 'text-gray-500');
+                groupContent.classList.remove('hidden');
+            } else {
+                recentTab.classList.add('active', 'border-primary-600', 'text-primary-600');
+                recentTab.classList.remove('border-transparent', 'text-gray-500');
+                recentContent.classList.remove('hidden');
+                loadPaymentsList();
+            }
+        }
+
+        function addStudentRow() {
+            studentRowCounter++;
+            const html = `
+                <div class="student-row border border-gray-200 rounded-md p-4 bg-gray-50" data-id="${studentRowCounter}">
+                    <div class="flex justify-between items-center mb-3">
+                        <h5 class="font-semibold text-gray-700">Student #${studentRowCounter}</h5>
+                        <button type="button" onclick="removeStudentRow(${studentRowCounter})" class="text-red-600 hover:text-red-800 text-xl">&times;</button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Student Number *</label>
+                            <input type="text" class="student-number w-full px-3 py-2 border border-gray-300 rounded-md text-sm" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Amount (ZMW) *</label>
+                            <input type="number" class="student-amount w-full px-3 py-2 border border-gray-300 rounded-md text-sm" step="0.01" min="0.01" required oninput="calculateGroupTotal()">
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('studentsBox').insertAdjacentHTML('beforeend', html);
+        }
+
+        function removeStudentRow(id) {
+            const rows = document.querySelectorAll('.student-row');
+            if (rows.length <= 1) {
+                alert('At least one student is required');
+                return;
+            }
+            document.querySelector(`[data-id="${id}"]`).remove();
+            calculateGroupTotal();
+        }
+
+        function calculateGroupTotal() {
+            let total = 0;
+            document.querySelectorAll('.student-amount').forEach(input => {
+                total += parseFloat(input.value) || 0;
+            });
+            document.getElementById('groupTotal').textContent = `K ${total.toFixed(2)}`;
+        }
+
+        function resetGroupForm() {
+            document.getElementById('groupForm').reset();
+            document.getElementById('studentsBox').innerHTML = '';
+            studentRowCounter = 0;
+            addStudentRow();
+            calculateGroupTotal();
+            clearGroupFile();
+        }
+
+        document.getElementById('groupForm').addEventListener('submit', function (e) {
+            const rows = document.querySelectorAll('.student-row');
+            const studentNumbers = [];
+            const studentAmounts = [];
+
+            rows.forEach(row => {
+                const num = row.querySelector('.student-number').value.trim();
+                const amt = row.querySelector('.student-amount').value.trim();
+
+                if (num && amt) {
+                    studentNumbers.push(num);
+                    studentAmounts.push(amt);
+                }
+            });
+
+            if (studentNumbers.length === 0) {
+                e.preventDefault();
+                alert('Please add at least one valid student');
+                return;
+            }
+
+            document.getElementById('hiddenStudentNumbers').value = studentNumbers.join(',');
+            document.getElementById('hiddenStudentAmounts').value = studentAmounts.join(',');
+
+            document.getElementById('groupSubmitBtn').disabled = true;
+            document.getElementById('groupSubmitBtn').innerHTML = '<i class="material-icons animate-spin mr-2">refresh</i>Processing...';
+        });
+
+        async function verifyStudent() {
+            const studentNumber = document.getElementById('studentNumber').value.trim();
+            const verificationDiv = document.getElementById('studentVerification');
+            const consumerNameInput = document.getElementById('consumerName');
+
+            if (!studentNumber) {
+                verificationDiv.classList.add('hidden');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/Admin/VerifyStudent/${encodeURIComponent(studentNumber)}`);
+                const data = await response.json();
+
+                if (data.exists) {
+                    verificationDiv.className = 'mb-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start';
+                    verificationDiv.innerHTML = `
+                        <i class="material-icons text-green-600 mr-3">check_circle</i>
+                        <div class="flex-1">
+                            <p class="text-green-800 font-medium">Student Verified ✓</p>
+                            <div class="text-green-700 text-sm mt-1">
+                                <p><strong>Name:</strong> ${data.studentName}</p>
+                                <p><strong>Student ID:</strong> ${data.studentIdNumber}</p>
+                                ${data.programme ? `<p><strong>Programme:</strong> ${data.programme}</p>` : ''}
+                            </div>
+                        </div>
+                    `;
+                    
+                    if (consumerNameInput.value === '') {
+                        consumerNameInput.value = data.studentName;
+                    }
+                } else {
+                    verificationDiv.className = 'mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start';
+                    verificationDiv.innerHTML = `
+                        <i class="material-icons text-red-600 mr-3">error</i>
+                        <div>
+                            <p class="text-red-800 font-medium">Student Not Found</p>
+                            <p class="text-red-700 text-sm">${data.message}</p>
+                        </div>
+                    `;
+                }
+                
+                verificationDiv.classList.remove('hidden');
+            } catch (error) {
+                console.error('Error verifying student:', error);
+                verificationDiv.className = 'mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start';
+                verificationDiv.innerHTML = `
+                    <i class="material-icons text-yellow-600 mr-3">warning</i>
+                    <div>
+                        <p class="text-yellow-800 font-medium">Verification Error</p>
+                        <p class="text-yellow-700 text-sm">Could not verify student. Please check the student number.</p>
+                    </div>
+                `;
+                verificationDiv.classList.remove('hidden');
+            }
+        }
+
+        function displayFileName(input) {
+            const fileNameDisplay = document.getElementById('fileNameDisplay');
+            const fileName = document.getElementById('fileName');
+
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const fileSize = file.size / 1024 / 1024;
+
+                if (fileSize > 5) {
+                    alert('File size exceeds 5 MB. Please upload a smaller file.');
+                    input.value = '';
+                    fileNameDisplay.classList.add('hidden');
+                    return;
+                }
+
+                fileName.textContent = file.name;
+                fileNameDisplay.classList.remove('hidden');
+            }
+        }
+
+        function clearFile() {
+            document.getElementById('proofOfPayment').value = '';
+            document.getElementById('fileNameDisplay').classList.add('hidden');
+        }
+
+        function displayGroupFileName(input) {
+            const fileNameDisplay = document.getElementById('groupFileNameDisplay');
+            const fileName = document.getElementById('groupFileName');
+
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const fileSize = file.size / 1024 / 1024;
+
+                if (fileSize > 5) {
+                    alert('File size exceeds 5 MB. Please upload a smaller file.');
+                    input.value = '';
+                    fileNameDisplay.classList.add('hidden');
+                    return;
+                }
+
+                fileName.textContent = file.name;
+                fileNameDisplay.classList.remove('hidden');
+            }
+        }
+
+        function clearGroupFile() {
+            document.getElementById('groupProofOfPayment').value = '';
+            document.getElementById('groupFileNameDisplay').classList.add('hidden');
+        }
+
+        document.getElementById('paymentForm').addEventListener('submit', function(e) {
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="material-icons animate-spin mr-2">refresh</i>Processing...';
+        });
+
+        // Pagination and filtering functions
+        async function loadPaymentsList() {
+            const searchTerm = document.getElementById('searchBox').value;
+            const startDate = document.getElementById('dateStart').value;
+            const endDate = document.getElementById('dateEnd').value;
+            const status = document.getElementById('statusBox').value;
+
+            const params = new URLSearchParams({
+                pageNumber: currentPage,
+                pageSize: currentPageSize,
+                searchTerm: searchTerm || '',
+                startDate: startDate || '',
+                endDate: endDate || '',
+                status: status || ''
+            });
+
+            try {
+                const response = await fetch(`/Admin/GetPaymentsList?${params.toString()}`);
+                const data = await response.json();
+                displayPaymentsList(data);
+                updatePagination(data);
+            } catch (error) {
+                console.error('Error loading payments:', error);
+            }
+        }
+
+        function displayPaymentsList(data) {
+            const tbody = document.getElementById('paymentTableBody');
+
+            if (!data.items || data.items.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" class="px-6 py-8 text-center text-gray-500"><i class="material-icons text-4xl text-gray-300 mb-2">inbox</i><p>No payments found</p></td></tr>';
+                document.getElementById('countText').textContent = 'No records';
+                return;
+            }
+
+            tbody.innerHTML = data.items.map(p => `
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <div>
+                            <div class="font-medium">${new Date(p.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+                            <div class="text-gray-500 text-xs">${new Date(p.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${p.transactionDate ? `
+                            <div>
+                                <div class="font-medium">${new Date(p.transactionDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+                                <div class="text-gray-500 text-xs">${new Date(p.transactionDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</div>
+                            </div>
+                        ` : '<span class="text-gray-400">N/A</span>'}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 py-1 text-xs font-mono bg-purple-100 text-purple-800 rounded">${p.merchantTransactionId}</span>
+                        ${p.isGroupPayment === '1' ? `<div class="text-xs text-purple-600 mt-1 flex items-center"><i class="material-icons text-xs mr-1">group</i>${p.groupPaymentReference}</div>` : ''}
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm">
+                            <div class="font-medium text-gray-900">${p.fullName || 'N/A'}</div>
+                            <div class="text-gray-500">${p.accountNumber}</div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">${(p.paymentMethod || '').replace(' Cash Deposit', '')}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="text-sm font-semibold text-green-600">K ${parseFloat(p.amount).toFixed(2)}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${p.referenceNumber || 'N/A'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center text-sm text-gray-900">
+                            <i class="material-icons text-sm mr-1 text-gray-500">person</i>
+                            ${p.postedBy || 'Admin'}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        <div class="flex gap-2">
+                            <button onclick='printReceipt(${JSON.stringify({
+                                studentName: p.fullName,
+                                studentNumber: p.accountNumber,
+                                amount: p.amount,
+                                reference: p.referenceNumber,
+                                transactionId: p.merchantTransactionId,
+                                bank: p.paymentMethod,
+                                date: p.transactionDate,
+                                postedBy: p.postedBy
+                            })})' class="inline-flex items-center px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                                <i class="material-icons text-sm mr-1">print</i>
+                                Print
+                            </button>
+                            ${p.proofOfPaymentPath ? `
+                                <button onclick="viewReceipt('${p.proofOfPaymentPath}', '${p.merchantTransactionId}')" class="inline-flex items-center px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                    <i class="material-icons text-sm mr-1">visibility</i>
+                                    View
+                                </button>
+                            ` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+
+            document.getElementById('countText').textContent =
+                `Showing ${((currentPage - 1) * currentPageSize) + 1} to ${Math.min(currentPage * currentPageSize, data.totalCount)} of ${data.totalCount} records`;
+        }
+
+        function updatePagination(data) {
+            document.getElementById('paginationInfo').textContent = `Page ${data.pageNumber} of ${data.totalPages}`;
+            document.getElementById('prevBtn').disabled = !data.hasPreviousPage;
+            document.getElementById('nextBtn').disabled = !data.hasNextPage;
+        }
+
+        function goToPrevPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                loadPaymentsList();
+            }
+        }
+
+        function goToNextPage() {
+            currentPage++;
+            loadPaymentsList();
+        }
+
+        function changePageSize() {
+            currentPageSize = parseInt(document.getElementById('pageSizeBox').value);
+            currentPage = 1;
+            loadPaymentsList();
+        }
+
+        function applyFilters() {
+            currentPage = 1;
+            loadPaymentsList();
+        }
+
+        function clearFilters() {
+            document.getElementById('searchBox').value = '';
+            document.getElementById('statusBox').value = '';
+            setTodayDate();
+            currentPage = 1;
+            loadPaymentsList();
+        }
+
+        function viewReceipt(path, txnId) {
+            const modal = document.getElementById('receiptModal');
+            const content = document.getElementById('receiptContent');
+            const modalTxnId = document.getElementById('modalTxnId');
+            const downloadBtn = document.getElementById('downloadReceiptBtn');
+
+            modalTxnId.textContent = txnId;
+            downloadBtn.href = path;
+            
+            modal.classList.remove('hidden');
+            
+            const fileExtension = path.split('.').pop().toLowerCase();
+            
+            if (fileExtension === 'pdf') {
+                content.innerHTML = `<iframe src="${path}" class="w-full rounded-lg" style="height: 600px;" frameborder="0"></iframe>`;
+            } else if (['jpg', 'jpeg', 'png'].includes(fileExtension)) {
+                content.innerHTML = `<img src="${path}" alt="Proof of Payment" class="max-w-full h-auto rounded-lg mx-auto" style="max-height: 600px;" />`;
+            } else {
+                content.innerHTML = `
+                    <div class="text-center py-12">
+                        <i class="material-icons text-6xl text-gray-400 mb-4">description</i>
+                        <p class="text-gray-600 mb-4">Cannot preview this file type</p>
+                        <a href="${path}" target="_blank" class="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">
+                            <i class="material-icons text-sm mr-2">open_in_new</i>
+                            Open in New Tab
+                        </a>
+                    </div>
+                `;
+            }
+        }
+
+        function closeReceiptModal() {
+            document.getElementById('receiptModal').classList.add('hidden');
+        }
+
+        document.getElementById('receiptModal').addEventListener('click', function(e) {
+            if (e.target === this) closeReceiptModal();
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeReceiptModal();
+        });
+    </script>
+}

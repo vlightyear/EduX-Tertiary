@@ -1,0 +1,284 @@
+﻿@model SIS.Models.Lecturer.LecturerAssessmentDetailsViewModel
+
+<div class="min-h-screen bg-slate-50 p-6">
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row justify-between items-center h-24 mb-4">
+        <div class="flex items-center text-slate-800">
+            <i class="material-icons text-3xl mr-2">assessment</i>
+            <div>
+                <h1 class="text-2xl font-bold">Assessment Details</h1>
+                <p class="text-sm text-slate-600">
+                    @Model.AssessmentConfig.Assessment.Name -
+                    @Model.AssessmentConfig.Course.CourseCode (@Model.AssessmentConfig.Course.CourseName)
+                </p>
+            </div>
+        </div>
+        <div class="mt-4 md:mt-0 flex space-x-2">
+            <a asp-controller="Lecturer" asp-action="EditAssessmentConfig"
+               asp-route-id="@Model.AssessmentConfig.CourseId"
+               asp-route-assessmentConfigId="@Model.AssessmentConfig.Id"
+               class="inline-flex items-center px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors">
+                <i class="material-icons text-sm mr-1">edit</i>
+                <span>Edit Assessment</span>
+            </a>
+            <form asp-controller="Lecturer" asp-action="PublishAssessmentResults" asp-route-id="@Model.AssessmentConfig.Id" method="post">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                    <i class="material-icons text-sm mr-1">publish</i>
+                    <span>Publish Results</span>
+                </button>
+            </form>
+            <a asp-controller="Lecturer" asp-action="CourseContent"
+               asp-route-id="@Model.AssessmentConfig.CourseId"
+               class="inline-flex items-center px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors">
+                <i class="material-icons text-sm mr-1">arrow_back</i>
+                <span>Back to Course</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <!-- Assessment Info Card -->
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <h2 class="text-lg font-semibold text-slate-800 mb-4">Assessment Information</h2>
+            <div class="space-y-3">
+                <div class="flex justify-between">
+                    <span class="text-slate-600">Type:</span>
+                    <span class="font-medium">@Model.AssessmentConfig.Assessment.Name</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-600">Academic Year:</span>
+                    <span class="font-medium">@Model.AssessmentConfig.AcademicYear.YearValue</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-600">Mode of Study:</span>
+                    <span class="font-medium">@Model.AssessmentConfig.ModeOfStudy.ModeName</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-600">Start Date:</span>
+                    <span class="font-medium">@Model.AssessmentConfig.StartDateTime.ToString("MMM dd, yyyy - HH:mm")</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-600">End Date:</span>
+                    <span class="font-medium">@Model.AssessmentConfig.EndDateTime.ToString("MMM dd, yyyy - HH:mm")</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-600">Duration:</span>
+                    <span class="font-medium">@Model.AssessmentConfig.DurationMinutes minutes</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-600">Status:</span>
+                    @if (Model.AssessmentConfig.IsPublished)
+                    {
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Published</span>
+                    }
+                    else
+                    {
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-slate-100 text-slate-800">Draft</span>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Stats -->
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <h2 class="text-lg font-semibold text-slate-800 mb-4">Completion Statistics</h2>
+            <div class="flex flex-col space-y-6">
+                <!-- Attempt Progress -->
+                <div>
+                    <div class="flex justify-between mb-1">
+                        <span class="text-sm text-slate-600">Student Attempts</span>
+                        <span class="text-sm font-medium">@Model.CompletedAttempts / @Model.TotalStudents</span>
+                    </div>
+                    <div class="w-full bg-slate-200 rounded-full h-2.5">
+                        @{
+                            var attemptPercentage = Model.TotalStudents > 0
+                            ? (float)Model.CompletedAttempts / Model.TotalStudents * 100
+                            : 0;
+                        }
+                        <div class="bg-cyan-600 h-2.5 rounded-full" style="width: @attemptPercentage%"></div>
+                    </div>
+                </div>
+
+                <!-- Average Score -->
+                <div>
+                    <div class="flex justify-between mb-1">
+                        <span class="text-sm text-slate-600">Average Score</span>
+                        <span class="text-sm font-medium">@Model.AverageScore.ToString("0.0")%</span>
+                    </div>
+                    <div class="w-full bg-slate-200 rounded-full h-2.5">
+                        <div class="bg-blue-600 h-2.5 rounded-full" style="width: @Model.AverageScore%"></div>
+                    </div>
+                </div>
+
+                <!-- Pass Rate -->
+                <div>
+                    <div class="flex justify-between mb-1">
+                        <span class="text-sm text-slate-600">Pass Rate</span>
+                        <span class="text-sm font-medium">@Model.PassRate.ToString("0.0")%</span>
+                    </div>
+                    <div class="w-full bg-slate-200 rounded-full h-2.5">
+                        <div class="bg-green-600 h-2.5 rounded-full" style="width: @Model.PassRate%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Card -->
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <h2 class="text-lg font-semibold text-slate-800 mb-4">Summary</h2>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-blue-50 rounded-lg p-4">
+                    <div class="flex flex-col items-center">
+                        <span class="text-3xl font-bold text-blue-600">@Model.TotalStudents</span>
+                        <span class="text-sm text-slate-600">Total Students</span>
+                    </div>
+                </div>
+                <div class="bg-green-50 rounded-lg p-4">
+                    <div class="flex flex-col items-center">
+                        <span class="text-3xl font-bold text-green-600">@Model.TotalAttempts</span>
+                        <span class="text-sm text-slate-600">Total Attempts</span>
+                    </div>
+                </div>
+                <div class="bg-indigo-50 rounded-lg p-4">
+                    <div class="flex flex-col items-center">
+                        <span class="text-3xl font-bold text-indigo-600">@Model.CompletedAttempts</span>
+                        <span class="text-sm text-slate-600">Completed</span>
+                    </div>
+                </div>
+                <div class="bg-orange-50 rounded-lg p-4">
+                    <div class="flex flex-col items-center">
+                        <span class="text-3xl font-bold text-orange-600">@(Model.TotalStudents - Model.CompletedAttempts)</span>
+                        <span class="text-sm text-slate-600">Not Attempted</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Attempts Table -->
+    <div class="bg-white rounded-xl shadow-sm">
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-lg font-semibold text-slate-800">Student Attempts</h2>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                        <i class="material-icons text-slate-400 text-sm">search</i>
+                    </div>
+                    <input type="text" id="studentSearch"
+                           class="block w-60 pl-10 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:ring-cyan-500 focus:border-cyan-500"
+                           placeholder="Search students..."
+                           onkeyup="searchStudents()">
+                </div>
+            </div>
+
+            @if (Model.StudentAttempts == null || !Model.StudentAttempts.Any())
+            {
+                <div class="flex items-center gap-2 p-4 bg-amber-50 text-amber-800 rounded-lg">
+                    <i class="material-icons">info</i>
+                    <p>No student data available for this assessment.</p>
+                </div>
+            }
+            else
+            {
+                <!-- Students Table -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-slate-700">
+                        <thead class="text-xs uppercase bg-slate-100">
+                            <tr>
+                                <th class="px-4 py-3 rounded-tl-lg">Student</th>
+                                <th class="px-4 py-3">Student Number</th>
+                                <th class="px-4 py-3">Status</th>
+                                <th class="px-4 py-3">Score</th>
+                                <th class="px-4 py-3">Started</th>
+                                <th class="px-4 py-3">Finished</th>
+                                <th class="px-4 py-3 rounded-tr-lg">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var student in Model.StudentAttempts)
+                            {
+                                <tr class="student-row bg-white border-b hover:bg-slate-50">
+                                    <td class="px-4 py-3 font-medium">@student.StudentName</td>
+                                    <td class="px-4 py-3">@student.StudentNumber</td>
+                                    <td class="px-4 py-3">
+                                        @if (!student.HasAttempted)
+                                        {
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-slate-100 text-slate-800">Not Attempted</span>
+                                        }
+                                        else if (student.Status == "InProgress")
+                                        {
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">In Progress</span>
+                                        }
+                                        else if (student.Status == "Submitted")
+                                        {
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Submitted</span>
+                                        }
+                                        else if (student.Status == "TimedOut")
+                                        {
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-100 text-amber-800">Timed Out</span>
+                                        }
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        @if (student.Score.HasValue)
+                                        {
+                                            <span class="@(student.Score >= 50 ? "text-green-600" : "text-red-600")">
+                                                @student.Score.Value.ToString("0.0")%
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-slate-400">-</span>
+                                        }
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        @(student.StartTime.HasValue ? student.StartTime.Value.ToString("MMM dd, yyyy HH:mm") : "-")
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        @(student.EndTime.HasValue ? student.EndTime.Value.ToString("MMM dd, yyyy HH:mm") : "-")
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex gap-2">
+                                            @if (student.HasAttempted && student.AttemptId.HasValue)
+                                            {
+                                                <a href="@Url.Action("GradeAttempt", "Lecturer", new { id = student.AttemptId.Value })"
+                                                   class="text-green-600 hover:text-green-800" title="Grade Attempt">
+                                                    <i class="material-icons">grade</i>
+                                                </a>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-slate-300" title="No Attempt">
+                                                    <i class="material-icons">grade</i>
+                                                </span>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function searchStudents() {
+            const searchInput = document.getElementById('studentSearch');
+            const filter = searchInput.value.toUpperCase();
+            const studentRows = document.querySelectorAll('.student-row');
+
+            studentRows.forEach(row => {
+                const rowText = row.textContent || row.innerText;
+                if (rowText.toUpperCase().indexOf(filter) > -1) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+    </script>
+}

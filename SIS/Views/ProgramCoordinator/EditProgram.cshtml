@@ -1,0 +1,484 @@
+﻿@model SIS.Models.Admin.Programme
+@{
+    ViewData["Title"] = "Edit Program";
+}
+
+<div class="min-h-[88vh] bg-slate-50 p-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center gap-2">
+            <i class="material-icons text-3xl text-primary-600">edit</i>
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800">Edit Program</h1>
+                <p class="text-sm text-slate-600">Update program details and requirements</p>
+            </div>
+        </div>
+        <a href="@Url.Action("ProgramDetails", new { id = Model.Id })"
+           class="px-4 py-2 text-sm text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors flex items-center">
+            <i class="material-icons text-sm mr-1">arrow_back</i>
+            Back to Details
+        </a>
+    </div>
+
+    <form asp-action="EditProgram" method="post" enctype="multipart/form-data" id="editProgramForm">
+        <div asp-validation-summary="ModelOnly" class="text-red-500 text-sm mb-4"></div>
+        <input type="hidden" asp-for="Id" />
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Main Form Content -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Basic Information Card -->
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div class="px-6 py-4 border-b border-slate-200">
+                        <h2 class="text-lg font-semibold text-slate-800">Basic Information</h2>
+                    </div>
+                    <div class="p-6">
+                        <!-- Program Name -->
+                        <div class="mb-6">
+                            <label asp-for="Name" class="block mb-2 text-sm font-medium text-slate-700">Program Name</label>
+                            <input asp-for="Name" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" />
+                            <span asp-validation-for="Name" class="text-red-500 text-xs mt-1"></span>
+                        </div>
+
+                        <!-- Program Description -->
+                        <div class="mb-6">
+                            <label asp-for="Description" class="block mb-2 text-sm font-medium text-slate-700">Description</label>
+                            <textarea asp-for="Description" rows="5" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500"></textarea>
+                            <span asp-validation-for="Description" class="text-red-500 text-xs mt-1"></span>
+                            <p class="text-xs text-slate-500 mt-1">Provide a comprehensive description of the program, including its objectives, focus areas, and career prospects.</p>
+                        </div>
+
+                        <!-- Program Duration -->
+                        <div class="mb-6">
+                            <label asp-for="DurationYears" class="block mb-2 text-sm font-medium text-slate-700">Duration (Years)</label>
+                            <select asp-for="DurationYears" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                @for (int i = 1; i <= 6; i++)
+                                {
+                                    <option value="@i">@i @(i == 1 ? "Year" : "Years")</option>
+                                }
+                            </select>
+                            <span asp-validation-for="DurationYears" class="text-red-500 text-xs mt-1"></span>
+                        </div>
+
+                        <!-- Minimum Points -->
+                        <div class="mb-6">
+                            <label asp-for="MinimumPointsTop5Subjects" class="block mb-2 text-sm font-medium text-slate-700">Minimum Points (Top 5 Subjects)</label>
+                            <input asp-for="MinimumPointsTop5Subjects" type="number" min="0" max="100" step="1" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" />
+                            <span asp-validation-for="MinimumPointsTop5Subjects" class="text-red-500 text-xs mt-1"></span>
+                            <p class="text-xs text-slate-500 mt-1">The minimum number of points required from the top 5 subjects for admission.</p>
+                        </div>
+
+                        <!-- Mode of Study -->
+                        <div class="mb-6">
+                            <label asp-for="ModeOfStudyId" class="block mb-2 text-sm font-medium text-slate-700">Mode of Study</label>
+                            <select asp-for="ModeOfStudyId" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                @foreach (var mode in ViewBag.ModesOfStudy)
+                                {
+                                    <option value="@mode.ModeId">@mode.ModeName</option>
+                                }
+                            </select>
+                            <span asp-validation-for="ModeOfStudyId" class="text-red-500 text-xs mt-1"></span>
+                        </div>
+
+                        <!-- Program Level -->
+                        <div>
+                            <label asp-for="ProgrammeLevelId" class="block mb-2 text-sm font-medium text-slate-700">Program Level</label>
+                            <select asp-for="ProgrammeLevelId" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                @foreach (var level in ViewBag.ProgrammeLevels)
+                                {
+                                    <option value="@level.Id">@level.Name</option>
+                                }
+                            </select>
+                            <span asp-validation-for="ProgrammeLevelId" class="text-red-500 text-xs mt-1"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Yearly Requirements Card -->
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+                        <h2 class="text-lg font-semibold text-slate-800">Yearly Requirements</h2>
+                        <div>
+                            <button type="button" id="addYearButton" class="text-sm text-primary-600 bg-primary-50 hover:bg-primary-100 px-3 py-1.5 rounded-lg transition-colors flex items-center">
+                                <i class="material-icons text-sm mr-1">add</i>
+                                Add Year
+                            </button>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <p class="text-sm text-slate-600 mb-4">Define the requirements for each year of the program, such as the number of courses required per year or semester.</p>
+
+                        <!-- JSON Editor Container -->
+                        <div id="yearlyRequirementsEditor" class="space-y-4">
+                            <!-- Years will be added dynamically here -->
+                        </div>
+
+                        <!-- Hidden input to store JSON -->
+                        <input type="hidden" asp-for="YearlyRequirements" id="yearlyRequirementsInput" />
+                        <span asp-validation-for="YearlyRequirements" class="text-red-500 text-xs mt-1"></span>
+
+                        <!-- JSON Validation Error -->
+                        <div id="jsonError" class="hidden mt-3 p-3 bg-red-50 text-red-700 text-sm rounded-lg"></div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="flex justify-end gap-3">
+                    <a href="@Url.Action("ProgramDetails", new { id = Model.Id })"
+                       class="px-6 py-3 text-sm text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
+                        Cancel
+                    </a>
+                    <button type="submit" class="px-6 py-3 text-sm text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors">
+                        <i class="material-icons text-sm mr-1 align-middle">save</i>
+                        Save Changes
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="space-y-6">
+                <!-- Editing Tips Card -->
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div class="px-6 py-4 border-b border-slate-200">
+                        <h2 class="text-lg font-semibold text-slate-800">Editing Tips</h2>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-4">
+                            <div class="flex gap-3 items-start">
+                                <div class="bg-primary-50 p-1.5 rounded-lg">
+                                    <i class="material-icons text-primary-600 text-sm">tips_and_updates</i>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-medium text-slate-800 mb-1">Program Description</h3>
+                                    <p class="text-xs text-slate-600">Provide a clear, concise description that highlights the program's unique features and benefits.</p>
+                                </div>
+                            </div>
+
+                            <div class="flex gap-3 items-start">
+                                <div class="bg-secondary-50 p-1.5 rounded-lg">
+                                    <i class="material-icons text-secondary-600 text-sm">school</i>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-medium text-slate-800 mb-1">Entry Requirements</h3>
+                                    <p class="text-xs text-slate-600">Set appropriate minimum points that align with your program's academic rigor and institutional standards.</p>
+                                </div>
+                            </div>
+
+                            <div class="flex gap-3 items-start">
+                                <div class="bg-teal-50 p-1.5 rounded-lg">
+                                    <i class="material-icons text-teal-600 text-sm">schedule</i>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-medium text-slate-800 mb-1">Yearly Requirements</h3>
+                                    <p class="text-xs text-slate-600">Structure requirements to ensure a balanced academic load. Typically, students take 8-10 courses per year.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Program Information Card -->
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div class="px-6 py-4 border-b border-slate-200">
+                        <h2 class="text-lg font-semibold text-slate-800">Program Information</h2>
+                    </div>
+                    <div class="p-6">
+                        <ul class="space-y-3">
+                            <li class="flex justify-between">
+                                <span class="text-slate-600 text-sm">Department:</span>
+                                <span class="font-medium text-slate-800 text-sm">@Model.Department?.Name</span>
+                            </li>
+                            <li class="flex justify-between">
+                                <span class="text-slate-600 text-sm">School:</span>
+                                <span class="font-medium text-slate-800 text-sm">@Model.Department?.School?.Name</span>
+                            </li>
+                            <li class="flex justify-between">
+                                <span class="text-slate-600 text-sm">Coordinator:</span>
+                                <span class="font-medium text-slate-800 text-sm">@Model.Coordinator?.UserName</span>
+                            </li>
+                            <li class="flex justify-between">
+                                <span class="text-slate-600 text-sm">Total Enrollments:</span>
+                                <span class="font-medium text-slate-800 text-sm">@Model.EnrollmentCount</span>
+                            </li>
+                            <li class="flex justify-between">
+                                <span class="text-slate-600 text-sm">Created On:</span>
+                                <span class="font-medium text-slate-800 text-sm">@Model.CreatedAt.ToString("MMM dd, yyyy")</span>
+                            </li>
+                            @if (Model.UpdatedAt.HasValue)
+                            {
+                                <li class="flex justify-between">
+                                    <span class="text-slate-600 text-sm">Last Updated:</span>
+                                    <span class="font-medium text-slate-800 text-sm">@Model.UpdatedAt.Value.ToString("MMM dd, yyyy")</span>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize yearly requirements editor
+            initYearlyRequirementsEditor();
+
+            // Form validation before submit
+            document.getElementById('editProgramForm').addEventListener('submit', function(e) {
+                // Update the hidden input with the current JSON value
+                updateYearlyRequirementsJSON();
+
+                // Validate the JSON
+                const jsonValue = document.getElementById('yearlyRequirementsInput').value;
+                try {
+                    if (jsonValue) {
+                        JSON.parse(jsonValue);
+                    }
+                } catch (error) {
+                    e.preventDefault();
+                    // Show JSON validation error
+                    const errorElement = document.getElementById('jsonError');
+                    errorElement.textContent = 'Invalid JSON format in yearly requirements: ' + error.message;
+                    errorElement.classList.remove('hidden');
+
+                    // Scroll to error
+                    errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+        });
+
+        function initYearlyRequirementsEditor() {
+            const yearlyRequirementsInput = document.getElementById('yearlyRequirementsInput');
+            const editorContainer = document.getElementById('yearlyRequirementsEditor');
+
+            // Add Year button
+            document.getElementById('addYearButton').addEventListener('click', function() {
+                addYearSection();
+                updateYearlyRequirementsJSON();
+            });
+
+            // Parse initial JSON value
+            let initialRequirements = {};
+            try {
+                if (yearlyRequirementsInput.value) {
+                    initialRequirements = JSON.parse(yearlyRequirementsInput.value);
+                }
+            } catch (error) {
+                console.error('Error parsing initial JSON:', error);
+                // Show error but still allow editing
+                document.getElementById('jsonError').textContent = 'Warning: Invalid JSON format in existing data. Starting with empty configuration.';
+                document.getElementById('jsonError').classList.remove('hidden');
+            }
+
+            // Create editor sections for each year in the JSON
+            if (Object.keys(initialRequirements).length > 0) {
+                Object.keys(initialRequirements).sort().forEach(yearKey => {
+                    addYearSection(yearKey, initialRequirements[yearKey]);
+                });
+            } else {
+                // Add a default "Year 1" if no data exists
+                addYearSection('Year1', { TotalRequired: 8 });
+            }
+
+            // Update the JSON after initialization
+            updateYearlyRequirementsJSON();
+        }
+
+        function addYearSection(yearKey = null, yearData = {}) {
+            const editorContainer = document.getElementById('yearlyRequirementsEditor');
+
+            // If no yearKey provided, generate one based on existing sections
+            if (!yearKey) {
+                const existingYears = Array.from(editorContainer.querySelectorAll('.year-section'))
+                    .map(section => section.getAttribute('data-year-key'));
+
+                // Find the next available year number
+                let nextYearNumber = 1;
+                while (existingYears.includes(`Year${nextYearNumber}`)) {
+                    nextYearNumber++;
+                }
+
+                yearKey = `Year${nextYearNumber}`;
+            }
+
+            // Create year section
+            const yearSection = document.createElement('div');
+            yearSection.className = 'year-section p-4 bg-slate-50 rounded-lg';
+            yearSection.setAttribute('data-year-key', yearKey);
+
+            // Format the year title (Year1 -> Year 1)
+            const yearTitle = yearKey.replace(/Year(\d+)/, 'Year $1');
+
+            yearSection.innerHTML = `
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-md font-medium text-slate-800">${yearTitle}</h3>
+                    <div>
+                        <button type="button" class="text-red-600 hover:text-red-800 transition-colors remove-year-btn">
+                            <i class="material-icons text-sm">delete</i>
+                        </button>
+                    </div>
+                </div>
+                <div class="space-y-3 requirements-container">
+                    <div class="requirement-item grid grid-cols-3 gap-3">
+                        <div class="col-span-2">
+                            <label class="text-xs font-medium text-slate-600 mb-1 block">Requirement</label>
+                            <input type="text" value="TotalRequired" readonly class="w-full p-2 bg-slate-100 border border-slate-300 rounded-lg text-slate-700" />
+                        </div>
+                        <div>
+                            <label class="text-xs font-medium text-slate-600 mb-1 block">Value</label>
+                            <input type="number" value="${yearData.TotalRequired || 8}" min="1" class="w-full p-2 border border-slate-300 rounded-lg requirement-value" data-key="TotalRequired" />
+                        </div>
+                    </div>
+
+                    ${Object.keys(yearData)
+                        .filter(key => key !== 'TotalRequired')
+                        .map(key => `
+                            <div class="requirement-item grid grid-cols-3 gap-3">
+                                <div class="col-span-2">
+                                    <label class="text-xs font-medium text-slate-600 mb-1 block">Requirement</label>
+                                    <input type="text" value="${key}" class="w-full p-2 border border-slate-300 rounded-lg requirement-key" />
+                                </div>
+                                <div class="flex gap-2">
+                                    <div class="flex-1">
+                                        <label class="text-xs font-medium text-slate-600 mb-1 block">Value</label>
+                                        <input type="number" value="${yearData[key]}" min="0" class="w-full p-2 border border-slate-300 rounded-lg requirement-value" data-key="${key}" />
+                                    </div>
+                                    <div class="flex items-end">
+                                        <button type="button" class="h-[42px] aspect-square flex items-center justify-center text-red-600 hover:text-red-800 transition-colors remove-requirement-btn">
+                                            <i class="material-icons text-sm">close</i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                </div>
+                <div class="mt-3">
+                    <button type="button" class="w-full text-center p-2 border border-dashed border-slate-300 rounded-lg text-xs text-slate-600 hover:bg-slate-100 transition-colors add-requirement-btn">
+                        <i class="material-icons text-xs align-middle">add</i>
+                        Add Requirement
+                    </button>
+                </div>
+            `;
+
+            // Add remove year event listener
+            yearSection.querySelector('.remove-year-btn').addEventListener('click', function() {
+                yearSection.remove();
+                updateYearlyRequirementsJSON();
+            });
+
+            // Add new requirement event listener
+            yearSection.querySelector('.add-requirement-btn').addEventListener('click', function() {
+                addRequirementRow(yearSection);
+                updateYearlyRequirementsJSON();
+            });
+
+            // Add existing remove requirement event listeners
+            yearSection.querySelectorAll('.remove-requirement-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    button.closest('.requirement-item').remove();
+                    updateYearlyRequirementsJSON();
+                });
+            });
+
+            // Add input change event listeners
+            yearSection.querySelectorAll('input').forEach(input => {
+                input.addEventListener('change', updateYearlyRequirementsJSON);
+                input.addEventListener('input', function() {
+                    if (input.classList.contains('requirement-key')) {
+                        // Update the corresponding value input's data-key
+                        const valueInput = input.closest('.requirement-item').querySelector('.requirement-value');
+                        valueInput.setAttribute('data-key', input.value);
+                    }
+                });
+            });
+
+            // Add to container
+            editorContainer.appendChild(yearSection);
+        }
+
+        function addRequirementRow(yearSection) {
+            const requirementsContainer = yearSection.querySelector('.requirements-container');
+
+            const requirementItem = document.createElement('div');
+            requirementItem.className = 'requirement-item grid grid-cols-3 gap-3';
+            requirementItem.innerHTML = `
+                <div class="col-span-2">
+                    <label class="text-xs font-medium text-slate-600 mb-1 block">Requirement</label>
+                    <input type="text" placeholder="ElectiveCourses" class="w-full p-2 border border-slate-300 rounded-lg requirement-key" />
+                </div>
+                <div class="flex gap-2">
+                    <div class="flex-1">
+                        <label class="text-xs font-medium text-slate-600 mb-1 block">Value</label>
+                        <input type="number" value="2" min="0" class="w-full p-2 border border-slate-300 rounded-lg requirement-value" data-key="" />
+                    </div>
+                    <div class="flex items-end">
+                        <button type="button" class="h-[42px] aspect-square flex items-center justify-center text-red-600 hover:text-red-800 transition-colors remove-requirement-btn">
+                            <i class="material-icons text-sm">close</i>
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            // Add remove button event listener
+            requirementItem.querySelector('.remove-requirement-btn').addEventListener('click', function() {
+                requirementItem.remove();
+                updateYearlyRequirementsJSON();
+            });
+
+            // Add input event listeners
+            requirementItem.querySelectorAll('input').forEach(input => {
+                input.addEventListener('change', updateYearlyRequirementsJSON);
+                input.addEventListener('input', function() {
+                    if (input.classList.contains('requirement-key')) {
+                        // Update the corresponding value input's data-key
+                        const valueInput = requirementItem.querySelector('.requirement-value');
+                        valueInput.setAttribute('data-key', input.value);
+                    }
+                });
+            });
+
+            requirementsContainer.appendChild(requirementItem);
+        }
+
+        function updateYearlyRequirementsJSON() {
+            const yearSections = document.querySelectorAll('.year-section');
+            const yearlyRequirementsInput = document.getElementById('yearlyRequirementsInput');
+
+            let requirementsObject = {};
+
+            yearSections.forEach(section => {
+                const yearKey = section.getAttribute('data-year-key');
+                const requirementItems = section.querySelectorAll('.requirement-item');
+
+                let yearRequirements = {};
+
+                requirementItems.forEach(item => {
+                    const keyInput = item.querySelector('.requirement-key');
+                    const valueInput = item.querySelector('.requirement-value');
+
+                    let key = keyInput ? keyInput.value.trim() : valueInput.getAttribute('data-key');
+                    let value = parseInt(valueInput.value, 10);
+
+                    if (key && !isNaN(value)) {
+                        yearRequirements[key] = value;
+                    }
+                });
+
+                if (Object.keys(yearRequirements).length > 0) {
+                    requirementsObject[yearKey] = yearRequirements;
+                }
+            });
+
+            // Update the hidden input value
+            yearlyRequirementsInput.value = JSON.stringify(requirementsObject);
+
+            // Clear any previous error
+            document.getElementById('jsonError').classList.add('hidden');
+
+            // Return the object for testing
+            return requirementsObject;
+        }
+    </script>
+}

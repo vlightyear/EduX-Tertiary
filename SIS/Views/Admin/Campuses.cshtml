@@ -1,0 +1,453 @@
+﻿@model IEnumerable<SIS.Models.StudentAccommodation.Campus>
+<div class="h-[90vh] p-4">
+    <!-- Header Section -->
+    <div class="flex justify-between items-center mb-4">
+        <div class="flex items-center text-gray-800">
+            <i class="material-icons text-3xl mr-2">location_city</i>
+            <div>
+                <h1 class="text-2xl font-bold">Campus Management</h1>
+                <p class="text-sm text-slate-600">Manage all campus locations for accommodation</p>
+            </div>
+        </div>
+        <button type="button"
+                onclick="showCreateCampusModal()"
+                class="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors flex items-center">
+            <i class="material-icons mr-2">add_circle</i>
+            Create Campus
+        </button>
+    </div>
+
+    <!-- Main Content Layout -->
+    <div class="flex gap-4 h-[calc(90vh-80px)]">
+        <!-- Main Table Section (3/4 width) -->
+        <div class="w-3/4">
+            <div class="bg-white rounded-lg shadow-md h-full">
+                <div class="p-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <i class="material-icons text-slate-400 text-sm">search</i>
+                            </div>
+                            <input type="text" id="searchInput"
+                                   class="block w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500"
+                                   placeholder="Search campuses..." />
+                        </div>
+                        <div class="flex items-center">
+                            <label for="filterStatus" class="text-sm text-slate-600 mr-2">Filter:</label>
+                            <select id="filterStatus"
+                                    class="px-4 py-2 border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500">
+                                <option value="all">All Campuses</option>
+                                <option value="active">Active Campuses</option>
+                                <option value="inactive">Inactive Campuses</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="overflow-y-auto h-[calc(100%-60px)]">
+                        @if (TempData["Success"] != null)
+                        {
+                            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4" role="alert">
+                                <p>@TempData["Success"]</p>
+                            </div>
+                        }
+
+                        @if (TempData["Error"] != null)
+                        {
+                            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" role="alert">
+                                <p>@TempData["Error"]</p>
+                            </div>
+                        }
+
+                        <table id="campusesTable" class="w-full text-sm text-gray-600">
+                            <thead class="sticky top-0 bg-slate-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left">
+                                        <span class="flex items-center">
+                                            #
+                                            <button class="sort-btn ml-1" data-sort="index">
+                                                <svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 15 4 4 4-4m0-6-4-4-4 4" />
+                                                </svg>
+                                            </button>
+                                        </span>
+                                    </th>
+                                    <th class="px-6 py-3 text-left">
+                                        <span class="flex items-center">
+                                            Campus Name
+                                            <button class="sort-btn ml-1" data-sort="name">
+                                                <svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 15 4 4 4-4m0-6-4-4-4 4" />
+                                                </svg>
+                                            </button>
+                                        </span>
+                                    </th>
+                                    <th class="px-6 py-3 text-left">
+                                        <span class="flex items-center">
+                                            Location
+                                        </span>
+                                    </th>
+                                    <th class="px-6 py-3 text-left">
+                                        <span class="flex items-center">
+                                            Hostels
+                                            <button class="sort-btn ml-1" data-sort="hostels">
+                                                <svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 15 4 4 4-4m0-6-4-4-4 4" />
+                                                </svg>
+                                            </button>
+                                        </span>
+                                    </th>
+                                    <th class="px-6 py-3 text-left">
+                                        <span class="flex items-center">
+                                            Status
+                                        </span>
+                                    </th>
+                                    <th class="px-6 py-3 text-left">
+                                        <span class="flex items-center">
+                                            Actions
+                                        </span>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="campusesTableBody">
+                                @if (Model != null && Model.Any())
+                                {
+                                    @for (int i = 0; i < Model.Count(); i++)
+                                    {
+                                        var campus = Model.ElementAt(i);
+                                        <tr class="hover:bg-slate-50 border-b" data-status="@(campus.IsActive ? "active" : "inactive")">
+                                            <td class="px-6 py-4">@(i + 1)</td>
+                                            <td class="px-6 py-4 font-medium text-cyan-600">@campus.CampusName</td>
+                                            <td class="px-6 py-4">
+                                                @if (!string.IsNullOrEmpty(campus.Location))
+                                                {
+                                                    <div class="flex items-center">
+                                                        <i class="material-icons text-slate-400 text-sm mr-1">place</i>
+                                                        <span>@campus.Location</span>
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-slate-400">-</span>
+                                                }
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <span class="font-medium">@campus.Hostels.Count</span>
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                @if (campus.IsActive)
+                                                {
+                                                    <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">Active</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">Inactive</span>
+                                                }
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <div class="flex space-x-2">
+                                                    <button onclick="showUpdateCampusModal('@campus.CampusId')"
+                                                            class="text-slate-600 hover:text-cyan-600" title="Edit">
+                                                        <i class="material-icons text-base">edit</i>
+                                                    </button>
+                                                    <button onclick="showDeleteCampusModal('@campus.CampusId', '@campus.CampusName.Replace("'", "\\'")', '@campus.Hostels.Count')"
+                                                            class="text-slate-600 hover:text-red-600" title="Delete">
+                                                        <i class="material-icons text-base">delete</i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+
+                        <!-- Empty state message - shown/hidden via JS -->
+                        <div id="emptyStateMessage" class="flex flex-col items-center justify-center h-[calc(100%-60px)] text-slate-500"
+                             style="@(Model != null && Model.Any() ? "display: none;" : "")">
+                            <i class="material-icons text-5xl mb-4">location_off</i>
+                            <h3 class="text-xl font-medium mb-2">No Campuses Found</h3>
+                            <p class="text-sm mb-4">You haven't created any campus locations yet.</p>
+                            <button onclick="showCreateCampusModal()"
+                                    class="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors flex items-center">
+                                <i class="material-icons mr-2">add_circle</i>
+                                Create First Campus
+                            </button>
+                        </div>
+
+                        <!-- Loading indicator -->
+                        <div id="loadingIndicator" class="flex justify-center items-center h-[calc(100%-60px)]" style="display: none;">
+                            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-600"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Sidebar (1/4 width) -->
+        <div class="w-1/4 space-y-4">
+            <!-- Statistics Cards -->
+            <div class="grid grid-cols-1 gap-4">
+                <div class="bg-white rounded-lg shadow p-4">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-cyan-100 rounded-lg">
+                            <i class="material-icons text-cyan-600 text-xl">location_city</i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-gray-500 text-sm">Total Campuses</p>
+                            <div id="totalCampuses" class="text-xl font-semibold">@(Model?.Count() ?? 0)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow p-4">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-blue-100 rounded-lg">
+                            <i class="material-icons text-blue-600 text-xl">apartment</i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-gray-500 text-sm">Total Hostels</p>
+                            <div id="totalHostels" class="text-xl font-semibold text-blue-600">
+                                @(Model?.Sum(c => c.Hostels.Count) ?? 0)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow p-4">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-green-100 rounded-lg">
+                            <i class="material-icons text-green-600 text-xl">check_circle</i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-gray-500 text-sm">Active Campuses</p>
+                            <div id="activeCampuses" class="text-xl font-semibold text-green-600">
+                                @(Model?.Count(c => c.IsActive) ?? 0)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Campus Distribution Chart -->
+            <div class="bg-white rounded-lg shadow p-4">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Campus Distribution</h3>
+                <div id="campusDistributionChart" class="h-64"></div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="bg-white rounded-lg shadow p-4">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Recent Activity</h3>
+                <div id="recentActivityList" class="space-y-3">
+                    @if (Model != null && Model.Any())
+                    {
+                        var recentCampuses = Model.OrderByDescending(c => c.CreatedAt).Take(3);
+                        foreach (var campus in recentCampuses)
+                        {
+                            <div class="flex items-start">
+                                <div class="bg-cyan-100 p-2 rounded-full mr-3">
+                                    <i class="material-icons text-cyan-600 text-sm">location_city</i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium">
+                                        <span class="text-cyan-600">@campus.CampusName</span> created
+                                    </p>
+                                    <p class="text-xs text-slate-500">
+                                        @campus.CreatedAt.ToString("MMM dd, yyyy") by @campus.CreatedBy
+                                    </p>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <p class="text-sm text-slate-500">No recent activity</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div> 
+
+<!-- Create Campus Modal -->
+<div id="createCampusModal" class="fixed inset-0 z-50 hidden flex items-center justify-center">
+    <div class="fixed inset-0 bg-black opacity-40" onclick="hideCreateCampusModal()"></div>
+    <div class="bg-white rounded-lg shadow-lg w-11/12 md:w-1/3 z-10 overflow-hidden">
+        <div class="px-6 py-4 bg-cyan-600 text-white">
+            <h3 class="text-xl font-semibold flex items-center">
+                <i class="material-icons mr-2">add_location</i>
+                Create New Campus
+            </h3>
+        </div>
+        <form id="createCampusForm" method="post" asp-controller="Admin" asp-action="CreateCampus">
+            @Html.AntiForgeryToken()
+            <div class="px-6 py-4">
+                <div class="space-y-4">
+                    <!-- Campus Name -->
+                    <div class="relative z-0 w-full group">
+                        <input type="text" name="CampusName" id="CampusName"
+                               class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
+                               placeholder=" " required />
+                        <label for="CampusName"
+                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                            Campus Name
+                        </label>
+                    </div>
+                        <!-- Location -->
+                        <div class="relative z-0 w-full group">
+                            <input type="text" name="Location" id="Location"
+                                   class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
+                                   placeholder=" " />
+                            <label for="Location"
+                                   class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                Location
+                            </label>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="relative z-0 w-full group">
+                            <textarea name="Description" id="Description" rows="3"
+                                      class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
+                                      placeholder=" "></textarea>
+                            <label for="Description"
+                                   class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                Description
+                            </label>
+                        </div>
+
+                        <!-- Is Active -->
+                        <div class="flex items-center">
+                            <input checked id="IsActive" name="IsActive" type="checkbox" value="true" class="w-4 h-4 text-cyan-600 bg-gray-100 border-gray-300 rounded focus:ring-cyan-500 focus:ring-2">
+                            <label for="IsActive" class="ms-2 text-sm font-medium text-gray-700">Active Campus</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="px-6 py-4 bg-gray-50 flex justify-end gap-2">
+                    <button type="button" onclick="hideCreateCampusModal()" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors">
+                        Create Campus
+                    </button>
+                </div>
+            </form>
+        </div>
+ </div>
+
+<!-- Update Campus Modal -->
+<div id="updateCampusModal" class="fixed inset-0 z-50 hidden flex items-center justify-center">
+    <div class="fixed inset-0 bg-black opacity-40" onclick="hideUpdateCampusModal()"></div>
+    <div class="bg-white rounded-lg shadow-lg w-11/12 md:w-1/3 z-10 overflow-hidden">
+        <div class="px-6 py-4 bg-cyan-700 text-white">
+            <h3 class="text-xl font-semibold flex items-center">
+                <i class="material-icons mr-2">edit_location</i>
+                Update Campus
+            </h3>
+        </div>
+        <form id="updateCampusForm" method="post" asp-controller="Admin" asp-action="UpdateCampus">
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="updateCampusId" name="CampusId" />
+            <div class="px-6 py-4">
+                <div class="space-y-4">
+                    <!-- Campus Name -->
+                    <div class="relative z-0 w-full group">
+                        <input type="text" name="CampusName" id="updateCampusName"
+                               class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
+                               placeholder=" " required />
+                        <label for="updateCampusName"
+                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                            Campus Name
+                        </label>
+                    </div>
+                            <!-- Location -->
+                            <div class="relative z-0 w-full group">
+                                <input type="text" name="Location" id="updateLocation"
+                                       class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
+                                       placeholder=" " />
+                                <label for="updateLocation"
+                                       class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                    Location
+                                </label>
+                            </div>
+
+                            <!-- Description -->
+                            <div class="relative z-0 w-full group">
+                                <textarea name="Description" id="updateDescription" rows="3"
+                                          class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
+                                          placeholder=" "></textarea>
+                                <label for="updateDescription"
+                                       class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                    Description
+                                </label>
+                            </div>
+
+                            <!-- Is Active -->
+                            <div class="flex items-center">
+                                <input id="updateIsActive" name="IsActive" type="checkbox" value="true" class="w-4 h-4 text-cyan-600 bg-gray-100 border-gray-300 rounded focus:ring-cyan-500 focus:ring-2">
+                                <label for="updateIsActive" class="ms-2 text-sm font-medium text-gray-700">Active Campus</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="px-6 py-4 bg-gray-50 flex justify-end gap-2">
+                        <button type="button" onclick="hideUpdateCampusModal()" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300 transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors">
+                            Update Campus
+                        </button>
+                    </div>
+                </form>
+            </div>
+            </div>
+<!-- Delete Campus Modal -->
+<div id="deleteCampusModal" class="fixed inset-0 z-50 hidden flex items-center justify-center">
+    <div class="fixed inset-0 bg-black opacity-40" onclick="hideDeleteCampusModal()"></div>
+    <div class="bg-white rounded-lg shadow-lg w-11/12 md:w-1/3 z-10 overflow-hidden">
+        <div class="px-6 py-4 bg-red-600 text-white">
+            <h3 class="text-xl font-semibold flex items-center">
+                <i class="material-icons mr-2">warning</i>
+                Confirm Deletion
+            </h3>
+        </div>
+        <form id="deleteCampusForm" method="post" asp-controller="Admin" asp-action="DeleteCampus">
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="deleteCampusId" name="id" />
+            <div class="px-6 py-4">
+                <p class="text-gray-700 mb-4">Are you sure you want to delete this campus?</p>
+                        <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 mb-4">
+                            <p id="deleteCampusName" class="font-medium text-sm mb-2 text-slate-800"></p>
+                            <div class="flex flex-wrap gap-1 mt-2" id="deleteCampusDetails">
+                                <span id="deleteCampusHostelCount" class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full"></span>
+                            </div>
+                        </div>
+
+                        <div id="deleteWarning" class="text-sm text-red-600 mb-4">
+                            This action cannot be undone and will permanently remove this campus from the system.
+                        </div>
+
+                        <div id="hasHostelsWarning" class="bg-yellow-50 border-l-4 border-yellow-400 p-4 hidden">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <i class="material-icons text-yellow-400">warning</i>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-yellow-700">
+                                        This campus has associated hostels. Deleting it may cause data inconsistencies.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="px-6 py-4 bg-gray-50 flex justify-end gap-2">
+                        <button type="button" onclick="hideDeleteCampusModal()" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300 transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                            Delete Campus
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        @section Scripts {
+            <script src="~/js/campuses.js"></script>
+        }

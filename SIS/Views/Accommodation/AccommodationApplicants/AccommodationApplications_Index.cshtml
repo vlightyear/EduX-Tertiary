@@ -1,0 +1,734 @@
+@model SIS.Controllers.AccomodationControllers.AccommodationApplicationsViewModel
+@{
+    ViewData["Title"] = "Accommodation Applications";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var managedHostel = ViewBag.ManagedHostel as SIS.Models.StudentAccommodation.Hostel;
+    var noHostelAssigned = ViewBag.NoHostelAssigned ?? false;
+}
+
+<style>
+    /* CRITICAL: Fixed heights for proper scrolling */
+    .applications-container {
+        display: flex;
+        height: calc(100vh - 300px); /* Adjust based on header height */
+        gap: 0;
+        background: #f5f5f5;
+        overflow: hidden; /* Prevent container from scrolling */
+    }
+
+    .applications-header {
+        background: white;
+        padding: 20px 30px;
+        border-bottom: 1px solid #e0e0e0;
+        margin-bottom: 0;
+    }
+
+    .header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .header-title {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+        .header-title i {
+            font-size: 32px;
+            color: #17a2b8;
+        }
+
+        .header-title h2 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+    .header-subtitle {
+        color: #7f8c8d;
+        font-size: 14px;
+        margin: 0;
+    }
+
+    .hostel-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: #e8f5e9;
+        color: #2e7d32;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 500;
+        border: 1px solid #a5d6a7;
+    }
+
+    .role-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: #e3f2fd;
+        color: #1976d2;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .no-hostel-alert {
+        background: #fff3cd;
+        border: 1px solid #ffc107;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 30px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+        .no-hostel-alert i {
+            font-size: 48px;
+            color: #ff9800;
+        }
+
+    .no-hostel-alert-content h3 {
+        margin: 0 0 10px 0;
+        color: #856404;
+    }
+
+    .no-hostel-alert-content p {
+        margin: 0;
+        color: #856404;
+    }
+
+    .search-section {
+        background: white;
+        padding: 20px 30px;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .search-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 15px;
+        color: #17a2b8;
+        font-weight: 600;
+    }
+
+    .search-form {
+        display: grid;
+        grid-template-columns: 1fr 300px 150px 100px;
+        gap: 15px;
+        align-items: end;
+    }
+
+    .form-group {
+        margin-bottom: 0;
+    }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #555;
+            font-weight: 500;
+        }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 15px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 14px;
+    }
+
+    .search-btn {
+        background: #17a2b8;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        height: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+        .search-btn:hover {
+            background: #138496;
+        }
+
+    .clear-btn {
+        background: #6c757d;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        height: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+    }
+
+        .clear-btn:hover {
+            background: #5a6268;
+            color: white;
+        }
+
+    /* FIXED: Results panel with proper height and scrolling */
+    .results-panel {
+        flex: 0 0 450px;
+        background: white;
+        border-right: 1px solid #e0e0e0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden; /* Prevent panel itself from scrolling */
+        height: 100%; /* Take full height of container */
+    }
+
+    .results-header {
+        padding: 20px;
+        border-bottom: 1px solid #e0e0e0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0; /* Don't shrink header */
+    }
+
+        .results-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+    .results-count {
+        background: #17a2b8;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    /* FIXED: Scrollable list */
+    .results-list {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 10px;
+    }
+
+    .application-card {
+        background: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+        .application-card:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-color: #17a2b8;
+        }
+
+        .application-card.selected {
+            border-color: #17a2b8;
+            background: #f8fbfc;
+        }
+
+    .student-name {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 5px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+        .status-badge.registered {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-badge.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-badge.allocated {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .status-badge.checked-in {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-badge.checked-out {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+    .card-info {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 13px;
+        color: #666;
+        margin-top: 5px;
+    }
+
+        .card-info i {
+            font-size: 14px;
+            color: #999;
+        }
+
+    .year-badge {
+        background: #f8d7da;
+        color: #721c24;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        margin-left: auto;
+    }
+
+        .year-badge.outstanding {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+    /* FIXED: Details panel with proper height and scrolling */
+    .details-panel {
+        flex: 1;
+        background: #fafafa;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden; /* Prevent panel itself from scrolling */
+        height: 100%; /* Take full height of container */
+    }
+
+    .no-selection {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #999;
+    }
+
+        .no-selection i {
+            font-size: 80px;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+
+        .no-selection h3 {
+            color: #666;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+
+        .no-selection p {
+            color: #999;
+            font-size: 14px;
+        }
+
+    /* FIXED: Details content with proper scrolling */
+    .details-content {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 0;
+        height: 100%; /* Critical for scrolling */
+    }
+
+    /* Stats Summary */
+    .stats-summary {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 15px;
+        padding: 20px 30px;
+        background: white;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .stat-card {
+        text-align: center;
+        padding: 15px;
+        border-radius: 8px;
+        background: #f8f9fa;
+    }
+
+        .stat-card.total {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .stat-card.allocated {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+
+        .stat-card.pending {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .stat-card.checked-in {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+
+    .stat-value {
+        font-size: 32px;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    /* Scrollbar styling for both panels */
+    .results-list::-webkit-scrollbar,
+    .details-content::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .results-list::-webkit-scrollbar-track,
+    .details-content::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+
+    .results-list::-webkit-scrollbar-thumb,
+    .details-content::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 4px;
+    }
+
+        .results-list::-webkit-scrollbar-thumb:hover,
+        .details-content::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+    /* Responsive */
+    @@media (max-width: 1200px) {
+        .search-form {
+            grid-template-columns: 1fr;
+        }
+
+        .results-panel {
+            flex: 0 0 350px;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .applications-container {
+            flex-direction: column;
+            height: auto;
+        }
+
+        .results-panel {
+            flex: 0 0 auto;
+            max-height: 400px;
+        }
+    }
+</style>
+
+<!-- Header -->
+<div class="applications-header">
+    <div class="header-top">
+        <div class="header-title">
+            <i class="fas fa-bed"></i>
+            <div>
+                <h2>Accommodation Applications</h2>
+                @if (Model.IsAdmin)
+                {
+                    <p class="header-subtitle">University-wide access</p>
+                }
+                else if (managedHostel != null)
+                {
+                    <p class="header-subtitle">Showing applications for @managedHostel.HostelName - @managedHostel.Campus?.CampusName</p>
+                }
+                else
+                {
+                    <p class="header-subtitle">Hostel Manager View</p>
+                }
+            </div>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            @if (!Model.IsAdmin && managedHostel != null)
+            {
+                <span class="hostel-badge">
+                    <i class="fas fa-building"></i>
+                    @managedHostel.HostelName
+                </span>
+            }
+            <span class="role-badge">
+                <i class="fas fa-user-shield"></i>
+                @(Model.IsAdmin ? "Admin" : "Hostel Manager")
+            </span>
+        </div>
+    </div>
+</div>
+
+@if (noHostelAssigned)
+{
+    <div class="no-hostel-alert">
+        <i class="fas fa-exclamation-triangle"></i>
+        <div class="no-hostel-alert-content">
+            <h3>No Hostel Assigned</h3>
+            <p>@ViewBag.Message</p>
+            <p style="margin-top: 10px;">Please contact the system administrator to have a hostel assigned to your account.</p>
+        </div>
+    </div>
+}
+else
+{
+    <!-- Search Section -->
+    <div class="search-section">
+        <div class="search-title">
+            <i class="fas fa-search"></i>
+            <span>Search Applications</span>
+        </div>
+        <form asp-action="Index" method="get" class="search-form">
+            <div class="form-group">
+                <label for="searchTerm">Search Term</label>
+                <input type="text"
+                       class="form-control"
+                       id="searchTerm"
+                       name="searchTerm"
+                       placeholder="Enter search term..."
+                       value="@Model.SearchTerm" />
+            </div>
+            <div class="form-group">
+                <label for="searchBy">Search By</label>
+                <select class="form-control" id="searchBy" name="searchBy">
+                    <option value="AllFields" selected="@(Model.SearchBy == "AllFields")">All Fields</option>
+                    <option value="StudentNumber" selected="@(Model.SearchBy == "StudentNumber")">Student Number</option>
+                    <option value="StudentName" selected="@(Model.SearchBy == "StudentName")">Student Name</option>
+                    <option value="Programme" selected="@(Model.SearchBy == "Programme")">Programme</option>
+                    <option value="School" selected="@(Model.SearchBy == "School")">School</option>
+                    <option value="AcademicYear" selected="@(Model.SearchBy == "AcademicYear")">Academic Year</option>
+                    <option value="RoomNumber" selected="@(Model.SearchBy == "RoomNumber")">Room Number</option>
+                </select>
+            </div>
+            <button type="submit" class="search-btn">
+                <i class="fas fa-search"></i>
+                Search
+            </button>
+            <a asp-action="Index" class="clear-btn">
+                <i class="fas fa-times"></i>
+            </a>
+        </form>
+    </div>
+
+    <!-- Stats Summary -->
+    <div class="stats-summary">
+        <div class="stat-card total">
+            <div class="stat-value">@Model.TotalApplications</div>
+            <div class="stat-label">Total Applications</div>
+        </div>
+        <div class="stat-card allocated">
+            <div class="stat-value">@Model.AllocatedCount</div>
+            <div class="stat-label">Allocated</div>
+        </div>
+        <div class="stat-card pending">
+            <div class="stat-value">@Model.PendingCount</div>
+            <div class="stat-label">Pending</div>
+        </div>
+        <div class="stat-card checked-in">
+            <div class="stat-value">@Model.CheckedInCount</div>
+            <div class="stat-label">Checked In</div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="applications-container">
+        <!-- Results Panel -->
+        <div class="results-panel">
+            <div class="results-header">
+                <h3>Search Results</h3>
+                <span class="results-count">@Model.Applications.Count results</span>
+            </div>
+            <div class="results-list">
+                @if (Model.Applications.Any())
+                {
+                    foreach (var item in Model.Applications)
+                    {
+                        var student = item.Application.Student;
+                        var allocation = item.Application.Allocation;
+                        var hasOutstandingFees = student.OutstandingFees > 0;
+
+                        <div class="application-card"
+                             data-application-id="@item.Application.ApplicationId"
+                             onclick="loadApplicationDetails(@item.Application.ApplicationId)">
+                            <div class="student-name">
+                                <span>@student.FullName</span>
+                                @if (item.HasBedAllocation)
+                                {
+                                    <span class="status-badge allocated">Allocated</span>
+                                }
+                                else if (item.Application.Status == SIS.Enums.Status.Pending)
+                                {
+                                    <span class="status-badge pending">Pending</span>
+                                }
+                            </div>
+
+                            <div class="card-info">
+                                <i class="fas fa-id-card"></i>
+                                <span>@student.StudentId_Number</span>
+                            </div>
+
+                            <div class="card-info">
+                                <i class="fas fa-graduation-cap"></i>
+                                <span>@student.Programme?.Name</span>
+                            </div>
+
+                            <div class="card-info">
+                                <i class="fas fa-school"></i>
+                                <span>@student.Programme?.Department?.School?.Name</span>
+                            </div>
+
+                            <div class="card-info">
+                                <span>Year @(student.StudentCurrentYear ?? 0) • @student?.AcademicYear?.YearValue</span>
+                                @if (hasOutstandingFees)
+                                {
+                                    <span class="year-badge outstanding">Outstanding</span>
+                                }
+                            </div>
+
+                            @if (allocation != null)
+                            {
+                                <div class="card-info" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee;">
+                                    <i class="fas fa-door-open"></i>
+                                    <span>@allocation.Bed?.Room?.Hostel?.HostelName - Room @allocation.Bed?.Room?.RoomNumber - Bed @allocation.Bed?.BedIdentifier</span>
+                                </div>
+                                <div class="card-info">
+                                    @if (item.CheckInOutStatus == "Checked In")
+                                    {
+                                        <span class="status-badge checked-in">
+                                            <i class="fas fa-check-circle"></i> Checked In
+                                        </span>
+                                    }
+                                    else if (item.CheckInOutStatus == "Checked Out")
+                                    {
+                                        <span class="status-badge checked-out">
+                                            <i class="fas fa-sign-out-alt"></i> Checked Out
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="status-badge pending">
+                                            <i class="fas fa-clock"></i> @item.CheckInOutStatus
+                                        </span>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div style="text-align: center; padding: 40px; color: #999;">
+                        <i class="fas fa-inbox" style="font-size: 48px; margin-bottom: 15px;"></i>
+                        <p>No applications found</p>
+                        @if (!Model.IsAdmin)
+                        {
+                            <p style="font-size: 12px; margin-top: 10px;">Only applications allocated to your hostel are displayed</p>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Details Panel -->
+        <div class="details-panel">
+            <div id="applicationDetailsContainer" class="details-content">
+                <div class="no-selection">
+                    <i class="fas fa-user-circle"></i>
+                    <h3>No Application Selected</h3>
+                    <p>Select an application from the search results to view details</p>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        function loadApplicationDetails(applicationId) {
+            // Remove selected class from all cards
+            document.querySelectorAll('.application-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+
+            // Add selected class to clicked card
+            event.currentTarget.classList.add('selected');
+
+            // Show loading state
+            document.getElementById('applicationDetailsContainer').innerHTML = `
+                <div class="no-selection">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <h3>Loading...</h3>
+                    <p>Please wait</p>
+                </div>
+            `;
+
+            // Load details via AJAX
+            fetch('@Url.Action("Details", "AccommodationApplications")?id=' + applicationId)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.text();
+                })
+                .then(html => {
+                    document.getElementById('applicationDetailsContainer').innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Error loading application details:', error);
+                    document.getElementById('applicationDetailsContainer').innerHTML =
+                        `<div class="no-selection">
+                            <i class="fas fa-exclamation-triangle" style="color: #dc3545;"></i>
+                            <h3>Error Loading Details</h3>
+                            <p>You may not have permission to view this application or it may not be allocated to your hostel.</p>
+                        </div>`;
+                });
+        }
+
+        // Auto-select first application if available
+        document.addEventListener('DOMContentLoaded', function() {
+            const firstCard = document.querySelector('.application-card');
+            if (firstCard) {
+                firstCard.click();
+            }
+        });
+    </script>
+}

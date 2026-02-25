@@ -1,0 +1,523 @@
+@{
+    ViewData["Title"] = "Sage Sync Monitor";
+    var stats = ViewBag.Statistics;
+}
+
+<div class="min-h-screen p-4 bg-gray-50">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-4">
+        <h1 class="text-2xl font-bold text-primary-800 flex items-center">
+            <i class="material-icons mr-2 text-primary-600">sync</i>
+            Sage Integration Monitor
+        </h1>
+        <div class="flex gap-2">
+            <button onclick="window.location.reload()" class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center">
+                <i class="material-icons text-sm mr-2">refresh</i>
+                Refresh
+            </button>
+            <button onclick="openSettings()" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center">
+                <i class="material-icons text-sm mr-2">settings</i>
+                Settings
+            </button>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <!-- Invoices -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center mb-4">
+                <div class="p-3 bg-blue-100 rounded-lg">
+                    <i class="material-icons text-blue-600">receipt</i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-gray-600">Synced Invoices</p>
+                    <p class="text-2xl font-bold">@stats.TotalInvoices</p>
+                </div>
+            </div>
+            <div class="text-sm text-gray-500">
+                <i class="material-icons text-xs text-green-600">check_circle</i>
+                Successfully synced from Sage
+            </div>
+        </div>
+
+        <!-- Payments -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center mb-4">
+                <div class="p-3 bg-green-100 rounded-lg">
+                    <i class="material-icons text-green-600">payment</i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-gray-600">Synced Payments</p>
+                    <p class="text-2xl font-bold">@stats.TotalPayments</p>
+                </div>
+            </div>
+            <div class="text-sm text-gray-500">
+                <i class="material-icons text-xs text-green-600">check_circle</i>
+                Successfully synced from Sage
+            </div>
+        </div>
+
+        <!-- Service Status -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center mb-4">
+                <div class="p-3 @(stats.IsEnabled ? "bg-green-100" : "bg-red-100") rounded-lg">
+                    <i class="material-icons @(stats.IsEnabled ? "text-green-600" : "text-red-600")">power_settings_new</i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-gray-600">Background Service</p>
+                    <p class="text-2xl font-bold @(stats.IsEnabled ? "text-green-600" : "text-red-600")">
+                        @(stats.IsEnabled ? "Active" : "Disabled")
+                    </p>
+                </div>
+            </div>
+            <div class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Interval:</span>
+                    <span class="font-semibold">@stats.IntervalMinutes min</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Batch Size:</span>
+                    <span class="font-semibold">@stats.BatchSize</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Service Control Panel -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <div class="p-3 @(stats.IsEnabled ? "bg-green-100" : "bg-gray-100") rounded-lg">
+                    <i class="material-icons @(stats.IsEnabled ? "text-green-600" : "text-gray-600")">power_settings_new</i>
+                </div>
+                <div class="ml-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Background Service Control</h3>
+                    <p class="text-sm text-gray-600 mt-1">
+                        Service is currently <strong class="@(stats.IsEnabled ? "text-green-600" : "text-red-600")">@(stats.IsEnabled ? "Enabled" : "Disabled")</strong>
+                        - Runs every <strong>@stats.IntervalMinutes minutes</strong> processing <strong>@stats.BatchSize items</strong> per batch
+                    </p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="serviceToggle" class="sr-only peer" @(stats.IsEnabled ? "checked" : "") onchange="toggleService(this.checked)">
+                    <div class="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-600"></div>
+                    <span class="ml-3 text-sm font-medium text-gray-900">@(stats.IsEnabled ? "ON" : "OFF")</span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <i class="material-icons mr-2 text-primary-600">filter_list</i>
+            Filters
+        </h3>
+        <form method="get" asp-controller="SageTransactionSync" asp-action="Index" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Date From</label>
+                <input type="date" name="dateFrom" value="@ViewBag.DateFrom?.ToString("yyyy-MM-dd")" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Date To</label>
+                <input type="date" name="dateTo" value="@ViewBag.DateTo?.ToString("yyyy-MM-dd")" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                <input type="text" name="searchTerm" value="@ViewBag.SearchTerm" placeholder="Reference, Name, Student #..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+            </div>
+            <div class="flex items-end gap-2">
+                <button type="submit" class="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center">
+                    <i class="material-icons text-sm mr-2">search</i>
+                    Apply
+                </button>
+                <a href="@Url.Action("Index", "SageTransactionSync")" class="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 flex items-center">
+                    <i class="material-icons text-sm mr-2">clear</i>
+                    Clear
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Transactions Table -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div class="p-6 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                <i class="material-icons mr-2 text-primary-600">list</i>
+                Synced Transactions
+                <span class="ml-2 px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm font-normal">
+                    @ViewBag.TotalItems total
+                </span>
+            </h3>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reference</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Transaction Date</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created Date</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    @if (ViewBag.Transactions != null && ViewBag.Transactions.Count > 0)
+                    {
+                        @foreach (var transaction in ViewBag.Transactions)
+                        {
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    @if (transaction.Type == "Invoice")
+                                    {
+                                        <span class="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded inline-flex items-center">
+                                            <i class="material-icons text-xs mr-1">receipt</i> Invoice
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="px-2 py-1 text-xs bg-green-100 text-green-800 rounded inline-flex items-center">
+                                            <i class="material-icons text-xs mr-1">payment</i> Payment
+                                        </span>
+                                    }
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap font-mono text-sm">@transaction.Reference</td>
+                                <td class="px-6 py-4">
+                                    <div class="text-sm font-medium text-gray-900">@transaction.CustomerName</div>
+                                    <div class="text-sm text-gray-500">@transaction.CustomerCode</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold">K @transaction.Amount.ToString("N2")</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-3 py-1 text-xs bg-green-100 text-green-800 rounded-full inline-flex items-center">
+                                        <i class="material-icons text-xs mr-1">check_circle</i> Synced
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    @if (transaction.TransactionDate.HasValue)
+                                    {
+                                        @transaction.TransactionDate.Value.ToString("MMM dd, yyyy")
+                                        <div class="text-xs text-gray-400">@transaction.TransactionDate.Value.ToString("hh:mm tt")</div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-gray-400">—</span>
+                                    }
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    @transaction.CreatedDate.ToString("MMM dd, yyyy")
+                                    <div class="text-xs text-gray-400">@transaction.CreatedDate.ToString("hh:mm tt")</div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7" class="px-6 py-12 text-center">
+                                <i class="material-icons text-6xl text-gray-400 mb-4">inbox</i>
+                                <p class="text-gray-500">No synced transactions found</p>
+                                <p class="text-sm text-gray-400 mt-2">Try adjusting your filters or date range</p>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        @if (ViewBag.TotalPages > 1)
+        {
+            <div class="px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="text-sm text-gray-700">
+                    Showing page <strong>@ViewBag.CurrentPage</strong> of <strong>@ViewBag.TotalPages</strong>
+                    (<strong>@ViewBag.TotalItems</strong> total items)
+                </div>
+                <div class="flex gap-2 flex-wrap justify-center">
+                    @if (ViewBag.CurrentPage > 1)
+                    {
+                        <a href="@Url.Action("Index", "SageTransactionSync", new { 
+                            page = ViewBag.CurrentPage - 1, 
+                            dateFrom = ViewBag.DateFrom?.ToString("yyyy-MM-dd"), 
+                            dateTo = ViewBag.DateTo?.ToString("yyyy-MM-dd"),
+                            searchTerm = ViewBag.SearchTerm 
+                        })" 
+                           class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium">
+                            Previous
+                        </a>
+                    }
+
+                    @for (int i = Math.Max(1, ViewBag.CurrentPage - 2); i <= Math.Min(ViewBag.TotalPages, ViewBag.CurrentPage + 2); i++)
+                    {
+                        <a href="@Url.Action("Index", "SageTransactionSync", new { 
+                            page = i, 
+                            dateFrom = ViewBag.DateFrom?.ToString("yyyy-MM-dd"), 
+                            dateTo = ViewBag.DateTo?.ToString("yyyy-MM-dd"),
+                            searchTerm = ViewBag.SearchTerm 
+                        })" 
+                           class="px-4 py-2 border @(i == ViewBag.CurrentPage ? "bg-primary-600 text-white border-primary-600" : "border-gray-300 hover:bg-gray-50") rounded-lg text-sm font-medium">
+                            @i
+                        </a>
+                    }
+
+                    @if (ViewBag.CurrentPage < ViewBag.TotalPages)
+                    {
+                        <a href="@Url.Action("Index", "SageTransactionSync", new { 
+                            page = ViewBag.CurrentPage + 1, 
+                            dateFrom = ViewBag.DateFrom?.ToString("yyyy-MM-dd"), 
+                            dateTo = ViewBag.DateTo?.ToString("yyyy-MM-dd"),
+                            searchTerm = ViewBag.SearchTerm 
+                        })" 
+                           class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium">
+                            Next
+                        </a>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-lg p-6 flex flex-col items-center">
+        <i class="material-icons text-6xl text-primary-600 animate-spin mb-4">refresh</i>
+        <p class="text-gray-900 font-semibold">Processing...</p>
+    </div>
+</div>
+
+<!-- Settings Modal -->
+<div id="settingsModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 max-w-2xl shadow-lg rounded-lg bg-white">
+        <div class="flex items-center justify-between pb-3 border-b border-gray-200">
+            <h3 class="text-xl font-semibold text-gray-900 flex items-center">
+                <i class="material-icons mr-2 text-primary-600">settings</i>
+                Sage Sync Settings
+            </h3>
+            <button onclick="closeSettings()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                <i class="material-icons">close</i>
+            </button>
+        </div>
+        
+        <div class="mt-4">
+            <form id="settingsForm" class="space-y-6">
+                <!-- Enable/Disable Service -->
+                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div class="flex-1">
+                        <label class="text-sm font-medium text-gray-900">Background Service Status</label>
+                        <p class="text-xs text-gray-500 mt-1">Enable or disable automatic syncing from Sage</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="serviceToggleModal" class="sr-only peer" @(stats.IsEnabled ? "checked" : "")>
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                    </label>
+                </div>
+
+                <!-- Base URL -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Sage API Base URL</label>
+                    <input type="text" id="baseUrl" value="@stats.BaseUrl"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                           placeholder="http://41.63.0.222:4433">
+                    <p class="text-xs text-gray-500 mt-1">The base URL for your Sage API endpoint</p>
+                </div>
+
+                <!-- Batch Size -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Batch Size</label>
+                    <input type="number" id="batchSize" value="@stats.BatchSize" min="10" max="100"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                    <p class="text-xs text-gray-500 mt-1">Maximum items to process per sync cycle (10-100)</p>
+                </div>
+
+                <!-- Payment GL Account -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Payment GL Account</label>
+                    <input type="text" id="paymentGLAccount" value="@stats.PaymentGLAccount"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                           placeholder="1200">
+                    <p class="text-xs text-gray-500 mt-1">GL account code for payment transactions</p>
+                </div>
+
+                <!-- Default GL Account -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Default GL Account (Invoices)</label>
+                    <input type="text" id="defaultGLAccount" value="@stats.DefaultGLAccount"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                           placeholder="4000">
+                    <p class="text-xs text-gray-500 mt-1">Default GL account code for invoice line items</p>
+                </div>
+
+                <!-- Warning Notice -->
+                <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start">
+                    <i class="material-icons text-amber-600 mr-3">warning</i>
+                    <div class="text-sm text-amber-800">
+                        <p class="font-semibold mb-1">Important:</p>
+                        <p>Changes require an application restart to take effect. Make sure you have proper authorization before modifying these settings.</p>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="flex justify-end pt-4 border-t border-gray-200 mt-6 gap-2">
+            <button onclick="closeSettings()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors">
+                Cancel
+            </button>
+            <button onclick="saveSettings()" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center">
+                <i class="material-icons text-sm mr-2">save</i>
+                Save Settings
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function showLoading() {
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.add('hidden');
+        }
+
+        function openSettings() {
+            document.getElementById('settingsModal').classList.remove('hidden');
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.add('hidden');
+        }
+
+        async function toggleService(enable) {
+            if (!confirm(`Are you sure you want to ${enable ? 'enable' : 'disable'} the background service? Application restart will be required.`)) {
+                document.getElementById('serviceToggle').checked = !enable;
+                return;
+            }
+
+            try {
+                showLoading();
+                const response = await fetch('@Url.Action("ToggleService", "SageTransactionSync")', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `enable=${enable}`
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(result.message);
+                    if (result.requiresRestart) {
+                        if (confirm('Settings saved. Would you like to refresh the page?')) {
+                            location.reload();
+                        }
+                    }
+                } else {
+                    alert('Error: ' + result.message);
+                    document.getElementById('serviceToggle').checked = !enable;
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+                document.getElementById('serviceToggle').checked = !enable;
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function saveSettings() {
+            const batchSize = parseInt(document.getElementById('batchSize').value);
+            const serviceEnabled = document.getElementById('serviceToggleModal').checked;
+            const baseUrl = document.getElementById('baseUrl').value.trim();
+            const paymentGLAccount = document.getElementById('paymentGLAccount').value.trim();
+            const defaultGLAccount = document.getElementById('defaultGLAccount').value.trim();
+
+            if (batchSize < 10 || batchSize > 100) {
+                alert('Batch size must be between 10 and 100');
+                return;
+            }
+
+            if (!baseUrl) {
+                alert('Base URL is required');
+                return;
+            }
+
+            if (!paymentGLAccount) {
+                alert('Payment GL Account is required');
+                return;
+            }
+
+            if (!defaultGLAccount) {
+                alert('Default GL Account is required');
+                return;
+            }
+
+            try {
+                showLoading();
+
+                // Update service status first
+                const toggleResponse = await fetch('@Url.Action("ToggleService", "SageTransactionSync")', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `enable=${serviceEnabled}`
+                });
+
+                const toggleResult = await toggleResponse.json();
+                
+                if (!toggleResult.success) {
+                    alert('Error updating service status: ' + toggleResult.message);
+                    hideLoading();
+                    return;
+                }
+
+                // Update other settings
+                const params = new URLSearchParams({
+                    intervalMinutes: 5,
+                    batchSize: batchSize,
+                    baseUrl: baseUrl,
+                    paymentGLAccount: paymentGLAccount,
+                    defaultGLAccount: defaultGLAccount
+                });
+
+                const settingsResponse = await fetch('@Url.Action("UpdateSettings", "SageTransactionSync")', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: params.toString()
+                });
+
+                const result = await settingsResponse.json();
+                
+                if (result.success) {
+                    closeSettings();
+                    alert(result.message);
+                    location.reload();
+                } else {
+                    alert('Error: ' + result.message);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('settingsModal')?.addEventListener('click', function(e) {
+            if (e.target === this) closeSettings();
+        });
+
+        // Close modal on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeSettings();
+        });
+    </script>
+}

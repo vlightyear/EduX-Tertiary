@@ -1,0 +1,383 @@
+﻿@model SIS.Models.ProgramCoordinator.LecturerManagementViewModel
+@{
+    ViewData["Title"] = "Lecturer Management";
+}
+
+<div class="min-h-[88vh] bg-slate-50">
+    <!-- Header Banner -->
+    <div class="bg-primary-700 text-white">
+        <div class="container mx-auto px-6 py-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h1 class="text-2xl font-bold">Lecturer Management</h1>
+                    <p class="mt-1 text-primary-100">Manage lecturers in your coordinated programs</p>
+                </div>
+                <div class="flex gap-2">
+                    <a href="@Url.Action("Index", "ProgramCoordinator")"
+                       class="bg-white bg-opacity-20 hover:bg-opacity-30 transition-colors px-4 py-2 rounded-lg text-sm flex items-center">
+                        <i class="material-icons text-sm mr-1">arrow_back</i>
+                        Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-6 py-8">
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <div class="flex items-center">
+                    <div class="bg-blue-50 p-3 rounded-lg">
+                        <i class="material-icons text-blue-600 text-2xl">groups</i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-sm font-medium text-slate-600">Total Lecturers</h3>
+                        <p class="text-2xl font-bold text-slate-800">@Model.Statistics.TotalLecturers</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <div class="flex items-center">
+                    <div class="bg-green-50 p-3 rounded-lg">
+                        <i class="material-icons text-green-600 text-2xl">trending_up</i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-sm font-medium text-slate-600">Avg. Courses</h3>
+                        <p class="text-2xl font-bold text-slate-800">@Model.Statistics.AverageCoursesPerLecturer.ToString("F1")</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <div class="flex items-center">
+                    <div class="bg-amber-50 p-3 rounded-lg">
+                        <i class="material-icons text-amber-600 text-2xl">school</i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-sm font-medium text-slate-600">Departments</h3>
+                        <p class="text-2xl font-bold text-slate-800">@Model.Statistics.LecturersByDepartment.Count</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <div class="flex items-center">
+                    <div class="bg-purple-50 p-3 rounded-lg">
+                        <i class="material-icons text-purple-600 text-2xl">check_circle</i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-sm font-medium text-slate-600">Active Lecturers</h3>
+                        <p class="text-2xl font-bold text-slate-800">@Model.Lecturers.Count(l => l.Status == "Active")</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <!-- Filters Sidebar -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden sticky top-6">
+                    <div class="px-6 py-4 border-b border-slate-200">
+                        <h2 class="text-lg font-semibold text-slate-800 flex items-center">
+                            <i class="material-icons text-slate-600 mr-2">filter_list</i>
+                            Filters
+                        </h2>
+                    </div>
+                    
+                    <div class="p-6 space-y-6">
+                        <!-- Search -->
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Search</label>
+                            <div class="relative">
+                                <input type="text" id="searchTerm" 
+                                       class="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500"
+                                       placeholder="Search by name or email..."
+                                       value="@Model.AppliedFilters.SearchTerm">
+                                <i class="material-icons absolute left-3 top-2.5 text-slate-400 text-sm">search</i>
+                            </div>
+                        </div>
+
+                        <!-- Department Filter -->
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Department</label>
+                            <select id="departmentFilter" class="w-full border border-slate-300 rounded-lg p-2 focus:ring-primary-500 focus:border-primary-500">
+                                <option value="">All Departments</option>
+                                @foreach (var department in Model.FilterOptions.Departments)
+                                {
+                                    @if (Model.AppliedFilters.Department == department)
+                                    {
+                                        <option value="@department" selected>@department</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@department">@department</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+
+                        <!-- Course Filter -->
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Course</label>
+                            <select id="courseFilter" class="w-full border border-slate-300 rounded-lg p-2 focus:ring-primary-500 focus:border-primary-500">
+                                <option value="">All Courses</option>
+                                @foreach (dynamic course in Model.FilterOptions.Courses)
+                                {
+                                    @if (Model.AppliedFilters.CourseId == course.Id)
+                                    {
+                                        <option value="@course.Id" selected>@course.CourseCode - @course.CourseName</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@course.Id">@course.CourseCode - @course.CourseName</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+
+                        <!-- Status Filter -->
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Status</label>
+                            <select id="statusFilter" class="w-full border border-slate-300 rounded-lg p-2 focus:ring-primary-500 focus:border-primary-500">
+                                <option value="">All Statuses</option>
+                                @foreach (var status in Model.FilterOptions.Statuses)
+                                {
+                                    @if (Model.AppliedFilters.Status == status)
+                                    {
+                                        <option value="@status" selected>@status</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@status">@status</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+
+                        <!-- Filter Actions -->
+                        <div class="flex gap-2">
+                            <button type="button" id="applyFilters" 
+                                    class="flex-1 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+                                Apply
+                            </button>
+                            <button type="button" id="clearFilters" 
+                                    class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg text-sm transition-colors">
+                                Clear
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="lg:col-span-3">
+                <!-- Results Header -->
+                <div class="bg-white rounded-xl shadow-sm mb-6 p-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div>
+                            <h3 class="text-lg font-semibold text-slate-800">
+                                Lecturers (@Model.Lecturers.Count)
+                            </h3>
+                            <p class="text-sm text-slate-600 mt-1">
+                                @if (!string.IsNullOrEmpty(Model.AppliedFilters.SearchTerm) || 
+                                     !string.IsNullOrEmpty(Model.AppliedFilters.Department) || 
+                                     Model.AppliedFilters.CourseId.HasValue)
+                                {
+                                    <span>Filtered results</span>
+                                }
+                                else
+                                {
+                                    <span>All lecturers in your coordinated programs</span>
+                                }
+                            </p>
+                        </div>
+                        
+                        <div class="flex items-center gap-2">
+                            <button type="button" id="viewModeGrid" class="p-2 rounded-lg bg-primary-100 text-primary-600">
+                                <i class="material-icons text-sm">grid_view</i>
+                            </button>
+                            <button type="button" id="viewModeList" class="p-2 rounded-lg text-slate-400 hover:bg-slate-100">
+                                <i class="material-icons text-sm">view_list</i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lecturer List Container -->
+                <div id="lecturerListContainer">
+                    @Html.Partial("_LecturerListPartial", Model.Lecturers)
+                </div>
+
+                <!-- Loading State -->
+                <div id="loadingState" class="hidden">
+                    <div class="bg-white rounded-xl shadow-sm p-8 text-center">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto mb-4"></div>
+                        <p class="text-slate-600">Loading lecturers...</p>
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div id="emptyState" class="hidden">
+                    <div class="bg-white rounded-xl shadow-sm p-8 text-center">
+                        <i class="material-icons text-4xl text-slate-400 mb-4">person_search</i>
+                        <h3 class="text-lg font-medium text-slate-800 mb-2">No lecturers found</h3>
+                        <p class="text-slate-600 mb-4">Try adjusting your filters or search terms.</p>
+                        <button type="button" id="clearFiltersEmpty" 
+                                class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+                            Clear All Filters
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize filter functionality
+            initFilters();
+            
+            // Initialize view mode toggle
+            initViewModeToggle();
+        });
+
+        function initFilters() {
+            const searchInput = document.getElementById('searchTerm');
+            const departmentFilter = document.getElementById('departmentFilter');
+            const courseFilter = document.getElementById('courseFilter');
+            const statusFilter = document.getElementById('statusFilter');
+            const applyButton = document.getElementById('applyFilters');
+            const clearButton = document.getElementById('clearFilters');
+            const clearEmptyButton = document.getElementById('clearFiltersEmpty');
+
+            // Apply filters
+            applyButton.addEventListener('click', function() {
+                applyFilters();
+            });
+
+            // Clear filters
+            clearButton.addEventListener('click', function() {
+                clearAllFilters();
+            });
+
+            clearEmptyButton.addEventListener('click', function() {
+                clearAllFilters();
+            });
+
+            // Auto-apply on search input (with debounce)
+            let searchTimeout;
+            searchInput.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    applyFilters();
+                }, 500);
+            });
+
+            // Auto-apply on dropdown change
+            [departmentFilter, courseFilter, statusFilter].forEach(filter => {
+                filter.addEventListener('change', function() {
+                    applyFilters();
+                });
+            });
+        }
+
+        function applyFilters() {
+            const formData = new FormData();
+            formData.append('SearchTerm', document.getElementById('searchTerm').value);
+            formData.append('Department', document.getElementById('departmentFilter').value);
+            formData.append('CourseId', document.getElementById('courseFilter').value);
+            formData.append('Status', document.getElementById('statusFilter').value);
+
+            showLoading();
+
+            fetch('@Url.Action("FilterLecturers")', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.text())
+            .then(html => {
+                hideLoading();
+                document.getElementById('lecturerListContainer').innerHTML = html;
+                
+                // Check if results are empty
+                const lecturerCards = document.querySelectorAll('.lecturer-card');
+                if (lecturerCards.length === 0) {
+                    showEmptyState();
+                } else {
+                    hideEmptyState();
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('Error:', error);
+                // Show error message
+                document.getElementById('lecturerListContainer').innerHTML = 
+                    '<div class="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">Error loading lecturers. Please try again.</div>';
+            });
+        }
+
+        function clearAllFilters() {
+            document.getElementById('searchTerm').value = '';
+            document.getElementById('departmentFilter').value = '';
+            document.getElementById('courseFilter').value = '';
+            document.getElementById('statusFilter').value = '';
+            applyFilters();
+        }
+
+        function showLoading() {
+            document.getElementById('lecturerListContainer').classList.add('hidden');
+            document.getElementById('loadingState').classList.remove('hidden');
+            document.getElementById('emptyState').classList.add('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('lecturerListContainer').classList.remove('hidden');
+        }
+
+        function showEmptyState() {
+            document.getElementById('lecturerListContainer').classList.add('hidden');
+            document.getElementById('emptyState').classList.remove('hidden');
+        }
+
+        function hideEmptyState() {
+            document.getElementById('emptyState').classList.add('hidden');
+            document.getElementById('lecturerListContainer').classList.remove('hidden');
+        }
+
+        function initViewModeToggle() {
+            const gridButton = document.getElementById('viewModeGrid');
+            const listButton = document.getElementById('viewModeList');
+
+            gridButton.addEventListener('click', function() {
+                setViewMode('grid');
+            });
+
+            listButton.addEventListener('click', function() {
+                setViewMode('list');
+            });
+        }
+
+        function setViewMode(mode) {
+            const gridButton = document.getElementById('viewModeGrid');
+            const listButton = document.getElementById('viewModeList');
+            const container = document.getElementById('lecturerListContainer');
+
+            if (mode === 'grid') {
+                gridButton.className = 'p-2 rounded-lg bg-primary-100 text-primary-600';
+                listButton.className = 'p-2 rounded-lg text-slate-400 hover:bg-slate-100';
+                container.querySelector('.lecturer-grid')?.classList.remove('hidden');
+                container.querySelector('.lecturer-list')?.classList.add('hidden');
+            } else {
+                listButton.className = 'p-2 rounded-lg bg-primary-100 text-primary-600';
+                gridButton.className = 'p-2 rounded-lg text-slate-400 hover:bg-slate-100';
+                container.querySelector('.lecturer-grid')?.classList.add('hidden');
+                container.querySelector('.lecturer-list')?.classList.remove('hidden');
+            }
+        }
+    </script>
+}

@@ -1,0 +1,766 @@
+﻿@{
+    ViewData["Title"] = "Academic Calendar";
+}
+
+<div class="min-h-screen bg-slate-50 p-6">
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row justify-between items-center h-24 mb-4">
+        <div class="flex items-center text-slate-800">
+            <i class="material-icons text-3xl mr-2">event</i>
+            <div>
+                <h1 class="text-2xl font-bold">Academic Calendar</h1>
+                <p class="text-sm text-slate-600">View academic events and deadlines</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters Card -->
+    <div class="bg-white rounded-xl shadow-sm mb-6">
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-slate-800">Filters</h2>
+                <button id="toggleFiltersBtn" class="text-cyan-600 hover:text-cyan-800 flex items-center text-sm">
+                    <i class="material-icons text-sm mr-1">tune</i>
+                    <span>Toggle Filters</span>
+                </button>
+            </div>
+            
+            <div id="filtersContainer" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Academic Year -->
+                <div>
+                    <label for="academicYearSelect" class="block text-sm font-medium text-slate-700 mb-1">Academic Year</label>
+                    <select id="academicYearSelect" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm">
+                        @foreach (var year in ViewBag.AcademicYears)
+                        {
+                            <option value="@year.Value" selected="@year.Selected">@year.Text</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- School -->
+                <div>
+                    <label for="schoolSelect" class="block text-sm font-medium text-slate-700 mb-1">School</label>
+                    <select id="schoolSelect" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm">
+                        <option value="">All Schools</option>
+                        @foreach (var school in ViewBag.Schools)
+                        {
+                            <option value="@school.Value">@school.Text</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Programme (will be populated via AJAX) -->
+                <div>
+                    <label for="programmeSelect" class="block text-sm font-medium text-slate-700 mb-1">Programme</label>
+                    <select id="programmeSelect" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm" disabled>
+                        <option value="">All Programmes</option>
+                    </select>
+                </div>
+
+                <!-- Programme Level -->
+                <div>
+                    <label for="programmeLevelSelect" class="block text-sm font-medium text-slate-700 mb-1">Programme Level</label>
+                    <select id="programmeLevelSelect" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm">
+                        <option value="">All Levels</option>
+                        @foreach (var level in ViewBag.ProgrammeLevels)
+                        {
+                            <option value="@level.Value">@level.Text</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Mode of Study -->
+                <div>
+                    <label for="modeOfStudySelect" class="block text-sm font-medium text-slate-700 mb-1">Mode of Study</label>
+                    <select id="modeOfStudySelect" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm">
+                        <option value="">All Modes</option>
+                        @foreach (var mode in ViewBag.ModesOfStudy)
+                        {
+                            <option value="@mode.Value">@mode.Text</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Student Year -->
+                <div>
+                    <label for="studentYearSelect" class="block text-sm font-medium text-slate-700 mb-1">Student Year</label>
+                    <select id="studentYearSelect" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm">
+                        <option value="">All Years</option>
+                        <option value="1">Year 1</option>
+                        <option value="2">Year 2</option>
+                        <option value="3">Year 3</option>
+                        <option value="4">Year 4</option>
+                        <option value="5">Year 5</option>
+                    </select>
+                </div>
+            </div>
+
+            @if (ViewBag.StudentInfo != null)
+            {
+                <div class="mt-4 p-3 bg-cyan-50 rounded-lg border border-cyan-100">
+                    <h3 class="text-sm font-medium text-cyan-800 mb-2">Your Academic Profile</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-cyan-700">
+                        <div>
+                            <span class="font-medium">School:</span> @ViewBag.StudentInfo.SchoolName
+                        </div>
+                        <div>
+                            <span class="font-medium">Programme:</span> @ViewBag.StudentInfo.ProgrammeName
+                        </div>
+                        <div>
+                            <span class="font-medium">Level:</span> @ViewBag.StudentInfo.ProgrammeLevelName
+                        </div>
+                        <div>
+                            <span class="font-medium">Mode:</span> @ViewBag.StudentInfo.ModeOfStudyName
+                        </div>
+                        <div>
+                            <span class="font-medium">Year:</span> @ViewBag.StudentInfo.StudentYear
+                        </div>
+                        <div>
+                            <span class="font-medium">Semester:</span> @ViewBag.StudentInfo.Semester
+                        </div>
+                    </div>
+                    <div class="mt-2 flex justify-end">
+                        <button id="useMyProfileBtn" class="text-xs bg-cyan-600 text-white px-3 py-1 rounded hover:bg-cyan-700 transition-colors">
+                            Filter Events for My Profile
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Calendar Card -->
+    <div class="bg-white rounded-xl shadow-sm mb-6">
+        <div class="p-6">
+            <h2 class="text-lg font-semibold text-slate-800 mb-4">Events Calendar</h2>
+            
+            <!-- View Type Toggle -->
+            <div class="mb-4 flex justify-between items-center">
+                <div class="inline-flex rounded-md shadow-sm" role="group">
+                    <button type="button" id="monthViewBtn" class="bg-cyan-600 text-white px-4 py-2 text-sm font-medium rounded-l-lg hover:bg-cyan-700">
+                        Month
+                    </button>
+                    <button type="button" id="weekViewBtn" class="bg-slate-200 text-slate-800 px-4 py-2 text-sm font-medium hover:bg-slate-300">
+                        Week
+                    </button>
+                    <button type="button" id="listViewBtn" class="bg-slate-200 text-slate-800 px-4 py-2 text-sm font-medium rounded-r-lg hover:bg-slate-300">
+                        List
+                    </button>
+                </div>
+                <div>
+                    <button id="todayBtn" class="bg-slate-200 text-slate-800 px-4 py-2 text-sm font-medium rounded-lg hover:bg-slate-300">
+                        Today
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Calendar Container -->
+            <div id="calendar" class="mt-4"></div>
+        </div>
+    </div>
+
+    <!-- Key Dates Section -->
+    <div class="bg-white rounded-xl shadow-sm mb-6">
+        <div class="p-6">
+            <h2 class="text-lg font-semibold text-slate-800 mb-4">Key Academic Dates</h2>
+            <div id="keyDatesContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Key dates will be populated via JavaScript -->
+                <div class="p-4 border border-slate-200 rounded-lg animate-pulse">
+                    <div class="h-4 bg-slate-200 rounded w-3/4 mb-2"></div>
+                    <div class="h-3 bg-slate-200 rounded w-1/2"></div>
+                </div>
+                <div class="p-4 border border-slate-200 rounded-lg animate-pulse">
+                    <div class="h-4 bg-slate-200 rounded w-3/4 mb-2"></div>
+                    <div class="h-3 bg-slate-200 rounded w-1/2"></div>
+                </div>
+                <div class="p-4 border border-slate-200 rounded-lg animate-pulse">
+                    <div class="h-4 bg-slate-200 rounded w-3/4 mb-2"></div>
+                    <div class="h-3 bg-slate-200 rounded w-1/2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Event Details Modal -->
+<div id="eventModal" class="hidden fixed inset-0 bg-slate-900 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+        <div class="flex justify-between items-center border-b pb-3">
+            <h3 id="eventTitle" class="text-lg font-medium text-slate-900">Event Title</h3>
+            <button id="closeEventModal" class="text-slate-400 hover:text-slate-500">
+                <i class="material-icons">close</i>
+            </button>
+        </div>
+        <div class="mt-4">
+            <div id="eventIcon" class="bg-slate-100 h-12 w-12 rounded-full flex items-center justify-center mb-4 mx-auto">
+                <i class="material-icons text-2xl">event</i>
+            </div>
+            
+            <div id="eventDateTime" class="flex items-center justify-center text-sm text-slate-500 mb-4">
+                <i class="material-icons text-sm mr-1">schedule</i>
+                <span>Date and time</span>
+            </div>
+            
+            <div id="eventDescription" class="text-sm text-slate-600 mb-4 border-b pb-4">
+                Event description will appear here.
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4 text-sm">
+                <div id="eventLocation" class="flex items-start">
+                    <i class="material-icons text-sm mr-1 text-slate-400">place</i>
+                    <span class="text-slate-600">Location</span>
+                </div>
+                <div id="eventContact" class="flex items-start">
+                    <i class="material-icons text-sm mr-1 text-slate-400">person</i>
+                    <span class="text-slate-600">Contact</span>
+                </div>
+                <div id="eventType" class="flex items-start">
+                    <i class="material-icons text-sm mr-1 text-slate-400">label</i>
+                    <span class="text-slate-600">Type</span>
+                </div>
+                <div id="eventEmail" class="flex items-start">
+                    <i class="material-icons text-sm mr-1 text-slate-400">email</i>
+                    <span class="text-slate-600">Email</span>
+                </div>
+            </div>
+            
+            <div id="eventAppliesTo" class="mt-4 text-xs text-slate-500 italic">
+                This event applies to all students.
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- FullCalendar Dependencies -->
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.0/main.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.0/main.min.js"></script>
+    
+    <script>
+        // Global variables
+        let calendar;
+        let currentView = 'dayGridMonth';
+        let currentFilters = {
+            academicYearId: '@ViewBag.CurrentAcademicYearId',
+            schoolId: '',
+            programmeId: '',
+            programmeLevelId: '',
+            modeOfStudyId: '',
+            studentYear: '',
+            semester: ''
+        };
+        
+        // Initialize the calendar when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCalendar();
+            setupEventListeners();
+            loadKeyDates();
+            
+            // Check if Student info exists, if so, add the student's school ID to select
+            @if (ViewBag.StudentInfo != null)
+            {
+                <text>
+                // Pre-select student's school in the dropdown if it exists
+                const schoolSelect = document.getElementById('schoolSelect');
+                const schoolId = '@ViewBag.StudentInfo.SchoolId';
+                if (schoolId && schoolSelect) {
+                    schoolSelect.value = schoolId;
+                    loadProgrammes(schoolId);
+                    
+                    // After loading programmes, pre-select student's programme
+                    setTimeout(() => {
+                        const programmeSelect = document.getElementById('programmeSelect');
+                        if (programmeSelect) {
+                            programmeSelect.value = '@ViewBag.StudentInfo.ProgrammeId';
+                        }
+                    }, 500);
+                }
+                </text>
+            }
+        });
+
+        // Initialize FullCalendar
+        function initializeCalendar() {
+            const calendarEl = document.getElementById('calendar');
+            
+            calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: currentView,
+                headerToolbar: {
+                    left: 'prev,next',
+                    center: 'title',
+                    right: ''
+                },
+                height: 'auto',
+                aspectRatio: 1.8,
+                events: fetchEvents,
+                eventTimeFormat: {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    meridiem: 'short'
+                },
+                eventClick: handleEventClick,
+                datesSet: function(info) {
+                    // Update date ranges when calendar dates change
+                    loadKeyDates();
+                },
+                loading: function(isLoading) {
+                    // Could add loading indicator here
+                },
+                eventContent: function(info) {
+                    // Custom rendering of events to include icons
+                    let icon = info.event.extendedProps.icon || 'event';
+                    let title = info.event.title;
+                    
+                    let eventEl = document.createElement('div');
+                    eventEl.className = 'fc-event-main-wrapper';
+                    
+                    if (!info.event.allDay) {
+                        let timeText = info.timeText;
+                        let timeEl = document.createElement('div');
+                        timeEl.className = 'fc-event-time text-xs';
+                        timeEl.innerHTML = timeText;
+                        eventEl.appendChild(timeEl);
+                    }
+                    
+                    let contentWrapper = document.createElement('div');
+                    contentWrapper.className = 'flex items-center';
+                    
+                    let iconEl = document.createElement('i');
+                    iconEl.className = 'material-icons text-xs mr-1';
+                    iconEl.innerHTML = icon;
+                    contentWrapper.appendChild(iconEl);
+                    
+                    let titleEl = document.createElement('div');
+                    titleEl.className = 'fc-event-title text-xs font-medium truncate';
+                    titleEl.innerHTML = title;
+                    contentWrapper.appendChild(titleEl);
+                    
+                    eventEl.appendChild(contentWrapper);
+                    
+                    return { domNodes: [eventEl] };
+                }
+            });
+            
+            calendar.render();
+        }
+        
+        // Set up event listeners for the UI
+        function setupEventListeners() {
+            // Filters change event listener
+            document.getElementById('academicYearSelect').addEventListener('change', updateFilters);
+            document.getElementById('schoolSelect').addEventListener('change', function() {
+                loadProgrammes(this.value);
+                updateFilters();
+            });
+            document.getElementById('programmeSelect').addEventListener('change', updateFilters);
+            document.getElementById('programmeLevelSelect').addEventListener('change', updateFilters);
+            document.getElementById('modeOfStudySelect').addEventListener('change', updateFilters);
+            document.getElementById('studentYearSelect').addEventListener('change', updateFilters);
+            
+            // View toggle buttons
+            document.getElementById('monthViewBtn').addEventListener('click', function() {
+                setCalendarView('dayGridMonth', this);
+            });
+            document.getElementById('weekViewBtn').addEventListener('click', function() {
+                setCalendarView('timeGridWeek', this);
+            });
+            document.getElementById('listViewBtn').addEventListener('click', function() {
+                setCalendarView('listMonth', this);
+            });
+            
+            // Today button
+            document.getElementById('todayBtn').addEventListener('click', function() {
+                calendar.today();
+            });
+            
+            // Filter toggle button
+            document.getElementById('toggleFiltersBtn').addEventListener('click', function() {
+                const filtersContainer = document.getElementById('filtersContainer');
+                if (filtersContainer.classList.contains('hidden')) {
+                    filtersContainer.classList.remove('hidden');
+                    this.innerHTML = '<i class="material-icons text-sm mr-1">tune</i><span>Hide Filters</span>';
+                } else {
+                    filtersContainer.classList.add('hidden');
+                    this.innerHTML = '<i class="material-icons text-sm mr-1">tune</i><span>Show Filters</span>';
+                }
+            });
+            
+            // Close event modal
+            document.getElementById('closeEventModal').addEventListener('click', function() {
+                document.getElementById('eventModal').classList.add('hidden');
+            });
+            
+            // Use my profile button (for students)
+            const useMyProfileBtn = document.getElementById('useMyProfileBtn');
+            if (useMyProfileBtn) {
+                useMyProfileBtn.addEventListener('click', function() {
+                    @if (ViewBag.StudentInfo != null)
+                    {
+                        <text>
+                        // Set filters to student's profile
+                        document.getElementById('schoolSelect').value = '@ViewBag.StudentInfo.SchoolId';
+                        loadProgrammes('@ViewBag.StudentInfo.SchoolId', function() {
+                            document.getElementById('programmeSelect').value = '@ViewBag.StudentInfo.ProgrammeId';
+                            document.getElementById('programmeLevelSelect').value = '@ViewBag.StudentInfo.ProgrammeLevelId';
+                            document.getElementById('modeOfStudySelect').value = '@ViewBag.StudentInfo.ModeOfStudyId';
+                            document.getElementById('studentYearSelect').value = '@ViewBag.StudentInfo.StudentYear';
+                            
+                            // Update filters and refresh calendar
+                            updateFilters();
+                        });
+                        </text>
+                    }
+                });
+            }
+        }
+        
+        // Update filters and refresh calendar
+        function updateFilters() {
+            currentFilters = {
+                academicYearId: document.getElementById('academicYearSelect').value,
+                schoolId: document.getElementById('schoolSelect').value,
+                programmeId: document.getElementById('programmeSelect').value,
+                programmeLevelId: document.getElementById('programmeLevelSelect').value,
+                modeOfStudyId: document.getElementById('modeOfStudySelect').value,
+                studentYear: document.getElementById('studentYearSelect').value,
+                semester: document.getElementById('semesterSelect')?.value || ''
+            };
+            
+            // Refresh the calendar with new filters
+            calendar.refetchEvents();
+            
+            // Also refresh the key dates
+            loadKeyDates();
+        }
+        
+        // Load programmes based on selected school
+        function loadProgrammes(schoolId, callback) {
+            const programmeSelect = document.getElementById('programmeSelect');
+            
+            // Reset and disable the programmes dropdown
+            programmeSelect.innerHTML = '<option value="">All Programmes</option>';
+            programmeSelect.disabled = true;
+            
+            if (!schoolId) {
+                return;
+            }
+            
+            // Fetch programmes for the selected school
+            fetch(`/PublicAcademicCalendar/GetProgrammes/${schoolId}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Add options for each programme
+                    data.forEach(programme => {
+                        const option = document.createElement('option');
+                        option.value = programme.id;
+                        option.textContent = programme.name;
+                        programmeSelect.appendChild(option);
+                    });
+                    
+                    // Enable the dropdown
+                    programmeSelect.disabled = false;
+                    
+                    // Call the callback if provided
+                    if (callback && typeof callback === 'function') {
+                        callback();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading programmes:', error);
+                });
+        }
+        
+        // Fetch events from the server for FullCalendar
+        function fetchEvents(info, successCallback, failureCallback) {
+            const start = info.startStr;
+            const end = info.endStr;
+            
+            // Construct the URL with query parameters
+            const url = new URL('/PublicAcademicCalendar/GetEvents', window.location.origin);
+            url.searchParams.append('academicYearId', currentFilters.academicYearId);
+            url.searchParams.append('start', start);
+            url.searchParams.append('end', end);
+            
+            // Add filters if they have values
+            if (currentFilters.schoolId) url.searchParams.append('schoolId', currentFilters.schoolId);
+            if (currentFilters.programmeId) url.searchParams.append('programmeId', currentFilters.programmeId);
+            if (currentFilters.programmeLevelId) url.searchParams.append('programmeLevelId', currentFilters.programmeLevelId);
+            if (currentFilters.modeOfStudyId) url.searchParams.append('modeOfStudyId', currentFilters.modeOfStudyId);
+            if (currentFilters.studentYear) url.searchParams.append('studentYear', currentFilters.studentYear);
+            if (currentFilters.semester) url.searchParams.append('semester', currentFilters.semester);
+            
+            // Fetch the events
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    successCallback(data);
+                })
+                .catch(error => {
+                    console.error('Error fetching events:', error);
+                    failureCallback(error);
+                });
+        }
+        
+        // Handle event click to show details
+        function handleEventClick(info) {
+            const event = info.event;
+            const modal = document.getElementById('eventModal');
+            
+            // Set event details in the modal
+            document.getElementById('eventTitle').textContent = event.title;
+            
+            // Format the date and time
+            let dateTimeStr = '';
+            if (event.allDay) {
+                dateTimeStr = new Date(event.start).toLocaleDateString('en-GB', { 
+                    weekday: 'long', 
+                    day: 'numeric', 
+                    month: 'long', 
+                    year: 'numeric' 
+                });
+                
+                if (event.end) {
+                    // For multi-day events, end date is exclusive in FullCalendar
+                    let endDate = new Date(event.end);
+                    endDate.setDate(endDate.getDate() - 1); // Adjust to inclusive end date
+                    
+                    dateTimeStr += ' - ' + endDate.toLocaleDateString('en-GB', { 
+                        weekday: 'long', 
+                        day: 'numeric', 
+                        month: 'long', 
+                        year: 'numeric' 
+                    });
+                }
+                
+                dateTimeStr += ' (All day)';
+            } else {
+                dateTimeStr = new Date(event.start).toLocaleDateString('en-GB', { 
+                    weekday: 'long', 
+                    day: 'numeric', 
+                    month: 'long', 
+                    year: 'numeric' 
+                });
+                
+                dateTimeStr += ' at ' + new Date(event.start).toLocaleTimeString('en-GB', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                if (event.end) {
+                    dateTimeStr += ' - ' + new Date(event.end).toLocaleTimeString('en-GB', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                }
+            }
+            
+            document.getElementById('eventDateTime').innerHTML = `
+                <i class="material-icons text-sm mr-1">schedule</i>
+                <span>${dateTimeStr}</span>
+            `;
+            
+            // Set description
+            document.getElementById('eventDescription').textContent = event.extendedProps.description || 'No description available.';
+            
+            // Set icon and background color
+            const iconEl = document.getElementById('eventIcon');
+            iconEl.innerHTML = `<i class="material-icons text-2xl">${event.extendedProps.icon || 'event'}</i>`;
+            iconEl.style.backgroundColor = event.backgroundColor || '#3788d8';
+            iconEl.style.color = event.textColor || '#ffffff';
+            
+            // Set additional details
+            document.getElementById('eventLocation').innerHTML = `
+                <i class="material-icons text-sm mr-1 text-slate-400">place</i>
+                <span class="text-slate-600">${event.extendedProps.location || 'No location specified'}</span>
+            `;
+            
+            document.getElementById('eventContact').innerHTML = `
+                <i class="material-icons text-sm mr-1 text-slate-400">person</i>
+                <span class="text-slate-600">${event.extendedProps.contactPerson || 'No contact specified'}</span>
+            `;
+            
+            document.getElementById('eventType').innerHTML = `
+                <i class="material-icons text-sm mr-1 text-slate-400">label</i>
+                <span class="text-slate-600">${event.extendedProps.eventType || 'General'}</span>
+            `;
+            
+            document.getElementById('eventEmail').innerHTML = `
+                <i class="material-icons text-sm mr-1 text-slate-400">email</i>
+                <span class="text-slate-600">${event.extendedProps.contactEmail || 'No email specified'}</span>
+            `;
+            
+            // Set the "applies to" text
+            let appliesTo = 'This event applies to all students.';
+            const applicableGroups = [];
+            
+            if (event.extendedProps.school) applicableGroups.push(event.extendedProps.school);
+            if (event.extendedProps.programme) applicableGroups.push(event.extendedProps.programme);
+            if (event.extendedProps.programmeLevel) applicableGroups.push(event.extendedProps.programmeLevel);
+            if (event.extendedProps.modeOfStudy) applicableGroups.push(event.extendedProps.modeOfStudy);
+            if (event.extendedProps.studentYear) applicableGroups.push(`Year ${event.extendedProps.studentYear}`);
+            if (event.extendedProps.semester) applicableGroups.push(`Semester ${event.extendedProps.semester}`);
+            
+            if (applicableGroups.length > 0) {
+                appliesTo = 'This event applies to: ' + applicableGroups.join(', ');
+            }
+            
+            document.getElementById('eventAppliesTo').textContent = appliesTo;
+            
+            // Show the modal
+            modal.classList.remove('hidden');
+        }
+        
+        // Set calendar view and update button styles
+        function setCalendarView(view, button) {
+            // Update current view
+            currentView = view;
+            calendar.changeView(view);
+            
+            // Update button styles
+            const buttons = [
+                document.getElementById('monthViewBtn'),
+                document.getElementById('weekViewBtn'),
+                document.getElementById('listViewBtn')
+            ];
+            
+            buttons.forEach(btn => {
+                btn.classList.remove('bg-cyan-600', 'text-white');
+                btn.classList.add('bg-slate-200', 'text-slate-800');
+            });
+            
+            button.classList.remove('bg-slate-200', 'text-slate-800');
+            button.classList.add('bg-cyan-600', 'text-white');
+        }
+        
+        // Load key dates for the Key Dates section
+        function loadKeyDates() {
+            const container = document.getElementById('keyDatesContainer');
+            
+            // Get current calendar dates
+            const calendarInfo = calendar.getDate();
+            const currentMonth = calendarInfo.getMonth();
+            const currentYear = calendarInfo.getFullYear();
+            
+            // Construct date range for the query (current month +/- 2 months)
+            const start = new Date(currentYear, currentMonth - 2, 1).toISOString();
+            const end = new Date(currentYear, currentMonth + 3, 0).toISOString();
+            
+            // Construct the URL with query parameters
+            const url = new URL('/PublicAcademicCalendar/GetEvents', window.location.origin);
+            url.searchParams.append('academicYearId', currentFilters.academicYearId);
+            url.searchParams.append('start', start);
+            url.searchParams.append('end', end);
+            
+            // Add filters if they have values
+            if (currentFilters.schoolId) url.searchParams.append('schoolId', currentFilters.schoolId);
+            if (currentFilters.programmeId) url.searchParams.append('programmeId', currentFilters.programmeId);
+            if (currentFilters.programmeLevelId) url.searchParams.append('programmeLevelId', currentFilters.programmeLevelId);
+            if (currentFilters.modeOfStudyId) url.searchParams.append('modeOfStudyId', currentFilters.modeOfStudyId);
+            if (currentFilters.studentYear) url.searchParams.append('studentYear', currentFilters.studentYear);
+            if (currentFilters.semester) url.searchParams.append('semester', currentFilters.semester);
+
+            // Fetch the events
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Sort events by date
+                    data.sort((a, b) => new Date(a.start) - new Date(b.start));
+
+                    // Take only the first 6 events
+                    const keyEvents = data.slice(0, 6);
+
+                    // Clear the container and remove loading state
+                    container.innerHTML = '';
+
+                    if (keyEvents.length === 0) {
+                        container.innerHTML = `
+                            <div class="col-span-full p-4 text-center text-slate-500">
+                                <i class="material-icons text-2xl mb-2">event_busy</i>
+                                <p>No events found for the selected filters.</p>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    // Create cards for each key event
+                    keyEvents.forEach(event => {
+                        // Format the date
+                        let dateStr = new Date(event.start).toLocaleDateString('en-GB', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric'
+                        });
+
+                        // For multi-day events, add end date
+                        if (event.end && event.allDay) {
+                            // For multi-day events, end date is exclusive in FullCalendar
+                            let endDate = new Date(event.end);
+                            endDate.setDate(endDate.getDate() - 1); // Adjust to inclusive end date
+
+                            dateStr += ' - ' + endDate.toLocaleDateString('en-GB', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric'
+                            });
+                        }
+
+                        // Create the event card
+                        const card = document.createElement('div');
+                        card.className = 'p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer';
+                        card.onclick = () => {
+                            // Find the corresponding calendar event and click it
+                            const calendarEvent = calendar.getEventById(event.id);
+                            if (calendarEvent) {
+                                calendar.gotoDate(calendarEvent.start);
+                                setTimeout(() => {
+                                    handleEventClick({ event: calendarEvent });
+                                }, 300);
+                            }
+                        };
+
+                        card.innerHTML = `
+                            <div class="flex items-start">
+                                <div class="bg-${event.color.substring(1)} rounded-full p-2 mr-3" style="background-color: ${event.color}">
+                                    <i class="material-icons text-white">${event.icon || 'event'}</i>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-medium text-slate-800">${event.title}</h3>
+                                    <p class="text-xs text-slate-500">${dateStr}</p>
+                                    <p class="text-xs text-slate-600 mt-1">${event.eventType || 'General Event'}</p>
+                                </div>
+                            </div>
+                        `;
+
+                        container.appendChild(card);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching key dates:', error);
+                    container.innerHTML = `
+                        <div class="col-span-full p-4 text-center text-red-500">
+                            <i class="material-icons text-2xl mb-2">error</i>
+                            <p>Error loading events. Please try again later.</p>
+                        </div>
+                    `;
+                });
+        }
+
+        // Click outside modal to close it
+        window.addEventListener('click', function(event) {
+            const modal = document.getElementById('eventModal');
+            if (event.target === modal) {
+                modal.classList.add('hidden');
+            }
+        });
+    </script>
+}

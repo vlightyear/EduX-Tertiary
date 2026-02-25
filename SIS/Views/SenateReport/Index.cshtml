@@ -1,0 +1,2782 @@
+﻿@model SIS.Models.Reports.SenateReportViewModel
+@{
+    ViewData["Title"] = "Senate Academic Progress Report";
+    Layout = "_Layout";
+}
+
+<!-- Add SweetAlert2 for alerts -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<div class="min-h-screen bg-slate-50 p-4">
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+        <div class="flex items-center text-slate-800">
+            <i class="material-icons text-primary-600 text-3xl mr-2">assessment</i>
+            <div>
+                <h1 class="text-2xl font-bold">Senate Academic Progress Report</h1>
+                <p class="text-sm text-slate-600">Comprehensive student progression analysis</p>
+            </div>
+        </div>
+        <div class="mt-4 md:mt-0 flex items-center gap-2">
+            <button id="refreshReport" class="inline-flex items-center px-4 py-2 text-sm text-primary-600 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors">
+                <i class="material-icons text-sm mr-1">refresh</i>
+                Refresh
+            </button>
+            <button id="exportOptions" class="inline-flex items-center px-4 py-2 text-sm text-white bg-secondary-600 hover:bg-secondary-700 rounded-lg transition-colors">
+                <i class="material-icons text-sm mr-1">file_download</i>
+                Export Report
+            </button>
+        </div>
+    </div>
+
+    <!-- Filter Panel -->
+    <div class="bg-white rounded-xl shadow-sm mb-6 overflow-hidden">
+        <div class="px-6 py-4 border-b bg-gradient-to-r from-primary-50 to-secondary-50">
+            <h2 class="text-lg font-semibold text-slate-800 flex items-center">
+                <i class="material-icons mr-2 text-primary-600">filter_list</i>
+                Report Filters
+            </h2>
+        </div>
+        <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                <!-- Academic Year Filter -->
+                <div>
+                    <label for="academicYearFilter" class="block text-sm font-medium text-slate-700 mb-1">
+                        Academic Year <span class="text-red-500">*</span>
+                    </label>
+                    <select id="academicYearFilter" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                        <option value="">Select Academic Year</option>
+                        @foreach (var year in Model.AcademicYears)
+                        {
+                            <option value="@year.YearId">@year.YearValue</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Report Level Filter -->
+                <div>
+                    <label for="reportLevelFilter" class="block text-sm font-medium text-slate-700 mb-1">
+                        Report Level <span class="text-red-500">*</span>
+                    </label>
+                    <select id="reportLevelFilter" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                        <option value="School">School Level</option>
+                        <option value="Department">Department Level</option>
+                        <option value="Programme">Programme Level</option>
+                    </select>
+                </div>
+
+                <!-- School Filter -->
+                <div>
+                    <label for="schoolFilter" class="block text-sm font-medium text-slate-700 mb-1">School</label>
+                    <select id="schoolFilter" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                        <option value="">All Schools</option>
+                        @foreach (var school in Model.Schools)
+                        {
+                            <option value="@school.Id">@school.Name</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Department Filter -->
+                <div>
+                    <label for="departmentFilter" class="block text-sm font-medium text-slate-700 mb-1">Department</label>
+                    <select id="departmentFilter" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" disabled>
+                        <option value="">All Departments</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                <!-- Programme Filter -->
+                <div>
+                    <label for="programmeFilter" class="block text-sm font-medium text-slate-700 mb-1">Programme</label>
+                    <select id="programmeFilter" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" disabled>
+                        <option value="">All Programmes</option>
+                    </select>
+                </div>
+
+                <!-- Mode of Study Filter -->
+                <div>
+                    <label for="modeOfStudyFilter" class="block text-sm font-medium text-slate-700 mb-1">Mode of Study</label>
+                    <select id="modeOfStudyFilter" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                        <option value="">All Modes</option>
+                        @foreach (var mode in Model.ModesOfStudy)
+                        {
+                            <option value="@mode.ModeId">@mode.ModeName</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Year of Study Filter -->
+                <div>
+                    <label for="yearOfStudyFilter" class="block text-sm font-medium text-slate-700 mb-1">Year of Study</label>
+                    <select id="yearOfStudyFilter" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                        <option value="">All Years</option>
+                        <option value="1">Year 1</option>
+                        <option value="2">Year 2</option>
+                        <option value="3">Year 3</option>
+                        <option value="4">Year 4</option>
+                        <option value="5">Year 5</option>
+                        <option value="6">Year 6</option>
+                        <option value="7">Year 7</option>
+                    </select>
+                </div>
+
+                <!-- Semester Filter -->
+                <div>
+                    <label for="semesterFilter" class="block text-sm font-medium text-slate-700 mb-1">Semester</label>
+                    <select id="semesterFilter" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                        <option value="">All Semesters</option>
+                        <option value="1">Semester 1</option>
+                        <option value="2">Semester 2</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Generate Report Button -->
+            <div class="flex justify-center">
+                <button id="generateReportBtn" class="inline-flex items-center px-6 py-3 text-white bg-primary-600 hover:bg-primary-700 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i class="material-icons mr-2">analytics</i>
+                    Generate Report
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Breadcrumb Navigation -->
+    <div id="breadcrumbContainer" class="hidden bg-white rounded-lg shadow-sm mb-6 p-4">
+        <nav class="flex" aria-label="Breadcrumb">
+            <ol id="breadcrumbList" class="inline-flex items-center space-x-1 md:space-x-3">
+                <!-- Breadcrumbs will be dynamically populated -->
+            </ol>
+        </nav>
+    </div>
+
+    <!-- Performance Summary Section (NEW) -->
+    <div id="performanceSummarySection" class="hidden bg-white rounded-xl shadow-sm mb-6 overflow-hidden">
+        <div class="px-6 py-4 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
+            <h2 class="text-lg font-semibold text-slate-800 flex items-center">
+                <i class="material-icons mr-2 text-blue-600">analytics</i>
+                Performance Summary
+            </h2>
+        </div>
+        <div class="p-6">
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse border border-gray-400">
+                    <thead>
+                        <tr class="bg-gray-200">
+                            <th class="border border-gray-400 px-3 py-2 text-left font-bold text-sm w-12">No.</th>
+                            <th class="border border-gray-400 px-3 py-2 text-left font-bold text-sm">Description</th>
+                            <th class="border border-gray-400 px-3 py-2 text-right font-bold text-sm w-32">No. of Students</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-sm" id="performanceSummaryBody">
+                        <!-- Populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Statistics -->
+    <div id="summaryStats" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <!-- Statistics cards will be dynamically populated -->
+    </div>
+
+    <!-- Report Content Area -->
+    <div id="reportContainer" class="bg-white rounded-xl shadow-sm overflow-hidden">
+        <!-- Welcome Message -->
+        <div id="welcomeMessage" class="p-12 text-center">
+            <div class="max-w-2xl mx-auto">
+                <i class="material-icons text-6xl text-slate-300 mb-4">assessment</i>
+                <h3 class="text-xl font-semibold text-slate-700 mb-2">Welcome to Senate Academic Progress Report</h3>
+                <p class="text-slate-500 mb-6">
+                    Generate comprehensive reports on student academic progression, including pass rates,
+                    progression rules, and institutional performance metrics.
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div class="bg-slate-50 p-4 rounded-lg">
+                        <i class="material-icons text-primary-600 mb-2">school</i>
+                        <div class="font-medium">School Level</div>
+                        <div class="text-slate-600">Institutional overview</div>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-lg">
+                        <i class="material-icons text-secondary-600 mb-2">domain</i>
+                        <div class="font-medium">Department Level</div>
+                        <div class="text-slate-600">Departmental analysis</div>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-lg">
+                        <i class="material-icons text-accent-600 mb-2">book</i>
+                        <div class="font-medium">Programme Level</div>
+                        <div class="text-slate-600">Detailed breakdown</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="hidden p-12 text-center">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-full mb-4">
+                <i class="material-icons text-primary-600 animate-spin">refresh</i>
+            </div>
+            <h3 class="text-lg font-semibold text-slate-700 mb-2">Generating Report...</h3>
+            <p class="text-slate-500">Please wait while we analyze the academic data.</p>
+        </div>
+
+        <!-- Report Results -->
+        <div id="reportResults" class="hidden">
+            <div class="px-6 py-4 border-b bg-gradient-to-r from-primary-50 to-secondary-50">
+                <div class="flex justify-between items-center">
+                    <h2 id="reportTitle" class="text-lg font-semibold text-slate-800">Report Results</h2>
+                    <div class="flex items-center space-x-2">
+                        <span id="reportMetadata" class="text-sm text-slate-600"></span>
+                        <button id="backToParent" class="hidden inline-flex items-center px-3 py-1 text-sm text-primary-600 bg-primary-100 hover:bg-primary-200 rounded-md transition-colors">
+                            <i class="material-icons text-sm mr-1">arrow_back</i>
+                            Back
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Report Table -->
+            <div class="overflow-x-auto">
+                <table id="reportTable" class="w-full text-sm">
+                    <thead class="bg-slate-50 text-slate-600 border-b">
+                        <tr id="tableHeader">
+                            <!-- Headers will be dynamically populated -->
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- Data will be dynamically populated -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div id="paginationContainer" class="hidden px-6 py-4 border-t bg-slate-50">
+                <div class="flex items-center justify-between">
+                    <div class="text-sm text-slate-600">
+                        Showing <span id="pageStart">1</span> to <span id="pageEnd">10</span> of <span id="totalEntries">0</span> entries
+                    </div>
+                    <div class="flex space-x-1">
+                        <button id="prevPage" class="px-3 py-1 text-sm text-slate-600 hover:bg-slate-100 rounded-md disabled:opacity-50 disabled:cursor-not-allowed">
+                            Previous
+                        </button>
+                        <div id="paginationNumbers" class="flex space-x-1">
+                            <!-- Pagination numbers will be added by JS -->
+                        </div>
+                        <button id="nextPage" class="px-3 py-1 text-sm text-slate-600 hover:bg-slate-100 rounded-md disabled:opacity-50 disabled:cursor-not-allowed">
+                            Next
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error State -->
+        <div id="errorState" class="hidden p-12 text-center">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
+                <i class="material-icons text-red-600">error</i>
+            </div>
+            <h3 class="text-lg font-semibold text-slate-700 mb-2">Report Generation Failed</h3>
+            <p id="errorMessage" class="text-slate-500 mb-4">An error occurred while generating the report.</p>
+            <button id="retryReport" class="inline-flex items-center px-4 py-2 text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors">
+                <i class="material-icons mr-2">refresh</i>
+                Try Again
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Export Options Modal -->
+<div id="exportModal" class="hidden fixed inset-0 z-50">
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-lg shadow-xl w-full max-w-md">
+                <!-- Modal Header -->
+                <div class="bg-primary-600 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
+                    <h3 class="text-lg font-semibold flex items-center">
+                        <i class="material-icons mr-2">file_download</i>
+                        Export Report
+                    </h3>
+                    <button type="button" class="text-white hover:text-gray-200 close-modal">
+                        <i class="material-icons">close</i>
+                    </button>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="p-6">
+                    <div class="space-y-4">
+                        <!-- PDF Export Option -->
+                        <div class="border border-slate-200 rounded-lg p-4 hover:bg-slate-50 transition-colors">
+                            <div class="flex items-start">
+                                <div class="bg-red-100 rounded-full p-2 mr-3">
+                                    <i class="material-icons text-red-600">picture_as_pdf</i>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="font-medium text-slate-800">Official PDF Report</h4>
+                                    <p class="text-sm text-slate-600 mt-1">Formatted report for official use with signature blocks</p>
+                                    <button id="exportPdfBtn" class="mt-2 inline-flex items-center px-3 py-1 text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded-md transition-colors">
+                                        <i class="material-icons text-sm mr-1">download</i>
+                                        Generate PDF
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Excel Export Option -->
+                        <div class="border border-slate-200 rounded-lg p-4 hover:bg-slate-50 transition-colors">
+                            <div class="flex items-start">
+                                <div class="bg-green-100 rounded-full p-2 mr-3">
+                                    <i class="material-icons text-green-600">table_chart</i>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="font-medium text-slate-800">Detailed Excel Report</h4>
+                                    <p class="text-sm text-slate-600 mt-1">Complete data breakdown for analysis and audit purposes</p>
+                                    <button id="exportExcelBtn" class="mt-2 inline-flex items-center px-3 py-1 text-sm text-green-600 bg-green-50 hover:bg-green-100 rounded-md transition-colors">
+                                        <i class="material-icons text-sm mr-1">download</i>
+                                        Generate Excel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="bg-slate-50 px-6 py-4 rounded-b-lg flex justify-end">
+                    <button type="button" class="px-4 py-2 text-slate-700 bg-slate-200 hover:bg-slate-300 rounded-lg transition-colors close-modal">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Entity Student Details Modal -->
+<div id="entityDetailsModal" class="hidden fixed inset-0 z-50">
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] overflow-hidden">
+                <!-- Modal Header -->
+                <div class="bg-primary-600 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
+                    <h3 class="text-lg font-semibold flex items-center">
+                        <i class="material-icons mr-2">people</i>
+                        <span id="entityDetailsTitle">Student Details</span>
+                    </h3>
+                    <button type="button" class="text-white hover:text-gray-200 close-entity-details">
+                        <i class="material-icons">close</i>
+                    </button>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
+                    <!-- Summary Cards -->
+                    <div id="entityDetailsSummary" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                        <!-- Dynamically populated -->
+                    </div>
+
+                    <!-- Search and Filter Bar -->
+                    <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
+                        <div class="relative flex-1 w-full">
+                            <i class="material-icons absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400">search</i>
+                            <input type="text" id="studentSearch"
+                                   placeholder="Search by student number or name..."
+                                   class="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                        </div>
+                        <div class="flex gap-2">
+                            <select id="progressionFilter" class="px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                                <option value="">All Progressions</option>
+                                <option value="Proceed">Proceed</option>
+                                <option value="ProceedWithRepeat">Proceed with Repeat</option>
+                                <option value="ProceedOnProbation">Proceed on Probation</option>
+                                <option value="RepeatYear">Repeat Year</option>
+                                <option value="RepeatSemester">Repeat Semester</option>
+                                <option value="Exclude">Academic Exclusion</option>
+                                <option value="Results Pending">Results Pending</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Students Table -->
+                    <div class="overflow-x-auto border border-slate-200 rounded-lg">
+                        <table class="w-full text-sm">
+                            <thead class="bg-slate-50 text-slate-600 border-b">
+                                <tr>
+                                    <th class="px-4 py-3 text-left font-medium">Student Number</th>
+                                    <th class="px-4 py-3 text-left font-medium">Name</th>
+                                    <th class="px-4 py-3 text-center font-medium">Courses</th>
+                                    <th class="px-4 py-3 text-center font-medium">Failed</th>
+                                    <th class="px-4 py-3 text-center font-medium">GPA</th>
+                                    <th class="px-4 py-3 text-left font-medium">Progression</th>
+                                    <th class="px-4 py-3 text-center font-medium">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="entityStudentsTableBody">
+                                <!-- Dynamically populated -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Loading State -->
+                    <div id="entityDetailsLoading" class="hidden text-center py-12">
+                        <div class="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-full mb-4">
+                            <i class="material-icons text-primary-600 animate-spin">refresh</i>
+                        </div>
+                        <p class="text-slate-600">Loading student details...</p>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div id="entityDetailsEmpty" class="hidden text-center py-12">
+                        <i class="material-icons text-6xl text-slate-300 mb-4">inbox</i>
+                        <p class="text-slate-600">No students found</p>
+                    </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="bg-slate-50 px-6 py-4 rounded-b-lg flex justify-between items-center">
+                    <div class="text-sm text-slate-600">
+                        <span id="entityDetailsCount">0 students</span>
+                    </div>
+                    <div class="flex gap-2">
+                        <button type="button" id="exportEntityDetailsBtn"
+                                class="inline-flex items-center px-4 py-2 text-sm text-primary-600 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors">
+                            <i class="material-icons text-sm mr-1">file_download</i>
+                            Export List
+                        </button>
+                        <button type="button" class="px-4 py-2 text-slate-700 bg-slate-200 hover:bg-slate-300 rounded-lg transition-colors close-entity-details">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Student Progression Detail Modal -->
+<div id="studentDetailModal" class="hidden fixed inset-0 z-[60]">
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-lg shadow-xl w-full max-w-5xl max-h-[90vh] overflow-hidden">
+                <!-- Modal Header -->
+                <div class="bg-secondary-600 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
+                    <h3 class="text-lg font-semibold flex items-center">
+                        <i class="material-icons mr-2">person</i>
+                        <span id="studentDetailTitle">Student Progression Detail</span>
+                    </h3>
+                    <button type="button" class="text-white hover:text-gray-200 close-student-detail">
+                        <i class="material-icons">close</i>
+                    </button>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="overflow-y-auto max-h-[calc(90vh-180px)]">
+                    <!-- Student Information -->
+                    <div class="bg-gradient-to-r from-secondary-50 to-accent-50 p-6 border-b">
+                        <div id="studentInfoSection" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Dynamically populated -->
+                        </div>
+                    </div>
+
+                    <!-- Academic Performance Summary -->
+                    <div class="p-6 border-b bg-slate-50">
+                        <h4 class="font-semibold text-slate-800 mb-4 flex items-center">
+                            <i class="material-icons mr-2 text-secondary-600">assessment</i>
+                            Academic Performance Summary
+                        </h4>
+                        <div id="performanceSummary" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <!-- Dynamically populated -->
+                        </div>
+                    </div>
+
+                    <!-- Course Details -->
+                    <div class="p-6">
+                        <h4 class="font-semibold text-slate-800 mb-4 flex items-center">
+                            <i class="material-icons mr-2 text-accent-600">list_alt</i>
+                            Course Breakdown
+                        </h4>
+                        <div class="overflow-x-auto border border-slate-200 rounded-lg">
+                            <table class="w-full text-sm">
+                                <thead class="bg-slate-50 text-slate-600 border-b">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left font-medium">Course Code</th>
+                                        <th class="px-4 py-3 text-left font-medium">Course Name</th>
+                                        <th class="px-4 py-3 text-center font-medium">Credits</th>
+                                        <th class="px-4 py-3 text-center font-medium">Semester</th>
+                                        <th class="px-4 py-3 text-center font-medium">Score</th>
+                                        <th class="px-4 py-3 text-center font-medium">Grade</th>
+                                        <th class="px-4 py-3 text-center font-medium">Grade Points</th>
+                                        <th class="px-4 py-3 text-center font-medium">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="studentCoursesTableBody">
+                                    <!-- Dynamically populated -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Loading State -->
+                    <div id="studentDetailLoading" class="hidden text-center py-12">
+                        <div class="inline-flex items-center justify-center w-16 h-16 bg-secondary-100 rounded-full mb-4">
+                            <i class="material-icons text-secondary-600 animate-spin">refresh</i>
+                        </div>
+                        <p class="text-slate-600">Loading student details...</p>
+                    </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="bg-slate-50 px-6 py-4 rounded-b-lg flex justify-end gap-2">
+                    <button type="button" id="printStudentDetailBtn"
+                            class="inline-flex items-center px-4 py-2 text-sm text-secondary-600 bg-secondary-50 hover:bg-secondary-100 rounded-lg transition-colors">
+                        <i class="material-icons text-sm mr-1">print</i>
+                        Print
+                    </button>
+                    <button type="button" class="px-4 py-2 text-slate-700 bg-slate-200 hover:bg-slate-300 rounded-lg transition-colors close-student-detail">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Batch Publishing Modal -->
+<div id="batchPublishModal" class="hidden fixed inset-0 z-[60]">
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] overflow-hidden">
+                <!-- Modal Header -->
+                <div class="bg-amber-600 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
+                    <h3 class="text-lg font-semibold flex items-center">
+                        <i class="material-icons mr-2">check_circle</i>
+                        <span>Publish Result Batches</span>
+                    </h3>
+                    <button type="button" class="text-white hover:text-gray-200 close-batch-publish">
+                        <i class="material-icons">close</i>
+                    </button>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
+                    <!-- Programme Info -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h4 class="font-semibold text-slate-800" id="batchProgrammeName">Programme Name</h4>
+                                <div class="text-sm text-slate-600 mt-1">
+                                    <span id="batchAcademicYear"></span> |
+                                    <span id="batchSemester"></span>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-xs text-slate-500">Batch Summary</div>
+                                <div class="flex gap-2 mt-1">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                                        <span id="pendingBatchCount">0</span> Pending
+                                    </span>
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <span id="approvedBatchCount">0</span> Approved
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="mb-4 flex justify-between items-center">
+                        <div class="flex gap-2">
+                            <button type="button" class="inline-flex items-center px-3 py-1 text-sm text-primary-600 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors" id="selectAllBatches">
+                                <i class="material-icons text-sm mr-1">check_box</i>
+                                Select All Pending
+                            </button>
+                            <button type="button" class="inline-flex items-center px-3 py-1 text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors" id="deselectAllBatches">
+                                <i class="material-icons text-sm mr-1">check_box_outline_blank</i>
+                                Deselect All
+                            </button>
+                        </div>
+                        <div>
+                            <span id="selectedBatchCount" class="text-sm text-slate-600">0 selected</span>
+                        </div>
+                    </div>
+
+                    <!-- Batches Table -->
+                    <div class="overflow-x-auto border border-slate-200 rounded-lg" style="max-height: 400px; overflow-y: auto;">
+                        <table class="w-full text-sm">
+                            <thead class="bg-slate-50 text-slate-600 border-b sticky top-0">
+                                <tr>
+                                    <th class="px-4 py-3 text-left" style="width: 40px;">
+                                        <input type="checkbox" class="form-checkbox h-4 w-4 text-primary-600 rounded" id="selectAllCheckbox">
+                                    </th>
+                                    <th class="px-4 py-3 text-left font-medium">Course</th>
+                                    <th class="px-4 py-3 text-left font-medium">Assessment</th>
+                                    <th class="px-4 py-3 text-left font-medium">Type</th>
+                                    <th class="px-4 py-3 text-center font-medium">Records</th>
+                                    <th class="px-4 py-3 text-left font-medium">Status</th>
+                                    <th class="px-4 py-3 text-left font-medium">Uploaded</th>
+                                    <th class="px-4 py-3 text-left font-medium">Uploaded By</th>
+                                </tr>
+                            </thead>
+                            <tbody id="batchesTableBody">
+                                <!-- Populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Loading State -->
+                    <div id="batchesLoading" class="hidden text-center py-12">
+                        <div class="inline-flex items-center justify-center w-16 h-16 bg-amber-100 rounded-full mb-4">
+                            <i class="material-icons text-amber-600 animate-spin">refresh</i>
+                        </div>
+                        <p class="text-slate-600">Loading batches...</p>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div id="batchesEmpty" class="hidden text-center py-12">
+                        <i class="material-icons text-6xl text-slate-300 mb-4">inbox</i>
+                        <p class="text-slate-600">No result batches found for this programme.</p>
+                    </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="bg-slate-50 px-6 py-4 rounded-b-lg flex justify-end gap-2">
+                    <button type="button" class="px-4 py-2 text-slate-700 bg-slate-200 hover:bg-slate-300 rounded-lg transition-colors close-batch-publish">
+                        <i class="material-icons text-sm mr-1 align-middle">close</i>
+                        Close
+                    </button>
+                    <button type="button" class="inline-flex items-center px-4 py-2 text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed" id="publishSelectedBtn" disabled>
+                        <i class="material-icons text-sm mr-1">check_circle</i>
+                        Publish Selected (<span id="publishCount">0</span>)
+                    </button>
+                    <button type="button" class="inline-flex items-center px-4 py-2 text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors" id="publishAllPendingBtn">
+                        <i class="material-icons text-sm mr-1">done_all</i>
+                        Publish All Pending
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Grading Overview Modal -->
+<div id="gradingOverviewModal" class="hidden fixed inset-0 z-[60] overflow-y-auto">
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+
+    <div class="flex min-h-full items-center justify-center p-4">
+        <div class="relative bg-white rounded-lg shadow-xl w-full max-w-7xl max-h-[90vh] flex flex-col">
+            <!-- Modal Header -->
+            <div class="bg-blue-600 text-white px-6 py-4 rounded-t-lg flex justify-between items-center">
+                <div>
+                    <h3 class="text-xl font-semibold mb-1">Grading Overview</h3>
+                    <p id="gradingOverviewSubtitle" class="text-sm text-blue-100"></p>
+                </div>
+                <button onclick="hideGradingOverviewModal()" class="text-white hover:text-gray-200 close-grading-overview">
+                    <i class="material-icons">close</i>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="flex-1 overflow-y-auto p-6">
+                <!-- Loading State -->
+                <div id="gradingOverviewLoading" class="flex justify-center items-center py-12">
+                    <div class="text-center">
+                        <i class="material-icons animate-spin text-4xl text-blue-600 mb-2">refresh</i>
+                        <p class="text-gray-600">Loading grading overview...</p>
+                    </div>
+                </div>
+
+                <!-- Content -->
+                <div id="gradingOverviewContent" class="hidden">
+                    <!-- Summary Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 hidden">
+                        <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                            <div class="text-sm text-blue-600 mb-1">Total Courses</div>
+                            <div id="summaryTotalCourses" class="text-2xl font-bold text-blue-900">0</div>
+                        </div>
+                        <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+                            <div class="text-sm text-green-600 mb-1">Total Passed</div>
+                            <div id="summaryTotalPassed" class="text-2xl font-bold text-green-900">0</div>
+                        </div>
+                        <div class="bg-red-50 p-4 rounded-lg border border-red-200">
+                            <div class="text-sm text-red-600 mb-1">Total Failed</div>
+                            <div id="summaryTotalFailed" class="text-2xl font-bold text-red-900">0</div>
+                        </div>
+                        <div class="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                            <div class="text-sm text-purple-600 mb-1">Overall Pass Rate</div>
+                            <div id="summaryPassRate" class="text-2xl font-bold text-purple-900">0%</div>
+                        </div>
+                    </div>
+
+                    <!-- Grading Table -->
+                    <div class="overflow-x-auto border rounded-lg">
+                        <table class="w-full text-sm border-collapse">
+                            <thead class="bg-gray-50 sticky top-0">
+                                <tr>
+                                    <th class="px-4 py-3 text-left font-semibold text-gray-700 border-b">CourseNo</th>
+                                    <th class="px-4 py-3 text-left font-semibold text-gray-700 border-b">Course Name</th>
+                                    <th class="px-3 py-3 text-center font-semibold text-gray-700 border-b border-l bg-purple-50">A+<br>(#)</th>
+                                    <th class="px-3 py-3 text-center font-semibold text-gray-700 border-b bg-purple-50">A<br>(#)</th>
+                                    <th class="px-3 py-3 text-center font-semibold text-gray-700 border-b bg-blue-50">B+<br>(#)</th>
+                                    <th class="px-3 py-3 text-center font-semibold text-gray-700 border-b bg-blue-50">B<br>(#)</th>
+                                    <th class="px-3 py-3 text-center font-semibold text-gray-700 border-b bg-green-50">C+<br>(#)</th>
+                                    <th class="px-3 py-3 text-center font-semibold text-gray-700 border-b bg-green-50">C<br>(#)</th>
+                                    <th class="px-3 py-3 text-center font-semibold text-gray-700 border-b bg-yellow-50">D+<br>(#)</th>
+                                    <th class="px-3 py-3 text-center font-semibold text-gray-700 border-b bg-yellow-50">D<br>(#)</th>
+                                    <th class="px-3 py-3 text-center font-semibold text-gray-700 border-b bg-orange-50">EXP<br>(#)</th>
+                                    <th class="px-3 py-3 text-center font-semibold text-gray-700 border-b bg-gray-50">NE/INC<br>(#)</th>
+                                    <th class="px-3 py-3 text-center font-semibold text-gray-700 border-b bg-gray-50">DEF<br>(#)</th>
+                                    <th class="px-3 py-3 text-center font-semibold text-gray-700 border-b bg-teal-50">P<br>(#)</th>
+                                    <th class="px-3 py-3 text-center font-semibold text-gray-700 border-b bg-red-50">F<br>(#)</th>
+                                    <th class="px-4 py-3 text-center font-semibold text-gray-700 border-b border-l bg-red-100">Total<br>Failed</th>
+                                    <th class="px-4 py-3 text-center font-semibold text-gray-700 border-b bg-green-100">Total<br>Passed</th>
+                                    <th class="px-4 py-3 text-center font-semibold text-gray-700 border-b bg-blue-100">Pass<br>Rate</th>
+                                </tr>
+                            </thead>
+                            <tbody id="gradingOverviewTableBody" class="divide-y divide-gray-200">
+                                <!-- Will be populated by JavaScript -->
+                            </tbody>
+                            <tfoot class="bg-gray-100 font-semibold">
+                                <tr id="gradingOverviewTotals">
+                                    <!-- Will be populated by JavaScript -->
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div id="gradingOverviewEmpty" class="hidden text-center py-12">
+                        <i class="material-icons text-gray-300 text-6xl mb-4">assessment</i>
+                        <p class="text-gray-500 text-lg">No grading data available</p>
+                        <p class="text-gray-400 text-sm mt-2">Courses may not have published results yet</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-between items-center border-t">
+                <button onclick="exportGradingOverview()"
+                        class="inline-flex items-center px-4 py-2 text-sm text-green-600 bg-green-50 hover:bg-green-100 rounded-lg transition-colors">
+                    <i class="material-icons text-sm mr-1">download</i>
+                    Export to Excel
+                </button>
+                <button onclick="hideGradingOverviewModal()"
+                        class="inline-flex items-center px-4 py-2 text-sm text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors">
+                    <i class="material-icons text-sm mr-1">close</i>
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alert Template (Hidden) -->
+<div id="alertTemplate" class="hidden fixed inset-0 flex items-center justify-center z-[70]">
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+    <div class="relative bg-white rounded-lg shadow-xl p-6 max-w-sm mx-auto transform transition-all">
+        <div class="flex items-center alert-header">
+            <i class="material-icons mr-2 alert-icon"></i>
+            <h3 class="text-lg font-semibold alert-title"></h3>
+        </div>
+        <p class="mt-2 text-slate-600 alert-text"></p>
+        <div class="mt-4 alert-buttons"></div>
+    </div>
+</div>
+
+<script>
+    // Global variables for batch publishing
+    let currentProgrammeData = null;
+    let allBatches = [];
+    let selectedBatchIds = new Set();
+    let viewModel = null; // Will store the report data
+
+    // Initialize page data
+    const pageData = {
+        currentUser: '@ViewBag.CurrentUser',
+        isAdmin: @Json.Serialize(ViewBag.IsAdmin ?? false),
+        isDean: @Json.Serialize(ViewBag.IsDean ?? false),
+        isRegistrar: @Json.Serialize(ViewBag.IsRegistrar ?? false),
+        isProgramCoordinator: @Json.Serialize(ViewBag.IsProgramCoordinator ?? false),
+        currentFilters: {},
+        currentReportData: null,
+        breadcrumbHistory: []
+    };
+
+    // Global variables for detail views
+    let currentEntityDetails = null;
+    let filteredStudents = [];
+
+    // ===================================================================
+    // UTILITY FUNCTIONS (GLOBAL SCOPE)
+    // ===================================================================
+
+    function showModal(modalElement) {
+        if (modalElement) {
+            modalElement.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    function hideModal(modalElement) {
+        if (modalElement) {
+            modalElement.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+    }
+
+    // ===================================================================
+    // PERFORMANCE SUMMARY FUNCTIONS (NEW)
+    // ===================================================================
+
+    function renderPerformanceSummary(summary) {
+        const tbody = document.getElementById('performanceSummaryBody');
+        tbody.innerHTML = '';
+
+        const rows = [
+            { no: 1, desc: 'Students with Clear Pass', value: summary.studentsWithClearPass },
+            { no: 2, desc: 'Percentage with Clear Pass', value: summary.percentageWithClearPass + '%', highlight: true },
+            { no: 3, desc: 'Students with Proceed with Repeats', value: summary.studentsWithProceedWithRepeats },
+            { no: 4, desc: 'Students with Repeat Semester', value: summary.studentsWithRepeatSemester },
+            { no: 5, desc: 'Students Excluded', value: summary.studentsExcluded },
+            { no: 6, desc: 'Students Disqualified', value: summary.studentsDisqualified },
+            { no: 7, desc: 'Students with Supplementary Exams', value: summary.studentsWithSupplementaryExams },
+            { no: 8, desc: 'Students with Deferred Exams', value: summary.studentsWithDeferredExams },
+            { no: 9, desc: 'TOTAL', value: summary.totalStudents, isTotal: true }
+        ];
+
+        rows.forEach(row => {
+            const tr = document.createElement('tr');
+            if (row.highlight) {
+                tr.className = 'bg-blue-50';
+            } else if (row.isTotal) {
+                tr.className = 'bg-gray-100';
+            }
+
+            tr.innerHTML = `
+                <td class="border border-gray-400 px-3 py-2 text-center ${row.isTotal ? 'font-bold' : ''}">${row.no}</td>
+                <td class="border border-gray-400 px-3 py-2 ${row.isTotal ? 'font-bold' : ''}">${row.desc}</td>
+                <td class="border border-gray-400 px-3 py-2 text-right ${row.isTotal ? 'font-bold' : ''} ${row.highlight ? 'text-blue-700 font-bold' : ''}">${row.value}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        // Show the performance summary section
+        document.getElementById('performanceSummarySection').classList.remove('hidden');
+    }
+
+    function hidePerformanceSummary() {
+        document.getElementById('performanceSummarySection').classList.add('hidden');
+    }
+
+    // ===================================================================
+    // GRADING OVERVIEW FUNCTIONS
+    // ===================================================================
+
+    let currentGradingOverviewData = null;
+
+    function showGradingOverviewModal(entityId, entityType) {
+        // Only show for programme level
+        if (entityType !== 'Programme') {
+            Swal.fire({
+                icon: 'info',
+                title: 'Programme Level Only',
+                text: 'Grading Overview is only available at programme level',
+                confirmButtonColor: '#3b82f6'
+            });
+            return;
+        }
+
+       if (!pageData.currentFilters || !pageData.currentFilters.academicYearId || !pageData.currentFilters.semester) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Please generate a report first',
+                confirmButtonColor: '#dc2626'
+            });
+            return;
+        }
+
+        currentGradingOverviewData = {
+            programmeId: entityId,
+            academicYearId: viewModel.academicYearId,
+            semester: viewModel.semester
+        };
+
+        const modal = document.getElementById('gradingOverviewModal');
+        showModal(modal);
+        loadGradingOverview();
+    }
+
+    async function loadGradingOverview() {
+        const loadingDiv = document.getElementById('gradingOverviewLoading');
+        const contentDiv = document.getElementById('gradingOverviewContent');
+        const emptyDiv = document.getElementById('gradingOverviewEmpty');
+
+        // Show loading
+        loadingDiv.classList.remove('hidden');
+        contentDiv.classList.add('hidden');
+        emptyDiv.classList.add('hidden');
+
+        try {
+            const response = await fetch(
+                `/SenateReport/GetProgrammeGradingOverview?programmeId=${currentGradingOverviewData.programmeId}&academicYearId=${pageData.currentFilters.academicYearId}&semester=${pageData.currentFilters.semester}&yearOfStudy=${pageData.currentFilters.yearOfStudy || 0}`
+            );
+
+            const result = await response.json();
+
+            if (result.success && result.data) {
+                // Update subtitle
+                const subtitle = `${result.data.programmeName} - ${result.data.modeOfStudy} - ${result.data.academicYear} - Semester ${result.data.semester}`;
+                document.getElementById('gradingOverviewSubtitle').textContent = subtitle;
+
+                // Check if there are courses
+                if (result.data.courses && result.data.courses.length > 0) {
+                    renderGradingOverview(result.data);
+                    contentDiv.classList.remove('hidden');
+                } else {
+                    emptyDiv.classList.remove('hidden');
+                }
+            } else {
+                throw new Error(result.message || 'Failed to load grading overview');
+            }
+        } catch (error) {
+            console.error('Error loading grading overview:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Failed to load grading overview',
+                confirmButtonColor: '#dc2626'
+            });
+            hideGradingOverviewModal();
+        } finally {
+            loadingDiv.classList.add('hidden');
+        }
+    }
+
+    function renderGradingOverview(data) {
+        const tbody = document.getElementById('gradingOverviewTableBody');
+        tbody.innerHTML = '';
+
+        // Initialize totals
+        const totals = {
+            'A+': 0, 'A': 0, 'B+': 0, 'B': 0,
+            'C+': 0, 'C': 0, 'D+': 0, 'D': 0,
+            'EXP': 0, 'NE/INC': 0, 'DEF': 0, 'P': 0, 'F': 0,
+            totalFailed: 0,
+            totalPassed: 0
+        };
+
+        // Render each course row
+        data.courses.forEach(course => {
+            const row = document.createElement('tr');
+            row.className = 'hover:bg-gray-50';
+
+            const gradeOrder = ['A+', 'A', 'B+', 'B', 'C+', 'C', 'D+', 'D', 'EXP', 'NE/INC', 'DEF', 'P', 'F'];
+
+            // Build row HTML
+            let rowHTML = `
+                <td class="px-4 py-3 font-medium text-gray-900">${escapeHtml(course.courseNo)}</td>
+                <td class="px-4 py-3 text-gray-900">${escapeHtml(course.courseName)}</td>
+            `;
+
+            // Add grade columns with background colors
+            const gradeColors = {
+                'A+': 'bg-purple-50', 'A': 'bg-purple-50',
+                'B+': 'bg-blue-50', 'B': 'bg-blue-50',
+                'C+': 'bg-green-50', 'C': 'bg-green-50',
+                'D+': 'bg-yellow-50', 'D': 'bg-yellow-50',
+                'EXP': 'bg-orange-50',
+                'NE/INC': 'bg-gray-50', 'DEF': 'bg-gray-50',
+                'P': 'bg-teal-50',
+                'F': 'bg-red-50'
+            };
+
+            gradeOrder.forEach((grade, index) => {
+                const count = course.gradeDistribution[grade] || 0;
+                const borderClass = (index === 0 || index === 9 || index === 15) ? 'border-l' : '';
+                const bgColor = gradeColors[grade] || '';
+
+                rowHTML += `<td class="px-3 py-3 text-center ${borderClass} ${bgColor}">${count}</td>`;
+
+                // Add to totals
+                totals[grade] += count;
+            });
+
+            // Add summary columns
+            rowHTML += `
+                <td class="px-4 py-3 text-center font-semibold border-l bg-red-50">${course.totalFailed}</td>
+                <td class="px-4 py-3 text-center font-semibold bg-green-50">${course.totalPassed}</td>
+                <td class="px-4 py-3 text-center font-semibold bg-blue-50">${course.passRate}%</td>
+            `;
+
+            row.innerHTML = rowHTML;
+            tbody.appendChild(row);
+
+            // Add to summary totals
+            totals.totalFailed += course.totalFailed;
+            totals.totalPassed += course.totalPassed;
+        });
+
+        // Render totals row
+        renderGradingTotals(totals, data.courses.length);
+
+        // Update summary cards
+        updateGradingSummary(data.courses);
+    }
+
+    function renderGradingTotals(totals, courseCount) {
+        const totalsRow = document.getElementById('gradingOverviewTotals');
+
+        const gradeOrder = ['A+', 'A', 'B+', 'B', 'C+', 'C', 'D+', 'D', 'EXP', 'NE/INC', 'DEF', 'P', 'F'];
+
+        let totalsHTML = `
+            <td class="px-4 py-3 text-left">TOTALS</td>
+            <td class="px-4 py-3"></td>
+        `;
+
+        gradeOrder.forEach((grade, index) => {
+            const borderClass = (index === 0 || index === 9 || index === 15) ? 'border-l' : '';
+            totalsHTML += `<td class="px-3 py-3 text-center ${borderClass}">${totals[grade]}</td>`;
+        });
+
+        const overallTotal = totals.totalPassed + totals.totalFailed;
+        const overallPassRate = overallTotal > 0 ? Math.round((totals.totalPassed / overallTotal) * 100) : 0;
+
+        totalsHTML += `
+            <td class="px-4 py-3 text-center border-l">${totals.totalFailed}</td>
+            <td class="px-4 py-3 text-center">${totals.totalPassed}</td>
+            <td class="px-4 py-3 text-center">${overallPassRate}%</td>
+        `;
+
+        totalsRow.innerHTML = totalsHTML;
+    }
+
+    function updateGradingSummary(courses) {
+        const totalCourses = courses.length;
+        const totalPassed = courses.reduce((sum, c) => sum + c.totalPassed, 0);
+        const totalFailed = courses.reduce((sum, c) => sum + c.totalFailed, 0);
+        const total = totalPassed + totalFailed;
+        const passRate = total > 0 ? Math.round((totalPassed / total) * 100) : 0;
+
+        document.getElementById('summaryTotalCourses').textContent = totalCourses;
+        document.getElementById('summaryTotalPassed').textContent = totalPassed;
+        document.getElementById('summaryTotalFailed').textContent = totalFailed;
+        document.getElementById('summaryPassRate').textContent = passRate + '%';
+    }
+
+    function hideGradingOverviewModal() {
+        const modal = document.getElementById('gradingOverviewModal');
+        hideModal(modal);
+        currentGradingOverviewData = null;
+    }
+
+    function exportGradingOverview() {
+        if (!currentGradingOverviewData) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'No data to export',
+                confirmButtonColor: '#dc2626'
+            });
+            return;
+        }
+
+        // Get the table
+        const table = document.querySelector('#gradingOverviewContent table');
+        if (!table) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'No data to export',
+                confirmButtonColor: '#dc2626'
+            });
+            return;
+        }
+
+        // Convert table to CSV
+        let csv = [];
+
+        // Add title and subtitle
+        const subtitle = document.getElementById('gradingOverviewSubtitle').textContent;
+        csv.push(['Grading Overview']);
+        csv.push([subtitle]);
+        csv.push([]); // Empty row
+
+        // Get headers
+        const headers = [];
+        table.querySelectorAll('thead th').forEach(th => {
+            headers.push(th.textContent.replace(/\n/g, ' ').trim());
+        });
+        csv.push(headers);
+
+        // Get body rows
+        table.querySelectorAll('tbody tr').forEach(tr => {
+            const row = [];
+            tr.querySelectorAll('td').forEach(td => {
+                row.push(td.textContent.trim());
+            });
+            csv.push(row);
+        });
+
+        // Get totals row
+        const totalsRow = [];
+        table.querySelectorAll('tfoot tr td').forEach(td => {
+            totalsRow.push(td.textContent.trim());
+        });
+        csv.push(totalsRow);
+
+        // Convert to CSV string
+        const csvContent = csv.map(row => row.join(',')).join('\n');
+
+        // Download
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+
+        link.setAttribute('href', url);
+        link.setAttribute('download', `Grading_Overview_${Date.now()}.csv`);
+        link.style.visibility = 'hidden';
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        Swal.fire({
+            icon: 'success',
+            title: 'Exported!',
+            text: 'Grading overview has been exported to CSV',
+            timer: 2000,
+            showConfirmButton: false
+        });
+    }
+
+    function escapeHtml(text) {
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text ? text.replace(/[&<>"']/g, m => map[m]) : '';
+    }
+
+    // Close modal on escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const modal = document.getElementById('gradingOverviewModal');
+            if (modal && !modal.classList.contains('hidden')) {
+                hideGradingOverviewModal();
+            }
+        }
+    });
+
+    // Close modal when clicking backdrop
+    document.getElementById('gradingOverviewModal')?.addEventListener('click', function(e) {
+        if (e.target === this) {
+            hideGradingOverviewModal();
+        }
+    });
+
+    // Global reference for report refresh
+    window.triggerReportRefresh = null;
+
+    // ===================================================================
+    // BATCH PUBLISHING FUNCTIONS
+    // ===================================================================
+
+    function showBatchPublishModal(entityId, entityType) {
+        // Only allow publishing at programme level
+        if (entityType.toLowerCase() !== 'programme') {
+            Swal.fire({
+                icon: 'info',
+                title: 'Programme Level Only',
+                text: 'Result batch publishing is only available at the programme level. Please drill down to a specific programme.',
+                confirmButtonColor: '#0d6efd'
+            });
+            return;
+        }
+
+        // Find the entity in the current report
+        const entity = viewModel.summaries.find(s => s.entityId === entityId && s.entityType.toLowerCase() === 'programme');
+        if (!entity) {
+            showErrorToast('Programme not found');
+            return;
+        }
+
+        // Store current programme data
+        currentProgrammeData = {
+            programmeId: entityId,
+            programmeName: entity.entityName,
+            academicYearId: viewModel.appliedFilters.academicYearId,
+            semester: viewModel.appliedFilters.semester
+        };
+
+        // Reset state
+        selectedBatchIds.clear();
+        allBatches = [];
+
+        // Show modal
+        showModal(document.getElementById('batchPublishModal'));
+
+        // Update modal header info
+        document.getElementById('batchProgrammeName').textContent = currentProgrammeData.programmeName;
+        document.getElementById('batchAcademicYear').textContent = `Academic Year: ${currentProgrammeData.academicYearId}`;
+        document.getElementById('batchSemester').textContent = `Semester ${currentProgrammeData.semester}`;
+
+        // Load batches
+        loadProgrammeBatches();
+    }
+
+    async function loadProgrammeBatches() {
+        const loadingDiv = document.getElementById('batchesLoading');
+        const tableContainer = document.querySelector('#batchesTableBody').parentElement.parentElement;
+        const emptyDiv = document.getElementById('batchesEmpty');
+
+        // Show loading
+        loadingDiv.classList.remove('hidden');
+        tableContainer.classList.add('hidden');
+        emptyDiv.classList.add('hidden');
+
+        try {
+            const response = await fetch(`/SenateReport/GetProgrammeBatches?` +
+                `programmeId=${currentProgrammeData.programmeId}&` +
+                `academicYearId=${currentProgrammeData.academicYearId}&` +
+                `semester=${currentProgrammeData.semester}`);
+
+            const result = await response.json();
+
+            if (result.success) {
+                allBatches = result.data || [];
+
+                // Update counts
+                document.getElementById('pendingBatchCount').textContent = result.pendingCount || 0;
+                document.getElementById('approvedBatchCount').textContent = result.approvedCount || 0;
+
+                if (allBatches.length > 0) {
+                    renderBatchesTable();
+                    tableContainer.classList.remove('hidden');
+                } else {
+                    emptyDiv.classList.remove('hidden');
+                }
+            } else {
+                showErrorToast(result.message || 'Failed to load batches');
+                emptyDiv.classList.remove('hidden');
+            }
+        } catch (error) {
+            console.error('Error loading batches:', error);
+            showErrorToast('Error loading batches');
+            emptyDiv.classList.remove('hidden');
+        } finally {
+            loadingDiv.classList.add('hidden');
+        }
+    }
+
+    function renderBatchesTable() {
+        const tbody = document.getElementById('batchesTableBody');
+        tbody.innerHTML = '';
+
+        allBatches.forEach((batch, index) => {
+            const row = document.createElement('tr');
+            row.className = `${index % 2 === 0 ? 'bg-white' : 'bg-slate-50'} ${batch.approvalStatus === 'Approved' ? 'bg-green-50' : ''}`;
+
+            const canSelect = batch.canPublish;
+            const isChecked = selectedBatchIds.has(batch.id);
+
+            row.innerHTML = `
+                <td class="px-4 py-3">
+                    ${canSelect ? `
+                        <input type="checkbox"
+                               class="form-checkbox h-4 w-4 text-primary-600 rounded batch-checkbox"
+                               data-batch-id="${batch.id}"
+                               ${isChecked ? 'checked' : ''}>
+                    ` : ''}
+                </td>
+                <td class="px-4 py-3">
+                    <div class="font-medium text-slate-900">${batch.courseCode}</div>
+                    <div class="text-xs text-slate-500">${batch.courseName}</div>
+                </td>
+                <td class="px-4 py-3 text-slate-600">${batch.assessmentName || '-'}</td>
+                <td class="px-4 py-3">
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        ${batch.submissionType}
+                    </span>
+                </td>
+                <td class="px-4 py-3 text-center text-slate-600">${batch.totalRecords}</td>
+                <td class="px-4 py-3">${getStatusBadgeForBatch(batch.approvalStatus, batch.approvalStatusText)}</td>
+                <td class="px-4 py-3 text-sm text-slate-500">${formatDateTime(batch.uploadedAt)}</td>
+                <td class="px-4 py-3 text-sm text-slate-500">${batch.uploadedByName}</td>
+            `;
+
+            tbody.appendChild(row);
+        });
+
+        // Attach event listeners
+        document.querySelectorAll('.batch-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', handleBatchCheckboxChange);
+        });
+
+        updateSelectedCount();
+    }
+
+    function handleBatchCheckboxChange(event) {
+        const batchId = parseInt(event.target.dataset.batchId);
+
+        if (event.target.checked) {
+            selectedBatchIds.add(batchId);
+        } else {
+            selectedBatchIds.delete(batchId);
+        }
+
+        updateSelectedCount();
+    }
+
+    function updateSelectedCount() {
+        const count = selectedBatchIds.size;
+        document.getElementById('selectedBatchCount').textContent = `${count} selected`;
+        document.getElementById('publishCount').textContent = count;
+
+        const publishBtn = document.getElementById('publishSelectedBtn');
+        publishBtn.disabled = count === 0;
+    }
+
+    async function publishSelectedBatches() {
+        if (selectedBatchIds.size === 0) {
+            showErrorToast('No batches selected');
+            return;
+        }
+
+        const result = await Swal.fire({
+            title: 'Publish Selected Batches?',
+            html: `You are about to publish <strong>${selectedBatchIds.size}</strong> result batch(es).<br><br>` +
+                  `This will make the results visible to students and cannot be easily undone.<br><br>` +
+                  `Are you sure you want to continue?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#16a34a',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Yes, Publish',
+            cancelButtonText: 'Cancel'
+        });
+
+        if (!result.isConfirmed) {
+            return;
+        }
+
+        // Show progress
+        Swal.fire({
+            title: 'Publishing...',
+            html: 'Please wait while we publish the selected batches.',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        try {
+            const response = await fetch('/SenateReport/PublishBatches', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    batchIds: Array.from(selectedBatchIds)
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                await Swal.fire({
+                    icon: 'success',
+                    title: 'Published!',
+                    html: `<strong>${result.publishedCount}</strong> batch(es) published successfully.` +
+                          (result.failedCount > 0 ? `<br><br><strong>${result.failedCount}</strong> batch(es) failed.` : ''),
+                    confirmButtonColor: '#16a34a'
+                });
+
+                // Clear selection and reload
+                selectedBatchIds.clear();
+                await loadProgrammeBatches();
+
+                // Close the modal
+                const modal = document.getElementById('batchPublishModal');
+                if (modal) {
+                    hideModal(modal);
+                }
+
+                // Refresh the main report - use global reference
+                if (window.triggerReportRefresh) {
+                    window.triggerReportRefresh();
+                }
+            } else {
+                await Swal.fire({
+                    icon: 'error',
+                    title: 'Publishing Failed',
+                    text: result.message || 'Failed to publish batches',
+                    confirmButtonColor: '#dc2626'
+                });
+            }
+        } catch (error) {
+            console.error('Error publishing batches:', error);
+            await Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'An error occurred while publishing batches',
+                confirmButtonColor: '#dc2626'
+            });
+        }
+    }
+
+    async function publishAllPendingBatches() {
+        const pendingCount = allBatches.filter(b => b.canPublish).length;
+
+        if (pendingCount === 0) {
+            showErrorToast('No pending batches to publish');
+            return;
+        }
+
+        const result = await Swal.fire({
+            title: 'Publish All Pending Batches?',
+            html: `You are about to publish <strong>ALL ${pendingCount}</strong> pending result batch(es) for this programme.<br><br>` +
+                  `This will make all results visible to students and cannot be easily undone.<br><br>` +
+                  `Are you sure you want to continue?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#16a34a',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Yes, Publish All',
+            cancelButtonText: 'Cancel'
+        });
+
+        if (!result.isConfirmed) {
+            return;
+        }
+
+        // Show progress
+        Swal.fire({
+            title: 'Publishing...',
+            html: 'Please wait while we publish all pending batches.',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        try {
+            const response = await fetch('/SenateReport/PublishAllProgrammeBatches', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    programmeId: currentProgrammeData.programmeId,
+                    academicYearId: currentProgrammeData.academicYearId,
+                    semester: currentProgrammeData.semester
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                await Swal.fire({
+                    icon: 'success',
+                    title: 'Published!',
+                    html: `<strong>${result.publishedCount}</strong> batch(es) published successfully.` +
+                          (result.failedCount > 0 ? `<br><br><strong>${result.failedCount}</strong> batch(es) failed.` : ''),
+                    confirmButtonColor: '#16a34a'
+                });
+
+                // Clear selection and reload
+                selectedBatchIds.clear();
+                await loadProgrammeBatches();
+
+                // Close the modal
+                const modal = document.getElementById('batchPublishModal');
+                if (modal) {
+                    hideModal(modal);
+                }
+
+                // Refresh the main report - use global reference
+                if (window.triggerReportRefresh) {
+                    window.triggerReportRefresh();
+                }
+            } else {
+                await Swal.fire({
+                    icon: 'error',
+                    title: 'Publishing Failed',
+                    text: result.message || 'Failed to publish batches',
+                    confirmButtonColor: '#dc2626'
+                });
+            }
+        } catch (error) {
+            console.error('Error publishing all batches:', error);
+            await Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'An error occurred while publishing batches',
+                confirmButtonColor: '#dc2626'
+            });
+        }
+    }
+
+    // Helper function for status badges (used in batch table)
+    function getStatusBadgeForBatch(status, statusText) {
+        const badges = {
+            'Draft': { color: 'slate', label: statusText },
+            'PendingApproval': { color: 'amber', label: statusText },
+            'InReview': { color: 'blue', label: statusText },
+            'Approved': { color: 'green', label: statusText },
+            'Rejected': { color: 'red', label: statusText }
+        };
+
+        const badge = badges[status] || { color: 'slate', label: statusText };
+        return `<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-${badge.color}-100 text-${badge.color}-800">${badge.label}</span>`;
+    }
+
+    // Helper function for date formatting
+    function formatDateTime(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
+    function showErrorToast(message) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: message,
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000
+        });
+    }
+
+    // ===================================================================
+    // EVENT LISTENERS FOR BATCH PUBLISHING
+    // ===================================================================
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Batch publishing modal close
+        document.querySelectorAll('.close-batch-publish').forEach(button => {
+            button.addEventListener('click', () => hideModal(document.getElementById('batchPublishModal')));
+        });
+
+        // Select All Batches
+        document.getElementById('selectAllBatches')?.addEventListener('click', function() {
+            allBatches.forEach(batch => {
+                if (batch.canPublish) {
+                    selectedBatchIds.add(batch.id);
+                }
+            });
+            renderBatchesTable();
+        });
+
+        // Deselect All Batches
+        document.getElementById('deselectAllBatches')?.addEventListener('click', function() {
+            selectedBatchIds.clear();
+            renderBatchesTable();
+        });
+
+        // Select All Checkbox
+        document.getElementById('selectAllCheckbox')?.addEventListener('change', function(e) {
+            if (e.target.checked) {
+                allBatches.forEach(batch => {
+                    if (batch.canPublish) {
+                        selectedBatchIds.add(batch.id);
+                    }
+                });
+            } else {
+                selectedBatchIds.clear();
+            }
+            renderBatchesTable();
+        });
+
+        // Publish Selected Button
+        document.getElementById('publishSelectedBtn')?.addEventListener('click', publishSelectedBatches);
+
+        // Publish All Pending Button
+        document.getElementById('publishAllPendingBtn')?.addEventListener('click', publishAllPendingBatches);
+    });
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // DOM Elements
+        const elements = {
+            // Filter elements
+            academicYearFilter: document.getElementById('academicYearFilter'),
+            reportLevelFilter: document.getElementById('reportLevelFilter'),
+            schoolFilter: document.getElementById('schoolFilter'),
+            departmentFilter: document.getElementById('departmentFilter'),
+            programmeFilter: document.getElementById('programmeFilter'),
+            modeOfStudyFilter: document.getElementById('modeOfStudyFilter'),
+            yearOfStudyFilter: document.getElementById('yearOfStudyFilter'),
+            semesterFilter: document.getElementById('semesterFilter'),
+
+            // Action buttons
+            generateReportBtn: document.getElementById('generateReportBtn'),
+            refreshReport: document.getElementById('refreshReport'),
+            exportOptions: document.getElementById('exportOptions'),
+            exportPdfBtn: document.getElementById('exportPdfBtn'),
+            exportExcelBtn: document.getElementById('exportExcelBtn'),
+
+            // Content areas
+            welcomeMessage: document.getElementById('welcomeMessage'),
+            loadingState: document.getElementById('loadingState'),
+            reportResults: document.getElementById('reportResults'),
+            errorState: document.getElementById('errorState'),
+            reportContainer: document.getElementById('reportContainer'),
+            summaryStats: document.getElementById('summaryStats'),
+            breadcrumbContainer: document.getElementById('breadcrumbContainer'),
+
+            // Modal elements
+            exportModal: document.getElementById('exportModal'),
+            entityDetailsModal: document.getElementById('entityDetailsModal'),
+            studentDetailModal: document.getElementById('studentDetailModal'),
+            batchPublishModal: document.getElementById('batchPublishModal'),
+            alertTemplate: document.getElementById('alertTemplate')
+        };
+
+        // Initialize all event listeners
+        initializeEventListeners();
+        initializeCascadingFilters();
+        initializeDetailViews();
+
+        function initializeEventListeners() {
+            // Generate report button
+            elements.generateReportBtn.addEventListener('click', generateReport);
+
+            // Refresh button
+            elements.refreshReport.addEventListener('click', refreshCurrentReport);
+
+            // Export buttons
+            elements.exportOptions.addEventListener('click', () => showModal(elements.exportModal));
+            elements.exportPdfBtn.addEventListener('click', exportToPdf);
+            elements.exportExcelBtn.addEventListener('click', exportToExcel);
+
+            // Modal close buttons
+            document.querySelectorAll('.close-modal').forEach(button => {
+                button.addEventListener('click', function() {
+                    const modal = this.closest('[id$="Modal"]');
+                    if (modal) hideModal(modal);
+                });
+            });
+
+            // Retry button
+            document.getElementById('retryReport')?.addEventListener('click', generateReport);
+
+            // Filter change listeners for validation
+            elements.academicYearFilter.addEventListener('change', validateFilters);
+            elements.reportLevelFilter.addEventListener('change', handleReportLevelChange);
+        }
+
+        function initializeDetailViews() {
+            // Entity details modal close buttons
+            document.querySelectorAll('.close-entity-details').forEach(button => {
+                button.addEventListener('click', () => hideModal(elements.entityDetailsModal));
+            });
+
+            // Student detail modal close buttons
+            document.querySelectorAll('.close-student-detail').forEach(button => {
+                button.addEventListener('click', () => hideModal(elements.studentDetailModal));
+            });
+
+            // Student search
+            const studentSearch = document.getElementById('studentSearch');
+            if (studentSearch) {
+                studentSearch.addEventListener('input', filterEntityStudents);
+            }
+
+            // Progression filter
+            const progressionFilter = document.getElementById('progressionFilter');
+            if (progressionFilter) {
+                progressionFilter.addEventListener('change', filterEntityStudents);
+            }
+
+            // Export entity details button
+            const exportEntityDetailsBtn = document.getElementById('exportEntityDetailsBtn');
+            if (exportEntityDetailsBtn) {
+                exportEntityDetailsBtn.addEventListener('click', exportEntityDetailsList);
+            }
+
+            // Print student detail button
+            const printStudentDetailBtn = document.getElementById('printStudentDetailBtn');
+            if (printStudentDetailBtn) {
+                printStudentDetailBtn.addEventListener('click', printStudentDetail);
+            }
+        }
+
+        function initializeCascadingFilters() {
+            // School filter change
+            elements.schoolFilter.addEventListener('change', function() {
+                const schoolId = this.value;
+                if (schoolId) {
+                    loadDepartments(schoolId);
+                } else {
+                    resetDepartmentFilter();
+                    resetProgrammeFilter();
+                }
+            });
+
+            // Department filter change
+            elements.departmentFilter.addEventListener('change', function() {
+                const departmentId = this.value;
+                if (departmentId) {
+                    loadProgrammes(departmentId);
+                } else {
+                    resetProgrammeFilter();
+                }
+            });
+        }
+
+        async function loadDepartments(schoolId) {
+            try {
+                const response = await fetch(`/SenateReport/GetDepartmentsBySchool?schoolId=${schoolId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    populateDepartmentFilter(data.departments);
+                    elements.departmentFilter.disabled = false;
+                } else {
+                    showAlert('error', 'Error', 'Failed to load departments');
+                }
+            } catch (error) {
+                console.error('Error loading departments:', error);
+                showAlert('error', 'Error', 'Failed to load departments');
+            }
+        }
+
+        async function loadProgrammes(departmentId) {
+            try {
+                const response = await fetch(`/SenateReport/GetProgrammesByDepartment?departmentId=${departmentId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    populateProgrammeFilter(data.programmes);
+                    elements.programmeFilter.disabled = false;
+                } else {
+                    showAlert('error', 'Error', 'Failed to load programmes');
+                }
+            } catch (error) {
+                console.error('Error loading programmes:', error);
+                showAlert('error', 'Error', 'Failed to load programmes');
+            }
+        }
+
+        function populateDepartmentFilter(departments) {
+            elements.departmentFilter.innerHTML = '<option value="">All Departments</option>';
+            departments.forEach(dept => {
+                const option = document.createElement('option');
+                option.value = dept.id;
+                option.textContent = dept.name;
+                elements.departmentFilter.appendChild(option);
+            });
+            resetProgrammeFilter();
+        }
+
+        function populateProgrammeFilter(programmes) {
+            elements.programmeFilter.innerHTML = '<option value="">All Programmes</option>';
+            programmes.forEach(prog => {
+                const option = document.createElement('option');
+                option.value = prog.id;
+                option.textContent = prog.name;
+                elements.programmeFilter.appendChild(option);
+            });
+        }
+
+        function resetDepartmentFilter() {
+            elements.departmentFilter.innerHTML = '<option value="">All Departments</option>';
+            elements.departmentFilter.disabled = true;
+            resetProgrammeFilter();
+        }
+
+        function resetProgrammeFilter() {
+            elements.programmeFilter.innerHTML = '<option value="">All Programmes</option>';
+            elements.programmeFilter.disabled = true;
+        }
+
+        function handleReportLevelChange() {
+            validateFilters();
+        }
+
+        function validateFilters() {
+            const academicYear = elements.academicYearFilter.value;
+            const isValid = academicYear !== '';
+
+            elements.generateReportBtn.disabled = !isValid;
+
+            if (!isValid) {
+                elements.generateReportBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                elements.generateReportBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        function getFilterValues() {
+            return {
+                academicYearId: elements.academicYearFilter.value || null,
+                reportLevel: elements.reportLevelFilter.value || 'School',
+                schoolId: elements.schoolFilter.value || null,
+                departmentId: elements.departmentFilter.value || null,
+                programmeId: elements.programmeFilter.value || null,
+                modeOfStudyId: elements.modeOfStudyFilter.value || null,
+                yearOfStudy: elements.yearOfStudyFilter.value || null,
+                semester: elements.semesterFilter.value || null,
+                period: 'Current'
+            };
+        }
+
+        async function generateReport() {
+            const filters = getFilterValues();
+
+            // Validate required fields
+            if (!filters.academicYearId) {
+                showAlert('warning', 'Missing Information', 'Please select an Academic Year');
+                return;
+            }
+
+            // Store current filters
+            pageData.currentFilters = filters;
+
+            // Show loading state
+            showState('loading');
+
+            // Hide performance summary before generating new report
+            hidePerformanceSummary();
+
+            try {
+                const response = await fetch('/SenateReport/GenerateReport', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(filters)
+                });
+
+                const data = await response.json();console.log(data);
+
+                if (data.success) {
+                    pageData.currentReportData = data.data;
+                    viewModel = data.data; // Store for batch publishing
+                    displayReportResults(data.data);
+
+                    // NEW: Check for and render performance summary if available
+                    if (data.performanceSummary && data.performanceSummary.totalStudents > 0) {
+                        renderPerformanceSummary(data.performanceSummary);
+                    }
+
+                    showAlert('success', 'Success', data.message);
+                } else {
+                    showErrorState(data.message);
+                }
+            } catch (error) {
+                console.error('Error generating report:', error);
+                showErrorState('Network error occurred while generating report');
+            }
+        }
+
+        // Make report generation accessible globally
+        window.triggerReportRefresh = generateReport;
+
+        function displayReportResults(reportData) {
+            updateSummaryStats(reportData.totals);
+            updateBreadcrumbs(reportData.breadcrumbs);
+            updateReportTable(reportData);
+            updateReportMetadata(reportData);
+            showState('results');
+        }
+
+        function updateSummaryStats(totals) {
+            const statsHtml = `
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div class="p-4">
+                        <div class="flex items-start">
+                            <div class="bg-primary-100 rounded-full p-2 mr-3">
+                                <i class="material-icons text-primary-600">people</i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-slate-500 font-medium">Total Students</p>
+                                <h3 class="text-2xl font-semibold text-slate-800">${totals.totalStudents}</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-primary-50 px-4 py-2">
+                        <div class="flex justify-between items-center text-xs text-primary-700">
+                            <span>All students</span>
+                            <span>${totals.totalWithResults + totals.totalWithoutResults}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div class="p-4">
+                        <div class="flex items-start">
+                            <div class="bg-secondary-100 rounded-full p-2 mr-3">
+                                <i class="material-icons text-secondary-600">assignment_turned_in</i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-slate-500 font-medium">With Results</p>
+                                <h3 class="text-2xl font-semibold text-slate-800">${totals.totalWithResults}</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-secondary-50 px-4 py-2">
+                        <div class="flex justify-between items-center text-xs text-secondary-700">
+                            <span>Pending results</span>
+                            <span>${totals.totalWithResults > 0 ? ((totals.totalWithResults / totals.totalStudents) * 100).toFixed(1) : 0}%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div class="p-4">
+                        <div class="flex items-start">
+                            <div class="bg-accent-100 rounded-full p-2 mr-3">
+                                <i class="material-icons text-accent-600">trending_up</i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-slate-500 font-medium">Pass Rate</p>
+                                <h3 class="text-2xl font-semibold text-slate-800">${totals.overallPassRate.toFixed(1)}%</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-accent-50 px-4 py-2">
+                        <div class="flex justify-between items-center text-xs text-accent-700">
+                            <span>Can proceed</span>
+                            <span>Average</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div class="p-4">
+                        <div class="flex items-start">
+                            <div class="bg-purple-100 rounded-full p-2 mr-3">
+                                <i class="material-icons text-purple-600">grade</i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-slate-500 font-medium">Average GPA</p>
+                                <h3 class="text-2xl font-semibold text-slate-800">${totals.overallAverageGPA.toFixed(2)}</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-purple-50 px-4 py-2">
+                        <div class="flex justify-between items-center text-xs text-purple-700">
+                            <span>Overall performance</span>
+                            <span>Scale 0-4</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            elements.summaryStats.innerHTML = statsHtml;
+            elements.summaryStats.classList.remove('hidden');
+        }
+
+        function updateBreadcrumbs(breadcrumbs) {
+            if (!breadcrumbs || breadcrumbs.length === 0) {
+                elements.breadcrumbContainer.classList.add('hidden');
+                return;
+            }
+
+            const breadcrumbList = document.getElementById('breadcrumbList');
+            breadcrumbList.innerHTML = '';
+
+            breadcrumbs.forEach((crumb, index) => {
+                const li = document.createElement('li');
+                li.className = 'inline-flex items-center';
+
+                if (index > 0) {
+                    const separator = document.createElement('i');
+                    separator.className = 'material-icons text-slate-400 mx-1';
+                    separator.textContent = 'chevron_right';
+                    li.appendChild(separator);
+                }
+
+                if (crumb.isActive) {
+                    const span = document.createElement('span');
+                    span.className = 'text-slate-700 font-medium';
+                    span.textContent = crumb.text;
+                    li.appendChild(span);
+                } else {
+                    const a = document.createElement('a');
+                    a.href = '#';
+                    a.className = 'text-primary-600 hover:text-primary-800';
+                    a.textContent = crumb.text;
+                    a.addEventListener('click', (e) => {
+                        e.preventDefault();
+                    });
+                    li.appendChild(a);
+                }
+
+                breadcrumbList.appendChild(li);
+            });
+
+            elements.breadcrumbContainer.classList.remove('hidden');
+        }
+
+        function updateReportTable(reportData) {
+            const tableHeader = document.getElementById('tableHeader');
+            const tableBody = document.getElementById('tableBody');
+
+            tableHeader.innerHTML = '';
+            tableBody.innerHTML = '';
+
+            const headers = getTableHeaders(reportData.reportLevel);
+            headers.forEach(header => {
+                const th = document.createElement('th');
+                th.className = 'px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider';
+                th.textContent = header;
+                tableHeader.appendChild(th);
+            });
+
+            reportData.summaries.forEach((summary, index) => {
+                const tr = document.createElement('tr');
+                tr.className = `${index % 2 === 0 ? 'bg-white' : 'bg-slate-50'} hover:bg-slate-100 transition-colors`;
+
+                // Build actions HTML
+                let actionsHtml = `<div class="flex justify-end space-x-2">`;
+
+                // Add Drill Down button if applicable
+                if (summary.canDrillDown) {
+                    actionsHtml += `
+                        <button class="inline-flex items-center px-3 py-1 text-xs text-primary-600 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors drill-down-btn"
+                                data-entity-id="${summary.entityId}"
+                                data-level="${summary.drillDownLevel}">
+                            <i class="material-icons text-xs mr-1">zoom_in</i>
+                            Drill Down
+                        </button>`;
+                }
+
+                if (summary.entityType === 'Programme') {
+                        actionsHtml += `
+                        <button class="inline-flex items-center px-3 py-1 text-xs text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors ml-2 grading-overview-btn"
+                                data-entity-id="${summary.entityId}"
+                                data-entity-type="${summary.entityType}">
+                            <i class="material-icons text-xs mr-1">assessment</i>
+                            Grading Overview
+                        </button>`;
+                }
+
+                // Add Publish button for Programme level
+                if (summary.entityType === 'Programme') {
+                    actionsHtml += `
+                        <button class="inline-flex items-center px-3 py-1 text-xs text-amber-600 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors publish-btn"
+                                data-entity-id="${summary.entityId}"
+                                data-entity-type="${summary.entityType}">
+                            <i class="material-icons text-xs mr-1">check_circle</i>
+                            Publish
+                        </button>`;
+                }
+
+                // Add Details button
+                actionsHtml += `
+                    <button class="inline-flex items-center px-3 py-1 text-xs text-secondary-600 bg-secondary-50 hover:bg-secondary-100 rounded-lg transition-colors view-details-btn"
+                            data-entity-id="${summary.entityId}">
+                        <i class="material-icons text-xs mr-1">visibility</i>
+                        Details
+                    </button>
+                </div>`;
+
+                tr.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
+                        ${summary.entityName}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                        ${summary.totalStudents}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                        ${summary.studentsWithResults}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                        ${summary.studentsWithoutResults}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                        ${summary.passRate.toFixed(1)}%
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                        ${summary.averageGPA.toFixed(2)}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                        ${getProgressionBreakdown(summary.progressionRuleCounts)}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        ${actionsHtml}
+                    </td>
+                `;
+
+                tableBody.appendChild(tr);
+            });
+
+            // Attach event listeners for drill down
+            document.querySelectorAll('.drill-down-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const entityId = this.dataset.entityId;
+                    const level = this.dataset.level;
+                    performDrillDown(level, entityId);
+                });
+            });
+
+            // Attach event listeners for publish
+            document.querySelectorAll('.publish-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const entityId = parseInt(this.dataset.entityId);
+                    const entityType = this.dataset.entityType;
+                    showBatchPublishModal(entityId, entityType);
+                });
+            });
+
+            // Attach event listeners for details
+            document.querySelectorAll('.view-details-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const entityId = parseInt(this.dataset.entityId);
+                    showEntityDetails(entityId);
+                });
+            });
+
+            document.querySelectorAll('.grading-overview-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const entityId = parseInt(this.dataset.entityId);
+                    const entityType = this.dataset.entityType;
+                    showGradingOverviewModal(entityId, entityType);
+                });
+            });
+        }
+
+        function getTableHeaders(reportLevel) {
+            return [
+                reportLevel === 'School' ? 'School' :
+                reportLevel === 'Department' ? 'Department' : 'Programme',
+                'Total Students',
+                'With Results',
+                'Without Results',
+                'Pass Rate',
+                'Avg GPA',
+                'Progression Breakdown',
+                'Actions'
+            ];
+        }
+
+        function getProgressionBreakdown(progressionCounts) {
+            if (!progressionCounts || Object.keys(progressionCounts).length === 0) {
+                return '<span class="text-slate-400">No data</span>';
+            }
+
+            const breakdown = Object.entries(progressionCounts)
+                .map(([rule, count]) => `${getProgressionRuleShortName(rule)}: ${count}`)
+                .join(' | ');
+
+            return `<span class="text-xs">${breakdown}</span>`;
+        }
+
+        function getProgressionRuleShortName(rule) {
+            const shortNames = {
+                'Proceed': 'Pass',
+                'ProceedWithRepeat': 'Pass+Rep',
+                'ProceedOnProbation': 'Probation',
+                'RepeatYear': 'Repeat Yr',
+                'RepeatSemester': 'Repeat Sem',
+                'Exclude': 'Exclude',
+                'Withdraw': 'Withdraw'
+            };
+            return shortNames[rule] || rule;
+        }
+
+        function updateReportMetadata(reportData) {
+            const metadata = `Generated: ${new Date(reportData.generatedAt).toLocaleString()} |
+                             ${reportData.summaries.length} ${reportData.reportLevel}(s) |
+                             ${reportData.totals.totalStudents} Students`;
+
+            document.getElementById('reportMetadata').textContent = metadata;
+            document.getElementById('reportTitle').textContent = `${reportData.reportLevel} Level Report`;
+        }
+
+        async function performDrillDown(level, entityId) {
+            showState('loading');
+
+            // Hide performance summary when drilling down
+            hidePerformanceSummary();
+
+            try {
+                const params = new URLSearchParams({
+                    level: level,
+                    entityId: entityId,
+                    ...pageData.currentFilters
+                });
+
+                const response = await fetch(`/SenateReport/DrillDown?${params}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    pageData.breadcrumbHistory.push({
+                        filters: { ...pageData.currentFilters },
+                        reportData: { ...pageData.currentReportData }
+                    });
+
+                    pageData.currentFilters.reportLevel = data.level;
+                    pageData.currentReportData = data.data;
+                    viewModel = data.data; // Update for batch publishing
+
+                    displayReportResults(data.data);
+                    document.getElementById('backToParent').classList.remove('hidden');
+                    showAlert('success', 'Success', data.message);
+                } else {
+                    showErrorState(data.message);
+                }
+            } catch (error) {
+                console.error('Error in drill-down:', error);
+                showErrorState('Failed to load drill-down report');
+            }
+        }
+
+        // Entity Details Functions
+        async function showEntityDetails(entityId) {
+            const modal = elements.entityDetailsModal;
+            const loadingState = document.getElementById('entityDetailsLoading');
+            const tableBody = document.getElementById('entityStudentsTableBody');
+            const emptyState = document.getElementById('entityDetailsEmpty');
+
+            showModal(modal);
+            loadingState.classList.remove('hidden');
+            tableBody.innerHTML = '';
+            emptyState.classList.add('hidden');
+
+            try {
+                const entity = pageData.currentReportData.summaries.find(s => s.entityId === entityId);
+                if (!entity) {
+                    throw new Error('Entity not found');
+                }
+
+                const params = new URLSearchParams({
+                    entityId: entityId,
+                    entityType: entity.entityType,
+                    ...pageData.currentFilters
+                });
+
+                const response = await fetch(`/SenateReport/GetEntityStudentDetails?${params}`);
+                const result = await response.json();
+
+                loadingState.classList.add('hidden');
+
+                if (result.success) {
+                    currentEntityDetails = result.data;
+                    filteredStudents = result.data.students;
+                    displayEntityStudentDetails(result.data);
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                console.error('Error loading entity details:', error);
+                loadingState.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                showAlert('error', 'Error', 'Failed to load student details: ' + error.message);
+            }
+        }
+
+        function displayEntityStudentDetails(data) {
+            const titleElement = document.getElementById('entityDetailsTitle');
+            const countElement = document.getElementById('entityDetailsCount');
+            const summaryContainer = document.getElementById('entityDetailsSummary');
+
+            titleElement.textContent = `${data.entityName} - Student Details`;
+
+            summaryContainer.innerHTML = `
+                <div class="bg-white border border-slate-200 rounded-lg p-4">
+                    <div class="flex items-center">
+                        <div class="bg-primary-100 rounded-full p-2 mr-3">
+                            <i class="material-icons text-primary-600">people</i>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-500 font-medium">Total Students</p>
+                            <p class="text-2xl font-bold text-slate-800">${data.totalStudents}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white border border-slate-200 rounded-lg p-4">
+                    <div class="flex items-center">
+                        <div class="bg-green-100 rounded-full p-2 mr-3">
+                            <i class="material-icons text-green-600">check_circle</i>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-500 font-medium">With Results</p>
+                            <p class="text-2xl font-bold text-slate-800">${data.studentsWithResults}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white border border-slate-200 rounded-lg p-4">
+                    <div class="flex items-center">
+                        <div class="bg-amber-100 rounded-full p-2 mr-3">
+                            <i class="material-icons text-amber-600">pending</i>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-500 font-medium">Pending Results</p>
+                            <p class="text-2xl font-bold text-slate-800">${data.studentsWithoutResults}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white border border-slate-200 rounded-lg p-4">
+                    <div class="flex items-center">
+                        <div class="bg-purple-100 rounded-full p-2 mr-3">
+                            <i class="material-icons text-purple-600">grade</i>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-500 font-medium">Average GPA</p>
+                            <p class="text-2xl font-bold text-slate-800">${data.averageGPA.toFixed(2)}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            if (data.students && data.students.length > 0) {
+                renderEntityStudentsTable(data.students);
+                countElement.textContent = `${data.students.length} student${data.students.length !== 1 ? 's' : ''}`;
+            } else {
+                document.getElementById('entityDetailsEmpty').classList.remove('hidden');
+                countElement.textContent = '0 students';
+            }
+        }
+
+        function renderEntityStudentsTable(students) {
+            const tableBody = document.getElementById('entityStudentsTableBody');
+            tableBody.innerHTML = '';
+
+            students.forEach((student, index) => {
+                const row = document.createElement('tr');
+                row.className = `${index % 2 === 0 ? 'bg-white' : 'bg-slate-50'} hover:bg-slate-100 transition-colors`;
+
+                const progressionBadge = getProgressionBadge(student.progressionRule);
+                const gpaDisplay = student.hasPublishedResults ? student.gpa.toFixed(2) : 'N/A';
+
+                row.innerHTML = `
+                    <td class="px-4 py-3 whitespace-nowrap font-medium text-slate-900">${student.studentNumber}</td>
+                    <td class="px-4 py-3">${student.studentName}</td>
+                    <td class="px-4 py-3 text-center">${student.totalCourses}</td>
+                    <td class="px-4 py-3 text-center">
+                        ${student.hasPublishedResults ?
+                            `<span class="${student.failedCourses > 0 ? 'text-red-600 font-semibold' : 'text-slate-600'}">${student.failedCourses}</span>` :
+                            '<span class="text-slate-400">-</span>'}
+                    </td>
+                    <td class="px-4 py-3 text-center font-medium">
+                        ${student.hasPublishedResults ?
+                            `<span class="${getGPAColorClass(student.gpa)}">${gpaDisplay}</span>` :
+                            '<span class="text-slate-400">N/A</span>'}
+                    </td>
+                    <td class="px-4 py-3">${progressionBadge}</td>
+                    <td class="px-4 py-3 text-center">
+                        <button class="inline-flex items-center px-3 py-1 text-xs text-secondary-600 bg-secondary-50 hover:bg-secondary-100 rounded-lg transition-colors view-student-detail-btn"
+                                data-student-id="${student.studentId}"
+                                ${!student.hasPublishedResults ? 'disabled title="No published results"' : ''}>
+                            <i class="material-icons text-xs mr-1">visibility</i>
+                            View Detail
+                        </button>
+                    </td>
+                `;
+
+                tableBody.appendChild(row);
+            });
+
+            document.querySelectorAll('.view-student-detail-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const studentId = parseInt(this.dataset.studentId);
+                    showStudentDetail(studentId);
+                });
+            });
+        }
+
+        function filterEntityStudents() {
+            if (!currentEntityDetails) return;
+
+            const searchTerm = document.getElementById('studentSearch').value.toLowerCase();
+            const progressionFilterValue = document.getElementById('progressionFilter').value;
+
+            filteredStudents = currentEntityDetails.students.filter(student => {
+                const matchesSearch = student.studentNumber.toLowerCase().includes(searchTerm) ||
+                                    student.studentName.toLowerCase().includes(searchTerm);
+                const matchesProgression = !progressionFilterValue || student.progressionRule === progressionFilterValue;
+
+                return matchesSearch && matchesProgression;
+            });
+
+            renderEntityStudentsTable(filteredStudents);
+            document.getElementById('entityDetailsCount').textContent =
+                `${filteredStudents.length} student${filteredStudents.length !== 1 ? 's' : ''}`;
+        }
+
+        // Student Detail Functions
+        async function showStudentDetail(studentId) {
+            const modal = elements.studentDetailModal;
+            const loadingState = document.getElementById('studentDetailLoading');
+            const studentInfo = document.getElementById('studentInfoSection');
+            const performanceSummary = document.getElementById('performanceSummary');
+            const coursesTableBody = document.getElementById('studentCoursesTableBody');
+
+            showModal(modal);
+            loadingState.classList.remove('hidden');
+            studentInfo.innerHTML = '';
+            performanceSummary.innerHTML = '';
+            coursesTableBody.innerHTML = '';
+
+            try {
+                const params = new URLSearchParams({
+                    studentId: studentId,
+                    ...pageData.currentFilters
+                });
+
+                const response = await fetch(`/SenateReport/GetStudentProgressionDetail?${params}`);
+                const result = await response.json();
+
+                loadingState.classList.add('hidden');
+
+                if (result.success) {
+                    displayStudentProgressionDetail(result.data);
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                console.error('Error loading student detail:', error);
+                loadingState.classList.add('hidden');
+                showAlert('error', 'Error', 'Failed to load student progression detail: ' + error.message);
+                hideModal(modal);
+            }
+        }
+
+        function displayStudentProgressionDetail(data) {
+            const titleElement = document.getElementById('studentDetailTitle');
+            const studentInfo = document.getElementById('studentInfoSection');
+            const performanceSummary = document.getElementById('performanceSummary');
+            const coursesTableBody = document.getElementById('studentCoursesTableBody');
+
+            titleElement.textContent = `${data.studentNumber} - ${data.studentName}`;
+
+            studentInfo.innerHTML = `
+                <div class="space-y-2">
+                    <div class="flex items-start">
+                        <i class="material-icons text-secondary-600 mr-2">badge</i>
+                        <div>
+                            <p class="text-xs text-slate-500">Student Number</p>
+                            <p class="font-semibold text-slate-800">${data.studentNumber}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <i class="material-icons text-secondary-600 mr-2">school</i>
+                        <div>
+                            <p class="text-xs text-slate-500">Programme</p>
+                            <p class="font-semibold text-slate-800">${data.programme}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <i class="material-icons text-secondary-600 mr-2">domain</i>
+                        <div>
+                            <p class="text-xs text-slate-500">Department</p>
+                            <p class="font-semibold text-slate-800">${data.department}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <div class="flex items-start">
+                        <i class="material-icons text-secondary-600 mr-2">business</i>
+                        <div>
+                            <p class="text-xs text-slate-500">School</p>
+                            <p class="font-semibold text-slate-800">${data.school}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <i class="material-icons text-secondary-600 mr-2">calendar_today</i>
+                        <div>
+                            <p class="text-xs text-slate-500">Year & Semester</p>
+                            <p class="font-semibold text-slate-800">Year ${data.yearOfStudy}, Semester ${data.semester}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <i class="material-icons text-secondary-600 mr-2">trending_up</i>
+                        <div>
+                            <p class="text-xs text-slate-500">Academic Standing</p>
+                            <p class="font-semibold text-slate-800">${data.academicStanding}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            performanceSummary.innerHTML = `
+                <div class="bg-white border border-slate-200 rounded-lg p-4 text-center">
+                    <i class="material-icons text-purple-600 mb-2">grade</i>
+                    <p class="text-xs text-slate-500 font-medium">GPA</p>
+                    <p class="text-2xl font-bold ${getGPAColorClass(data.gpa)}">${data.gpa.toFixed(2)}</p>
+                </div>
+                <div class="bg-white border border-slate-200 rounded-lg p-4 text-center">
+                    <i class="material-icons text-blue-600 mb-2">assignment</i>
+                    <p class="text-xs text-slate-500 font-medium">Total Courses</p>
+                    <p class="text-2xl font-bold text-slate-800">${data.totalCourses}</p>
+                </div>
+                <div class="bg-white border border-slate-200 rounded-lg p-4 text-center">
+                    <i class="material-icons ${data.failedCourses > 0 ? 'text-red-600' : 'text-green-600'} mb-2">
+                        ${data.failedCourses > 0 ? 'close' : 'check_circle'}
+                    </i>
+                    <p class="text-xs text-slate-500 font-medium">Failed Courses</p>
+                    <p class="text-2xl font-bold ${data.failedCourses > 0 ? 'text-red-600' : 'text-green-600'}">${data.failedCourses}</p>
+                </div>
+                <div class="bg-white border border-slate-200 rounded-lg p-4 text-center">
+                    <i class="material-icons text-secondary-600 mb-2">rule</i>
+                    <p class="text-xs text-slate-500 font-medium">Progression</p>
+                    <p class="text-sm font-bold text-slate-800">${formatProgressionRule(data.progressionRule)}</p>
+                </div>
+            `;
+
+            if (data.courses && data.courses.length > 0) {
+                data.courses.forEach((course, index) => {
+                    const row = document.createElement('tr');
+                    row.className = `${index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`;
+
+                    const statusBadge = getStatusBadge(course.status, course.isPassed);
+
+                    row.innerHTML = `
+                        <td class="px-4 py-3 font-medium text-slate-900">${course.courseCode}</td>
+                        <td class="px-4 py-3">${course.courseName}</td>
+                        <td class="px-4 py-3 text-center">${course.credits}</td>
+                        <td class="px-4 py-3 text-center">${course.semester}</td>
+                        <td class="px-4 py-3 text-center font-medium">${course.totalScore > 0 ? course.totalScore.toFixed(1) : '-'}</td>
+                        <td class="px-4 py-3 text-center font-bold ${getGradeColorClass(course.grade)}">${course.grade || '-'}</td>
+                        <td class="px-4 py-3 text-center">${course.gradePoints > 0 ? course.gradePoints.toFixed(2) : '-'}</td>
+                        <td class="px-4 py-3 text-center">${statusBadge}</td>
+                    `;
+
+                    coursesTableBody.appendChild(row);
+                });
+            } else {
+                coursesTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="px-4 py-8 text-center text-slate-500">
+                            <i class="material-icons text-4xl text-slate-300 mb-2">inbox</i>
+                            <p>No course data available</p>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        // Helper Functions
+        function getProgressionBadge(rule) {
+            const badges = {
+                'Proceed': '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Proceed</span>',
+                'ProceedWithRepeat': '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Proceed + Repeat</span>',
+                'ProceedOnProbation': '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">Probation</span>',
+                'RepeatYear': '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">Repeat Year</span>',
+                'RepeatSemester': '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">Repeat Semester</span>',
+                'Exclude': '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">Exclude</span>',
+                'Withdraw': '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">Withdraw</span>',
+                'Results Pending': '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-800">Pending</span>',
+                'Academic Exclusion': '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">Exclusion</span>'
+            };
+            return badges[rule] || `<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-800">${rule}</span>`;
+        }
+
+        function getStatusBadge(status, isPassed) {
+            if (status === 'Pass' || isPassed) {
+                return '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Pass</span>';
+            } else if (status === 'Fail') {
+                return '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">Fail</span>';
+            } else {
+                return `<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-800">${status}</span>`;
+            }
+        }
+
+        function getGPAColorClass(gpa) {
+            if (gpa >= 3.5) return 'text-green-600';
+            if (gpa >= 3.0) return 'text-blue-600';
+            if (gpa >= 2.5) return 'text-amber-600';
+            if (gpa >= 2.0) return 'text-orange-600';
+            return 'text-red-600';
+        }
+
+        function getGradeColorClass(grade) {
+            if (['A+', 'A', 'A-'].includes(grade)) return 'text-green-600';
+            if (['B+', 'B', 'B-'].includes(grade)) return 'text-blue-600';
+            if (['C+', 'C', 'C-'].includes(grade)) return 'text-amber-600';
+            if (['D+', 'D', 'D-'].includes(grade)) return 'text-orange-600';
+            return 'text-red-600';
+        }
+
+        function formatProgressionRule(rule) {
+            return rule.replace(/([A-Z])/g, ' $1').trim();
+        }
+
+        function exportEntityDetailsList() {
+            if (!currentEntityDetails) return;
+            showAlert('info', 'Export Started', 'Exporting entity details list...');
+        }
+
+        function printStudentDetail() {
+            window.print();
+        }
+
+        function refreshCurrentReport() {
+            if (pageData.currentFilters && Object.keys(pageData.currentFilters).length > 0) {
+                generateReport();
+            } else {
+                showAlert('warning', 'No Report to Refresh', 'Please generate a report first');
+            }
+        }
+
+        async function exportToPdf() {
+            if (!pageData.currentFilters || Object.keys(pageData.currentFilters).length === 0) {
+                showAlert('warning', 'No Report to Export', 'Please generate a report first');
+                return;
+            }
+
+            try {
+                hideModal(elements.exportModal);
+                showAlert('info', 'Export Started', 'Generating PDF report...');
+
+                const response = await fetch('/SenateReport/ExportToPdf', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(pageData.currentFilters)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showAlert('success', 'Success', data.message);
+                } else {
+                    showAlert('error', 'Export Failed', data.message);
+                }
+            } catch (error) {
+                console.error('Error exporting to PDF:', error);
+                showAlert('error', 'Export Failed', 'An error occurred while generating the PDF');
+            }
+        }
+
+        async function exportToExcel() {
+            if (!pageData.currentFilters || Object.keys(pageData.currentFilters).length === 0) {
+                showAlert('warning', 'No Report to Export', 'Please generate a report first');
+                return;
+            }
+
+            try {
+                hideModal(elements.exportModal);
+                showAlert('info', 'Export Started', 'Generating Excel report...');
+
+                const response = await fetch('/SenateReport/ExportToExcel', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(pageData.currentFilters)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showAlert('success', 'Success', data.message);
+                } else {
+                    showAlert('error', 'Export Failed', data.message);
+                }
+            } catch (error) {
+                console.error('Error exporting to Excel:', error);
+                showAlert('error', 'Export Failed', 'An error occurred while generating the Excel file');
+            }
+        }
+
+        // State management functions
+        function showState(state) {
+            elements.welcomeMessage.classList.add('hidden');
+            elements.loadingState.classList.add('hidden');
+            elements.reportResults.classList.add('hidden');
+            elements.errorState.classList.add('hidden');
+
+            switch (state) {
+                case 'welcome':
+                    elements.welcomeMessage.classList.remove('hidden');
+                    break;
+                case 'loading':
+                    elements.loadingState.classList.remove('hidden');
+                    break;
+                case 'results':
+                    elements.reportResults.classList.remove('hidden');
+                    break;
+                case 'error':
+                    elements.errorState.classList.remove('hidden');
+                    break;
+            }
+        }
+
+        function showErrorState(message) {
+            document.getElementById('errorMessage').textContent = message;
+            showState('error');
+        }
+
+        // Alert function
+        function showAlert(type, title, text) {
+            const alertTemplate = elements.alertTemplate;
+            const alertEl = alertTemplate.cloneNode(true);
+            alertEl.id = '';
+            alertEl.classList.remove('hidden');
+
+            const alertIcon = alertEl.querySelector('.alert-icon');
+            const alertTitle = alertEl.querySelector('.alert-title');
+            const alertText = alertEl.querySelector('.alert-text');
+            const alertButtons = alertEl.querySelector('.alert-buttons');
+
+            let iconName, colorClass;
+            switch (type) {
+                case 'error':
+                    iconName = 'error';
+                    colorClass = 'text-red-600';
+                    break;
+                case 'success':
+                    iconName = 'check_circle';
+                    colorClass = 'text-green-600';
+                    break;
+                case 'warning':
+                    iconName = 'warning';
+                    colorClass = 'text-amber-600';
+                    break;
+                default:
+                    iconName = 'info';
+                    colorClass = 'text-blue-600';
+            }
+
+            alertIcon.textContent = iconName;
+            alertTitle.textContent = title;
+            alertTitle.className = `text-lg font-semibold ${colorClass}`;
+            alertText.textContent = text;
+
+            alertButtons.innerHTML = `
+                <button class="w-full bg-primary-600 text-white py-2 px-4 rounded-lg hover:bg-primary-700 transition-colors">
+                    OK
+                </button>
+            `;
+
+            document.body.appendChild(alertEl);
+
+            const closeBtn = alertEl.querySelector('button');
+            closeBtn.onclick = () => {
+                alertEl.remove();
+            };
+
+            setTimeout(() => {
+                if (alertEl.parentNode) {
+                    alertEl.remove();
+                }
+            }, 5000);
+        }
+
+        // Initialize validation on page load
+        validateFilters();
+    });
+</script>

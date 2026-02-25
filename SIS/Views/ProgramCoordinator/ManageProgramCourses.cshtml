@@ -1,0 +1,817 @@
+﻿@model SIS.Models.ProgramCoordinator.ManageProgramCoursesViewModel
+@{
+    ViewData["Title"] = "Manage Program Courses";
+}
+
+<div class="min-h-[88vh] bg-slate-50">
+    <!-- Header Banner -->
+    <div class="bg-primary-700 text-white">
+        <div class="container mx-auto px-6 py-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h1 class="text-2xl font-bold">Manage Program Courses</h1>
+                    <p class="mt-1 text-primary-100">@Model.Program.Name</p>
+                </div>
+                <div class="flex gap-2">
+                    <a href="@Url.Action("ProgramDetails", new { id = Model.Program.Id })"
+                       class="bg-white bg-opacity-20 hover:bg-opacity-30 transition-colors px-4 py-2 rounded-lg text-sm flex items-center">
+                        <i class="material-icons text-sm mr-1">arrow_back</i>
+                        Back to Details
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-6 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <!-- Main Content Area -->
+            <div class="lg:col-span-3 space-y-6">
+                <!-- Course Structure Section -->
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+                        <h2 class="text-lg font-semibold text-slate-800">Program Course Structure</h2>
+                        <button type="button" id="saveStructureBtn" class="px-4 py-2 text-sm text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors flex items-center">
+                            <i class="material-icons text-sm mr-1">save</i>
+                            Save Changes
+                        </button>
+                    </div>
+
+                    <!-- Year and Semester Structure -->
+                    <div class="p-6">
+                        <div class="mb-6">
+                            <div class="flex text-sm font-medium text-slate-500 mb-2">
+                                <span class="w-1/2 pl-3">Year 1</span>
+                                <span class="w-1/2 pl-3">Year 2</span>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <!-- Year 1 -->
+                                <div class="space-y-4">
+                                    <!-- Semester 1 -->
+                                    <div>
+                                        <div class="flex justify-between items-center mb-2">
+                                            <h4 class="text-sm font-medium text-slate-700">Semester 1</h4>
+                                            <button type="button" class="add-course-btn px-2 py-1 text-xs text-primary-600 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors"
+                                                    data-year="1" data-semester="1">
+                                                <i class="material-icons text-xs">add</i>
+                                                Add Course
+                                            </button>
+                                        </div>
+                                        <div class="course-container border border-slate-200 rounded-lg min-h-[150px] bg-slate-50 p-2"
+                                             id="course-container-1-1" data-year="1" data-semester="1">
+                                            @foreach (var course in Model.CourseStructure.GetValueOrDefault(1, new List<SIS.Models.ProgramCoordinator.CourseViewModel>()).Where(c => c.Semester == 1))
+                                            {
+                                                <div class="course-item bg-white border border-slate-200 rounded-lg p-3 mb-2 cursor-move"
+                                                     data-course-id="@course.Course.Id" data-mandatory="@course.IsMandatory.ToString().ToLower()">
+                                                    <div class="flex justify-between items-start">
+                                                        <div>
+                                                            <h5 class="text-sm font-medium text-slate-800">@course.Course.CourseName</h5>
+                                                            <p class="text-xs text-slate-500 mt-0.5">@course.Course.CourseCode</p>
+                                                        </div>
+                                                        <div class="flex items-center gap-1">
+                                                            @if (course.IsMandatory)
+                                                            {
+                                                                <span class="bg-secondary-100 text-secondary-800 text-xs px-2 py-0.5 rounded">Mandatory</span>
+                                                            }
+                                                            <button type="button" class="remove-course-btn text-red-500 hover:text-red-700 transition-colors">
+                                                                <i class="material-icons text-sm">close</i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+
+                                    <!-- Semester 2 -->
+                                    <div>
+                                        <div class="flex justify-between items-center mb-2">
+                                            <h4 class="text-sm font-medium text-slate-700">Semester 2</h4>
+                                            <button type="button" class="add-course-btn px-2 py-1 text-xs text-primary-600 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors"
+                                                    data-year="1" data-semester="2">
+                                                <i class="material-icons text-xs">add</i>
+                                                Add Course
+                                            </button>
+                                        </div>
+                                        <div class="course-container border border-slate-200 rounded-lg min-h-[150px] bg-slate-50 p-2"
+                                             id="course-container-1-2" data-year="1" data-semester="2">
+                                            @foreach (var course in Model.CourseStructure.GetValueOrDefault(1, new List<SIS.Models.ProgramCoordinator.CourseViewModel>()).Where(c => c.Semester == 2))
+                                            {
+                                                <div class="course-item bg-white border border-slate-200 rounded-lg p-3 mb-2 cursor-move"
+                                                     data-course-id="@course.Course.Id" data-mandatory="@course.IsMandatory.ToString().ToLower()">
+                                                    <div class="flex justify-between items-start">
+                                                        <div>
+                                                            <h5 class="text-sm font-medium text-slate-800">@course.Course.CourseName</h5>
+                                                            <p class="text-xs text-slate-500 mt-0.5">@course.Course.CourseCode</p>
+                                                        </div>
+                                                        <div class="flex items-center gap-1">
+                                                            @if (course.IsMandatory)
+                                                            {
+                                                                <span class="bg-secondary-100 text-secondary-800 text-xs px-2 py-0.5 rounded">Mandatory</span>
+                                                            }
+                                                            <button type="button" class="remove-course-btn text-red-500 hover:text-red-700 transition-colors">
+                                                                <i class="material-icons text-sm">close</i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Year 2 -->
+                                <div class="space-y-4">
+                                    <!-- Semester 1 -->
+                                    <div>
+                                        <div class="flex justify-between items-center mb-2">
+                                            <h4 class="text-sm font-medium text-slate-700">Semester 1</h4>
+                                            <button type="button" class="add-course-btn px-2 py-1 text-xs text-primary-600 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors"
+                                                    data-year="2" data-semester="1">
+                                                <i class="material-icons text-xs">add</i>
+                                                Add Course
+                                            </button>
+                                        </div>
+                                        <div class="course-container border border-slate-200 rounded-lg min-h-[150px] bg-slate-50 p-2"
+                                             id="course-container-2-1" data-year="2" data-semester="1">
+                                            @foreach (var course in Model.CourseStructure.GetValueOrDefault(2, new List<SIS.Models.ProgramCoordinator.CourseViewModel>()).Where(c => c.Semester == 1))
+                                            {
+                                                <div class="course-item bg-white border border-slate-200 rounded-lg p-3 mb-2 cursor-move"
+                                                     data-course-id="@course.Course.Id" data-mandatory="@course.IsMandatory.ToString().ToLower()">
+                                                    <div class="flex justify-between items-start">
+                                                        <div>
+                                                            <h5 class="text-sm font-medium text-slate-800">@course.Course.CourseName</h5>
+                                                            <p class="text-xs text-slate-500 mt-0.5">@course.Course.CourseCode</p>
+                                                        </div>
+                                                        <div class="flex items-center gap-1">
+                                                            @if (course.IsMandatory)
+                                                            {
+                                                                <span class="bg-secondary-100 text-secondary-800 text-xs px-2 py-0.5 rounded">Mandatory</span>
+                                                            }
+                                                            <button type="button" class="remove-course-btn text-red-500 hover:text-red-700 transition-colors">
+                                                                <i class="material-icons text-sm">close</i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+
+                                    <!-- Semester 2 -->
+                                    <div>
+                                        <div class="flex justify-between items-center mb-2">
+                                            <h4 class="text-sm font-medium text-slate-700">Semester 2</h4>
+                                            <button type="button" class="add-course-btn px-2 py-1 text-xs text-primary-600 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors"
+                                                    data-year="2" data-semester="2">
+                                                <i class="material-icons text-xs">add</i>
+                                                Add Course
+                                            </button>
+                                        </div>
+                                        <div class="course-container border border-slate-200 rounded-lg min-h-[150px] bg-slate-50 p-2"
+                                             id="course-container-2-2" data-year="2" data-semester="2">
+                                            @foreach (var course in Model.CourseStructure.GetValueOrDefault(2, new List<SIS.Models.ProgramCoordinator.CourseViewModel>()).Where(c => c.Semester == 2))
+                                            {
+                                                <div class="course-item bg-white border border-slate-200 rounded-lg p-3 mb-2 cursor-move"
+                                                     data-course-id="@course.Course.Id" data-mandatory="@course.IsMandatory.ToString().ToLower()">
+                                                    <div class="flex justify-between items-start">
+                                                        <div>
+                                                            <h5 class="text-sm font-medium text-slate-800">@course.Course.CourseName</h5>
+                                                            <p class="text-xs text-slate-500 mt-0.5">@course.Course.CourseCode</p>
+                                                        </div>
+                                                        <div class="flex items-center gap-1">
+                                                            @if (course.IsMandatory)
+                                                            {
+                                                                <span class="bg-secondary-100 text-secondary-800 text-xs px-2 py-0.5 rounded">Mandatory</span>
+                                                            }
+                                                            <button type="button" class="remove-course-btn text-red-500 hover:text-red-700 transition-colors">
+                                                                <i class="material-icons text-sm">close</i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-6">
+                            <div class="flex text-sm font-medium text-slate-500 mb-2">
+                                <span class="w-1/2 pl-3">Year 3</span>
+                                <span class="w-1/2 pl-3">Year 4</span>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <!-- Year 3 -->
+                                <div class="space-y-4">
+                                    <!-- Semester 1 -->
+                                    <div>
+                                        <div class="flex justify-between items-center mb-2">
+                                            <h4 class="text-sm font-medium text-slate-700">Semester 1</h4>
+                                            <button type="button" class="add-course-btn px-2 py-1 text-xs text-primary-600 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors"
+                                                    data-year="3" data-semester="1">
+                                                <i class="material-icons text-xs">add</i>
+                                                Add Course
+                                            </button>
+                                        </div>
+                                        <div class="course-container border border-slate-200 rounded-lg min-h-[150px] bg-slate-50 p-2"
+                                             id="course-container-3-1" data-year="3" data-semester="1">
+                                            @foreach (var course in Model.CourseStructure.GetValueOrDefault(3, new List<SIS.Models.ProgramCoordinator.CourseViewModel>()).Where(c => c.Semester == 1))
+                                            {
+                                                <div class="course-item bg-white border border-slate-200 rounded-lg p-3 mb-2 cursor-move"
+                                                     data-course-id="@course.Course.Id" data-mandatory="@course.IsMandatory.ToString().ToLower()">
+                                                    <div class="flex justify-between items-start">
+                                                        <div>
+                                                            <h5 class="text-sm font-medium text-slate-800">@course.Course.CourseName</h5>
+                                                            <p class="text-xs text-slate-500 mt-0.5">@course.Course.CourseCode</p>
+                                                        </div>
+                                                        <div class="flex items-center gap-1">
+                                                            @if (course.IsMandatory)
+                                                            {
+                                                                <span class="bg-secondary-100 text-secondary-800 text-xs px-2 py-0.5 rounded">Mandatory</span>
+                                                            }
+                                                            <button type="button" class="remove-course-btn text-red-500 hover:text-red-700 transition-colors">
+                                                                <i class="material-icons text-sm">close</i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+
+                                    <!-- Semester 2 -->
+                                    <div>
+                                        <div class="flex justify-between items-center mb-2">
+                                            <h4 class="text-sm font-medium text-slate-700">Semester 2</h4>
+                                            <button type="button" class="add-course-btn px-2 py-1 text-xs text-primary-600 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors"
+                                                    data-year="3" data-semester="2">
+                                                <i class="material-icons text-xs">add</i>
+                                                Add Course
+                                            </button>
+                                        </div>
+                                        <div class="course-container border border-slate-200 rounded-lg min-h-[150px] bg-slate-50 p-2"
+                                             id="course-container-3-2" data-year="3" data-semester="2">
+                                            @foreach (var course in Model.CourseStructure.GetValueOrDefault(3, new List<SIS.Models.ProgramCoordinator.CourseViewModel>()).Where(c => c.Semester == 2))
+                                            {
+                                                <div class="course-item bg-white border border-slate-200 rounded-lg p-3 mb-2 cursor-move"
+                                                     data-course-id="@course.Course.Id" data-mandatory="@course.IsMandatory.ToString().ToLower()">
+                                                    <div class="flex justify-between items-start">
+                                                        <div>
+                                                            <h5 class="text-sm font-medium text-slate-800">@course.Course.CourseName</h5>
+                                                            <p class="text-xs text-slate-500 mt-0.5">@course.Course.CourseCode</p>
+                                                        </div>
+                                                        <div class="flex items-center gap-1">
+                                                            @if (course.IsMandatory)
+                                                            {
+                                                                <span class="bg-secondary-100 text-secondary-800 text-xs px-2 py-0.5 rounded">Mandatory</span>
+                                                            }
+                                                            <button type="button" class="remove-course-btn text-red-500 hover:text-red-700 transition-colors">
+                                                                <i class="material-icons text-sm">close</i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Year 4 -->
+                                <div class="space-y-4">
+                                    <!-- Semester 1 -->
+                                    <div>
+                                        <div class="flex justify-between items-center mb-2">
+                                            <h4 class="text-sm font-medium text-slate-700">Semester 1</h4>
+                                            <button type="button" class="add-course-btn px-2 py-1 text-xs text-primary-600 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors"
+                                                    data-year="4" data-semester="1">
+                                                <i class="material-icons text-xs">add</i>
+                                                Add Course
+                                            </button>
+                                        </div>
+                                        <div class="course-container border border-slate-200 rounded-lg min-h-[150px] bg-slate-50 p-2"
+                                             id="course-container-4-1" data-year="4" data-semester="1">
+                                            @foreach (var course in Model.CourseStructure.GetValueOrDefault(4, new List<SIS.Models.ProgramCoordinator.CourseViewModel>()).Where(c => c.Semester == 1))
+                                            {
+                                                <div class="course-item bg-white border border-slate-200 rounded-lg p-3 mb-2 cursor-move"
+                                                     data-course-id="@course.Course.Id" data-mandatory="@course.IsMandatory.ToString().ToLower()">
+                                                    <div class="flex justify-between items-start">
+                                                        <div>
+                                                            <h5 class="text-sm font-medium text-slate-800">@course.Course.CourseName</h5>
+                                                            <p class="text-xs text-slate-500 mt-0.5">@course.Course.CourseCode</p>
+                                                        </div>
+                                                        <div class="flex items-center gap-1">
+                                                            @if (course.IsMandatory)
+                                                            {
+                                                                <span class="bg-secondary-100 text-secondary-800 text-xs px-2 py-0.5 rounded">Mandatory</span>
+                                                            }
+                                                            <button type="button" class="remove-course-btn text-red-500 hover:text-red-700 transition-colors">
+                                                                <i class="material-icons text-sm">close</i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+
+                                    <!-- Semester 2 -->
+                                    <div>
+                                        <div class="flex justify-between items-center mb-2">
+                                            <h4 class="text-sm font-medium text-slate-700">Semester 2</h4>
+                                            <button type="button" class="add-course-btn px-2 py-1 text-xs text-primary-600 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors"
+                                                    data-year="4" data-semester="2">
+                                                <i class="material-icons text-xs">add</i>
+                                                Add Course
+                                            </button>
+                                        </div>
+                                        <div class="course-container border border-slate-200 rounded-lg min-h-[150px] bg-slate-50 p-2"
+                                             id="course-container-4-2" data-year="4" data-semester="2">
+                                            @foreach (var course in Model.CourseStructure.GetValueOrDefault(4, new List<SIS.Models.ProgramCoordinator.CourseViewModel>()).Where(c => c.Semester == 2))
+                                            {
+                                                <div class="course-item bg-white border border-slate-200 rounded-lg p-3 mb-2 cursor-move"
+                                                     data-course-id="@course.Course.Id" data-mandatory="@course.IsMandatory.ToString().ToLower()">
+                                                    <div class="flex justify-between items-start">
+                                                        <div>
+                                                            <h5 class="text-sm font-medium text-slate-800">@course.Course.CourseName</h5>
+                                                            <p class="text-xs text-slate-500 mt-0.5">@course.Course.CourseCode</p>
+                                                        </div>
+                                                        <div class="flex items-center gap-1">
+                                                            @if (course.IsMandatory)
+                                                            {
+                                                                <span class="bg-secondary-100 text-secondary-800 text-xs px-2 py-0.5 rounded">Mandatory</span>
+                                                            }
+                                                            <button type="button" class="remove-course-btn text-red-500 hover:text-red-700 transition-colors">
+                                                                <i class="material-icons text-sm">close</i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Hidden form to submit the structure -->
+                        <form id="courseStructureForm" asp-action="UpdateProgramCourses" method="post">
+                            <input type="hidden" name="programId" value="@Model.Program.Id" />
+                            <input type="hidden" id="courseStructureJson" name="courseStructureJson" value="" />
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="space-y-6">
+                <!-- Available Courses Card -->
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+                        <h2 class="text-lg font-semibold text-slate-800">Available Courses</h2>
+                        <div class="relative">
+                            <input type="text" id="courseSearch" class="px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 w-40" placeholder="Search courses" />
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <div class="space-y-2 max-h-[500px] overflow-y-auto pr-2 available-courses-container" id="availableCoursesList">
+                            @foreach (var course in Model.AvailableCourses.OrderBy(c => c.CourseCode))
+                            {
+                                <div class="available-course-item bg-slate-50 border border-slate-200 hover:border-primary-300 hover:bg-slate-100 transition-colors rounded-lg p-3 cursor-pointer"
+                                     data-course-id="@course.Id" data-course-name="@course.CourseName" data-course-code="@course.CourseCode">
+                                    <div class="flex justify-between items-start">
+                                        <div>
+                                            <h5 class="text-sm font-medium text-slate-800">@course.CourseName</h5>
+                                            <p class="text-xs text-slate-500 mt-0.5">@course.CourseCode</p>
+                                        </div>
+                                        <div>
+                                            <button type="button" class="add-to-structure-btn text-xs px-2 py-1 text-primary-600 hover:text-primary-800">
+                                                <i class="material-icons text-sm">add</i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- If no courses available -->
+                        @if (!Model.AvailableCourses.Any())
+                        {
+                            <div class="py-6 text-center text-slate-500">
+                                <i class="material-icons text-xl mb-2">info</i>
+                                <p>No available courses found</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Tips Card -->
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div class="px-6 py-4 border-b border-slate-200">
+                        <h2 class="text-lg font-semibold text-slate-800">Organizing Tips</h2>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-4">
+                            <div class="flex gap-3 items-start">
+                                <div class="bg-primary-50 p-1.5 rounded-lg">
+                                    <i class="material-icons text-primary-600 text-sm">drag_indicator</i>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-medium text-slate-800 mb-1">Drag & Drop</h3>
+                                    <p class="text-xs text-slate-600">Drag courses between semesters to rearrange the program structure.</p>
+                                </div>
+                            </div>
+
+                            <div class="flex gap-3 items-start">
+                                <div class="bg-secondary-50 p-1.5 rounded-lg">
+                                    <i class="material-icons text-secondary-600 text-sm">check_circle</i>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-medium text-slate-800 mb-1">Mandatory Courses</h3>
+                                    <p class="text-xs text-slate-600">Right-click on a course to toggle between mandatory and elective status.</p>
+                                </div>
+                            </div>
+
+                            <div class="flex gap-3 items-start">
+                                <div class="bg-amber-50 p-1.5 rounded-lg">
+                                    <i class="material-icons text-amber-600 text-sm">balance</i>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-medium text-slate-800 mb-1">Course Balance</h3>
+                                    <p class="text-xs text-slate-600">Aim for a balanced number of courses per semester, typically 4-6 courses.</p>
+                                </div>
+                            </div>
+
+                            <div class="flex gap-3 items-start">
+                                <div class="bg-teal-50 p-1.5 rounded-lg">
+                                    <i class="material-icons text-teal-600 text-sm">save</i>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-medium text-slate-800 mb-1">Save Changes</h3>
+                                    <p class="text-xs text-slate-600">Remember to save your changes before leaving this page.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Course Selection Modal -->
+<div id="courseSelectionModal" class="hidden fixed inset-0 z-50">
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-lg shadow-xl w-full max-w-md">
+                <div class="bg-primary-600 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
+                    <h3 class="text-lg font-semibold">Add Course</h3>
+                    <button type="button" class="text-white hover:text-gray-200 close-modal">
+                        <i class="material-icons">close</i>
+                    </button>
+                </div>
+                <div class="p-6">
+                    <div class="mb-6">
+                        <h4 class="text-sm font-medium text-slate-700 mb-2">Select Course</h4>
+                        <select id="courseSelect" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                            <option value="">Select a course...</option>
+                            @foreach (var course in Model.AvailableCourses.OrderBy(c => c.CourseName))
+                            {
+                                <option value="@course.Id" data-code="@course.CourseCode">@course.CourseName</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="mb-6">
+                        <h4 class="text-sm font-medium text-slate-700 mb-2">Course Type</h4>
+                        <div class="flex gap-4">
+                            <label class="flex items-center">
+                                <input type="radio" name="courseMandatory" value="true" class="w-4 h-4 text-primary-600 border-slate-300 focus:ring-primary-500" checked />
+                                <span class="ml-2 text-sm text-slate-700">Mandatory</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" name="courseMandatory" value="false" class="w-4 h-4 text-primary-600 border-slate-300 focus:ring-primary-500" />
+                                <span class="ml-2 text-sm text-slate-700">Elective</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="text-right">
+                        <button type="button" id="addCourseConfirmBtn" class="px-4 py-2 text-sm text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors">
+                            Add to Program
+                        </button>
+                    </div>
+
+                    <input type="hidden" id="selectedYear" value="" />
+                    <input type="hidden" id="selectedSemester" value="" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize sortable containers
+            initSortableContainers();
+
+            // Initialize course search
+            initCourseSearch();
+
+            // Initialize add course buttons
+            initAddCourseButtons();
+
+            // Initialize save structure button
+            initSaveStructureButton();
+
+            // Initialize available courses interactions
+            initAvailableCourses();
+        });
+
+        // Initialize sortable containers for drag and drop functionality
+        function initSortableContainers() {
+            const containers = document.querySelectorAll('.course-container');
+
+            containers.forEach(container => {
+                new Sortable(container, {
+                    group: 'courses',
+                    animation: 150,
+                    ghostClass: 'bg-primary-50',
+                    onEnd: function(evt) {
+                        // Update the course's year and semester based on its new container
+                        const newContainer = evt.to;
+                        const courseItem = evt.item;
+
+                        // Add remove course button event listener if it doesn't have one
+                        const removeButton = courseItem.querySelector('.remove-course-btn');
+                        if (removeButton) {
+                            removeButton.addEventListener('click', function() {
+                                courseItem.remove();
+                            });
+                        }
+                    }
+                });
+
+                // Add event listeners to remove buttons
+                container.querySelectorAll('.remove-course-btn').forEach(button => {
+                    button.addEventListener('click', function() {
+                        button.closest('.course-item').remove();
+                    });
+                });
+
+                // Add context menu for toggling mandatory/elective
+                container.querySelectorAll('.course-item').forEach(item => {
+                    item.addEventListener('contextmenu', function(e) {
+                        e.preventDefault();
+                        toggleMandatoryStatus(item);
+                    });
+                });
+            });
+        }
+
+        // Toggle mandatory status of a course
+        function toggleMandatoryStatus(courseItem) {
+            const isMandatory = courseItem.getAttribute('data-mandatory') === 'true';
+            courseItem.setAttribute('data-mandatory', (!isMandatory).toString());
+
+            // Update the UI
+            const badgeContainer = courseItem.querySelector('.flex.items-center.gap-1');
+
+            if (!isMandatory) {
+                // Add mandatory badge if not present
+                if (!courseItem.querySelector('.bg-secondary-100')) {
+                    const mandatoryBadge = document.createElement('span');
+                    mandatoryBadge.className = 'bg-secondary-100 text-secondary-800 text-xs px-2 py-0.5 rounded';
+                    mandatoryBadge.textContent = 'Mandatory';
+                    badgeContainer.insertBefore(mandatoryBadge, badgeContainer.firstChild);
+                }
+            } else {
+                // Remove mandatory badge if present
+                const badge = courseItem.querySelector('.bg-secondary-100');
+                if (badge) {
+                    badge.remove();
+                }
+            }
+        }
+
+        // Initialize course search functionality
+        function initCourseSearch() {
+            const searchInput = document.getElementById('courseSearch');
+            const coursesList = document.getElementById('availableCoursesList');
+
+            if (!searchInput || !coursesList) return;
+
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                const courseItems = coursesList.querySelectorAll('.available-course-item');
+
+                courseItems.forEach(item => {
+                    const courseName = item.getAttribute('data-course-name').toLowerCase();
+                    const courseCode = item.getAttribute('data-course-code').toLowerCase();
+
+                    if (courseName.includes(searchTerm) || courseCode.includes(searchTerm)) {
+                        item.classList.remove('hidden');
+                    } else {
+                        item.classList.add('hidden');
+                    }
+                });
+            });
+        }
+
+        // Initialize add course buttons
+        function initAddCourseButtons() {
+            const addCourseButtons = document.querySelectorAll('.add-course-btn');
+            const courseSelectionModal = document.getElementById('courseSelectionModal');
+            const closeModalButtons = courseSelectionModal.querySelectorAll('.close-modal');
+            const addCourseConfirmBtn = document.getElementById('addCourseConfirmBtn');
+
+            // Show modal when add course button is clicked
+            addCourseButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const year = this.getAttribute('data-year');
+                    const semester = this.getAttribute('data-semester');
+
+                    // Set hidden inputs in the modal
+                    document.getElementById('selectedYear').value = year;
+                    document.getElementById('selectedSemester').value = semester;
+
+                    // Show the modal
+                    courseSelectionModal.classList.remove('hidden');
+                });
+            });
+
+            // Close modal when close button is clicked
+            closeModalButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    courseSelectionModal.classList.add('hidden');
+                });
+            });
+
+            // Add course when confirm button is clicked
+            addCourseConfirmBtn.addEventListener('click', function() {
+                const courseSelect = document.getElementById('courseSelect');
+                const selectedYear = document.getElementById('selectedYear').value;
+                const selectedSemester = document.getElementById('selectedSemester').value;
+                const isMandatory = document.querySelector('input[name="courseMandatory"]:checked').value === 'true';
+
+                if (!courseSelect.value) {
+                    alert('Please select a course');
+                    return;
+                }
+
+                // Get course details
+                const selectedOption = courseSelect.options[courseSelect.selectedIndex];
+                const courseId = courseSelect.value;
+                const courseName = selectedOption.text;
+                const courseCode = selectedOption.getAttribute('data-code');
+
+                // Create course item
+                addCourseToContainer(courseId, courseName, courseCode, isMandatory, selectedYear, selectedSemester);
+
+                // Close the modal
+                courseSelectionModal.classList.add('hidden');
+
+                // Reset the form
+                courseSelect.value = '';
+                document.querySelector('input[name="courseMandatory"][value="true"]').checked = true;
+            });
+        }
+
+        // Add course to the appropriate container
+        function addCourseToContainer(courseId, courseName, courseCode, isMandatory, year, semester) {
+            const container = document.getElementById(`course-container-${year}-${semester}`);
+
+            if (!container) return;
+
+            // Check if course is already in any container
+            const existingCourse = document.querySelector(`.course-item[data-course-id="${courseId}"]`);
+            if (existingCourse) {
+                existingCourse.remove();
+            }
+
+            // Create course item
+            const courseItem = document.createElement('div');
+            courseItem.className = 'course-item bg-white border border-slate-200 rounded-lg p-3 mb-2 cursor-move';
+            courseItem.setAttribute('data-course-id', courseId);
+            courseItem.setAttribute('data-mandatory', isMandatory.toString());
+
+            courseItem.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h5 class="text-sm font-medium text-slate-800">${courseName}</h5>
+                        <p class="text-xs text-slate-500 mt-0.5">${courseCode}</p>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        ${isMandatory ? '<span class="bg-secondary-100 text-secondary-800 text-xs px-2 py-0.5 rounded">Mandatory</span>' : ''}
+                        <button type="button" class="remove-course-btn text-red-500 hover:text-red-700 transition-colors">
+                            <i class="material-icons text-sm">close</i>
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            // Add to container
+            container.appendChild(courseItem);
+
+            // Add remove button event listener
+            courseItem.querySelector('.remove-course-btn').addEventListener('click', function() {
+                courseItem.remove();
+            });
+
+            // Add context menu for toggling mandatory/elective
+            courseItem.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                toggleMandatoryStatus(courseItem);
+            });
+        }
+
+        // Initialize save structure button
+        function initSaveStructureButton() {
+            const saveButton = document.getElementById('saveStructureBtn');
+            const courseStructureForm = document.getElementById('courseStructureForm');
+            const courseStructureJsonInput = document.getElementById('courseStructureJson');
+
+            saveButton.addEventListener('click', function() {
+                // Collect course structure data
+                const structure = collectCourseStructure();
+
+                // Set the JSON input value
+                courseStructureJsonInput.value = JSON.stringify(structure);
+
+                // Submit the form
+                courseStructureForm.submit();
+            });
+        }
+
+        // Collect course structure data
+        function collectCourseStructure() {
+            const structure = {};
+
+            const containers = document.querySelectorAll('.course-container');
+
+            containers.forEach(container => {
+                const year = parseInt(container.getAttribute('data-year'));
+                const semester = parseInt(container.getAttribute('data-semester'));
+
+                if (!structure[year]) {
+                    structure[year] = {};
+                }
+
+                if (!structure[year][semester]) {
+                    structure[year][semester] = [];
+                }
+
+                const courseItems = container.querySelectorAll('.course-item');
+
+                courseItems.forEach(item => {
+                    const courseId = parseInt(item.getAttribute('data-course-id'));
+                    const isMandatory = item.getAttribute('data-mandatory') === 'true';
+
+                    structure[year][semester].push({
+                        courseId: courseId,
+                        isMandatory: isMandatory
+                    });
+                });
+            });
+
+            return structure;
+        }
+
+        // Initialize available courses interactions
+        function initAvailableCourses() {
+            const availableCourseItems = document.querySelectorAll('.available-course-item');
+
+            availableCourseItems.forEach(item => {
+                const addBtn = item.querySelector('.add-to-structure-btn');
+
+                addBtn.addEventListener('click', function() {
+                    // Show course selection modal with this course pre-selected
+                    const courseId = item.getAttribute('data-course-id');
+                    const courseName = item.getAttribute('data-course-name');
+                    const courseCode = item.getAttribute('data-course-code');
+
+                    // Open the modal
+                    const modal = document.getElementById('courseSelectionModal');
+                    modal.classList.remove('hidden');
+
+                    // Pre-select the course
+                    const courseSelect = document.getElementById('courseSelect');
+                    courseSelect.value = courseId;
+
+                    // Set default year and semester to 1-1 if not already set
+                    if (!document.getElementById('selectedYear').value) {
+                        document.getElementById('selectedYear').value = '1';
+                    }
+
+                    if (!document.getElementById('selectedSemester').value) {
+                        document.getElementById('selectedSemester').value = '1';
+                    }
+                });
+            });
+        }
+    </script>
+}

@@ -1,0 +1,731 @@
+@model SIS.Controllers.AccomodationControllers.CheckInOutDetailsViewModel
+@{
+    var student = Model.Allocation.Application.Student;
+    var bed = Model.Allocation.Bed;
+    var checkInOut = Model.Allocation.CheckInOut;
+    var allocation = Model.Allocation;
+
+    // Fix image path - handle both relative and absolute paths
+    var imageUrl = "";
+    if (!string.IsNullOrEmpty(student.PassportPhotoPath))
+    {
+        if (student.PassportPhotoPath.StartsWith("http") || student.PassportPhotoPath.StartsWith("/"))
+        {
+            imageUrl = student.PassportPhotoPath;
+        }
+        else
+        {
+            imageUrl = "/" + student.PassportPhotoPath.TrimStart('/');
+        }
+    }
+}
+
+<style>
+    /* CRITICAL: Fixed height container with internal scrolling */
+    .details-scroll {
+        height: 100%;
+        max-height: 100%;
+        overflow-y: auto !important;
+        overflow-x: hidden;
+        background: white;
+        position: relative;
+    }
+
+    .details-header {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        color: white;
+        padding: 15px 20px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .student-photo {
+        width: 60px;
+        height: 60px;
+        min-width: 60px;
+        border-radius: 50%;
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        color: #17a2b8;
+        border: 3px solid white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+
+        .student-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .student-photo i {
+            display: block;
+        }
+
+    .header-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .details-header h2 {
+        margin: 0 0 2px 0;
+        font-size: 18px;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .details-header .student-id {
+        font-size: 13px;
+        opacity: 0.9;
+        margin-bottom: 5px;
+    }
+
+    .status-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+        .status-indicator.not-checked-in {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .status-indicator.checked-in {
+            background: rgba(255,255,255,0.9);
+            color: #17a2b8;
+        }
+
+        .status-indicator.checked-out {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+    .details-body {
+        padding: 12px;
+    }
+
+    .info-section {
+        background: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+
+    .section-title {
+        font-size: 12px;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 8px;
+        padding-bottom: 5px;
+        border-bottom: 2px solid #17a2b8;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+        .section-title i {
+            color: #17a2b8;
+            font-size: 12px;
+        }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+
+    .info-item {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+
+    .info-label {
+        font-size: 9px;
+        color: #666;
+        text-transform: uppercase;
+        font-weight: 600;
+        margin-bottom: 2px;
+    }
+
+    .info-value {
+        font-size: 11px;
+        color: #2c3e50;
+        font-weight: 500;
+        word-break: break-word;
+        overflow-wrap: break-word;
+    }
+
+    .accommodation-card {
+        background: #f8f9fa;
+        border-left: 3px solid #17a2b8;
+        padding: 8px;
+        border-radius: 3px;
+        margin-bottom: 8px;
+    }
+
+        .accommodation-card h4 {
+            margin: 0 0 6px 0;
+            color: #17a2b8;
+            font-size: 11px;
+        }
+
+    .accommodation-details {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 5px;
+    }
+
+    .detail-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 10px;
+        min-width: 0;
+    }
+
+        .detail-item i {
+            color: #17a2b8;
+            width: 12px;
+            font-size: 10px;
+            flex-shrink: 0;
+        }
+
+        .detail-item span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+    .timeline {
+        position: relative;
+        padding-left: 20px;
+    }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 5px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #e0e0e0;
+        }
+
+    .timeline-item {
+        position: relative;
+        margin-bottom: 10px;
+    }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -18px;
+            top: 1px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #17a2b8;
+            border: 2px solid white;
+            box-shadow: 0 0 0 1px #17a2b8;
+        }
+
+        .timeline-item.pending::before {
+            background: #ffc107;
+            box-shadow: 0 0 0 1px #ffc107;
+        }
+
+        .timeline-item.completed::before {
+            background: #17a2b8;
+            box-shadow: 0 0 0 1px #17a2b8;
+        }
+
+    .timeline-date {
+        font-size: 9px;
+        color: #666;
+        font-weight: 600;
+    }
+
+    .timeline-content {
+        font-size: 10px;
+        color: #2c3e50;
+        margin-top: 1px;
+        word-wrap: break-word;
+    }
+
+    .timeline-person {
+        font-size: 9px;
+        color: #999;
+        font-style: italic;
+        margin-top: 1px;
+    }
+
+    .action-form {
+        background: #f8f9fa;
+        border: 2px solid #17a2b8;
+        border-radius: 4px;
+        padding: 10px;
+        margin-top: 10px;
+    }
+
+    .form-title {
+        font-size: 12px;
+        font-weight: 600;
+        color: #17a2b8;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .form-group {
+        margin-bottom: 8px;
+    }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 3px;
+            font-size: 11px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+            .form-group label .required {
+                color: #dc3545;
+            }
+
+        .form-group small {
+            font-size: 9px;
+            color: #666;
+            display: block;
+            margin-top: 2px;
+        }
+
+    .form-control {
+        width: 100%;
+        padding: 6px 10px;
+        border: 1px solid #ddd;
+        border-radius: 3px;
+        font-size: 11px;
+    }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #17a2b8;
+            box-shadow: 0 0 0 2px rgba(23, 162, 184, 0.1);
+        }
+
+    .btn {
+        padding: 8px 14px;
+        border: none;
+        border-radius: 4px;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        font-size: 11px;
+        transition: all 0.3s;
+        width: 100%;
+    }
+
+    .btn-success {
+        background: #17a2b8;
+        color: white;
+    }
+
+        .btn-success:hover {
+            background: #138496;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(23, 162, 184, 0.3);
+        }
+
+    .btn-danger {
+        background: #dc3545;
+        color: white;
+    }
+
+        .btn-danger:hover {
+            background: #c82333;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(220, 53, 69, 0.3);
+        }
+
+    .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .alert-box {
+        padding: 8px 10px;
+        border-radius: 3px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 11px;
+    }
+
+        .alert-box.info {
+            background: #d1ecf1;
+            border-left: 3px solid #17a2b8;
+            color: #0c5460;
+        }
+
+        .alert-box.success {
+            background: #d1ecf1;
+            border-left: 3px solid #17a2b8;
+            color: #0c5460;
+        }
+
+        .alert-box.warning {
+            background: #fff3cd;
+            border-left: 3px solid #ffc107;
+            color: #856404;
+        }
+
+        .alert-box i {
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .alert-box strong {
+            display: block;
+            margin-bottom: 2px;
+        }
+
+    .damage-charges-box {
+        background: #fff3cd;
+        border: 2px solid #ffc107;
+        border-radius: 4px;
+        padding: 8px;
+        margin-top: 8px;
+    }
+
+        .damage-charges-box h5 {
+            margin: 0 0 4px 0;
+            color: #856404;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+    .charge-amount {
+        font-size: 16px;
+        font-weight: 700;
+        color: #856404;
+    }
+
+    /* Custom scrollbar for the details panel */
+    .details-scroll::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .details-scroll::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+
+    .details-scroll::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 4px;
+    }
+
+        .details-scroll::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+</style>
+
+<div class="details-scroll">
+    <!-- Header with Photo Side-by-Side -->
+    <div class="details-header">
+        <div class="student-photo">
+            @if (!string.IsNullOrEmpty(imageUrl))
+            {
+                <img src="@imageUrl"
+                     alt="@student.FullName"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+                <i class="fas fa-user" style="display: none;"></i>
+            }
+            else
+            {
+                <i class="fas fa-user"></i>
+            }
+        </div>
+        <div class="header-info">
+            <h2 title="@student.FullName">@student.FullName</h2>
+            <div class="student-id">@student.StudentId_Number</div>
+            <div class="status-indicator @Model.CheckInOutStatus.ToLower().Replace(" ", "-")">
+                @if (Model.CheckInOutStatus == "Checked In")
+                {
+                    <i class="fas fa-check-circle"></i>
+                }
+                else if (Model.CheckInOutStatus == "Checked Out")
+                {
+                    <i class="fas fa-sign-out-alt"></i>
+                }
+                else
+                {
+                    <i class="fas fa-clock"></i>
+                }
+                <span>@Model.CheckInOutStatus</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Body -->
+    <div class="details-body">
+        <!-- Status Alert -->
+        @if (Model.CheckInOutStatus == "Checked In")
+        {
+            <div class="alert-box success">
+                <i class="fas fa-check-circle"></i>
+                <div>
+                    <strong>Currently Checked In</strong>
+                    Occupying allocated bed space
+                </div>
+            </div>
+        }
+        else if (Model.CheckInOutStatus == "Checked Out")
+        {
+            <div class="alert-box info">
+                <i class="fas fa-sign-out-alt"></i>
+                <div>
+                    <strong>Checked Out</strong>
+                    Accommodation period completed
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="alert-box warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                <div>
+                    <strong>Awaiting Check-In</strong>
+                    Bed allocated but not checked in
+                </div>
+            </div>
+        }
+
+        <!-- Personal Information -->
+        <div class="info-section">
+            <div class="section-title">
+                <i class="fas fa-user"></i>
+                <span>Student Information</span>
+            </div>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Email</div>
+                    <div class="info-value" title="@student.Email">@student.Email</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Phone</div>
+                    <div class="info-value">@student.Phone</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Programme</div>
+                    <div class="info-value" title="@student.Programme?.Name">@student.Programme?.Name</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">School</div>
+                    <div class="info-value" title="@student.Programme?.Department?.School?.Name">@student.Programme?.Department?.School?.Name</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Accommodation Details -->
+        <div class="info-section">
+            <div class="section-title">
+                <i class="fas fa-bed"></i>
+                <span>Accommodation</span>
+            </div>
+
+            <div class="accommodation-card">
+                <h4>Allocated Bed Space</h4>
+                <div class="accommodation-details">
+                    <div class="detail-item">
+                        <i class="fas fa-building"></i>
+                        <span title="@bed?.Room?.Hostel?.Campus?.CampusName">@bed?.Room?.Hostel?.Campus?.CampusName</span>
+                    </div>
+                    <div class="detail-item">
+                        <i class="fas fa-hotel"></i>
+                        <span title="@bed?.Room?.Hostel?.HostelName">@bed?.Room?.Hostel?.HostelName</span>
+                    </div>
+                    <div class="detail-item">
+                        <i class="fas fa-door-closed"></i>
+                        <span>Room @bed?.Room?.RoomNumber</span>
+                    </div>
+                    <div class="detail-item">
+                        <i class="fas fa-layer-group"></i>
+                        <span>Floor @bed?.Room?.Floor</span>
+                    </div>
+                    <div class="detail-item">
+                        <i class="fas fa-bed"></i>
+                        <span>Bed @bed?.BedIdentifier</span>
+                    </div>
+                    <div class="detail-item">
+                        <i class="fas fa-shapes"></i>
+                        <span>@bed?.Room?.RoomType</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Allocated</div>
+                    <div class="info-value">@allocation.AllocationDate.ToString("MMM dd, yyyy")</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Period End</div>
+                    <div class="info-value">
+                        @if (allocation.IsGraduationBased)
+                        {
+                            <span>Until Graduation</span>
+                        }
+                        else if (allocation.EndDate.HasValue)
+                        {
+                            @allocation.EndDate.Value.ToString("MMM dd, yyyy")
+                        }
+                        else
+                        {
+                            <span>Not Set</span>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Check-In/Out History -->
+        @if (checkInOut != null && (checkInOut.CheckInDate.HasValue || checkInOut.CheckOutDate.HasValue))
+        {
+            <div class="info-section">
+                <div class="section-title">
+                    <i class="fas fa-history"></i>
+                    <span>History</span>
+                </div>
+
+                <div class="timeline">
+                    @if (checkInOut.CheckInDate.HasValue)
+                    {
+                        <div class="timeline-item completed">
+                            <div class="timeline-date">@checkInOut.CheckInDate.Value.ToString("MMM dd, yyyy hh:mm tt")</div>
+                            <div class="timeline-content"><strong>Checked In</strong></div>
+                            @if (!string.IsNullOrWhiteSpace(checkInOut.CheckInCondition))
+                            {
+                                <div class="timeline-content">@checkInOut.CheckInCondition</div>
+                            }
+                            <div class="timeline-person">By: @(checkInOut.CheckInStaff?.FullName ?? "Unknown")</div>
+                        </div>
+                    }
+
+                    @if (checkInOut.CheckOutDate.HasValue)
+                    {
+                        <div class="timeline-item completed">
+                            <div class="timeline-date">@checkInOut.CheckOutDate.Value.ToString("MMM dd, yyyy hh:mm tt")</div>
+                            <div class="timeline-content"><strong>Checked Out</strong></div>
+                            @if (!string.IsNullOrWhiteSpace(checkInOut.CheckOutCondition))
+                            {
+                                <div class="timeline-content">@checkInOut.CheckOutCondition</div>
+                            }
+                            @if (checkInOut.DamageCharges > 0)
+                            {
+                                <div class="timeline-content" style="color: #dc3545;">
+                                    Charges: K@checkInOut.DamageCharges.ToString("N2")
+                                </div>
+                            }
+                            <div class="timeline-person">By: @(checkInOut.CheckOutStaff?.FullName ?? "Unknown")</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- Action Forms -->
+        @if (Model.CanCheckIn)
+        {
+            <div class="action-form">
+                <div class="form-title">
+                    <i class="fas fa-sign-in-alt"></i>
+                    <span>Check-In Student</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="checkInCondition">Room Condition <span class="required">*</span></label>
+                    <textarea id="checkInCondition"
+                              class="form-control"
+                              rows="2"
+                              placeholder="Describe room condition..."
+                              required></textarea>
+                </div>
+
+                <button type="button"
+                        class="btn btn-success"
+                        onclick="checkInStudent(@allocation.AllocationId)">
+                    <i class="fas fa-check"></i>
+                    Check In Student
+                </button>
+            </div>
+        }
+
+        @if (Model.CanCheckOut)
+        {
+            <div class="action-form">
+                <div class="form-title">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Check-Out Student</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="checkOutCondition">Room Condition <span class="required">*</span></label>
+                    <textarea id="checkOutCondition"
+                              class="form-control"
+                              rows="2"
+                              placeholder="Describe room condition..."
+                              required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="damageCharges">Damage Charges</label>
+                    <input type="number"
+                           id="damageCharges"
+                           class="form-control"
+                           placeholder="0.00"
+                           min="0"
+                           step="0.01"
+                           value="0" />
+                    <small>Enter any charges for damages</small>
+                </div>
+
+                <button type="button"
+                        class="btn btn-danger"
+                        onclick="checkOutStudent(@allocation.AllocationId)">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Check Out Student
+                </button>
+            </div>
+        }
+
+        @if (checkInOut?.DamageCharges > 0)
+        {
+            <div class="damage-charges-box">
+                <h5><i class="fas fa-exclamation-triangle"></i> Damage Charges</h5>
+                <div class="charge-amount">K@checkInOut.DamageCharges.ToString("N2")</div>
+            </div>
+        }
+    </div>
+</div>

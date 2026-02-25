@@ -1,0 +1,412 @@
+﻿@model CreateTemplateRequest
+
+@{
+    ViewData["Title"] = "Create Workflow Template";
+}
+
+<div class="min-h-screen bg-gray-50 p-6">
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <div class="mb-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900 flex items-center">
+                        <i class="material-icons mr-3 text-blue-600">add_task</i>
+                        Create Workflow Template
+                    </h1>
+                    <p class="text-gray-600 mt-2">Define approval stages and configure workflow rules</p>
+                </div>
+                <button onclick="history.back()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center transition-colors">
+                    <i class="material-icons mr-2">arrow_back</i>Back
+                </button>
+            </div>
+        </div>
+
+        <form asp-action="CreateTemplate" method="post" id="templateForm">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800"></div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Main Form Section (2/3 width) -->
+                <div class="lg:col-span-2 space-y-6">
+                    <!-- Basic Information Card -->
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                            <i class="material-icons mr-2 text-blue-600">info</i>
+                            Basic Information
+                        </h2>
+                        <div class="space-y-4">
+                            <!-- Template Name -->
+                            <div>
+                                <label asp-for="Name" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Template Name <span class="text-red-600">*</span>
+                                </label>
+                                <input asp-for="Name" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="e.g., Assessment Results Approval" />
+                                <span asp-validation-for="Name" class="text-red-600 text-sm"></span>
+                            </div>
+
+                            <!-- Description -->
+                            <div>
+                                <label asp-for="Description" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Description
+                                </label>
+                                <textarea asp-for="Description" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Describe the purpose of this workflow..."></textarea>
+                                <span asp-validation-for="Description" class="text-red-600 text-sm"></span>
+                            </div>
+
+                            <!-- Entity Type -->
+                            <div>
+                                <label asp-for="EntityType" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Entity Type <span class="text-red-600">*</span>
+                                </label>
+                                <select asp-for="EntityType" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="">Select entity type...</option>
+                                    @foreach (var entityType in ViewBag.EntityTypes as List<string>)
+                                    {
+                                        <option value="@entityType">@entityType</option>
+                                    }
+                                </select>
+                                <span asp-validation-for="EntityType" class="text-red-600 text-sm"></span>
+                                <p class="text-xs text-gray-500 mt-1">The type of entity this workflow will approve</p>
+                            </div>
+
+                            <!-- Workflow Settings -->
+                            <div class="grid grid-cols-2 gap-4 pt-4">
+                                <div class="flex items-center">
+                                    <input asp-for="IsActive" type="checkbox" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                                    <label asp-for="IsActive" class="ml-2 text-sm font-medium text-gray-700">
+                                        Active Template
+                                    </label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input asp-for="RequiresAllStages" type="checkbox" checked class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                                    <label asp-for="RequiresAllStages" class="ml-2 text-sm font-medium text-gray-700">
+                                        Requires All Stages
+                                    </label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input asp-for="AllowRejection" type="checkbox" checked class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                                    <label asp-for="AllowRejection" class="ml-2 text-sm font-medium text-gray-700">
+                                        Allow Rejection
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Workflow Stages Card -->
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+                                <i class="material-icons mr-2 text-purple-600">layers</i>
+                                Workflow Stages
+                            </h2>
+                            <button type="button" onclick="addStage()" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center transition-colors">
+                                <i class="material-icons mr-1">add</i>Add Stage
+                            </button>
+                        </div>
+
+                        <div id="stagesContainer" class="space-y-4">
+                            <!-- Stages will be added here dynamically -->
+                        </div>
+
+                        <div id="noStagesMessage" class="text-center py-8 text-gray-500">
+                            <i class="material-icons text-4xl mb-2">layers_clear</i>
+                            <p>No stages added yet. Click "Add Stage" to create your first approval stage.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Helper Sidebar (1/3 width) -->
+                <div class="space-y-6">
+                    <!-- Quick Tips Card -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                        <h3 class="text-lg font-semibold text-blue-900 mb-3 flex items-center">
+                            <i class="material-icons mr-2">lightbulb</i>
+                            Quick Tips
+                        </h3>
+                        <ul class="space-y-2 text-sm text-blue-800">
+                            <li class="flex items-start">
+                                <i class="material-icons text-sm mr-2 mt-0.5">check_circle</i>
+                                <span>Add stages in the order they should be executed</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="material-icons text-sm mr-2 mt-0.5">check_circle</i>
+                                <span>Each stage must have at least one approver resolution method</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="material-icons text-sm mr-2 mt-0.5">check_circle</i>
+                                <span>Property paths automatically resolve approvers from entity relationships</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="material-icons text-sm mr-2 mt-0.5">check_circle</i>
+                                <span>Auto-approval is optional but recommended for time-sensitive workflows</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Property Paths Reference -->
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                            <i class="material-icons mr-2">account_tree</i>
+                            Property Paths
+                        </h3>
+                        <div class="text-sm text-gray-600 space-y-2">
+                            <p class="font-medium text-gray-800">Available paths for Result Submissions:</p>
+                            <ul class="space-y-1 ml-4">
+                                <li class="font-mono text-xs bg-gray-100 p-1 rounded">Course.Programme.Department.HODId</li>
+                                <li class="font-mono text-xs bg-gray-100 p-1 rounded">Course.Programme.Department.School.DeanId</li>
+                                <li class="font-mono text-xs bg-gray-100 p-1 rounded">Course.Programme.CoordinatorId</li>
+                                <li class="font-mono text-xs bg-gray-100 p-1 rounded">Course.InstructorId</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Actions Card -->
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Actions</h3>
+                        <div class="space-y-2">
+                            <button type="submit" class="w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center">
+                                <i class="material-icons mr-2">save</i>
+                                Create Template
+                            </button>
+                            <button type="button" onclick="previewTemplate()" class="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center">
+                                <i class="material-icons mr-2">visibility</i>
+                                Preview
+                            </button>
+                            <button type="button" onclick="resetForm()" class="w-full px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center justify-center">
+                                <i class="material-icons mr-2">refresh</i>
+                                Reset Form
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Stage Template (Hidden) -->
+<template id="stageTemplate">
+    <div class="stage-item border border-gray-300 rounded-lg p-4 bg-gray-50">
+        <div class="flex justify-between items-start mb-4">
+            <div class="flex items-center">
+                <div class="bg-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-semibold mr-3 stage-number">
+                    1
+                </div>
+                <h3 class="font-semibold text-gray-900">Stage <span class="stage-order-text">1</span></h3>
+            </div>
+            <button type="button" onclick="removeStage(this)" class="text-red-600 hover:text-red-800">
+                <i class="material-icons">delete</i>
+            </button>
+        </div>
+
+        <div class="space-y-4">
+            <!-- Stage Name -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Stage Name <span class="text-red-600">*</span>
+                </label>
+                <input type="text" name="Stages[0].StageName" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="e.g., HOD Approval" />
+            </div>
+
+            <input type="hidden" name="Stages[0].StageOrder" value="1" class="stage-order-input" />
+
+            <!-- Approver Configuration -->
+            <div class="bg-white rounded-lg p-4 border border-gray-200">
+                <p class="text-sm font-medium text-gray-700 mb-3">Approver Configuration (choose one or more)</p>
+
+                <!-- Property Path -->
+                <div class="mb-3">
+                    <label class="block text-sm text-gray-600 mb-1">Property Path</label>
+                    <select name="Stages[0].ApproverPropertyPath" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                        <option value="">None</option>
+                        <option value="Course.Programme.Department.HODId">HOD (via Department)</option>
+                        <option value="Course.Programme.Department.School.DeanId">Dean (via School)</option>
+                        <option value="Course.Programme.Department.School.AssistantDeanId">Assistant Dean</option>
+                        <option value="Course.Programme.CoordinatorId">Programme Coordinator</option>
+                        <option value="Course.InstructorId">Course Instructor</option>
+                    </select>
+                </div>
+
+                <!-- Role -->
+                <div class="mb-3">
+                    <label class="block text-sm text-gray-600 mb-1">Required Role</label>
+                    <select name="Stages[0].RequiredRole" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                        <option value="">None</option>
+                        <option value="HOD">HOD</option>
+                        <option value="Dean">Dean</option>
+                        <option value="Senate">Senate</option>
+                        <option value="Registrar">Registrar</option>
+                    </select>
+                </div>
+
+                <!-- Specific User -->
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1">Specific User ID</label>
+                    <input type="text" name="Stages[0].RequiredUserId" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Leave empty for dynamic resolution" />
+                </div>
+            </div>
+
+            <!-- Stage Settings -->
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1">Auto-approve after (days)</label>
+                    <input type="number" name="Stages[0].AutoApproveAfterDays" min="1" max="365" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Optional" />
+                </div>
+                <div class="space-y-2 pt-6">
+                    <div class="flex items-center">
+                        <input type="checkbox" name="Stages[0].SendNotification" checked class="w-4 h-4 text-purple-600 rounded" />
+                        <label class="ml-2 text-sm text-gray-700">Send Notification</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" name="Stages[0].AllowDelegation" checked class="w-4 h-4 text-purple-600 rounded" />
+                        <label class="ml-2 text-sm text-gray-700">Allow Delegation</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" name="Stages[0].IsOptional" class="w-4 h-4 text-purple-600 rounded" />
+                        <label class="ml-2 text-sm text-gray-700">Optional Stage</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        let stageCount = 0;
+
+        function addStage() {
+            stageCount++;
+            const template = document.getElementById('stageTemplate');
+            const clone = template.content.cloneNode(true);
+
+            // Update stage number and order
+            const stageNumber = clone.querySelector('.stage-number');
+            const stageOrderText = clone.querySelector('.stage-order-text');
+            const stageOrderInput = clone.querySelector('.stage-order-input');
+
+            stageNumber.textContent = stageCount;
+            stageOrderText.textContent = stageCount;
+            stageOrderInput.value = stageCount;
+
+            // Update all input names with correct index
+            const inputs = clone.querySelectorAll('input, select');
+            inputs.forEach(input => {
+                const name = input.getAttribute('name');
+                if (name) {
+                    input.setAttribute('name', name.replace('[0]', `[${stageCount - 1}]`));
+                }
+            });
+
+            document.getElementById('stagesContainer').appendChild(clone);
+            document.getElementById('noStagesMessage').style.display = 'none';
+
+            // Scroll to new stage
+            setTimeout(() => {
+                const stages = document.querySelectorAll('.stage-item');
+                stages[stages.length - 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
+        }
+
+        function removeStage(button) {
+            if (confirm('Are you sure you want to remove this stage?')) {
+                button.closest('.stage-item').remove();
+                reorderStages();
+
+                if (document.querySelectorAll('.stage-item').length === 0) {
+                    document.getElementById('noStagesMessage').style.display = 'block';
+                }
+            }
+        }
+
+        function reorderStages() {
+            const stages = document.querySelectorAll('.stage-item');
+            stageCount = stages.length;
+
+            stages.forEach((stage, index) => {
+                const order = index + 1;
+
+                // Update visual elements
+                stage.querySelector('.stage-number').textContent = order;
+                stage.querySelector('.stage-order-text').textContent = order;
+                stage.querySelector('.stage-order-input').value = order;
+
+                // Update all input names
+                const inputs = stage.querySelectorAll('input, select');
+                inputs.forEach(input => {
+                    const name = input.getAttribute('name');
+                    if (name && name.includes('Stages[')) {
+                        input.setAttribute('name', name.replace(/Stages\[\d+\]/, `Stages[${index}]`));
+                    }
+                });
+            });
+        }
+
+        function previewTemplate() {
+            const stages = document.querySelectorAll('.stage-item');
+            if (stages.length === 0) {
+                alert('Please add at least one stage before previewing.');
+                return;
+            }
+
+            let preview = 'Template Preview:\n\n';
+            preview += `Name: ${document.querySelector('[name="Name"]').value || 'Not set'}\n`;
+            preview += `Entity Type: ${document.querySelector('[name="EntityType"]').value || 'Not set'}\n`;
+            preview += `Total Stages: ${stages.length}\n\n`;
+
+            stages.forEach((stage, index) => {
+                const stageName = stage.querySelector('[name*="StageName"]').value || 'Unnamed';
+                preview += `Stage ${index + 1}: ${stageName}\n`;
+            });
+
+            alert(preview);
+        }
+
+        function resetForm() {
+            if (confirm('Are you sure you want to reset the form? All data will be lost.')) {
+                document.getElementById('templateForm').reset();
+                document.getElementById('stagesContainer').innerHTML = '';
+                document.getElementById('noStagesMessage').style.display = 'block';
+                stageCount = 0;
+            }
+        }
+
+        // Form validation
+        document.getElementById('templateForm').addEventListener('submit', function(e) {
+            const stages = document.querySelectorAll('.stage-item');
+
+            if (stages.length === 0) {
+                e.preventDefault();
+                alert('Please add at least one workflow stage.');
+                return false;
+            }
+
+            // Validate each stage has at least one approver method
+            let isValid = true;
+            stages.forEach((stage, index) => {
+                const propertyPath = stage.querySelector('[name*="ApproverPropertyPath"]').value;
+                const role = stage.querySelector('[name*="RequiredRole"]').value;
+                const userId = stage.querySelector('[name*="RequiredUserId"]').value;
+
+                if (!propertyPath && !role && !userId) {
+                    isValid = false;
+                    alert(`Stage ${index + 1} must have at least one approver resolution method (Property Path, Role, or User ID).`);
+                }
+            });
+
+            if (!isValid) {
+                e.preventDefault();
+                return false;
+            }
+        });
+
+        // Auto-add first stage on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Optionally add a default stage
+            // addStage();
+        });
+    </script>
+}

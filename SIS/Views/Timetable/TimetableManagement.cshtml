@@ -1,0 +1,272 @@
+﻿@model IEnumerable<SIS.Models.TimeTabling.TimetableGroupViewModel>
+
+<div class="h-[90vh] p-4">
+    <!-- Header Section -->
+    <div class="flex justify-between items-center mb-4">
+        <h1 class="text-2xl font-bold text-gray-800 flex items-center">
+            <i class="material-icons mr-2">schedule</i>
+            Timetable Group Management
+        </h1>
+        <button type="button"
+                onclick="location.href='@Url.Action("Generate", "Timetable")'"
+                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+            <i class="material-icons mr-2">add</i>
+            Generate New Timetable
+        </button>
+    </div>
+
+    <!-- Main Content Layout -->
+    <div class="flex gap-4 h-[calc(90vh-80px)]">
+        <!-- Main Table Section (3/4 width) -->
+        <div class="w-3/4">
+            <div class="bg-white rounded-lg shadow-md h-full overflow-auto">
+                <div class="p-4">
+                    <table id="timetableGroupsTable" class="w-full text-sm text-gray-600">
+                        <thead>
+                            <tr>
+                                <th class="px-6 py-4">Academic Year</th>
+                                <th class="px-6 py-4">Mode of Study</th>
+                                <th class="px-6 py-4">Total Timetables</th>
+                                <th class="px-6 py-4">Published</th>
+                                <th class="px-6 py-4">Draft</th>
+                                <th class="px-6 py-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var group in Model)
+                            {
+                                <tr class="border-b hover:bg-gray-50 transition-colors">
+                                    <td class="px-6 py-4">@group.AcademicYearValue</td>
+                                    <td class="px-6 py-4">@group.ModeOfStudyName</td>
+                                    <td class="px-6 py-4 font-medium text-gray-900">@group.TimetableCount</td>
+                                    <td class="px-6 py-4">
+                                        <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">@group.PublishedCount</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">@group.DraftCount</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex space-x-2">
+                                            <button onclick="location.href='@Url.Action("ViewTimetables", "Timetable", new { academicYearId = group.AcademicYearId, modeOfStudyId = group.ModeOfStudyId })'"
+                                                    class="inline-flex items-center px-3 py-1 text-sm text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
+                                                <i class="material-icons text-sm mr-1">visibility</i>
+                                            </button>
+
+                                            @if (group.DraftCount > 0)
+                                            {
+                                                <button onclick="showPublishModal('@group.AcademicYearId', '@group.ModeOfStudyId')"
+                                                        class="inline-flex items-center px-3 py-1 text-sm text-green-600 bg-green-50 hover:bg-green-100 rounded-lg transition-colors">
+                                                    <i class="material-icons text-sm mr-1">publish</i>
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button class="inline-flex items-center px-3 py-1 text-sm text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed" disabled>
+                                                    <i class="material-icons text-sm mr-1">publish</i>
+                                                </button>
+                                            }
+
+                                            <button onclick="showDeleteGroupModal('@group.AcademicYearId', '@group.ModeOfStudyId')"
+                                                    class="inline-flex items-center px-3 py-1 text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
+                                                <i class="material-icons text-sm mr-1">delete</i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Sidebar (1/4 width) -->
+        <div class="w-1/4 space-y-4">
+            <!-- Statistics Cards -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Timetable Summary</h3>
+                <div class="space-y-6">
+                    <!-- Total Timetable Groups -->
+                    <div class="flex items-center">
+                        <div class="p-3 bg-blue-100 rounded-lg">
+                            <i class="material-icons text-blue-600 text-xl">folder</i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-gray-500 text-sm">Total Groups</p>
+                            <p class="text-xl font-semibold">@ViewBag.Statistics.TotalGroups</p>
+                        </div>
+                    </div>
+
+                    <!-- Total Timetables -->
+                    <div class="flex items-center">
+                        <div class="p-3 bg-blue-100 rounded-lg">
+                            <i class="material-icons text-blue-600 text-xl">schedule</i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-gray-500 text-sm">Total Timetables</p>
+                            <p class="text-xl font-semibold">@ViewBag.Statistics.TotalTimetables</p>
+                        </div>
+                    </div>
+
+                    <!-- Published Timetables -->
+                    <div class="flex items-center">
+                        <div class="p-3 bg-green-100 rounded-lg">
+                            <i class="material-icons text-green-600 text-xl">publish</i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-gray-500 text-sm">Published</p>
+                            <p class="text-xl font-semibold text-green-600">@ViewBag.Statistics.PublishedTimetables</p>
+                        </div>
+                    </div>
+
+                    <!-- Draft Timetables -->
+                    <div class="flex items-center">
+                        <div class="p-3 bg-yellow-100 rounded-lg">
+                            <i class="material-icons text-yellow-600 text-xl">edit</i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-gray-500 text-sm">Draft</p>
+                            <p class="text-xl font-semibold text-yellow-600">@ViewBag.Statistics.DraftTimetables</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current Semester Stats -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Current Semester</h3>
+                <div class="text-center">
+                    <p class="text-3xl font-bold text-blue-600">@ViewBag.Statistics.CurrentSemesterTimetables</p>
+                    <p class="text-gray-500 mt-2">Active Timetables</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Group Confirmation Modal -->
+<div id="deleteGroupModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg max-w-md w-full p-6">
+        <h3 class="text-xl font-semibold text-gray-900 mb-4">Confirm Delete</h3>
+        <p class="text-gray-600 mb-6">Are you sure you want to delete all timetables for this group? This action cannot be undone.</p>
+
+        <form id="deleteGroupForm" action="@Url.Action("DeleteTimetableGroup", "Timetable")" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="deleteAcademicYearId" name="academicYearId" />
+            <input type="hidden" id="deleteModeOfStudyId" name="modeOfStudyId" />
+
+            <div class="flex justify-end space-x-3">
+                <button type="button" onclick="closeDeleteModal()"
+                        class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg transition-colors">
+                    Cancel
+                </button>
+                <button type="submit"
+                        class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">
+                    Delete
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Publish Group Confirmation Modal -->
+<div id="publishModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg max-w-md w-full p-6">
+        <h3 class="text-xl font-semibold text-gray-900 mb-4">Confirm Publish</h3>
+        <p class="text-gray-600 mb-6">Are you sure you want to publish all draft timetables for this group?</p>
+        <p class="text-gray-600 mb-6">This action will make the timetables visible to all relevant stakeholders.</p>
+
+        <form id="publishGroupForm" action="@Url.Action("PublishTimetableGroup", "Timetable")" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="publishAcademicYearId" name="academicYearId" />
+            <input type="hidden" id="publishModeOfStudyId" name="modeOfStudyId" />
+
+            <div class="flex justify-end space-x-3">
+                <button type="button" onclick="closePublishModal()"
+                        class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg transition-colors">
+                    Cancel
+                </button>
+                <button type="submit"
+                        class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors">
+                    Publish
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Initialize DataTable
+            const dataTable = new simpleDatatables.DataTable("#timetableGroupsTable", {
+                perPage: 10,
+                searchable: true,
+                sortable: true,
+                labels: {
+                    placeholder: "Search...",
+                    perPage: "Show {select} entries",
+                    noRows: "No timetable groups found",
+                    info: "Showing {start} to {end} of {rows} timetable groups",
+                },
+                classes: {
+                    wrapper: "datatable-wrapper",
+                    input: "datatable-input px-3 py-2 text-sm border border-gray-300 rounded-lg",
+                    selector: "datatable-selector px-3 py-2 text-sm border border-gray-300 rounded-lg",
+                    paginationButton: "px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 rounded-md",
+                    paginationButtonActive: "bg-blue-50 text-blue-600 hover:bg-blue-100",
+                    paginationButtonDisabled: "text-gray-400 hover:bg-transparent cursor-not-allowed",
+                }
+            });
+
+            // Make the table responsive
+            window.addEventListener('resize', () => {
+                dataTable.columns().rebuild();
+            });
+        });
+
+        // Delete modal functions
+        function showDeleteGroupModal(academicYearId, modeOfStudyId) {
+            document.getElementById('deleteAcademicYearId').value = academicYearId;
+            document.getElementById('deleteModeOfStudyId').value = modeOfStudyId;
+            document.getElementById('deleteGroupModal').classList.remove('hidden');
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteGroupModal').classList.add('hidden');
+        }
+
+        // Publish modal functions
+        function showPublishModal(academicYearId, modeOfStudyId) {
+            document.getElementById('publishAcademicYearId').value = academicYearId;
+            document.getElementById('publishModeOfStudyId').value = modeOfStudyId;
+            document.getElementById('publishModal').classList.remove('hidden');
+        }
+
+        function closePublishModal() {
+            document.getElementById('publishModal').classList.add('hidden');
+        }
+
+        // Close modals when clicking outside
+        document.addEventListener('click', function(event) {
+            const publishModal = document.getElementById('publishModal');
+            const deleteModal = document.getElementById('deleteGroupModal');
+
+            if (event.target === publishModal) {
+                closePublishModal();
+            }
+
+            if (event.target === deleteModal) {
+                closeDeleteModal();
+            }
+        });
+
+        // Close modals with Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closePublishModal();
+                closeDeleteModal();
+            }
+        });
+    </script>
+}

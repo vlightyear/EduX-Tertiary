@@ -1,0 +1,289 @@
+﻿@model IEnumerable<SIS.Models.StudentAccommodation.AccommodationApplication>
+
+<style>
+    .payment-type-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 0.65rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+        .payment-type-badge.semester {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+
+        .payment-type-badge.year {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .payment-type-badge.perday {
+            background: #fff3e0;
+            color: #e65100;
+        }
+
+        .payment-type-badge.fixed {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+</style>
+
+<div class="min-h-[88vh] p-6 bg-slate-50">
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+        <div class="flex items-center gap-2">
+            <i class="material-icons text-3xl text-slate-800">history</i>
+            <h1 class="text-2xl font-bold text-slate-800">My Accommodation Applications</h1>
+        </div>
+        <div class="mt-4 md:mt-0">
+            <a href="@Url.Action("Dashboard", "StudentAccommodation")" class="flex items-center gap-2 px-4 py-2 border border-cyan-950 text-cyan-950 rounded-lg hover:bg-cyan-950 hover:text-white transition-colors">
+                <i class="material-icons">apartment</i>
+                <span>Back to Dashboard</span>
+            </a>
+        </div>
+    </div>
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+        <div class="bg-white rounded-xl shadow-sm p-4">
+            <div class="flex flex-col items-center text-center">
+                <div class="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center mb-2">
+                    <i class="material-icons text-slate-600">total</i>
+                </div>
+                <p class="text-sm text-slate-600">Total</p>
+                <p class="text-xl font-bold text-slate-800">@ViewBag.TotalApplications</p>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm p-4">
+            <div class="flex flex-col items-center text-center">
+                <div class="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center mb-2">
+                    <i class="material-icons text-amber-600">hourglass_empty</i>
+                </div>
+                <p class="text-sm text-slate-600">Pending</p>
+                <p class="text-xl font-bold text-amber-600">@ViewBag.PendingApplications</p>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm p-4">
+            <div class="flex flex-col items-center text-center">
+                <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mb-2">
+                    <i class="material-icons text-green-600">check_circle</i>
+                </div>
+                <p class="text-sm text-slate-600">Approved</p>
+                <p class="text-xl font-bold text-green-600">@ViewBag.ApprovedApplications</p>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm p-4">
+            <div class="flex flex-col items-center text-center">
+                <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center mb-2">
+                    <i class="material-icons text-red-600">cancel</i>
+                </div>
+                <p class="text-sm text-slate-600">Rejected</p>
+                <p class="text-xl font-bold text-red-600">@ViewBag.RejectedApplications</p>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm p-4">
+            <div class="flex flex-col items-center text-center">
+                <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mb-2">
+                    <i class="material-icons text-blue-600">home</i>
+                </div>
+                <p class="text-sm text-slate-600">Active</p>
+                <p class="text-xl font-bold text-blue-600">@ViewBag.ActiveAllocations</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Applications Table -->
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div class="p-6 border-b border-slate-100">
+            <div class="flex items-center gap-2">
+                <i class="material-icons text-cyan-950">format_list_bulleted</i>
+                <h2 class="text-lg font-semibold text-slate-800">Application History</h2>
+            </div>
+        </div>
+
+        @if (!Model.Any())
+        {
+            <div class="p-6">
+                <div class="flex items-center justify-center p-8 bg-slate-50 rounded-lg">
+                    <div class="text-center">
+                        <i class="material-icons text-slate-400 text-4xl mb-2">history</i>
+                        <p class="text-slate-600 mb-2">No application history found</p>
+                        <a href="@Url.Action("Dashboard", "StudentAccommodation")" class="inline-flex items-center gap-2 px-4 py-2 bg-cyan-950 text-white rounded-lg hover:bg-cyan-900 transition-colors">
+                            <i class="material-icons text-sm">add</i>
+                            <span>Apply for Accommodation</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-slate-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-sm font-semibold text-slate-800">Period & Payment</th>
+                            <th class="px-6 py-3 text-left text-sm font-semibold text-slate-800">Fee</th>
+                            <th class="px-6 py-3 text-left text-sm font-semibold text-slate-800">Applied Date</th>
+                            <th class="px-6 py-3 text-left text-sm font-semibold text-slate-800">Status</th>
+                            <th class="px-6 py-3 text-left text-sm font-semibold text-slate-800">Allocation</th>
+                            <th class="px-6 py-3 text-right text-sm font-semibold text-slate-800">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @foreach (var application in Model)
+                        {
+                            // Calculate fee for display
+                            var period = application.Period;
+                            decimal calculatedFee = 0;
+                            string feeDisplay = "";
+                            if (period != null)
+                            {
+                                if (period.TypeOfPayment == "PerDay")
+                                {
+                                    var numberOfDays = application.NumberOfDays ?? 1;
+                                    calculatedFee = period.TypeOfPaymentAmount * numberOfDays;
+                                    feeDisplay = $"K{calculatedFee:N2}";
+                                }
+                                else
+                                {
+                                    calculatedFee = period.TypeOfPaymentAmount;
+                                    feeDisplay = $"K{calculatedFee:N2}";
+                                }
+                            }
+                            
+                            <tr class="hover:bg-slate-50">
+                                <td class="px-6 py-4">
+                                    <div>
+                                        <p class="font-medium text-slate-800">
+                                            @(application.Period?.Type ?? "Accommodation")
+                                        </p>
+                                        <div class="mt-1">
+                                            <span class="payment-type-badge @(application.Period?.TypeOfPayment?.ToLower() ?? "")">
+                                                @(application.Period?.TypeOfPayment ?? "N/A")
+                                            </span>
+                                        </div>
+                                        @if (application.Period?.TypeOfPayment == "PerDay" && application.NumberOfDays.HasValue)
+                                        {
+                                            <p class="text-xs text-orange-600 mt-1">
+                                                @application.NumberOfDays days
+                                            </p>
+                                        }
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div>
+                                        <p class="font-semibold text-slate-800">@feeDisplay</p>
+                                        @if (application.Period?.TypeOfPayment == "PerDay" && application.NumberOfDays.HasValue)
+                                        {
+                                            <p class="text-xs text-slate-500">
+                                                K@application.Period.TypeOfPaymentAmount.ToString("N2")/day
+                                            </p>
+                                        }
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-sm text-slate-600">
+                                    @application.ApplicationDate.ToString("MMM d, yyyy")
+                                </td>
+                                <td class="px-6 py-4">
+                                    @{
+                                        string statusClass = "";
+                                        string statusIcon = "";
+
+                                        switch (application.Status)
+                                        {
+                                            case SIS.Enums.Status.Pending:
+                                                statusClass = "bg-amber-100 text-amber-800";
+                                                statusIcon = "hourglass_empty";
+                                                break;
+                                            case SIS.Enums.Status.Approved:
+                                                statusClass = "bg-green-100 text-green-800";
+                                                statusIcon = "check_circle";
+                                                break;
+                                            case SIS.Enums.Status.Rejected:
+                                                statusClass = "bg-red-100 text-red-800";
+                                                statusIcon = "cancel";
+                                                break;
+                                            case SIS.Enums.Status.Canceled:
+                                                statusClass = "bg-slate-100 text-slate-800";
+                                                statusIcon = "highlight_off";
+                                                break;
+                                            default:
+                                                statusClass = "bg-blue-100 text-blue-800";
+                                                statusIcon = "info";
+                                                break;
+                                        }
+                                    }
+
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium @statusClass">
+                                        <i class="material-icons text-xs mr-1">@statusIcon</i>
+                                        @application.Status
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-sm">
+                                    @if (application.Allocation != null)
+                                    {
+                                        <div>
+                                            <p class="font-medium text-slate-800">
+                                                @application.Allocation.Bed.Room.Hostel.HostelName
+                                            </p>
+                                            <p class="text-sm text-slate-500">
+                                                Room @application.Allocation.Bed.Room.RoomNumber, Bed @application.Allocation.Bed.BedIdentifier
+                                            </p>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-slate-500">Not allocated</span>
+                                    }
+                                </td>
+                                <td class="px-6 py-4 text-right">
+                                    <div class="flex items-center justify-end gap-2">
+                                        <a href="@Url.Action("ApplicationDetails", "StudentAccommodation", new { id = application.ApplicationId })" class="p-1.5 text-cyan-950 hover:bg-cyan-50 rounded">
+                                            <i class="material-icons">visibility</i>
+                                        </a>
+
+                                        @if (application.Status == SIS.Enums.Status.Pending)
+                                        {
+                                            <form asp-action="CancelApplication" asp-route-id="@application.ApplicationId" method="post" onsubmit="return confirm('Are you sure you want to cancel this application?');">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="p-1.5 text-red-600 hover:bg-red-50 rounded">
+                                                    <i class="material-icons">delete</i>
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+
+    <!-- Information Card -->
+    <div class="mt-6 bg-white rounded-xl shadow-sm p-6">
+        <div class="flex items-start gap-3 text-slate-800">
+            <i class="material-icons text-blue-600">info</i>
+            <div>
+                <h3 class="font-semibold mb-2">About Accommodation Applications</h3>
+                <ul class="list-disc pl-5 space-y-1 text-sm text-slate-600">
+                    <li>Applications with <span class="font-medium text-amber-600">Pending</span> status are still being processed.</li>
+                    <li>You can cancel applications that are still in the <span class="font-medium text-amber-600">Pending</span> status.</li>
+                    <li>If your application is <span class="font-medium text-green-600">Approved</span>, you'll need to pay the accommodation fee.</li>
+                    <li>For <span class="font-medium text-orange-600">Per Day</span> payment types, the fee is calculated based on the number of days you requested.</li>
+                    <li>For any questions about your application, please contact the accommodation office.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

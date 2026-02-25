@@ -1,0 +1,73 @@
+﻿@{
+    ViewData["Title"] = "PDF Viewer";
+    var filePath = ViewBag.FilePath;
+
+    // Create a URL to the file
+    var pdfUrl = Url.Content("~/" + filePath);
+
+    // Extract the filename from the path using string operations
+    string fileName = filePath;
+    if (!string.IsNullOrEmpty(filePath))
+    {
+        int lastSlashIndex = Math.Max(filePath.LastIndexOf('/'), filePath.LastIndexOf('\\'));
+        if (lastSlashIndex >= 0 && lastSlashIndex < filePath.Length - 1)
+        {
+            fileName = filePath.Substring(lastSlashIndex + 1);
+        }
+    }
+}
+
+<div class="min-h-screen bg-slate-50 p-6">
+    <div class="mb-6">
+        <div class="flex items-center mb-4">
+            <a href="javascript:history.back()" class="text-blue-600 hover:text-blue-800 mr-2">
+                <i class="material-icons">arrow_back</i>
+            </a>
+            <h1 class="text-2xl font-bold text-slate-800">PDF Document Viewer</h1>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm mb-6">
+        <div class="p-4 border-b border-slate-200 flex justify-between items-center">
+            <div>
+                <h2 class="text-lg font-semibold text-slate-800">@fileName</h2>
+            </div>
+            @* <div> *@
+            @*     <a href="@pdfUrl" target="_blank" class="text-blue-600 hover:text-blue-800 mr-3"> *@
+            @*         <i class="material-icons">open_in_new</i> Open in New Tab *@
+            @*     </a> *@
+            @* </div> *@
+        </div>
+        <div class="p-0">
+            <div style="height: 80vh; width: 100%;">
+                <embed src="@pdfUrl" type="application/pdf" width="100%" height="100%" />
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Check if PDF failed to load
+            const embed = document.querySelector('embed');
+            embed.onload = function() {
+                console.log("PDF loaded successfully");
+            };
+            embed.onerror = function() {
+                console.error("PDF failed to load");
+                // Replace the embed with an error message
+                const container = embed.parentElement;
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full p-8 bg-slate-50">
+                        <i class="material-icons text-5xl text-slate-300 mb-4">error_outline</i>
+                        <p class="text-slate-600 mb-3">Failed to load PDF document.</p>
+                        <a href="${embed.src}" target="_blank" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                            Try opening directly
+                        </a>
+                    </div>
+                `;
+            };
+        });
+    </script>
+}

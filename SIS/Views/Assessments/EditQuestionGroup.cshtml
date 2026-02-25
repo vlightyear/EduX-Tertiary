@@ -1,0 +1,365 @@
+﻿@model SIS.Models.Assessments.QuestionGroup
+@{
+    ViewData["Title"] = "Edit Question Group";
+}
+
+<div class="h-[90vh] p-4">
+    <!-- Header Section -->
+    <div class="flex items-center mb-4">
+        <a asp-controller="Assessments" asp-action="QuestionGroupDetails" asp-route-id="@Model.Id"
+           class="bg-slate-100 hover:bg-slate-200 p-2 rounded-full mr-2">
+            <i class="material-icons text-slate-600">arrow_back</i>
+        </a>
+        <div class="text-gray-800">
+            <h1 class="text-2xl font-bold">Edit Question Group</h1>
+            <p class="text-sm text-slate-600">Course: @Model.Course?.CourseName (@Model.Course?.CourseCode)</p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex gap-4 h-[calc(90vh-80px)]">
+        <!-- Form Section (2/3 width) -->
+        <div class="w-2/3">
+            <div class="bg-white rounded-lg shadow-md h-full">
+                <div class="p-6">
+                    @if (TempData["Success"] != null)
+                    {
+                        <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6" role="alert">
+                            <p>@TempData["Success"]</p>
+                        </div>
+                    }
+
+                    @if (TempData["Error"] != null)
+                    {
+                        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
+                            <p>@TempData["Error"]</p>
+                        </div>
+                    }
+
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
+                            <p class="font-medium">Please correct the following errors:</p>
+                            <div asp-validation-summary="All" class="text-sm"></div>
+                        </div>
+                    }
+
+                    <form asp-controller="Assessments" asp-action="EditQuestionGroup" method="post" id="editQuestionGroupForm">
+                        <input type="hidden" asp-for="Id" />
+
+                        <div class="mb-6">
+                            <label asp-for="Name" class="block text-sm font-medium text-slate-700 mb-1">Group Name*</label>
+                            <input asp-for="Name" class="block w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500"
+                                   placeholder="Enter a descriptive name for this question group" required />
+                            <span asp-validation-for="Name" class="text-sm text-red-600"></span>
+                        </div>
+
+                        <div class="mb-6">
+                            <label asp-for="CourseId" class="block text-sm font-medium text-slate-700 mb-1">Course*</label>
+                            <select asp-for="CourseId" class="block w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500" required>
+                                <option value="">-- Select Course --</option>
+                                @if (ViewBag.Courses != null)
+                                {
+                                    @foreach (var course in ViewBag.Courses)
+                                    {
+                                        <option value="@course.Id" selected="@(course.Id == Model.CourseId)">
+                                            @course.CourseName (@course.CourseCode)
+                                        </option>
+                                    }
+                                }
+                            </select>
+                            <span asp-validation-for="CourseId" class="text-sm text-red-600"></span>
+                            @if (ViewBag.Courses == null || !((IEnumerable<dynamic>)ViewBag.Courses).Any())
+                            {
+                                <p class="text-sm text-orange-600 mt-1">
+                                    <i class="material-icons text-xs mr-1">warning</i>
+                                    No courses available. Please contact administrator.
+                                </p>
+                            }
+                        </div>
+
+                        <div class="mb-6">
+                            <label asp-for="Topics" class="block text-sm font-medium text-slate-700 mb-1">Topics</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                    <i class="material-icons text-slate-400 text-sm">tag</i>
+                                </div>
+                                <input asp-for="Topics" id="topicsInput" class="block w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500"
+                                       placeholder="Enter topics separated by commas (e.g. 'Networking, Security, Data Structures')" />
+                            </div>
+                            <p class="text-xs text-slate-500 mt-1">Separate topics with commas to create tags</p>
+
+                            <!-- Topics tag preview -->
+                            <div id="topicsPreview" class="flex flex-wrap gap-2 mt-2"></div>
+                            <span asp-validation-for="Topics" class="text-sm text-red-600"></span>
+                        </div>
+
+                        <div class="mb-6">
+                            <label asp-for="Description" class="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                            <textarea asp-for="Description" rows="4" class="block w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500"
+                                      placeholder="Enter an optional description explaining what this question group is used for"></textarea>
+                            <span asp-validation-for="Description" class="text-sm text-red-600"></span>
+                        </div>
+
+                        <div class="flex justify-end gap-2">
+                            <a asp-controller="Assessments" asp-action="QuestionGroupDetails" asp-route-id="@Model.Id"
+                               class="px-4 py-2 bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300 transition-colors">
+                                Cancel
+                            </a>
+                            <button type="submit" class="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors flex items-center">
+                                <i class="material-icons text-sm mr-1">save</i>
+                                Update Group
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Information Sidebar (1/3 width) -->
+        <div class="w-1/3 space-y-4">
+            <!-- Group Information Card -->
+            <div class="bg-white rounded-lg shadow p-5">
+                <h3 class="text-lg font-semibold text-gray-800 mb-3">Group Information</h3>
+
+                <div class="space-y-3">
+                    <div class="flex items-start">
+                        <div class="bg-cyan-100 p-1.5 rounded-full mr-3 flex-shrink-0">
+                            <i class="material-icons text-cyan-600 text-md">date_range</i>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-500">Created on</p>
+                            <p class="text-sm font-medium text-gray-700">@Model.CreatedAt.ToString("MMM dd, yyyy")</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start">
+                        <div class="bg-cyan-100 p-1.5 rounded-full mr-3 flex-shrink-0">
+                            <i class="material-icons text-cyan-600 text-md">person</i>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-500">Created by</p>
+                            <p class="text-sm font-medium text-gray-700">@Model.CreatedBy</p>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Model.UpdatedBy))
+                    {
+                        <div class="flex items-start">
+                            <div class="bg-cyan-100 p-1.5 rounded-full mr-3 flex-shrink-0">
+                                <i class="material-icons text-cyan-600 text-md">update</i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-slate-500">Last updated on</p>
+                                <p class="text-sm font-medium text-gray-700">@Model.UpdatedAt?.ToString("MMM dd, yyyy")</p>
+                                <p class="text-xs text-slate-500">by @Model.UpdatedBy</p>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="flex items-start">
+                        <div class="bg-cyan-100 p-1.5 rounded-full mr-3 flex-shrink-0">
+                            <i class="material-icons text-cyan-600 text-md">quiz</i>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-500">Questions</p>
+                            <p class="text-sm font-medium text-gray-700">@(Model.Questions?.Count ?? 0) questions in this group</p>
+                            @if (Model.Questions != null && Model.Questions.Any())
+                            {
+                                <a asp-controller="Assessments" asp-action="QuestionsByGroup" asp-route-groupId="@Model.Id"
+                                   class="text-xs text-cyan-600 hover:text-cyan-800 hover:underline">
+                                    View questions
+                                </a>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Available Courses Card -->
+            @if (ViewBag.Courses != null)
+            {
+                <div class="bg-white rounded-lg shadow p-5">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Your Available Courses</h3>
+                    <p class="text-sm text-slate-600 mb-3">
+                        You can reassign this group to any of these courses:
+                    </p>
+                    <div class="space-y-2 max-h-40 overflow-y-auto">
+                        @foreach (var course in ViewBag.Courses)
+                        {
+                            <div class="flex items-center p-2 rounded @(course.Id == Model.CourseId ? "bg-cyan-50 border border-cyan-200" : "bg-slate-50")">
+                                <i class="material-icons text-slate-500 text-sm mr-2">@(course.Id == Model.CourseId ? "radio_button_checked" : "book")</i>
+                                <div>
+                                    <p class="text-xs font-medium text-slate-700">@course.CourseName</p>
+                                    <p class="text-xs text-slate-500">@course.CourseCode</p>
+                                </div>
+                                @if (course.Id == Model.CourseId)
+                                {
+                                    <span class="ml-auto text-xs text-cyan-600 font-medium">Current</span>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- Help Card -->
+            <div class="bg-white rounded-lg shadow p-5">
+                <h3 class="text-lg font-semibold text-gray-800 mb-3">Tips for Editing</h3>
+
+                <div class="border-l-4 border-cyan-500 pl-4 py-2 mb-4">
+                    <ul class="text-sm text-slate-600 list-disc list-inside space-y-1">
+                        <li>You can change the course association for this group</li>
+                        <li>Adding useful topics helps with organization and filtering</li>
+                        <li>A good description helps other instructors understand the purpose</li>
+                        <li>Course codes are shown to help identify courses clearly</li>
+                    </ul>
+                </div>
+
+                <div class="bg-amber-50 border-l-4 border-amber-500 p-4 text-sm text-amber-800">
+                    <p class="font-medium">Important Note</p>
+                    <p>Editing this group will not affect any assessments that are already using these questions.</p>
+                </div>
+            </div>
+
+            <!-- Quick Actions Card -->
+            <div class="bg-white rounded-lg shadow p-5">
+                <h3 class="text-lg font-semibold text-gray-800 mb-3">Quick Actions</h3>
+                <div class="space-y-2">
+                    <a asp-controller="Assessments" asp-action="CreateQuestion" asp-route-questionGroupId="@Model.Id"
+                       class="flex items-center text-sm text-cyan-600 hover:text-cyan-800 hover:underline">
+                        <i class="material-icons text-sm mr-2">add_circle</i>
+                        Add questions to this group
+                    </a>
+                    @if (Model.Questions != null && Model.Questions.Any())
+                    {
+                        <a asp-controller="Assessments" asp-action="QuestionsByGroup" asp-route-groupId="@Model.Id"
+                           class="flex items-center text-sm text-cyan-600 hover:text-cyan-800 hover:underline">
+                            <i class="material-icons text-sm mr-2">list</i>
+                            View all questions
+                        </a>
+                    }
+                    <a asp-controller="Assessments" asp-action="QuestionGroups"
+                       class="flex items-center text-sm text-slate-600 hover:text-slate-800 hover:underline">
+                        <i class="material-icons text-sm mr-2">folder</i>
+                        Back to all groups
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const topicsInput = document.getElementById('topicsInput');
+            const topicsPreview = document.getElementById('topicsPreview');
+
+            // Initialize topics preview
+            updateTopicsPreview();
+
+            // Update topics preview whenever the input changes
+            topicsInput.addEventListener('input', updateTopicsPreview);
+
+            function updateTopicsPreview() {
+                // Clear the current preview
+                topicsPreview.innerHTML = '';
+
+                // Get the current value of the topics input
+                const topicsText = topicsInput.value.trim();
+
+                if (topicsText) {
+                    // Split by commas and create tags for each topic
+                    const topics = topicsText.split(',').map(topic => topic.trim()).filter(topic => topic);
+
+                    topics.forEach(topic => {
+                        if (topic) {
+                            const tagEl = document.createElement('div');
+                            tagEl.className = 'bg-slate-100 text-slate-800 text-xs px-3 py-1.5 rounded-full flex items-center';
+
+                            // Escape the topic for use in JavaScript
+                            const escapedTopic = topic.replace(/"/g, '&quot;').replace(/'/g, '\\\'');
+
+                            tagEl.innerHTML = `
+                                <span>${topic}</span>
+                                <button type="button" class="ml-1.5 text-slate-500 hover:text-slate-700"
+                                        onclick="removeTag('${escapedTopic}')">
+                                    <i class="material-icons text-xs">close</i>
+                                </button>
+                            `;
+                            topicsPreview.appendChild(tagEl);
+                        }
+                    });
+                }
+            }
+
+            // Add function to remove a tag when clicked
+            window.removeTag = function(topicToRemove) {
+                const currentTopics = topicsInput.value.split(',').map(t => t.trim());
+                const newTopics = currentTopics.filter(topic => topic !== topicToRemove);
+                topicsInput.value = newTopics.join(', ');
+                updateTopicsPreview();
+            };
+
+            // Form validation
+            const form = document.getElementById('editQuestionGroupForm');
+            form.addEventListener('submit', function(e) {
+                let isValid = true;
+
+                // Validate group name
+                const nameInput = document.querySelector('input[name="Name"]');
+                if (!nameInput.value.trim()) {
+                    isValid = false;
+                    nameInput.classList.add('border-red-500');
+
+                    // Check if error message already exists
+                    let errorSpan = nameInput.nextElementSibling;
+                    if (!errorSpan || !errorSpan.classList.contains('text-red-600')) {
+                        errorSpan = document.createElement('span');
+                        errorSpan.className = 'text-sm text-red-600';
+                        nameInput.parentNode.appendChild(errorSpan);
+                    }
+                    errorSpan.textContent = 'Group name is required';
+                } else {
+                    nameInput.classList.remove('border-red-500');
+                    const errorSpan = nameInput.nextElementSibling;
+                    if (errorSpan && errorSpan.classList.contains('text-red-600')) {
+                        errorSpan.textContent = '';
+                    }
+                }
+
+                // Validate course selection
+                const courseInput = document.querySelector('select[name="CourseId"]');
+                if (!courseInput.value) {
+                    isValid = false;
+                    courseInput.classList.add('border-red-500');
+
+                    // Check if error message already exists
+                    let errorSpan = courseInput.nextElementSibling;
+                    if (!errorSpan || !errorSpan.classList.contains('text-red-600')) {
+                        errorSpan = document.createElement('span');
+                        errorSpan.className = 'text-sm text-red-600';
+                        courseInput.parentNode.appendChild(errorSpan);
+                    }
+                    errorSpan.textContent = 'Please select a course';
+                } else {
+                    courseInput.classList.remove('border-red-500');
+                    const errorSpan = courseInput.nextElementSibling;
+                    if (errorSpan && errorSpan.classList.contains('text-red-600')) {
+                        errorSpan.textContent = '';
+                    }
+                }
+
+                if (!isValid) {
+                    e.preventDefault();
+                    // Scroll to the first error
+                    const firstError = document.querySelector('.text-red-600');
+                    if (firstError) {
+                        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
+            });
+        });
+    </script>
+}

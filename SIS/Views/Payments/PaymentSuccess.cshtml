@@ -1,0 +1,155 @@
+﻿@model SIS.Models.Payments.PaymentConfirmationViewModel
+
+@{
+    ViewData["Title"] = "Payment Successful";
+}
+
+<div class="bg-slate-50 min-h-screen py-8">
+    <div class=" mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Success Card -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
+            <!-- Header with Success Icon -->
+            <div class="text-center mb-8">
+                <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-green-100 mb-6">
+                    <svg class="h-10 w-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                </div>
+                <h2 class="text-3xl font-bold text-slate-800">Payment Successful!</h2>
+                <p class="text-slate-600 text-lg mt-2">Your application has been submitted successfully</p>
+            </div>
+
+            <!-- Payment Details -->
+            <div class="border-t border-b border-slate-200 py-6 mb-6">
+                <h3 class="text-xl font-semibold text-slate-800 mb-4">Payment Details</h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <dl class="space-y-4">
+                            <div>
+                                <dt class="text-sm font-medium text-slate-500">Transaction Reference</dt>
+                                <dd class="text-base font-semibold text-slate-900">@Model.TransactionReference</dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-slate-500">Payment Date</dt>
+                                <dd class="text-base text-slate-900">@Model.PaymentDate.ToString("MMMM dd, yyyy HH:mm")</dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-slate-500">Amount Paid</dt>
+                                <dd class="text-base font-semibold text-green-600">@Model.Amount.ToString("C2", new System.Globalization.CultureInfo("en-ZM"))</dd>
+                            </div>
+                        </dl>
+                    </div>
+                    <div>
+                        <dl class="space-y-4">
+                            <div>
+                                <dt class="text-sm font-medium text-slate-500">Payment Method</dt>
+                                <dd class="text-base text-slate-900">@Model.PaymentMethod</dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-slate-500">Application Reference</dt>
+                                <dd class="text-base text-slate-900">@Model.ApplicationReference</dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-slate-500">Applicant Name</dt>
+                                <dd class="text-base text-slate-900">@Model.ApplicantName</dd>
+                            </div>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Next Steps -->
+            <div class="mb-8">
+                <h3 class="text-xl font-semibold text-slate-800 mb-4">Next Steps</h3>
+                <div class="bg-cyan-50 border-l-4 border-cyan-500 p-4 rounded-r-lg">
+                    <p class="text-cyan-800">@Model.NextSteps</p>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="@Url.Action("Index", "StudentApplication")" class="px-6 py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 transition-colors text-center">
+                    Back to Dashboard
+                </a>
+                <button onclick="printReceipt()" class="px-6 py-3 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 transition-colors flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                    </svg>
+                    Print Receipt
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Print Receipt Section (Hidden initially) -->
+    <div id="receipt-to-print" class="hidden">
+        <div style="max-width: 800px; margin: 0 auto; padding: 40px 20px; font-family: Arial, sans-serif;">
+            <div style="text-align: center; margin-bottom: 30px;">
+                <h1 style="font-size: 24px; margin-bottom: 5px;">Payment Receipt</h1>
+                <p style="color: #666;">eCampus Application System</p>
+            </div>
+
+            <div style="border-top: 1px solid #e5e5e5; border-bottom: 1px solid #e5e5e5; padding: 20px 0; margin-bottom: 20px;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                        <td style="padding: 8px 0; width: 40%; color: #666;">Transaction Reference:</td>
+                        <td style="padding: 8px 0; font-weight: bold;">@Model.TransactionReference</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: #666;">Payment Date:</td>
+                        <td style="padding: 8px 0;">@Model.PaymentDate.ToString("MMMM dd, yyyy HH:mm")</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: #666;">Amount Paid:</td>
+                        <td style="padding: 8px 0; font-weight: bold; color: #15803d;">
+                            @Model.Amount.ToString("C2", new System.Globalization.CultureInfo("en-ZM"))
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 8px 0; color: #666;">Payment Method:</td>
+                        <td style="padding: 8px 0;">@Model.PaymentMethod</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: #666;">Application Reference:</td>
+                        <td style="padding: 8px 0;">@Model.ApplicationReference</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: #666;">Applicant Name:</td>
+                        <td style="padding: 8px 0;">@Model.ApplicantName</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: #666;">Programme:</td>
+                        <td style="padding: 8px 0;">@Model.ProgrammeName</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div style="margin-bottom: 30px;">
+                <p style="font-size: 16px; font-weight: bold; margin-bottom: 10px;">Payment Status: <span style="color: #15803d;">Successful</span></p>
+                <p style="color: #666;">This is an automatically generated receipt and doesn't require a signature.</p>
+            </div>
+
+            <div style="text-align: center; margin-top: 50px; color: #666; font-size: 14px;">
+                <p>&copy; 2025 eCampus Application System. All rights reserved.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function printReceipt() {
+            const receiptContent = document.getElementById('receipt-to-print').innerHTML;
+            const originalContent = document.body.innerHTML;
+
+            document.body.innerHTML = receiptContent;
+            window.print();
+            document.body.innerHTML = originalContent;
+
+            // Re-attach event listeners after restoring content
+            document.querySelector('button').addEventListener('click', printReceipt);
+        }
+    </script>
+}

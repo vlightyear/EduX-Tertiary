@@ -1,0 +1,352 @@
+﻿@model SIS.Models.Results.ResultImportProcessResult
+
+@{
+    ViewData["Title"] = "Import Results";
+}
+
+<div class="min-h-[90vh] p-6 bg-gray-50">
+    <!-- Header -->
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold text-gray-800 flex items-center">
+            <i class="material-icons mr-3 text-primary-600">@(Model.Success ? "check_circle" : "error")</i>
+            Import @(Model.Success ? "Completed" : "Failed")
+        </h1>
+        <p class="text-gray-600 mt-2">
+            @Model.CourseCode - @Model.CourseName |
+            Academic Year ID: @Model.AcademicYearId |
+            Semester: @Model.Semester
+        </p>
+    </div>
+
+    <!-- Summary Alert -->
+    @if (Model.Success)
+    {
+        <div class="bg-green-50 border-l-4 border-green-500 p-6 mb-6 rounded-lg">
+            <div class="flex items-start">
+                <i class="material-icons text-green-600 text-4xl mr-4">check_circle</i>
+                <div class="flex-1">
+                    <h2 class="text-2xl font-bold text-green-900 mb-2">Import Successful!</h2>
+                    <p class="text-green-800 text-lg">
+                        Successfully imported results for <strong>@Model.SuccessfulImports</strong> student(s).
+                    </p>
+                    @if (Model.FailedImports > 0)
+                    {
+                        <p class="text-orange-700 mt-2">
+                            <i class="material-icons text-sm align-middle">warning</i>
+                            @Model.FailedImports student(s) failed to import. See details below.
+                        </p>
+                    }
+                    <p class="text-green-700 text-sm mt-2">
+                        Processing time: @Model.ImportSummary.ProcessingDuration
+                    </p>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="bg-red-50 border-l-4 border-red-500 p-6 mb-6 rounded-lg">
+            <div class="flex items-start">
+                <i class="material-icons text-red-600 text-4xl mr-4">error</i>
+                <div class="flex-1">
+                    <h2 class="text-2xl font-bold text-red-900 mb-2">Import Failed</h2>
+                    <p class="text-red-800 text-lg">@Model.Message</p>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Summary Statistics -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white rounded-lg shadow-sm p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-600">Total Processed</p>
+                    <p class="text-3xl font-bold text-gray-800">@Model.TotalProcessed</p>
+                </div>
+                <i class="material-icons text-4xl text-blue-500">people</i>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-600">Successful</p>
+                    <p class="text-3xl font-bold text-green-600">@Model.SuccessfulImports</p>
+                </div>
+                <i class="material-icons text-4xl text-green-500">check_circle</i>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-600">Failed</p>
+                    <p class="text-3xl font-bold text-red-600">@Model.FailedImports</p>
+                </div>
+                <i class="material-icons text-4xl text-red-500">error</i>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-600">Success Rate</p>
+                    <p class="text-3xl font-bold text-primary-600">@Model.ImportSummary.SuccessRate%</p>
+                </div>
+                <i class="material-icons text-4xl text-primary-500">analytics</i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Statistics -->
+    @if (Model.ImportSummary != null)
+    {
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                <i class="material-icons mr-2">insights</i>
+                Detailed Statistics
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <h3 class="text-sm font-medium text-gray-600 mb-3">Scores Processed</h3>
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-700">Total Scores:</span>
+                            <span class="font-semibold text-gray-900">@Model.ImportSummary.TotalScoresRecorded</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-700">New Scores:</span>
+                            <span class="font-semibold text-green-600">@Model.ImportSummary.NewScores</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-700">Updated Scores:</span>
+                            <span class="font-semibold text-blue-600">@Model.ImportSummary.UpdatedScores</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-sm font-medium text-gray-600 mb-3">Students</h3>
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-700">Total Processed:</span>
+                            <span class="font-semibold text-gray-900">@Model.ImportSummary.ValidRowsProcessed</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-700">Successful:</span>
+                            <span class="font-semibold text-green-600">@Model.ImportSummary.StudentsSuccessful</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-700">Failed:</span>
+                            <span class="font-semibold text-red-600">@Model.ImportSummary.StudentsFailed</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-sm font-medium text-gray-600 mb-3">Other</h3>
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-700">Results Calculated:</span>
+                            <span class="font-semibold text-gray-900">@Model.ImportSummary.ResultsCalculated</span>
+                        </div>
+                        @if (Model.IntegrityRestored > 0)
+                        {
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-700">Integrity Restored:</span>
+                                <span class="font-semibold text-orange-600">@Model.IntegrityRestored</span>
+                            </div>
+                        }
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-700">Processing Time:</span>
+                            <span class="font-semibold text-gray-900">@Model.ImportSummary.ProcessingDuration</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Successfully Imported Results -->
+    @if (Model.ImportedResults.Any())
+    {
+        <div class="bg-white rounded-lg shadow-sm mb-6">
+            <div class="p-6 border-b border-gray-200 bg-green-50">
+                <h2 class="text-xl font-semibold text-green-900 flex items-center">
+                    <i class="material-icons mr-2">check_circle</i>
+                    Successfully Imported (@Model.ImportedResults.Count)
+                </h2>
+            </div>
+
+            <div class="p-6">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-50 border-b-2 border-gray-200">
+                            <tr>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-700">Row</th>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-700">Student Number</th>
+                                @* <th class="px-4 py-3 text-left font-semibold text-gray-700">Full Name</th> *@
+                                <th class="px-4 py-3 text-center font-semibold text-gray-700">Scores</th>
+                                <th class="px-4 py-3 text-center font-semibold text-gray-700">Total</th>
+                                <th class="px-4 py-3 text-center font-semibold text-gray-700">Grade</th>
+                                <th class="px-4 py-3 text-center font-semibold text-gray-700">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            @foreach (var result in Model.ImportedResults.Take(20))
+                            {
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-4 py-3 text-gray-600">@result.RowNumber</td>
+                                    <td class="px-4 py-3 font-medium text-gray-900">@result.StudentNumber</td>
+                                    @* <td class="px-4 py-3 text-gray-700">@result.StudentName</td> *@
+                                    <td class="px-4 py-3 text-center">
+                                        <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+                                            @result.ScoresRecorded
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3 text-center font-semibold">
+                                        @result.CalculatedTotal.ToString("F1")%
+                                    </td>
+                                    <td class="px-4 py-3 text-center">
+                                        <span class="px-2 py-1 @(result.IsPassed ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800") rounded-full text-xs font-bold">
+                                            @result.Grade
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3 text-center">
+                                        <span class="px-2 py-1 @(result.IsPassed ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800") rounded-full text-xs font-medium">
+                                            @(result.IsPassed ? "PASS" : "FAIL")
+                                        </span>
+                                        @if (result.HadIntegrityIssue)
+                                        {
+                                            <span class="ml-1 px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-medium" title="Integrity issue detected and restored">
+                                                <i class="material-icons text-xs align-middle">healing</i>
+                                            </span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+
+                    @if (Model.ImportedResults.Count > 20)
+                    {
+                        <div class="mt-4 text-center text-sm text-gray-600">
+                            Showing 20 of @Model.ImportedResults.Count successful imports
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Failed Imports -->
+    @if (Model.FailedRows.Any())
+    {
+        <div class="bg-white rounded-lg shadow-sm mb-6">
+            <div class="p-6 border-b border-gray-200 bg-red-50">
+                <h2 class="text-xl font-semibold text-red-900 flex items-center">
+                    <i class="material-icons mr-2">error</i>
+                    Failed Imports (@Model.FailedRows.Count)
+                </h2>
+            </div>
+
+            <div class="p-6">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-50 border-b-2 border-gray-200">
+                            <tr>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-700">Row</th>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-700">Student Number</th>
+                                @* <th class="px-4 py-3 text-left font-semibold text-gray-700">Full Name</th> *@
+                                <th class="px-4 py-3 text-left font-semibold text-gray-700">Error Message</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            @foreach (var failed in Model.FailedRows)
+                            {
+                                <tr class="hover:bg-red-50">
+                                    <td class="px-4 py-3 text-gray-600">@failed.RowNumber</td>
+                                    <td class="px-4 py-3 font-medium text-gray-900">@failed.StudentNumber</td>
+                                    @* <td class="px-4 py-3 text-gray-700">@failed.StudentName</td> *@
+                                    <td class="px-4 py-3 text-red-700 text-xs">@failed.ErrorMessage</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Action Buttons -->
+    <div class="flex items-center justify-between bg-white rounded-lg shadow-sm p-6">
+        <a asp-action="Index"
+           class="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center font-semibold">
+            <i class="material-icons mr-2">add</i>
+            Import More Results
+        </a>
+
+        <div class="flex space-x-4">
+            <a asp-action="AssessmentManagement" asp-controller="StudentResults"
+               class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+                <i class="material-icons mr-2">assignment</i>
+                View Assessment Management
+            </a>
+
+            <a asp-action="CourseAssessments" asp-controller="StudentResults" asp-route-id="@Model.CourseId"
+               class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center">
+                <i class="material-icons mr-2">grade</i>
+                View Course Results
+            </a>
+        </div>
+    </div>
+
+    @if (Model.IntegrityRestored > 0)
+    {
+        <!-- Integrity Notice -->
+        <div class="bg-orange-50 border-l-4 border-orange-500 p-4 mt-6 rounded-lg">
+            <div class="flex items-start">
+                <i class="material-icons text-orange-600 mr-3">healing</i>
+                <div class="flex-1">
+                    <h3 class="font-semibold text-orange-900">Data Integrity Restored</h3>
+                    <p class="text-orange-800 text-sm mt-1">
+                        @Model.IntegrityRestored score(s) had integrity issues that were automatically restored during this import.
+                        All affected scores now have valid integrity hashes and are properly audited.
+                    </p>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        // Auto-celebrate on successful import
+        @if (Model.Success && Model.SuccessfulImports > 0)
+        {
+            <text>
+                setTimeout(() => {
+                    showCelebration();
+                }, 500);
+
+                function showCelebration() {
+                    const notification = document.createElement('div');
+                    notification.className = 'fixed top-4 right-4 bg-green-500 text-white p-6 rounded-lg shadow-2xl z-50 animate-bounce';
+                    notification.innerHTML = `
+                        <div class="flex items-center">
+                            <i class="material-icons text-4xl mr-3">celebration</i>
+                            <div>
+                                <div class="font-bold text-lg">Success!</div>
+                                <div class="text-sm">@Model.SuccessfulImports students imported</div>
+                            </div>
+                        </div>
+                    `;
+                    document.body.appendChild(notification);
+                    setTimeout(() => notification.remove(), 5000);
+                }
+            </text>
+        }
+    </script>
+}

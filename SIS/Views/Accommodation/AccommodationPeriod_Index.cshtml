@@ -1,0 +1,1665 @@
+﻿@model IEnumerable<SIS.Models.StudentAccommodation.AccommodationPeriod>
+@using Microsoft.AspNetCore.Mvc.Rendering
+
+@{
+    ViewData["Title"] = "Accommodation Period Management";
+}
+
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- Material Icons -->
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<!-- SweetAlert2 CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+<style>
+    /* Custom scrollbar */
+    .custom-scroll::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .custom-scroll::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+
+    .custom-scroll::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 10px;
+    }
+
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+    /* Spinning animation for loader */
+    @@keyframes spin {
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .animate-spin {
+        animation: spin 1s linear infinite;
+    }
+
+    /* Loading Indicator */
+    #loadingIndicator {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        z-index: 10000 !important;
+        background-color: rgba(0, 0, 0, 0.6) !important;
+        display: none !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+        #loadingIndicator[style*="display: flex"] {
+            display: flex !important;
+        }
+
+    /* Modal fixes */
+    .modal-overlay {
+        position: fixed !important;
+        inset: 0 !important;
+        z-index: 9998 !important;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        overflow-y: auto;
+    }
+
+        .modal-overlay.hidden {
+            display: none !important;
+        }
+
+    .modal-content {
+        background: white;
+        border-radius: 1rem;
+        max-width: 900px;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+        margin: auto;
+    }
+
+    .modal-header {
+        background: linear-gradient(to right, #0891b2, #0e7490);
+        padding: 1rem 1.5rem;
+        border-radius: 1rem 1rem 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+        .modal-header h5 {
+            color: white;
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .modal-header button {
+            color: white;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+
+            .modal-header button:hover {
+                opacity: 0.8;
+            }
+
+    /* Period card styling - Compact version */
+    .period-card {
+        transition: all 0.3s ease;
+        cursor: pointer;
+        background: white;
+        border-radius: 1rem;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+        .period-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .period-card.selected {
+            box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.3);
+            border: 2px solid #0891b2;
+        }
+
+    /* Status badges */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.25rem 0.625rem;
+        border-radius: 0.5rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+        .status-badge.active {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-badge.inactive {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .status-badge.upcoming {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .status-badge.closed {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status-badge .material-icons {
+            font-size: 14px;
+        }
+
+    /* Payment type badge */
+    .payment-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.25rem 0.625rem;
+        border-radius: 0.5rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+        .payment-badge .material-icons {
+            font-size: 14px;
+        }
+
+    /* Button styles */
+    .btn-primary {
+        background: linear-gradient(to right, #0891b2, #0e7490);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        cursor: pointer;
+    }
+
+        .btn-primary:hover {
+            background: linear-gradient(to right, #0e7490, #155e75);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+            color: white;
+            text-decoration: none;
+        }
+
+    .btn-select {
+        background: linear-gradient(to right, #0891b2, #0e7490);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: none;
+        width: 100%;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.375rem;
+        font-size: 0.875rem;
+        cursor: pointer;
+    }
+
+        .btn-select:hover {
+            background: linear-gradient(to right, #0e7490, #155e75);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+            color: white;
+        }
+
+        .btn-select.selected {
+            background: linear-gradient(to right, #10b981, #059669);
+            box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+        }
+
+            .btn-select.selected:hover {
+                background: linear-gradient(to right, #059669, #047857);
+            }
+
+        .btn-select .material-icons {
+            font-size: 16px;
+        }
+
+    .btn-danger-outline {
+        background-color: transparent;
+        color: #ef4444;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: 2px solid #ef4444;
+        width: 100%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.375rem;
+        font-size: 0.875rem;
+        cursor: pointer;
+    }
+
+        .btn-danger-outline:hover {
+            background: linear-gradient(to right, #ef4444, #dc2626);
+            color: white;
+            box-shadow: 0 4px 6px rgba(239, 68, 68, 0.2);
+            border-color: #ef4444;
+        }
+
+        .btn-danger-outline .material-icons {
+            font-size: 16px;
+        }
+
+    .btn-secondary {
+        background-color: #f3f4f6;
+        color: #374151;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        cursor: pointer;
+    }
+
+        .btn-secondary:hover {
+            background-color: #e5e7eb;
+            color: #374151;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+    /* Info boxes - Compact */
+    .info-item {
+        background: linear-gradient(to bottom right, #f9fafb, #f3f4f6);
+        padding: 0.625rem;
+        border-radius: 0.5rem;
+        border: 1px solid #e5e7eb;
+        margin-bottom: 0.5rem;
+    }
+
+        .info-item .info-label {
+            font-size: 0.625rem;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.25rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+            .info-item .info-label .material-icons {
+                font-size: 12px;
+            }
+
+        .info-item .info-value {
+            font-size: 0.8125rem;
+            color: #111827;
+            font-weight: 600;
+            margin: 0;
+        }
+
+    /* Section headings */
+    .section-heading {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #0891b2;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .section-heading .material-icons {
+            font-size: 20px;
+        }
+
+    /* Form control styling */
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #0891b2 !important;
+        box-shadow: 0 0 0 0.2rem rgba(8, 145, 178, 0.25) !important;
+    }
+
+    /* Grid utilities */
+    .periods-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.25rem;
+    }
+
+    @@media (min-width: 768px) {
+        .periods-grid {
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        }
+    }
+
+    /* Eligibility badge - Compact */
+    .eligibility-badge {
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.5rem;
+        font-size: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+        margin-bottom: 0.75rem;
+    }
+
+        .eligibility-badge.universal {
+            background: linear-gradient(to right, #ecfeff, #cffafe);
+            border: 1px solid #a5f3fc;
+            color: #0e7490;
+        }
+
+        .eligibility-badge.restricted {
+            background: linear-gradient(to right, #f9fafb, #f3f4f6);
+            border: 1px solid #e5e7eb;
+            color: #374151;
+        }
+
+        .eligibility-badge .material-icons {
+            font-size: 14px;
+        }
+
+        .eligibility-badge strong {
+            font-weight: 700;
+        }
+
+    /* Compact card header */
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 0.75rem;
+    }
+
+        .card-header h3 {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin: 0 0 0.375rem 0;
+        }
+
+    /* Dropdown menu */
+    .dropdown-menu {
+        position: absolute;
+        right: 0;
+        margin-top: 0.5rem;
+        width: 12rem;
+        background: white;
+        border-radius: 0.75rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e5e7eb;
+        z-index: 10;
+        overflow: hidden;
+    }
+
+        .dropdown-menu a {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
+            color: #374151;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+
+            .dropdown-menu a:hover {
+                background: #f3f4f6;
+            }
+
+            .dropdown-menu a.text-red {
+                color: #dc2626;
+            }
+
+                .dropdown-menu a.text-red:hover {
+                    background: #fee2e2;
+                }
+
+            .dropdown-menu a .material-icons {
+                font-size: 16px;
+            }
+
+        .dropdown-menu hr {
+            margin: 0.25rem 0;
+            border: none;
+            border-top: 1px solid #e5e7eb;
+        }
+
+    /* Action buttons container */
+    .action-buttons {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+    }
+</style>
+
+<!-- Loading Indicator -->
+<div id="loadingIndicator">
+    <div class="text-center">
+        <div class="spinner-border text-light" role="status" style="width: 3rem; height: 3rem;">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="text-white mt-3">Loading...</p>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div style="min-height: 100vh; background: #f9fafb; padding: 1.5rem;">
+    <!-- Header Section -->
+    <div style="margin-bottom: 1.5rem;">
+        <div style="background: white; border-radius: 1rem; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); padding: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                <div style="display: flex; align-items: start; gap: 1rem;">
+                    <div style="background: linear-gradient(to bottom right, #06b6d4, #0891b2); padding: 1rem; border-radius: 1rem; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                        <i class="material-icons" style="font-size: 2.5rem; color: white;">event_available</i>
+                    </div>
+                    <div>
+                        <h1 style="font-size: 1.875rem; font-weight: 700; color: #1f2937; margin: 0 0 0.5rem 0;">Accommodation Period Management</h1>
+                        <p style="font-size: 0.875rem; color: #6b7280; margin: 0;">Manage accommodation periods, payment types, and eligibility criteria</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-primary" onclick="showCreateModal()">
+                    <i class="material-icons" style="font-size: 20px;">add</i>
+                    <span>Create New Period</span>
+                </button>
+            </div>
+
+            @* TempData messages *@
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div style="background: #d1fae5; border-left: 4px solid #10b981; color: #065f46; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.75rem;">
+                    <i class="material-icons" style="color: #10b981;">check_circle</i>
+                    <p style="font-weight: 600; margin: 0;">@TempData["SuccessMessage"]</p>
+                </div>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div style="background: #fee2e2; border-left: 4px solid #ef4444; color: #991b1b; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.75rem;">
+                    <i class="material-icons" style="color: #ef4444;">error</i>
+                    <p style="font-weight: 600; margin: 0;">@TempData["ErrorMessage"]</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Periods Grid -->
+    <div class="periods-grid">
+        @foreach (var period in Model)
+        {
+            <div class="period-card" style="padding: 1rem;" onclick="showViewModal(@period.PeriodId)">
+                <!-- Header with Type and Status -->
+                <div class="card-header">
+                    <div>
+                        <h3>@period.Type Period</h3>
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <span class="status-badge @period.Status.ToString().ToLower()">
+                                <i class="material-icons">
+                                    @if (period.Status == SIS.Enums.Status.Active)
+                                    {
+                                        <text>check_circle</text>
+                                    }
+                                    else if (period.Status == SIS.Enums.Status.Upcoming)
+                                    {
+                                        <text>schedule</text>
+                                    }
+                                    else if (period.Status == SIS.Enums.Status.Closed)
+                                    {
+                                        <text>cancel</text>
+                                    }
+                                    else
+                                    {
+                                        <text>remove_circle</text>
+                                    }
+                                </i>
+                                @period.Status.ToString()
+                            </span>
+                            @if (!string.IsNullOrEmpty(period.TypeOfPayment))
+                            {
+                                <span class="payment-badge">
+                                    <i class="material-icons">payments</i>
+                                    @period.TypeOfPayment
+                                </span>
+                            }
+                        </div>
+                    </div>
+                    <div style="position: relative;" onclick="event.stopPropagation()">
+                        <button style="color: #9ca3af; background: none; border: none; padding: 0.5rem; border-radius: 0.5rem; cursor: pointer; transition: all 0.2s;"
+                                onmouseover="this.style.color='#6b7280'; this.style.background='#f3f4f6';"
+                                onmouseout="this.style.color='#9ca3af'; this.style.background='none';"
+                                type="button"
+                                onclick="toggleDropdown(event, @period.PeriodId)">
+                            <i class="material-icons">more_vert</i>
+                        </button>
+                        <div id="dropdown-@period.PeriodId" class="dropdown-menu" style="display: none;">
+                            <a href="#" onclick="event.preventDefault(); event.stopPropagation(); showViewModal(@period.PeriodId)">
+                                <i class="material-icons">visibility</i>View Details
+                            </a>
+                            <a href="#" onclick="event.preventDefault(); event.stopPropagation(); showEditModal(@period.PeriodId)">
+                                <i class="material-icons">edit</i>Edit
+                            </a>
+                            <hr>
+                            <a href="#" class="text-red" onclick="event.preventDefault(); event.stopPropagation(); showDeleteModal(@period.PeriodId, '@period.Type')">
+                                <i class="material-icons">delete</i>Delete
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Info -->
+                @if (!string.IsNullOrEmpty(period.TypeOfPayment))
+                {
+                    <div class="info-item" style="background: linear-gradient(to bottom right, #fef3c7, #fde68a); border-color: #fcd34d;">
+                        <p class="info-label">
+                            <i class="material-icons">payments</i>PAYMENT
+                        </p>
+                        <p class="info-value" style="color: #92400e;">
+                            @period.TypeOfPayment - K @period.TypeOfPaymentAmount.ToString("N2")
+                        </p>
+                    </div>
+                }
+
+                <!-- Info Items - Compact -->
+                <div class="info-item">
+                    <p class="info-label">
+                        <i class="material-icons">category</i>TYPE
+                    </p>
+                    <p class="info-value">@period.Type</p>
+                </div>
+
+                <div class="info-item">
+                    <p class="info-label">
+                        <i class="material-icons">date_range</i>PERIOD
+                    </p>
+                    <p class="info-value">
+                        @period.StartDate.ToString("MMM dd, yyyy") -
+                        @(period.IsPermanentUntilGraduation ? "Graduation" : period.EndDate?.ToString("MMM dd, yyyy"))
+                    </p>
+                </div>
+
+                <div class="info-item">
+                    <p class="info-label">
+                        <i class="material-icons">schedule</i>APPLICATIONS
+                    </p>
+                    <p class="info-value">
+                        @period.ApplicationStartDate.ToString("MMM dd") - @period.ApplicationEndDate.ToString("MMM dd, yyyy")
+                    </p>
+                </div>
+
+                <div class="info-item">
+                    <p class="info-label">
+                        <i class="material-icons">people</i>SUBMITTED
+                    </p>
+                    <p class="info-value" style="color: #0891b2;">
+                        @(period.Applications?.Count ?? 0) applications
+                        @if (period.Applications != null && period.Applications.Any())
+                        {
+                            var approved = period.Applications.Count(a => a.Status == SIS.Enums.Status.Active);
+                            var pending = period.Applications.Count(a => a.Status == SIS.Enums.Status.Upcoming);
+                            <span style="font-size: 0.75rem; font-weight: normal; color: #6b7280;">
+                                (<span style="color: #10b981;">@approved approved</span>,
+                                <span style="color: #f59e0b;">@pending pending</span>)
+                            </span>
+                        }
+                    </p>
+                </div>
+
+                <!-- Eligibility Badge -->
+                @if (period.AppliesUniversally)
+                {
+                    <div class="eligibility-badge universal">
+                        <i class="material-icons">public</i>
+                        <span><strong>Universal</strong> - Applies to all students</span>
+                    </div>
+                }
+                else
+                {
+                    <div class="eligibility-badge restricted">
+                        <i class="material-icons">filter_alt</i>
+                        <span><strong>Restricted</strong> - Specific eligibility criteria</span>
+                    </div>
+                }
+
+                <!-- Action Buttons -->
+                <div class="action-buttons" onclick="event.stopPropagation()">
+                    <button type="button"
+                            id="selectBtn-@period.PeriodId"
+                            class="btn-select"
+                            onclick="selectPeriod(event, @period.PeriodId, '@period.Type', '@period.TypeOfPayment')">
+                        <i class="material-icons">check_circle</i>
+                        <span>Select</span>
+                    </button>
+                    <button type="button"
+                            class="btn-danger-outline"
+                            onclick="event.stopPropagation(); showDeleteModal(@period.PeriodId, '@period.Type')">
+                        <i class="material-icons">delete</i>
+                        <span>Delete</span>
+                    </button>
+                </div>
+            </div>
+        }
+
+        @if (!Model.Any())
+        {
+            <div style="grid-column: 1 / -1; background: white; border-radius: 1rem; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); padding: 3rem; text-align: center;">
+                <div style="background: linear-gradient(to bottom right, #a5f3fc, #67e8f9); width: 6rem; height: 6rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                    <i class="material-icons" style="font-size: 3.5rem; color: #0e7490;">event_busy</i>
+                </div>
+                <h4 style="color: #374151; font-size: 1.5rem; font-weight: 700; margin: 0 0 0.75rem 0;">No Accommodation Periods Found</h4>
+                <p style="color: #6b7280; margin: 0 auto 1.5rem; max-width: 28rem;">Create your first accommodation period to start managing student applications.</p>
+                <button type="button" class="btn-primary" onclick="showCreateModal()">
+                    <i class="material-icons" style="font-size: 20px;">add</i>
+                    <span>Create First Period</span>
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Create/Edit Modal -->
+<div id="periodModal" class="modal-overlay hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 id="periodModalTitle">
+                <i class="material-icons">add_circle</i>
+                <span>Create Accommodation Period</span>
+            </h5>
+            <button type="button" onclick="hideModal()">
+                <i class="material-icons">close</i>
+            </button>
+        </div>
+        <form id="periodForm" method="post" action="">
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="periodId" name="PeriodId" value="0" />
+
+            <div class="p-6">
+                <!-- Period Information -->
+                <div class="mb-6">
+                    <h6 class="text-lg font-bold mb-4 text-gray-800 flex items-center gap-2">
+                        <i class="material-icons text-cyan-600">info</i>
+                        Period Information
+                    </h6>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="type" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Period Type <span class="text-red-500">*</span>
+                            </label>
+                            <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500" id="type" name="Type" required>
+                                <option value="">Select Type</option>
+                                @foreach (var option in ViewBag.TypeOptions as List<SelectListItem>)
+                                {
+                                    <option value="@option.Value">@option.Text</option>
+                                }
+                            </select>
+                            <p class="text-red-500 text-xs mt-1 hidden" id="typeError">This field is required</p>
+                        </div>
+                        <div>
+                            <label for="status" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Period Status <span class="text-red-500">*</span>
+                            </label>
+                            <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500" id="status" name="Status" required>
+                                <option value="">Select Status</option>
+                                @foreach (var option in ViewBag.StatusOptions as List<SelectListItem>)
+                                {
+                                    <option value="@option.Value">@option.Text</option>
+                                }
+                            </select>
+                            <p class="text-red-500 text-xs mt-1 hidden" id="statusError">This field is required</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Information -->
+                <div class="mb-6">
+                    <h6 class="text-lg font-bold mb-4 text-gray-800 flex items-center gap-2">
+                        <i class="material-icons text-cyan-600">payments</i>
+                        Payment Information
+                    </h6>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="typeOfPayment" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Type of Payment <span class="text-red-500">*</span>
+                            </label>
+                            <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500" id="typeOfPayment" name="TypeOfPayment" required>
+                                <option value="">Select Payment Type</option>
+                                @foreach (var option in ViewBag.PaymentTypeOptions as List<SelectListItem>)
+                                {
+                                    <option value="@option.Value">@option.Text</option>
+                                }
+                            </select>
+                            <p class="text-red-500 text-xs mt-1 hidden" id="typeOfPaymentError">This field is required</p>
+                        </div>
+                        <div>
+                            <label for="typeOfPaymentAmount" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Payment Amount (K) <span class="text-red-500">*</span>
+                            </label>
+                            <input type="number" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500" id="typeOfPaymentAmount" name="TypeOfPaymentAmount" placeholder="0.00" required />
+                            <p class="text-red-500 text-xs mt-1 hidden" id="typeOfPaymentAmountError">This field is required</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Period Dates -->
+                <div class="mb-6">
+                    <h6 class="text-lg font-bold mb-4 text-gray-800 flex items-center gap-2">
+                        <i class="material-icons text-cyan-600">date_range</i>
+                        Period Dates
+                    </h6>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="startDate" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Start Date <span class="text-red-500">*</span>
+                            </label>
+                            <input type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500" id="startDate" name="StartDate" required />
+                            <p class="text-red-500 text-xs mt-1 hidden" id="startDateError">This field is required</p>
+                        </div>
+                        <div>
+                            <label for="endDate" class="block text-sm font-semibold text-gray-700 mb-2">
+                                End Date <span class="text-gray-500 text-xs font-normal">(Optional if permanent)</span>
+                            </label>
+                            <input type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500" id="endDate" name="EndDate" />
+                            <div class="flex items-center mt-2">
+                                <input type="checkbox" id="isPermanent" name="IsPermanentUntilGraduation" value="true" onchange="toggleEndDate()" class="w-4 h-4 text-cyan-600 border-gray-300 rounded focus:ring-cyan-500">
+                                <label for="isPermanent" class="ml-2 text-sm text-gray-700">
+                                    Permanent until graduation
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Application Period -->
+                <div class="mb-6">
+                    <h6 class="text-lg font-bold mb-4 text-gray-800 flex items-center gap-2">
+                        <i class="material-icons text-cyan-600">edit_calendar</i>
+                        Application Period
+                    </h6>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="applicationStartDate" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Application Start <span class="text-red-500">*</span>
+                            </label>
+                            <input type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500" id="applicationStartDate" name="ApplicationStartDate" required />
+                            <p class="text-red-500 text-xs mt-1 hidden" id="applicationStartDateError">This field is required</p>
+                        </div>
+                        <div>
+                            <label for="applicationEndDate" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Application End <span class="text-red-500">*</span>
+                            </label>
+                            <input type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500" id="applicationEndDate" name="ApplicationEndDate" required />
+                            <p class="text-red-500 text-xs mt-1 hidden" id="applicationEndDateError">This field is required</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Eligibility Criteria -->
+                <div class="mb-6">
+                    <h6 class="text-lg font-bold mb-4 text-gray-800 flex items-center gap-2">
+                        <i class="material-icons text-cyan-600">filter_alt</i>
+                        Eligibility Criteria
+                    </h6>
+                    <div class="flex items-start mb-4 p-4 bg-gray-50 rounded-lg">
+                        <input type="checkbox" id="appliesUniversally" name="AppliesUniversally" value="true" onchange="toggleEligibilityCriteria()" class="w-4 h-4 mt-0.5 text-cyan-600 border-gray-300 rounded focus:ring-cyan-500">
+                        <div class="ml-3">
+                            <label for="appliesUniversally" class="font-semibold text-gray-900">
+                                Applies to All Students (Universal)
+                            </label>
+                            <p class="text-sm text-gray-600 mt-1">Check this if the period applies to all students regardless of school, programme, or level</p>
+                        </div>
+                    </div>
+
+                    <div id="eligibilityCriteria">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="schoolId" class="block text-sm font-semibold text-gray-700 mb-2">School</label>
+                                <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500" id="schoolId" name="SchoolId" onchange="loadProgrammes()">
+                                    <option value="">All Schools</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="programmeId" class="block text-sm font-semibold text-gray-700 mb-2">Programme</label>
+                                <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500" id="programmeId" name="ProgrammeId">
+                                    <option value="">All Programmes</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                            <div>
+                                <label for="modeOfStudyId" class="block text-sm font-semibold text-gray-700 mb-2">Mode of Study</label>
+                                <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500" id="modeOfStudyId" name="ModeOfStudyId">
+                                    <option value="">All Modes</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="yearOfStudy" class="block text-sm font-semibold text-gray-700 mb-2">Year of Study</label>
+                                <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500" id="yearOfStudy" name="YearOfStudy">
+                                    <option value="">All Years</option>
+                                    <option value="1">Year 1</option>
+                                    <option value="2">Year 2</option>
+                                    <option value="3">Year 3</option>
+                                    <option value="4">Year 4</option>
+                                    <option value="5">Year 5</option>
+                                    <option value="6">Year 6</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="programLevelId" class="block text-sm font-semibold text-gray-700 mb-2">Programme Level</label>
+                                <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500" id="programLevelId" name="ProgramLevelId">
+                                    <option value="">All Levels</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                    <button type="button" class="btn-secondary" onclick="hideModal()">
+                        <i class="material-icons text-lg">close</i>
+                        <span>Cancel</span>
+                    </button>
+                    <button type="submit" class="btn-primary" onclick="return validateForm(event)">
+                        <i class="material-icons text-lg">save</i>
+                        <span id="submitButtonText">Create Period</span>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- View Modal -->
+<div id="viewModal" class="modal-overlay hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5>
+                <i class="material-icons">visibility</i>
+                <span>Period Details</span>
+            </h5>
+            <button type="button" onclick="hideViewModal()">
+                <i class="material-icons">close</i>
+            </button>
+        </div>
+        <div id="viewModalContent" style="padding: 1.5rem;">
+            <!-- Content will be loaded dynamically -->
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; padding: 1rem 1.5rem; border-top: 1px solid #e5e7eb;">
+            <button type="button" class="btn-secondary" onclick="hideViewModal()">
+                <i class="material-icons" style="font-size: 18px;">close</i>
+                <span>Close</span>
+            </button>
+            <button type="button" class="btn-primary" onclick="editFromView()">
+                <i class="material-icons" style="font-size: 18px;">edit</i>
+                <span>Edit Period</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- SweetAlert2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+@section Scripts {
+    <script>
+        let dropdownsLoaded = false;
+        let currentPeriodId = 0;
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDropdowns();
+            loadSelectedPeriod(); // Load previously selected period
+
+            // Show TempData messages
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <text>
+                                showNotification('@TempData["SuccessMessage"]', 'success');
+            </text>
+        }
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <text>
+                                showNotification('@TempData["ErrorMessage"]', 'error');
+            </text>
+        }
+
+            // Close dropdowns when clicking outside
+            document.addEventListener('click', function(event) {
+                if (!event.target.closest('[onclick*="toggleDropdown"]')) {
+                    document.querySelectorAll('[id^="dropdown-"]').forEach(dropdown => {
+                        dropdown.style.display = 'none';
+                    });
+                }
+            });
+        });
+
+        // Toggle dropdown menu
+        function toggleDropdown(event, periodId) {
+            event.stopPropagation();
+            const dropdown = document.getElementById(`dropdown-${periodId}`);
+
+            // Close all other dropdowns
+            document.querySelectorAll('[id^="dropdown-"]').forEach(dd => {
+                if (dd.id !== `dropdown-${periodId}`) {
+                    dd.style.display = 'none';
+                }
+            });
+
+            // Toggle current dropdown
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // Select Period
+        function selectPeriod(event, periodId, type, paymentType) {
+            event.stopPropagation();
+
+            // Remove selected class from all cards
+            document.querySelectorAll('.period-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+
+            // Remove selected class from all buttons
+            document.querySelectorAll('.btn-select').forEach(btn => {
+                btn.classList.remove('selected');
+                btn.innerHTML = '<i class="material-icons" style="font-size: 16px;">check_circle</i><span>Select</span>';
+            });
+
+            // Add selected class to current card
+            const selectedCard = event.target.closest('.period-card');
+            if (selectedCard) {
+                selectedCard.classList.add('selected');
+            }
+
+            // Update button to show selected state
+            const selectBtn = document.getElementById(`selectBtn-${periodId}`);
+            if (selectBtn) {
+                selectBtn.classList.add('selected');
+                selectBtn.innerHTML = '<i class="material-icons" style="font-size: 16px;">check_circle</i><span>Selected</span>';
+            }
+
+            // Store selected period in session storage
+            sessionStorage.setItem('selectedPeriodId', periodId);
+            sessionStorage.setItem('selectedPeriodInfo', JSON.stringify({
+                periodId: periodId,
+                type: type,
+                paymentType: paymentType,
+                selectedAt: new Date().toISOString()
+            }));
+
+            // Show success notification
+            showNotification(`Period "${type} - ${paymentType}" selected successfully!`, 'success');
+        }
+
+        // Load selected period on page load
+        function loadSelectedPeriod() {
+            const selectedPeriodId = sessionStorage.getItem('selectedPeriodId');
+            if (selectedPeriodId) {
+                const selectBtn = document.getElementById(`selectBtn-${selectedPeriodId}`);
+                if (selectBtn) {
+                    selectBtn.classList.add('selected');
+                    selectBtn.innerHTML = '<i class="material-icons" style="font-size: 16px;">check_circle</i><span>Selected</span>';
+
+                    const selectedCard = selectBtn.closest('.period-card');
+                    if (selectedCard) {
+                        selectedCard.classList.add('selected');
+                    }
+                }
+            }
+        }
+
+        // Load all dropdown data
+        async function loadDropdowns() {
+            if (dropdownsLoaded) return;
+
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            loadingIndicator.style.display = 'flex';
+
+            try {
+                // Load Schools
+                const schoolsResponse = await fetch('/AccommodationPeriod/GetSchools');
+                const schools = await schoolsResponse.json();
+                populateDropdown('schoolId', schools);
+
+                // Load Mode of Study
+                const modesResponse = await fetch('/AccommodationPeriod/GetModesOfStudy');
+                const modes = await modesResponse.json();
+                populateDropdown('modeOfStudyId', modes);
+
+                // Load Programme Levels
+                const levelsResponse = await fetch('/AccommodationPeriod/GetProgramLevels');
+                const levels = await levelsResponse.json();
+                populateDropdown('programLevelId', levels);
+
+                dropdownsLoaded = true;
+            } catch (error) {
+                console.error('Error loading dropdowns:', error);
+                showNotification('Error loading form data', 'error');
+            } finally {
+                loadingIndicator.style.display = 'none';
+            }
+        }
+
+        function populateDropdown(selectId, items) {
+            const select = document.getElementById(selectId);
+            const currentValue = select.value;
+
+            // Keep the first option (placeholder)
+            while (select.options.length > 1) {
+                select.remove(1);
+            }
+
+            items.forEach(item => {
+                const option = new Option(item.text || item.name, item.value || item.id);
+                select.add(option);
+            });
+
+            // Restore selected value if it exists
+            if (currentValue) {
+                select.value = currentValue;
+            }
+        }
+
+        async function loadProgrammes() {
+            const schoolId = document.getElementById('schoolId').value;
+            if (!schoolId) {
+                populateDropdown('programmeId', []);
+                return;
+            }
+
+            try {
+                const response = await fetch(`/AccommodationPeriod/GetProgrammes?schoolId=${schoolId}`);
+                const programmes = await response.json();
+                populateDropdown('programmeId', programmes);
+            } catch (error) {
+                console.error('Error loading programmes:', error);
+            }
+        }
+
+        // Show modals
+        function showCreateModal() {
+            currentPeriodId = 0;
+            document.getElementById('periodId').value = '0';
+            document.getElementById('periodForm').action = '/AccommodationPeriod/Create';
+            document.getElementById('periodModalTitle').innerHTML = '<i class="material-icons">add_circle</i><span>Create Accommodation Period</span>';
+            document.getElementById('submitButtonText').textContent = 'Create Period';
+            document.getElementById('periodForm').reset();
+            document.getElementById('eligibilityCriteria').style.opacity = '1';
+            document.getElementById('eligibilityCriteria').style.pointerEvents = 'auto';
+            document.getElementById('periodModal').classList.remove('hidden');
+        }
+
+        async function showEditModal(periodId) {
+            currentPeriodId = periodId;
+            document.getElementById('periodId').value = periodId;
+            document.getElementById('periodForm').action = '/AccommodationPeriod/Edit';
+            document.getElementById('periodModalTitle').innerHTML = '<i class="material-icons">edit</i><span>Edit Accommodation Period</span>';
+            document.getElementById('submitButtonText').textContent = 'Update Period';
+
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            loadingIndicator.style.display = 'flex';
+
+            try {
+                const response = await fetch(`/AccommodationPeriod/GetPeriod/${periodId}`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const period = await response.json();
+
+                console.log('Period data received:', period); // Debug log
+
+                // Handle both PascalCase (C#) and camelCase (JavaScript) property names
+                document.getElementById('type').value = period.Type || period.type || '';
+                document.getElementById('typeOfPayment').value = period.TypeOfPayment || period.typeOfPayment || '';
+                document.getElementById('typeOfPaymentAmount').value = period.TypeOfPaymentAmount || period.typeOfPaymentAmount || 0;
+                document.getElementById('startDate').value = formatDateForInput(period.StartDate || period.startDate);
+                document.getElementById('endDate').value = formatDateForInput(period.EndDate || period.endDate);
+                document.getElementById('isPermanent').checked = period.IsPermanentUntilGraduation || period.isPermanentUntilGraduation || false;
+                document.getElementById('applicationStartDate').value = formatDateForInput(period.ApplicationStartDate || period.applicationStartDate);
+                document.getElementById('applicationEndDate').value = formatDateForInput(period.ApplicationEndDate || period.applicationEndDate);
+                document.getElementById('status').value = (period.Status !== undefined ? period.Status : period.status !== undefined ? period.status : '');
+                document.getElementById('appliesUniversally').checked = period.AppliesUniversally || period.appliesUniversally || false;
+                document.getElementById('schoolId').value = period.SchoolId || period.schoolId || '';
+
+                if (period.SchoolId || period.schoolId) {
+                    await loadProgrammes();
+                }
+
+                document.getElementById('programmeId').value = period.ProgrammeId || period.programmeId || '';
+                document.getElementById('modeOfStudyId').value = period.ModeOfStudyId || period.modeOfStudyId || '';
+                document.getElementById('yearOfStudy').value = period.YearOfStudy || period.yearOfStudy || '';
+                document.getElementById('programLevelId').value = period.ProgramLevelId || period.programLevelId || '';
+
+                toggleEndDate();
+                toggleEligibilityCriteria();
+
+                document.getElementById('periodModal').classList.remove('hidden');
+            } catch (error) {
+                console.error('Error loading period:', error);
+                showNotification(`Error loading period details: ${error.message}`, 'error');
+            } finally {
+                loadingIndicator.style.display = 'none';
+            }
+        }
+
+        async function showViewModal(periodId) {
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            loadingIndicator.style.display = 'flex';
+
+            try {
+                const response = await fetch(`/AccommodationPeriod/GetPeriod/${periodId}`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const period = await response.json();
+
+                console.log('Period data for view:', period); // Debug log
+
+                currentPeriodId = periodId;
+
+                // Handle both PascalCase and camelCase
+                const status = period.Status !== undefined ? period.Status : period.status;
+                const statusClass = status === 0 ? 'inactive' : status === 1 ? 'active' : status === 2 ? 'upcoming' : 'closed';
+                const statusText = status === 0 ? 'Inactive' : status === 1 ? 'Active' : status === 2 ? 'Upcoming' : 'Closed';
+
+                const periodType = period.Type || period.type || 'N/A';
+                const typeOfPayment = period.TypeOfPayment || period.typeOfPayment || 'N/A';
+                const typeOfPaymentAmount = period.TypeOfPaymentAmount || period.typeOfPaymentAmount || 0;
+                const startDate = period.StartDate || period.startDate;
+                const endDate = period.EndDate || period.endDate;
+                const isPermanent = period.IsPermanentUntilGraduation || period.isPermanentUntilGraduation;
+                const appStartDate = period.ApplicationStartDate || period.applicationStartDate;
+                const appEndDate = period.ApplicationEndDate || period.applicationEndDate;
+                const appliesUniversally = period.AppliesUniversally || period.appliesUniversally;
+
+                // Handle School object or string
+                let school = null;
+                if (period.School) {
+                    school = typeof period.School === 'object' ? (period.School.SchoolName || period.School.Name || period.School.name) : period.School;
+                } else if (period.school) {
+                    school = typeof period.school === 'object' ? (period.school.schoolName || period.school.name) : period.school;
+                }
+
+                // Handle Programme object or string
+                let programme = null;
+                if (period.Programme) {
+                    programme = typeof period.Programme === 'object' ? (period.Programme.ProgrammeName || period.Programme.Name || period.Programme.name) : period.Programme;
+                } else if (period.programme) {
+                    programme = typeof period.programme === 'object' ? (period.programme.programmeName || period.programme.name) : period.programme;
+                }
+
+                // Handle ModeOfStudy object or string
+                let modeOfStudy = null;
+                if (period.ModeOfStudy) {
+                    modeOfStudy = typeof period.ModeOfStudy === 'object' ? (period.ModeOfStudy.ModeName || period.ModeOfStudy.Name || period.ModeOfStudy.modeName) : period.ModeOfStudy;
+                } else if (period.modeOfStudy) {
+                    modeOfStudy = typeof period.modeOfStudy === 'object' ? (period.modeOfStudy.modeName || period.modeOfStudy.name) : period.modeOfStudy;
+                }
+
+                const yearOfStudy = period.YearOfStudy || period.yearOfStudy;
+
+                // Handle ProgramLevel object or string
+                let programLevel = null;
+                if (period.ProgramLevel) {
+                    programLevel = typeof period.ProgramLevel === 'object' ? (period.ProgramLevel.LevelName || period.ProgramLevel.Name || period.ProgramLevel.name) : period.ProgramLevel;
+                } else if (period.programLevel) {
+                    programLevel = typeof period.programLevel === 'object' ? (period.programLevel.levelName || period.programLevel.name) : period.programLevel;
+                }
+
+                const createdBy = period.CreatedBy || period.createdBy;
+                const createdAt = period.CreatedAt || period.createdAt;
+                const updatedBy = period.UpdatedBy || period.updatedBy;
+                const updatedAt = period.UpdatedAt || period.updatedAt;
+
+                const content = `
+                    <div>
+                        <h3 style="font-size: 1.5rem; font-weight: 700; color: #1f2937; margin: 0 0 0.5rem 0;">${periodType} Period</h3>
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <span class="status-badge ${statusClass}">
+                                <i class="material-icons">${status === 0 ? 'remove_circle' : status === 1 ? 'check_circle' : status === 2 ? 'schedule' : 'cancel'}</i>
+                                ${statusText}
+                            </span>
+                            <span class="payment-badge">
+                                <i class="material-icons">payments</i>
+                                ${typeOfPayment}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 1.5rem;">
+                        <h6 class="section-heading">
+                            <i class="material-icons">payments</i>
+                            Payment Information
+                        </h6>
+                        <div class="info-item" style="background: linear-gradient(to bottom right, #fef3c7, #fde68a); border-color: #fcd34d;">
+                            <p class="info-label">TYPE OF PAYMENT</p>
+                            <p class="info-value" style="color: #92400e;">${typeOfPayment}</p>
+                        </div>
+                        <div class="info-item" style="background: linear-gradient(to bottom right, #fef3c7, #fde68a); border-color: #fcd34d;">
+                            <p class="info-label">PAYMENT AMOUNT</p>
+                            <p class="info-value" style="color: #92400e;">K ${parseFloat(typeOfPaymentAmount).toFixed(2)}</p>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 1.5rem;">
+                        <h6 class="section-heading">
+                            <i class="material-icons">info</i>
+                            Period Information
+                        </h6>
+                        <div class="info-item">
+                            <p class="info-label">TYPE</p>
+                            <p class="info-value">${periodType}</p>
+                        </div>
+                        <div class="info-item">
+                            <p class="info-label">PERIOD</p>
+                            <p class="info-value">${formatDate(startDate)} - ${isPermanent ? 'Graduation' : formatDate(endDate)}</p>
+                        </div>
+                        <div class="info-item">
+                            <p class="info-label">APPLICATION START</p>
+                            <p class="info-value">${formatDate(appStartDate)}</p>
+                        </div>
+                        <div class="info-item">
+                            <p class="info-label">APPLICATION END</p>
+                            <p class="info-value">${formatDate(appEndDate)}</p>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 1.5rem;">
+                        <h6 class="section-heading">
+                            <i class="material-icons">filter_alt</i>
+                            Eligibility Criteria
+                        </h6>
+                        ${appliesUniversally ? `
+                            <div class="eligibility-badge universal">
+                                <i class="material-icons">public</i>
+                                <span><strong>Universal</strong> - Applies to all students</span>
+                            </div>
+                        ` : `
+                            <div class="eligibility-badge restricted">
+                                <i class="material-icons">filter_alt</i>
+                                <span><strong>Restricted</strong> - Specific eligibility criteria</span>
+                            </div>
+                            <div class="info-item">
+                                <p class="info-label">SCHOOL</p>
+                                <p class="info-value">${school || 'All Schools'}</p>
+                            </div>
+                            <div class="info-item">
+                                <p class="info-label">PROGRAMME</p>
+                                <p class="info-value">${programme || 'All Programmes'}</p>
+                            </div>
+                            <div class="info-item">
+                                <p class="info-label">MODE OF STUDY</p>
+                                <p class="info-value">${modeOfStudy || 'All Modes'}</p>
+                            </div>
+                            <div class="info-item">
+                                <p class="info-label">YEAR OF STUDY</p>
+                                <p class="info-value">${yearOfStudy || 'All Years'}</p>
+                            </div>
+                            <div class="info-item">
+                                <p class="info-label">PROGRAMME LEVEL</p>
+                                <p class="info-value">${programLevel || 'All Levels'}</p>
+                            </div>
+                        `}
+                    </div>
+
+                    <div style="margin-top: 1.5rem;">
+                        <h6 class="section-heading">
+                            <i class="material-icons">info</i>
+                            Audit Information
+                        </h6>
+                        <div class="info-item">
+                            <p class="info-label">CREATED BY</p>
+                            <p class="info-value">${createdBy || 'N/A'}</p>
+                        </div>
+                        <div class="info-item">
+                            <p class="info-label">CREATED AT</p>
+                            <p class="info-value">${formatDate(createdAt)}</p>
+                        </div>
+                        <div class="info-item">
+                            <p class="info-label">UPDATED BY</p>
+                            <p class="info-value">${updatedBy || 'N/A'}</p>
+                        </div>
+                        <div class="info-item">
+                            <p class="info-label">UPDATED AT</p>
+                            <p class="info-value">${formatDate(updatedAt)}</p>
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('viewModalContent').innerHTML = content;
+                document.getElementById('viewModal').classList.remove('hidden');
+            } catch (error) {
+                console.error('Error loading period details:', error);
+                showNotification(`Error loading period details: ${error.message}`, 'error');
+            } finally {
+                loadingIndicator.style.display = 'none';
+            }
+        }
+
+        function editFromView() {
+            hideViewModal();
+            setTimeout(() => showEditModal(currentPeriodId), 300);
+        }
+
+        // Delete modal
+        function showDeleteModal(periodId, periodName) {
+            Swal.fire({
+                title: 'Confirm Deletion',
+                html: `Are you sure you want to delete the accommodation period "<strong>${periodName}</strong>"?<br><br>This action cannot be undone.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: '<i class="material-icons" style="font-size: 16px; vertical-align: middle;">delete</i> Delete',
+                cancelButtonText: '<i class="material-icons" style="font-size: 16px; vertical-align: middle;">close</i> Cancel',
+                reverseButtons: true,
+                customClass: {
+                    confirmButton: 'btn-danger-outline',
+                    cancelButton: 'btn-secondary'
+                }
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    await performDelete(periodId);
+                }
+            });
+        }
+
+        // Perform delete
+        async function performDelete(periodId) {
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            loadingIndicator.style.display = 'flex';
+
+            try {
+                const formData = new FormData();
+                formData.append('__RequestVerificationToken', getAntiForgeryToken());
+
+                const response = await fetch(`/AccommodationPeriod/Delete/${periodId}`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    showNotification('Period deleted successfully!', 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    const error = await response.text();
+                    showNotification(error || 'Error deleting period', 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting period:', error);
+                showNotification('Error deleting period', 'error');
+            } finally {
+                loadingIndicator.style.display = 'none';
+            }
+        }
+
+        // Hide modals
+        function hideModal() {
+            document.getElementById('periodModal').classList.add('hidden');
+        }
+
+        function hideViewModal() {
+            document.getElementById('viewModal').classList.add('hidden');
+        }
+
+        // Toggle functions
+        function toggleEndDate() {
+            const isPermanent = document.getElementById('isPermanent').checked;
+            const endDateInput = document.getElementById('endDate');
+            endDateInput.disabled = isPermanent;
+            if (isPermanent) {
+                endDateInput.value = '';
+                endDateInput.classList.remove('border-danger');
+            }
+        }
+
+        function toggleEligibilityCriteria() {
+            const appliesUniversally = document.getElementById('appliesUniversally').checked;
+            const criteriaDiv = document.getElementById('eligibilityCriteria');
+
+            if (appliesUniversally) {
+                criteriaDiv.style.opacity = '0.5';
+                criteriaDiv.style.pointerEvents = 'none';
+                // Clear all eligibility fields
+                document.getElementById('schoolId').value = '';
+                document.getElementById('programmeId').value = '';
+                document.getElementById('modeOfStudyId').value = '';
+                document.getElementById('yearOfStudy').value = '';
+                document.getElementById('programLevelId').value = '';
+            } else {
+                criteriaDiv.style.opacity = '1';
+                criteriaDiv.style.pointerEvents = 'auto';
+            }
+        }
+
+        // Form validation
+        function validateForm(event) {
+            let isValid = true;
+
+            // Hide all error messages first
+            document.querySelectorAll('[id$="Error"]').forEach(el => el.classList.add('hidden'));
+
+            // Remove red borders
+            document.querySelectorAll('.border-red-500').forEach(el => {
+                el.classList.remove('border-red-500');
+                el.classList.add('border-gray-300');
+            });
+
+            // Validate Type
+            const type = document.getElementById('type');
+            if (!type.value) {
+                showFieldError('type', 'typeError');
+                isValid = false;
+            }
+
+            // Validate Type of Payment
+            const typeOfPayment = document.getElementById('typeOfPayment');
+            if (!typeOfPayment.value) {
+                showFieldError('typeOfPayment', 'typeOfPaymentError');
+                isValid = false;
+            }
+
+            // Validate Type of Payment Amount
+            const typeOfPaymentAmount = document.getElementById('typeOfPaymentAmount');
+            if (!typeOfPaymentAmount.value || parseFloat(typeOfPaymentAmount.value) < 0) {
+                showFieldError('typeOfPaymentAmount', 'typeOfPaymentAmountError');
+                isValid = false;
+            }
+
+            // Validate Start Date
+            const startDate = document.getElementById('startDate');
+            if (!startDate.value) {
+                showFieldError('startDate', 'startDateError');
+                isValid = false;
+            }
+
+            // Validate End Date if not permanent
+            const isPermanent = document.getElementById('isPermanent').checked;
+            const endDate = document.getElementById('endDate');
+            if (!isPermanent && !endDate.value) {
+                endDate.classList.add('border-red-500');
+                endDate.classList.remove('border-gray-300');
+                showNotification('Please provide an End Date or check "Permanent until graduation"', 'error');
+                isValid = false;
+            }
+
+            // Validate Application Start Date
+            const applicationStartDate = document.getElementById('applicationStartDate');
+            if (!applicationStartDate.value) {
+                showFieldError('applicationStartDate', 'applicationStartDateError');
+                isValid = false;
+            }
+
+            // Validate Application End Date
+            const applicationEndDate = document.getElementById('applicationEndDate');
+            if (!applicationEndDate.value) {
+                showFieldError('applicationEndDate', 'applicationEndDateError');
+                isValid = false;
+            }
+
+            // Validate Status
+            const status = document.getElementById('status');
+            if (!status.value && status.value !== '0') {
+                showFieldError('status', 'statusError');
+                isValid = false;
+            }
+
+            // Validate date logic
+            if (isValid && startDate.value && endDate.value && !isPermanent) {
+                if (new Date(endDate.value) <= new Date(startDate.value)) {
+                    showNotification('End date must be after start date', 'error');
+                    showFieldError('endDate', null);
+                    isValid = false;
+                }
+            }
+
+            if (isValid && applicationStartDate.value && applicationEndDate.value) {
+                if (new Date(applicationEndDate.value) <= new Date(applicationStartDate.value)) {
+                    showNotification('Application end date must be after application start date', 'error');
+                    showFieldError('applicationEndDate', null);
+                    isValid = false;
+                }
+            }
+
+            if (!isValid) {
+                event.preventDefault();
+                showNotification('Please fill in all required fields correctly', 'error');
+                return false;
+            }
+
+            // Show loader when form is valid and about to submit
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            loadingIndicator.style.display = 'flex';
+
+            // Disable submit button to prevent double submission
+            const submitBtn = event.target.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="material-icons text-lg">hourglass_empty</i><span>Saving...</span>';
+            }
+
+            return true;
+        }
+
+        function showFieldError(fieldId, errorId) {
+            const field = document.getElementById(fieldId);
+            field.classList.add('border-red-500');
+            field.classList.remove('border-gray-300');
+            field.focus();
+
+            if (errorId) {
+                const error = document.getElementById(errorId);
+                if (error) {
+                    error.classList.remove('hidden');
+                }
+            }
+        }
+
+        // Helper functions
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+        }
+
+        function formatDateForInput(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return date.toISOString().split('T')[0];
+        }
+
+        function getAntiForgeryToken() {
+            return document.querySelector('input[name="__RequestVerificationToken"]').value;
+        }
+
+        function showNotification(message, type) {
+            type = type || 'success';
+
+            const config = {
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                didOpen: (toast) => {
+                    toast.addEventListener('mouseenter', Swal.stopTimer);
+                    toast.addEventListener('mouseleave', Swal.resumeTimer);
+                }
+            };
+
+            if (type === 'success') {
+                Swal.fire({
+                    ...config,
+                    icon: 'success',
+                    title: message
+                });
+            } else if (type === 'error') {
+                Swal.fire({
+                    ...config,
+                    icon: 'error',
+                    title: message
+                });
+            } else if (type === 'warning') {
+                Swal.fire({
+                    ...config,
+                    icon: 'warning',
+                    title: message
+                });
+            } else {
+                Swal.fire({
+                    ...config,
+                    icon: 'info',
+                    title: message
+                });
+            }
+        }
+    </script>
+}

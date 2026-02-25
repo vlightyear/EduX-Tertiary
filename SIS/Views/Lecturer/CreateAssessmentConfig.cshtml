@@ -1,0 +1,284 @@
+﻿@model SIS.Models.Assessments.AssessmentConfiguration
+
+<div class="min-h-screen bg-slate-50 p-6">
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row justify-between items-center h-24 mb-4">
+        <div class="flex items-center text-slate-800">
+            <i class="material-icons text-3xl mr-2">assignment</i>
+            <div>
+                <h1 class="text-2xl font-bold">Create Assessment Configuration</h1>
+                <p class="text-sm text-slate-600">@ViewBag.Course.CourseCode - @ViewBag.Course.CourseName</p>
+            </div>
+        </div>
+        <div class="mt-4 md:mt-0">
+            <a asp-controller="Lecturer" asp-action="CourseContent" asp-route-id="@Model.CourseId"
+               class="inline-flex items-center px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-100 transition-colors">
+                <i class="material-icons text-sm mr-1">arrow_back</i>
+                <span>Back to Content</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content Card -->
+    <div class="bg-white rounded-xl shadow-sm">
+        <div class="p-6">
+            <form asp-action="SaveAssessmentConfig" method="post">
+                <div asp-validation-summary="ModelOnly" class="text-red-500 mb-4"></div>
+                <input type="hidden" asp-for="CourseId" />
+
+                <!-- Basic Configuration -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-medium text-slate-800 mb-4">Assessment Details</h3>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Assessment*</label>
+                            <select asp-for="AssessmentId" class="block w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500" required>
+                                <option value="">-- Select Assessment --</option>
+                                @foreach (var courseAssessment in ViewBag.CourseAssessments)
+                                {
+                                    <option value="@courseAssessment.Assessment.Id">@courseAssessment.Assessment.Name</option>
+                                }
+                            </select>
+                            <span asp-validation-for="AssessmentId" class="text-red-500 text-xs"></span>
+                        </div>
+                        <div>
+                            <label asp-for="AcademicYearId" class="block text-sm font-medium text-slate-700 mb-1">Academic Year*</label>
+                            <select asp-for="AcademicYearId" class="block w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500" required>
+                                <option value="">-- Select Academic Year --</option>
+                                @foreach (var year in ViewBag.AcademicYears)
+                                {
+                                    <option value="@year.YearId">@year.YearValue (@year.StartDate.ToString("MMM yyyy") - @year.EndDate.ToString("MMM yyyy"))</option>
+                                }
+                            </select>
+                            <span asp-validation-for="AcademicYearId" class="text-red-500 text-xs"></span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label asp-for="ModeOfStudyId" class="block text-sm font-medium text-slate-700 mb-1">Mode of Study*</label>
+                            <select asp-for="ModeOfStudyId" class="block w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500" required>
+                                <option value="">-- Select Mode of Study --</option>
+                                @foreach (var mode in ViewBag.ModesOfStudy)
+                                {
+                                    <option value="@mode.ModeId">@mode.ModeName (@mode.Code)</option>
+                                }
+                            </select>
+                            <span asp-validation-for="ModeOfStudyId" class="text-red-500 text-xs"></span>
+                        </div>
+                        <div>
+                            <label asp-for="DurationMinutes" class="block text-sm font-medium text-slate-700 mb-1">Duration (minutes)*</label>
+                            <input type="number" asp-for="DurationMinutes" min="1" class="block w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500" required />
+                            <span asp-validation-for="DurationMinutes" class="text-red-500 text-xs"></span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label asp-for="ChapterId" class="block text-sm font-medium text-slate-700 mb-1">Chapter</label>
+                            <select asp-for="ChapterId" class="block w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500">
+                                <option value="">-- Uncategorized --</option>
+                                @if (ViewBag.Chapters != null)
+                                {
+                                    foreach (var chapter in ViewBag.Chapters)
+                                    {
+                                        if (Model.ChapterId == chapter.Id)
+                                        {
+                                            <option value="@chapter.Id" selected>@chapter.Title</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@chapter.Id">@chapter.Title</option>
+                                        }
+                                    }
+                                }
+                            </select>
+                            <span asp-validation-for="ChapterId" class="text-red-500 text-xs"></span>
+                            <p class="text-xs text-slate-500 mt-1">Select a chapter to organize this assessment, or leave as "Uncategorized"</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label asp-for="StartDateTime" class="block text-sm font-medium text-slate-700 mb-1">Start Date & Time*</label>
+                            <input type="datetime-local" asp-for="StartDateTime" class="block w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500" required />
+                            <span asp-validation-for="StartDateTime" class="text-red-500 text-xs"></span>
+                        </div>
+                        <div>
+                            <label asp-for="EndDateTime" class="block text-sm font-medium text-slate-700 mb-1">End Date & Time*</label>
+                            <input type="datetime-local" asp-for="EndDateTime" class="block w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500" required />
+                            <span asp-validation-for="EndDateTime" class="text-red-500 text-xs"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Assessment Options -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-medium text-slate-800 mb-4">Assessment Options</h3>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div class="flex items-center">
+                            <input type="checkbox" asp-for="RandomizeQuestions" id="randomize" class="h-4 w-4 text-cyan-600 focus:ring-cyan-500 border-slate-300 rounded" />
+                            <label for="randomize" class="ml-2 block text-sm text-slate-700">Randomize Questions</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" asp-for="PreventTabSwitching" id="tabSwitch" class="h-4 w-4 text-cyan-600 focus:ring-cyan-500 border-slate-300 rounded" />
+                            <label for="tabSwitch" class="ml-2 block text-sm text-slate-700">Prevent Tab Switching</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" asp-for="ShowResults" id="showResults" class="h-4 w-4 text-cyan-600 focus:ring-cyan-500 border-slate-300 rounded" />
+                            <label for="showResults" class="ml-2 block text-sm text-slate-700">Show Results After Submission</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Question Groups Section -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-medium text-slate-800 mb-4">Question Groups</h3>
+
+                    <div id="questionGroups" class="space-y-4">
+                        @if (Model?.QuestionGroups != null && Model.QuestionGroups.Any())
+                        {
+                            @for (int i = 0; i < Model.QuestionGroups.Count; i++)
+                            {
+                                <div class="questionGroup bg-slate-50 p-4 rounded-lg">
+                                    <div class="flex justify-between mb-3">
+                                        <h4 class="font-medium">Question Group @(i + 1)</h4>
+                                        <button type="button" class="text-red-500 hover:text-red-700" onclick="removeQuestionGroup(this)">
+                                            <i class="material-icons text-sm">close</i>
+                                        </button>
+                                    </div>
+                                    <input type="hidden" name="QuestionGroups[@i].Id" value="@Model.QuestionGroups.ElementAt(i).Id" />
+
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-slate-700 mb-1">Question Group*</label>
+                                            <select name="QuestionGroups[@i].QuestionGroupId" class="block w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500" required>
+                                                <option value="">-- Select Question Group --</option>
+                                                @foreach (var group in ViewBag.QuestionGroups)
+                                                {
+                                                    if (Model.QuestionGroups.ElementAt(i).QuestionGroupId == group.Id)
+                                                    {
+                                                        <option value="@group.Id" selected>@group.Name (@group.Questions.Count questions)</option>
+                                                    }
+                                                    else
+                                                    {
+                                                        <option value="@group.Id">@group.Name (@group.Questions.Count questions)</option>
+                                                    }
+                                                }
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-slate-700 mb-1">Number of Questions to Use</label>
+                                            <input type="number" name="QuestionGroups[@i].NumberOfQuestionsToUse" value="@Model.QuestionGroups.ElementAt(i).NumberOfQuestionsToUse" class="block w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500" min="1" />
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="button" id="addQuestionGroup" class="inline-flex items-center px-4 py-2 border border-slate-300 bg-white text-slate-700 rounded-lg hover:bg-slate-50 transition-colors">
+                            <i class="material-icons text-sm mr-1">add</i>
+                            <span>Add Question Group</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-3">
+                    <a asp-controller="Lecturer" asp-action="CourseContent" asp-route-id="@Model.CourseId"
+                       class="inline-flex items-center px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-100 transition-colors">
+                        Cancel
+                    </a>
+                    <button type="submit" name="save" value="draft" class="inline-flex items-center px-4 py-2 border border-cyan-600 text-cyan-600 rounded-lg hover:bg-cyan-50 transition-colors">
+                        <i class="material-icons text-sm mr-1">save</i>
+                        <span>Save as Draft</span>
+                    </button>
+                    <button type="submit" name="save" value="publish" class="inline-flex items-center px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors">
+                        <i class="material-icons text-sm mr-1">publish</i>
+                        <span>Save & Publish</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let groupCount = @(Model?.QuestionGroups != null ? Model.QuestionGroups.Count : 0);
+
+        document.getElementById('addQuestionGroup').addEventListener('click', function() {
+            const container = document.getElementById('questionGroups');
+            const newGroup = document.createElement('div');
+            newGroup.className = 'questionGroup bg-slate-50 p-4 rounded-lg';
+
+            newGroup.innerHTML = `
+                <div class="flex justify-between mb-3">
+                    <h4 class="font-medium">Question Group ${groupCount + 1}</h4>
+                    <button type="button" class="text-red-500 hover:text-red-700" onclick="removeQuestionGroup(this)">
+                        <i class="material-icons text-sm">close</i>
+                    </button>
+                </div>
+                <input type="hidden" name="QuestionGroups[${groupCount}].Id" value="0" />
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Question Group*</label>
+                        <select name="QuestionGroups[${groupCount}].QuestionGroupId" class="block w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500" required>
+                            <option value="">-- Select Question Group --</option>
+                            @foreach (var group in ViewBag.QuestionGroups)
+                            {
+                                <option value="@group.Id">@group.Name (@group.Questions.Count questions)</option>
+                            }
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Number of Questions to Use</label>
+                        <input type="number" name="QuestionGroups[${groupCount}].NumberOfQuestionsToUse" value="0" class="block w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500" min="1" />
+                    </div>
+                </div>
+            `;
+
+            container.appendChild(newGroup);
+            groupCount++;
+        });
+
+        function removeQuestionGroup(button) {
+            const group = button.closest('.questionGroup');
+            group.remove();
+
+            // Renumber the remaining groups
+            const groups = document.querySelectorAll('.questionGroup');
+            groups.forEach((group, index) => {
+                const heading = group.querySelector('h4');
+                heading.textContent = `Question Group ${index + 1}`;
+
+                // Update input names
+                const inputs = group.querySelectorAll('input, select');
+                inputs.forEach(input => {
+                    const name = input.getAttribute('name');
+                    if (name) {
+                        const newName = name.replace(/QuestionGroups\[\d+\]/, `QuestionGroups[${index}]`);
+                        input.setAttribute('name', newName);
+                    }
+                });
+            });
+
+            groupCount = groups.length;
+        }
+
+        // Validation for start and end dates
+        document.querySelector('form').addEventListener('submit', function(event) {
+            const startDate = new Date(document.getElementById('StartDateTime').value);
+            const endDate = new Date(document.getElementById('EndDateTime').value);
+
+            if (endDate <= startDate) {
+                event.preventDefault();
+                alert('End date must be after start date.');
+            }
+        });
+    </script>
+}
