@@ -230,7 +230,7 @@
     // Initialize DataTable
     if (typeof simpleDatatables !== 'undefined' && document.getElementById("progressionRuleTable")) {
         const dataTable = new simpleDatatables.DataTable("#progressionRuleTable", {
-            perPage: 15,
+            perPage: 10,
             searchable: true,
             sortable: true,
             labels: {

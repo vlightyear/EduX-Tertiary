@@ -169,7 +169,7 @@
 
     // Initialize DataTable
     const dataTable = new simpleDatatables.DataTable("#modesTable", {
-        perPage: 15,
+        perPage: 10,
         searchable: true,
         sortable: true,
         labels: {

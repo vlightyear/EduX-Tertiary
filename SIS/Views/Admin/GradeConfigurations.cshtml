@@ -18,7 +18,7 @@
             Grade Configurations
         </h1>
         <button type="button"
-                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+                class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-900 transition-colors flex items-center"
                 onclick="showCreateGradeConfigModal()">
             <i class="material-icons mr-2">add</i>
             Create Grade
@@ -28,7 +28,7 @@
     <!-- Main Content Layout -->
     <div class="flex gap-4 h-[calc(90vh-80px)]">
         <!-- Main Table Section (3/4 width) -->
-        <div class="w-3/4">
+        <div class="w-full">
             <div class="bg-white rounded-lg shadow-md h-full overflow-hidden">
                 <div class="p-4">
                     <!-- Filter Section -->
@@ -93,78 +93,108 @@
                             <tbody>
                                 @if (Model != null && Model.Any())
                                 {
+                                    var groupedBySchool = Model
+                                    .GroupBy(g => g.SchoolId.HasValue && g.School != null ? g.School.Name : "Global")
+                                    .OrderBy(g => g.Key == "Global" ? "0" : g.Key);
+
                                     int index = 1;
-                                    foreach (var grade in Model)
+
+                                    foreach (var schoolGroup in groupedBySchool)
                                     {
-                                        <tr class="border-b hover:bg-gray-50 transition-colors"
-                                            data-school-id="@(grade.SchoolId.HasValue ? grade.SchoolId.ToString() : "global")"
-                                            data-academic-year-id="@(grade.AcademicYearId?.ToString() ?? "")">
-                                            <td class="px-4 py-4">@index</td>
-                                            <td class="px-4 py-4 font-medium text-gray-900">
-                                                <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-lg font-bold">
-                                                    @grade.GradeLetter
+                                        <tr class="bg-primary-50 border-b border-primary-200"
+                                            data-group-header="true"
+                                            data-group-key="@schoolGroup.Key">
+                                            <td colspan="8" class="px-4 py-3">
+                                                <span class="flex items-center text-primary-700 font-semibold text-sm uppercase tracking-wide">
+                                                    @if (schoolGroup.Key == "Global")
+                                                    {
+                                                        <i class="material-icons text-primary-600 mr-2 text-base">public</i>
+                                                    }
+                                                    else
+                                                    {
+                                                        <i class="material-icons text-primary-600 mr-2 text-base">account_balance</i>
+                                                    }
+                                                    @schoolGroup.Key
+                                                    <span class="ml-2 px-2 py-0.5 bg-primary-100 text-primary-600 rounded-full text-xs font-medium">
+                                                        @schoolGroup.Count() @(schoolGroup.Count() == 1 ? "grade" : "grades")
+                                                    </span>
                                                 </span>
-                                                @if (grade.IsPassingGrade)
-                                                {
-                                                    <span class="ml-2 px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">Pass</span>
-                                                }
-                                            </td>
-                                            <td class="px-4 py-4">@grade.MinScore% - @grade.MaxScore%</td>
-                                            <td class="px-4 py-4">
-                                                <span class="font-semibold">@grade.GPAValue.ToString("N2")</span>
-                                            </td>
-                                            <td class="px-4 py-4">
-                                                @if (grade.SchoolId.HasValue)
-                                                {
-                                                    var school = schoolsList?.FirstOrDefault(s => s.Id == grade.SchoolId);
-                                                    <span class="px-2 py-1 bg-purple-100 text-purple-800 rounded-lg text-xs">
-                                                        @(school?.Name ?? "N/A")
-                                                    </span>
-                                                }
-                                                else
-                                                {
-                                                    <span class="px-2 py-1 bg-gray-100 text-secondary-600 rounded-lg text-xs italic">
-                                                        <i class="material-icons text-xs align-middle">public</i> Global
-                                                    </span>
-                                                }
-                                            </td>
-                                            <td class="px-4 py-4">
-                                                @if (grade.AcademicYearId.HasValue)
-                                                {
-                                                    var academicYear = academicYearsList?.FirstOrDefault(a => a.YearId == grade.AcademicYearId);
-                                                    <span class="px-2 py-1 bg-indigo-100 text-indigo-800 rounded-lg text-xs">
-                                                        @(academicYear?.YearValue ?? "N/A")
-                                                    </span>
-                                                }
-                                                else
-                                                {
-                                                    <span class="text-gray-400 italic text-xs">N/A</span>
-                                                }
-                                            </td>
-                                            <td class="px-4 py-4">
-                                                @if (grade.IsActive)
-                                                {
-                                                    <span class="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">Active</span>
-                                                }
-                                                else
-                                                {
-                                                    <span class="px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full">Inactive</span>
-                                                }
-                                            </td>
-                                            <td class="px-4 py-4">
-                                                <div class="flex space-x-2">
-                                                    <button onclick="showUpdateGradeConfigModal('@grade.Id')"
-                                                            class="inline-flex items-center px-3 py-1 text-sm text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
-                                                        <i class="material-icons text-sm mr-1">edit</i> Edit
-                                                    </button>
-                                                    <button onclick="showDeleteGradeModal('@grade.Id', '@grade.GradeLetter')"
-                                                            class="inline-flex items-center px-3 py-1 text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
-                                                        <i class="material-icons text-sm mr-1">delete</i> Delete
-                                                    </button>
-                                                </div>
                                             </td>
                                         </tr>
-                                        index++;
+
+                                        foreach (var grade in schoolGroup)
+                                        {
+                                            <tr class="border-b hover:bg-gray-50 transition-colors"
+                                                data-school-id="@(grade.SchoolId.HasValue? grade.SchoolId.ToString() : "global")"
+                                                data-academic-year-id="@(grade.AcademicYearId?.ToString() ?? "")"
+                                                data-group-key="@schoolGroup.Key">
+                                                <td class="px-4 py-4 text-gray-400">@index</td>
+                                                <td class="px-4 py-4 font-medium text-gray-900">
+                                                    <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-lg font-bold">
+                                                        @grade.GradeLetter
+                                                    </span>
+                                                    @if (grade.IsPassingGrade)
+                                                    {
+                                                        <span class="ml-2 px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">Pass</span>
+                                                    }
+                                                </td>
+                                                <td class="px-4 py-4">@grade.MinScore% - @grade.MaxScore%</td>
+                                                <td class="px-4 py-4">
+                                                    <span class="font-semibold">@grade.GPAValue.ToString("N2")</span>
+                                                </td>
+                                                <td class="px-4 py-4">
+                                                    @if (grade.SchoolId.HasValue)
+                                                    {
+                                                        var school = schoolsList?.FirstOrDefault(s => s.Id == grade.SchoolId);
+                                                        <span class="px-2 py-1 bg-purple-100 text-purple-800 rounded-lg text-xs">
+                                                            @(school?.Name ?? "N/A")
+                                                        </span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="px-2 py-1 bg-gray-100 text-secondary-600 rounded-lg text-xs italic">
+                                                            <i class="material-icons text-xs align-middle">public</i> Global
+                                                        </span>
+                                                    }
+                                                </td>
+                                                <td class="px-4 py-4">
+                                                    @if (grade.AcademicYearId.HasValue)
+                                                    {
+                                                        var academicYear = academicYearsList?.FirstOrDefault(a => a.YearId == grade.AcademicYearId);
+                                                        <span class="px-2 py-1 bg-indigo-100 text-indigo-800 rounded-lg text-xs">
+                                                            @(academicYear?.YearValue ?? "N/A")
+                                                        </span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-gray-400 italic text-xs">N/A</span>
+                                                    }
+                                                </td>
+                                                <td class="px-4 py-4">
+                                                    @if (grade.IsActive)
+                                                    {
+                                                        <span class="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">Active</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full">Inactive</span>
+                                                    }
+                                                </td>
+                                                <td class="px-4 py-4">
+                                                    <div class="flex space-x-2">
+                                                        <button onclick="showUpdateGradeConfigModal('@grade.Id')"
+                                                                class="inline-flex items-center px-3 py-1 text-sm text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
+                                                            <i class="material-icons text-sm mr-1">edit</i> Edit
+                                                        </button>
+                                                        <button onclick="showDeleteGradeModal('@grade.Id', '@grade.GradeLetter')"
+                                                                class="inline-flex items-center px-3 py-1 text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
+                                                            <i class="material-icons text-sm mr-1">delete</i> Delete
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            index++;
+                                        }
                                     }
                                 }
                                 else
@@ -182,109 +212,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- Statistics Sidebar (1/4 width) -->
-        <div class="w-1/4 space-y-4 overflow-auto max-h-[calc(90vh-80px)]">
-            <!-- Statistics Cards -->
-            <div class="bg-white rounded-lg shadow p-4">
-                <h3 class="text-lg font-semibold text-secondary-800 mb-4">Grade Configuration Summary</h3>
-                <div class="space-y-4">
-                    <!-- Total Grades -->
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <div class="p-3 bg-blue-100 rounded-lg">
-                                <i class="material-icons text-blue-600 text-xl">list</i>
-                            </div>
-                            <div class="ml-4">
-                                <p class="text-gray-500 text-sm">Total Grades</p>
-                                <p class="text-xl font-semibold">@(Model?.Count() ?? 0)</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Active Grades -->
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <div class="p-3 bg-green-100 rounded-lg">
-                                <i class="material-icons text-green-600 text-xl">check_circle</i>
-                            </div>
-                            <div class="ml-4">
-                                <p class="text-gray-500 text-sm">Active Grades</p>
-                                <p class="text-xl font-semibold text-green-600">@(Model?.Count(x => x.IsActive) ?? 0)</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Highest GPA -->
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <div class="p-3 bg-yellow-100 rounded-lg">
-                                <i class="material-icons text-yellow-600 text-xl">star</i>
-                            </div>
-                            <div class="ml-4">
-                                <p class="text-gray-500 text-sm">Highest GPA</p>
-                                <p class="text-xl font-semibold text-yellow-600">@(Model?.Any() == true ? Model.Max(x => x.GPAValue).ToString("N2") : "0.00")</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Pass Grade -->
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <div class="p-3 bg-purple-100 rounded-lg">
-                                <i class="material-icons text-purple-600 text-xl">school</i>
-                            </div>
-                            <div class="ml-4">
-                                <p class="text-gray-500 text-sm">Pass Grades</p>
-                                <p class="text-xl font-semibold text-purple-600">@(Model?.Count(x => x.IsPassingGrade) ?? 0)</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Global Configs -->
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <div class="p-3 bg-indigo-100 rounded-lg">
-                                <i class="material-icons text-indigo-600 text-xl">public</i>
-                            </div>
-                            <div class="ml-4">
-                                <p class="text-gray-500 text-sm">Global Configs</p>
-                                <p class="text-xl font-semibold text-indigo-600">@(Model?.Count(x => !x.SchoolId.HasValue) ?? 0)</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- School-Specific Configs -->
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <div class="p-3 bg-orange-100 rounded-lg">
-                                <i class="material-icons text-orange-600 text-xl">business</i>
-                            </div>
-                            <div class="ml-4">
-                                <p class="text-gray-500 text-sm">School-Specific</p>
-                                <p class="text-xl font-semibold text-orange-600">@(Model?.Count(x => x.SchoolId.HasValue) ?? 0)</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Distribution Chart -->
-            <div class="bg-white rounded-lg shadow p-4">
-                <h3 class="text-lg font-semibold text-secondary-800 mb-4">Grade Distribution</h3>
-                <div id="grade-distribution-chart" class="h-64"></div>
-            </div>
-
-            <!-- Quick Info -->
-            <div class="bg-white rounded-lg shadow p-4">
-                <h3 class="text-lg font-semibold text-secondary-800 mb-4">Quick Info</h3>
-                <div class="space-y-2 text-sm text-secondary-600">
-                    <p><i class="material-icons text-sm align-middle text-blue-500">info</i> <strong>Global</strong> grades apply to all schools.</p>
-                    <p><i class="material-icons text-sm align-middle text-purple-500">info</i> <strong>School-specific</strong> grades override global grades.</p>
-                    <p><i class="material-icons text-sm align-middle text-green-500">info</i> <strong>Pass Grade</strong> defines the minimum passing threshold.</p>
-                </div>
-            </div>
-        </div>
     </div>
 </div>
 
@@ -296,7 +223,7 @@
         <div class="flex min-h-full items-center justify-center p-4">
             <div class="relative bg-white rounded-lg shadow-xl w-full max-w-2xl">
                 <!-- Modal Header -->
-                <div class="bg-blue-600 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
+                <div class="bg-primary-600 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
                     <h3 class="text-lg font-semibold flex items-center">
                         <i class="material-icons mr-2">add</i>
                         Create New Grade Configuration
@@ -431,7 +358,7 @@
                     <button type="button" class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center" onclick="hideCreateGradeConfigModal()">
                         <i class="material-icons mr-1">close</i>Cancel
                     </button>
-                    <button type="button" id="confirmCreate" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+                    <button type="button" id="confirmCreate" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-900 transition-colors flex items-center">
                         <i class="material-icons mr-1">save</i>Create
                     </button>
                 </div>
@@ -585,7 +512,7 @@
                     <button type="button" class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center" onclick="hideUpdateGradeConfigModal()">
                         <i class="material-icons mr-1">close</i>Cancel
                     </button>
-                    <button type="button" id="confirmUpdate" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+                    <button type="button" id="confirmUpdate" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-900 transition-colors flex items-center">
                         <i class="material-icons mr-1">save</i>Update
                     </button>
                 </div>

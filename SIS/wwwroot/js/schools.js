@@ -1,7 +1,7 @@
 ﻿document.addEventListener('DOMContentLoaded', function () {
     // Initialize DataTable
     const dataTable = new simpleDatatables.DataTable("#schoolsTable", {
-        perPage: 15,
+        perPage: 10,
         searchable: true,
         sortable: true,
         tableRender: (_data, table, type) => {

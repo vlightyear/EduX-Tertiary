@@ -196,7 +196,7 @@
 
     // Initialize DataTable
     const dataTable = new simpleDatatables.DataTable("#subjectsTable", {
-        perPage: 15,
+        perPage: 10,
         searchable: true,
         sortable: true,
         labels: {

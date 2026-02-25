@@ -101,7 +101,7 @@
 
     // Initialize DataTable
     const dataTable = new simpleDatatables.DataTable("#programLevelTable", {
-        perPage: 15,
+        perPage: 10,
         searchable: true,
         sortable: true,
         labels: {

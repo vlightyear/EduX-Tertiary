@@ -176,7 +176,7 @@
     // Initialize DataTable
     console.log('Test');
     const dataTable = new simpleDatatables.DataTable("#buildingTable", {
-        perPage: 15,
+        perPage: 10,
         searchable: true,
         sortable: true,
         labels: {

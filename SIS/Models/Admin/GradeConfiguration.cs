@@ -42,5 +42,6 @@ namespace SIS.Models.Admin
         public bool IsActive { get; set; }
         public int? SchoolId { get; set; }
         public int? AcademicYearId { get; set; }
+        public virtual School? School { get; set; }
     }
 }

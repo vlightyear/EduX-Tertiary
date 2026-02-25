@@ -5020,6 +5020,7 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
         public async Task<IActionResult> GradeConfigurations()
         {
             var gradeConfigs = await _context.GradeConfigurations
+                .Include(gc => gc.School)
                 .OrderByDescending(g => g.GPAValue)
                 .ToListAsync();
 

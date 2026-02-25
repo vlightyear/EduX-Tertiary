@@ -8,7 +8,7 @@
             Assessments
         </h1>
         <button type="button"
-                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+                class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-900 transition-colors flex items-center"
                 onclick="showCreateAssessmentModal()">
             <i class="material-icons mr-2">add</i>
             Create Assessment
@@ -18,7 +18,7 @@
     <!-- Main Content Layout -->
     <div class="flex gap-4 h-[calc(90vh-80px)]">
         <!-- Main Table Section (3/4 width) -->
-        <div class="w-3/4">
+        <div class="w-full">
             <div class="bg-white rounded-lg shadow-md h-full overflow-hidden">
                 <div class="p-4">
                     <table id="assessmentTable" class="w-full text-sm text-secondary-600">
@@ -44,40 +44,68 @@
                         <tbody>
                             @if (Model != null && Model.Any())
                             {
+                                var groupedByType = Model.GroupBy(a => a.Type ?? "Uncategorised")
+                                .OrderBy(g => g.Key);
                                 int index = 1;
-                                foreach (var assessment in Model)
+
+                                foreach (var typeGroup in groupedByType)
                                 {
-                                    <tr class="border-b hover:bg-gray-50 transition-colors">
-                                        <td class="px-6 py-4">@index</td>
-                                        <td class="px-6 py-4 font-medium text-gray-900">@assessment.Name</td>
-                                        <td class="px-6 py-4">@assessment.Type</td>
-                                        <td class="px-6 py-4">@assessment.WeightPercentage%</td>
-                                        <td class="px-6 py-4">@assessment.PassMark%</td>
-                                        <td class="px-6 py-4">@(assessment.DueDate?.ToString("dd/MM/yyyy") ?? "N/A")</td>
-                                        <td class="px-6 py-4">
-                                            @if (assessment.IsActive)
-                                            {
-                                                <span class="px-2 py-1 text-sm bg-green-100 text-green-800 rounded-full">Active</span>
-                                            }
-                                            else
-                                            {
-                                                <span class="px-2 py-1 text-sm bg-red-100 text-red-800 rounded-full">Inactive</span>
-                                            }
-                                        </td>
-                                        <td class="px-6 py-4">
-                                            <div class="flex space-x-2">
-                                                <button onclick="showUpdateAssessmentModal('@assessment.Id')"
-                                                        class="inline-flex items-center px-3 py-1 text-sm text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
-                                                    <i class="material-icons text-sm mr-1">edit</i> Edit
-                                                </button>
-                                                <button onclick="showDeleteAssessmentModal('@assessment.Id', '@assessment.Name')"
-                                                        class="inline-flex items-center px-3 py-1 text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
-                                                    <i class="material-icons text-sm mr-1">delete</i> Delete
-                                                </button>
-                                            </div>
+                                    <tr class="bg-primary-50 border-b border-primary-200" data-group-header="true">
+                                        <td colspan="8" class="px-6 py-3">
+                                            <span class="flex items-center text-primary-700 font-semibold text-sm uppercase tracking-wide">
+                                                @{
+                                                    var typeIcon = typeGroup.Key switch
+                                                    {
+                                                        "Exam" => "school",
+                                                        "Assignment" => "assignment",
+                                                        "Project" => "work",
+                                                        "Quiz" => "quiz",
+                                                        _ => "help_outline"
+                                                    };
+                                                }
+                                                <i class="material-icons text-primary-600 mr-2 text-base">@typeIcon</i>
+                                                @typeGroup.Key
+                                                <span class="ml-2 px-2 py-0.5 bg-primary-100 text-primary-600 rounded-full text-xs font-medium">
+                                                    @typeGroup.Count() @(typeGroup.Count() == 1 ? "assessment" : "assessments")
+                                                </span>
+                                            </span>
                                         </td>
                                     </tr>
-                                    index++;
+
+                                    foreach (var assessment in typeGroup)
+                                    {
+                                        <tr class="border-b hover:bg-gray-50 transition-colors">
+                                            <td class="px-6 py-4 text-gray-400">@index</td>
+                                            <td class="px-6 py-4 font-medium text-gray-900">@assessment.Name</td>
+                                            <td class="px-6 py-4">@assessment.Type</td>
+                                            <td class="px-6 py-4">@assessment.WeightPercentage%</td>
+                                            <td class="px-6 py-4">@assessment.PassMark%</td>
+                                            <td class="px-6 py-4">@(assessment.DueDate?.ToString("dd/MM/yyyy") ?? "N/A")</td>
+                                            <td class="px-6 py-4">
+                                                @if (assessment.IsActive)
+                                                {
+                                                    <span class="px-2 py-1 text-sm bg-green-100 text-green-800 rounded-full">Active</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="px-2 py-1 text-sm bg-red-100 text-red-800 rounded-full">Inactive</span>
+                                                }
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <div class="flex space-x-2">
+                                                    <button onclick="showUpdateAssessmentModal('@assessment.Id')"
+                                                            class="inline-flex items-center px-3 py-1 text-sm text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
+                                                        <i class="material-icons text-sm mr-1">edit</i> Edit
+                                                    </button>
+                                                    <button onclick="showDeleteAssessmentModal('@assessment.Id', '@assessment.Name')"
+                                                            class="inline-flex items-center px-3 py-1 text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
+                                                        <i class="material-icons text-sm mr-1">delete</i> Delete
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        index++;
+                                    }
                                 }
                             }
                             else
@@ -91,86 +119,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- Statistics Sidebar (1/4 width) -->
-        <div class="w-1/4 space-y-4">
-            <!-- Statistics Cards -->
-            <div class="bg-white rounded-lg shadow p-4">
-                <h3 class="text-lg font-semibold text-secondary-800 mb-4">Assessment Summary</h3>
-                <div class="space-y-4">
-                    <!-- Total Assessments -->
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <div class="p-3 bg-blue-100 rounded-lg">
-                                <i class="material-icons text-blue-600 text-xl">list</i>
-                            </div>
-                            <div class="ml-4">
-                                <p class="text-gray-500 text-sm">Total Assessments</p>
-                                <p class="text-xl font-semibold">@Model?.Count()</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Active Assessments -->
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <div class="p-3 bg-green-100 rounded-lg">
-                                <i class="material-icons text-green-600 text-xl">assignment</i>
-                            </div>
-                            <div class="ml-4">
-                                <p class="text-gray-500 text-sm">Active Assessments</p>
-                                <p class="text-xl font-semibold text-green-600">@Model?.Count(x => x.IsActive)</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Pending Due -->
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <div class="p-3 bg-yellow-100 rounded-lg">
-                                <i class="material-icons text-yellow-600 text-xl">assignment_late</i>
-                            </div>
-                            <div class="ml-4">
-                                <p class="text-gray-500 text-sm">Pending Due</p>
-                                <p class="text-xl font-semibold text-yellow-600">@Model?.Count(x => x.DueDate.HasValue && x.DueDate > DateTime.Now)</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Total Programmes -->
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <div class="p-3 bg-purple-100 rounded-lg">
-                                <i class="material-icons text-purple-600 text-xl">school</i>
-                            </div>
-                            <div class="ml-4">
-                                <p class="text-gray-500 text-sm">Total Programmes</p>
-                                <p class="text-xl font-semibold">20</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Total Courses -->
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <div class="p-3 bg-indigo-100 rounded-lg">
-                                <i class="material-icons text-indigo-600 text-xl">library_books</i>
-                            </div>
-                            <div class="ml-4">
-                                <p class="text-gray-500 text-sm">Total Courses</p>
-                                <p class="text-xl font-semibold">150</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Distribution Chart -->
-            <div class="bg-white rounded-lg shadow p-4">
-                <h3 class="text-lg font-semibold text-secondary-800 mb-4">Assessment Distribution</h3>
-                <div id="assessment-distribution-chart" class="h-64"></div>
-            </div>
-        </div>
     </div>
 </div>
 
@@ -182,7 +130,7 @@
         <div class="flex min-h-full items-center justify-center p-4">
             <div class="relative bg-white rounded-lg shadow-xl w-full max-w-4xl">
                 <!-- Modal Header -->
-                <div class="bg-blue-600 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
+                <div class="bg-primary-600 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
                     <h3 class="text-lg font-semibold flex items-center">
                         <i class="material-icons mr-2">add</i>
                         Create New Assessment
@@ -306,7 +254,7 @@
                     <button type="button" class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center" data-bs-dismiss="modal">
                         <i class="material-icons mr-1">close</i>Cancel
                     </button>
-                    <button type="button" id="confirmCreate" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+                    <button type="button" id="confirmCreate" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-900 transition-colors flex items-center">
                         <i class="material-icons mr-1">save</i>Create
                     </button>
                 </div>
@@ -438,7 +386,7 @@
                     <button type="button" class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center" data-bs-dismiss="modal">
                         <i class="material-icons mr-1">close</i>Cancel
                     </button>
-                    <button type="button" id="confirmUpdate" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+                    <button type="button" id="confirmUpdate" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-900 transition-colors flex items-center">
                         <i class="material-icons mr-1">save</i>Update
                     </button>
                 </div>
