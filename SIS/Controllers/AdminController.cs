@@ -2143,6 +2143,8 @@ namespace SIS.Controllers
             {
                 var query = _context.Courses
                     .Include(c => c.Programme)
+                        .ThenInclude(p => p.Department)
+                            .ThenInclude(d => d.School)
                     .AsQueryable();
 
                 // Apply filters
@@ -2206,7 +2208,8 @@ namespace SIS.Controllers
                             : query.OrderByDescending(c => c.IsMandatory);
                         break;
                     default:
-                        query = query.OrderBy(c => c.Id);
+                        query = query.OrderBy(c => c.Programme.Department.School.Name);
+                        query = query.OrderBy(c => c.Programme.Name);
                         break;
                 }
 
@@ -2223,7 +2226,8 @@ namespace SIS.Controllers
                         YearTaken = c.YearTaken,
                         SemesterTaken = c.SemesterTaken,
                         IsMandatory = c.IsMandatory,
-                        ProgrammeName = c.Programme.Name
+                        ProgrammeName = c.Programme.Name,
+                        SchoolName = c.Programme.Department.School.Name
                     })
                     .ToListAsync();
 

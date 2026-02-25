@@ -81,7 +81,7 @@
                         </svg>
                     </div>
                     <h3 class="text-xl font-semibold text-gray-900 mb-2">Application Completed!</h3>
-                    <p class="text-gray-600 mb-6">Your application has been received. Your reference number is:</p>
+                    <p class="text-secondary-600 mb-6">Your application has been received. Your reference number is:</p>
                     <div class="bg-gray-100 p-3 rounded-lg mb-6">
                         <p class="font-mono text-lg font-semibold text-gray-900">${referenceNumber}</p>
                     </div>

@@ -86,7 +86,7 @@
             wrapper: "datatable-wrapper",
             input: "datatable-input px-3 py-2 text-sm border border-gray-300 rounded-lg",
             selector: "datatable-selector px-3 py-2 text-sm border border-gray-300 rounded-lg",
-            paginationButton: "px-3 py-1 text-sm text-gray-600 rounded-md transition-colors",
+            paginationButton: "px-3 py-1 text-sm text-secondary-600 rounded-md transition-colors",
             paginationButtonActive: "bg-blue-50 text-blue-600 border border-blue-200",
             paginationButtonDisabled: "text-gray-400 cursor-not-allowed",
         }

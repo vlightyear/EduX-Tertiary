@@ -3,12 +3,12 @@
 <div class="h-[90vh] p-4">
     <!-- Header Section -->
     <div class="flex justify-between items-center mb-4">
-        <h1 class="text-2xl font-bold text-gray-800 flex items-center">
+        <h1 class="text-2xl font-bold text-secondary-800 flex items-center">
             <i class="material-icons mr-2">business</i>
             Department Management
         </h1>
         <button type="button"
-                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+                class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-900 transition-colors flex items-center"
                 onclick="showCreateDepartmentModal()">
             <i class="material-icons mr-2">add</i>
             Create Department
@@ -18,10 +18,10 @@
     <!-- Main Content Layout -->
     <div class="flex gap-4 h-[calc(90vh-80px)]">
         <!-- Main Table Section (3/4 width) -->
-        <div class="w-3/4">
+        <div class="w-full">
             <div class="bg-white rounded-lg shadow-md h-full overflow-auto">
                 <div class="p-4">
-                    <table id="departmentsTable" class="w-full text-sm text-gray-600">
+                    <table id="departmentsTable" class="w-full text-sm text-secondary-600">
                         <thead>
                             <tr>
                                 <th class="px-6 py-4">
@@ -70,29 +70,47 @@
                         <tbody class="overflow-auto">
                             @if (Model != null && Model.Any())
                             {
+                                var groupedBySchool = Model.GroupBy(d => d.School?.Name ?? "No School Assigned");
                                 int index = 1;
-                                foreach (var department in Model)
+
+                                foreach (var schoolGroup in groupedBySchool.OrderBy(g => g.Key))
                                 {
-                                    <tr class="border-b hover:bg-gray-50 transition-colors">
-                                        <td class="px-6 py-4">@index</td>
-                                        <td class="px-6 py-4 font-medium text-gray-900">@department.Name</td>
-                                        <td class="px-6 py-4">@department.Description</td>
-                                        <td class="px-6 py-4">@department.School?.Name</td>
-                                        <td class="px-6 py-4">@department.HOD?.UserName</td>
-                                        <td class="px-6 py-4">
-                                            <div class="flex space-x-2">
-                                                <button onclick="showUpdateDepartmentModal('@department.Id')"
-                                                        class="inline-flex items-center px-3 py-1 text-sm text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
-                                                    <i class="material-icons text-sm mr-1">edit</i> Edit
-                                                </button>
-                                                <button onclick="showDeleteDepartmentModal('@department.Id', '@department.Name')"
-                                                        class="inline-flex items-center px-3 py-1 text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
-                                                    <i class="material-icons text-sm mr-1">delete</i> Delete
-                                                </button>
-                                            </div>
+                                    <!-- School Group Header Row -->
+                                    <tr class="bg-primary-50 border-b border-primary-200">
+                                        <td colspan="6" class="px-6 py-3">
+                                            <span class="flex items-center text-primary-700 font-semibold text-sm uppercase tracking-wide">
+                                                <i class="material-icons text-primary-600 mr-2 text-base">account_balance</i>
+                                                @schoolGroup.Key
+                                                <span class="ml-2 px-2 py-0.5 bg-primary-100 text-primary-600 rounded-full text-xs font-medium">
+                                                    @schoolGroup.Count() @(schoolGroup.Count() == 1 ? "department" : "departments")
+                                                </span>
+                                            </span>
                                         </td>
                                     </tr>
-                                    index++;
+
+                                    foreach (var department in schoolGroup)
+                                    {
+                                        <tr class="border-b hover:bg-gray-50 transition-colors">
+                                            <td class="px-6 py-4 text-gray-400">@index</td>
+                                            <td class="px-6 py-4 font-medium text-slate-600">@department.Name</td>
+                                            <td class="px-6 py-4">@department.Description</td>
+                                            <td class="px-6 py-4">@department.School?.Name</td>
+                                            <td class="px-6 py-4">@department.HOD?.UserName</td>
+                                            <td class="px-6 py-4">
+                                                <div class="flex space-x-2">
+                                                    <button onclick="showUpdateDepartmentModal('@department.Id')"
+                                                            class="inline-flex items-center px-3 py-1 text-sm text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
+                                                        <i class="material-icons text-sm mr-1">edit</i> Edit
+                                                    </button>
+                                                    <button onclick="showDeleteDepartmentModal('@department.Id', '@department.Name')"
+                                                            class="inline-flex items-center px-3 py-1 text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
+                                                        <i class="material-icons text-sm mr-1">delete</i> Delete
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        index++;
+                                    }
                                 }
                             }
                             else
@@ -106,73 +124,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- Statistics Sidebar (1/4 width) -->
-        <div class="w-1/4 space-y-4">
-            <!-- Statistics Cards -->
-            <div class="bg-white rounded-lg shadow p-4">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Department Summary</h3>
-                <div class="space-y-4">
-                    <!-- Total Departments -->
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <div class="p-3 bg-emerald-100 rounded-lg">
-                                <i class="material-icons text-emerald-600 text-xl">business</i>
-                            </div>
-                            <div class="ml-4">
-                                <p class="text-gray-500 text-sm">Total Departments</p>
-                                <p class="text-xl font-semibold">@Model?.Count()</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Total Schools -->
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <div class="p-3 bg-blue-100 rounded-lg">
-                                <i class="material-icons text-blue-600 text-xl">account_balance</i>
-                            </div>
-                            <div class="ml-4">
-                                <p class="text-gray-500 text-sm">Total Schools</p>
-                                <p class="text-xl font-semibold">@Model?.Select(d => d.School?.Name).Distinct().Count()</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Active HODs -->
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <div class="p-3 bg-red-100 rounded-lg">
-                                <i class="material-icons text-red-600 text-xl">person</i>
-                            </div>
-                            <div class="ml-4">
-                                <p class="text-gray-500 text-sm">Active HODs</p>
-                                <p class="text-xl font-semibold">@Model?.Count(d => d.HOD != null)</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Total Programs -->
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <div class="p-3 bg-yellow-100 rounded-lg">
-                                <i class="material-icons text-yellow-600 text-xl">school</i>
-                            </div>
-                            <div class="ml-4">
-                                <p class="text-gray-500 text-sm">Total Programs</p>
-                                <p class="text-xl font-semibold">@ViewBag.TotalPrograms</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Distribution Chart -->
-            <div class="bg-white rounded-lg shadow p-4">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Department Distribution</h3>
-                <div id="department-distribution-chart" class="h-64"></div>
-            </div>
-        </div>
     </div>
 </div>
 
@@ -184,7 +135,7 @@
         <div class="flex min-h-full items-center justify-center p-4">
             <div class="relative bg-white rounded-lg shadow-xl w-full max-w-2xl">
                 <!-- Modal Header -->
-                <div class="bg-blue-600 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
+                <div class="bg-primary-600 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
                     <h3 class="text-lg font-semibold flex items-center">
                         <i class="material-icons mr-2">add</i>
                         Create New Department
@@ -262,7 +213,7 @@
                     <button type="button" class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center" data-bs-dismiss="modal">
                         <i class="material-icons mr-1">close</i>Cancel
                     </button>
-                    <button type="button" id="confirmCreate" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+                    <button type="button" id="confirmCreate" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-900 transition-colors flex items-center">
                         <i class="material-icons mr-1">save</i>Create
                     </button>
                 </div>
@@ -359,7 +310,7 @@
                     <button type="button" class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center" data-bs-dismiss="modal">
                         <i class="material-icons mr-1">close</i>Cancel
                     </button>
-                    <button type="button" id="confirmUpdate" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+                    <button type="button" id="confirmUpdate" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-900 transition-colors flex items-center">
                         <i class="material-icons mr-1">save</i>Update
                     </button>
                 </div>
@@ -402,7 +353,7 @@
 
                             <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                                 <p class="text-gray-700 font-medium mb-2">Department Details:</p>
-                                <p class="text-gray-600">
+                                <p class="text-secondary-600">
                                     <span class="font-medium">Department Name:</span>
                                     <span id="deleteDepName" class="ml-2"></span>
                                 </p>

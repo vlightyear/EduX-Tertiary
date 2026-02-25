@@ -125,7 +125,7 @@ if (!isRegistered) {
                 let tooltipContent = `
                     <div class="p-3">
                         <div class="font-semibold">${course.courseCode}</div>
-                        <div class="text-sm text-gray-600 mb-2">${course.courseName}</div>
+                        <div class="text-sm text-secondary-600 mb-2">${course.courseName}</div>
                         <div class="text-lg font-bold">${score}%</div>
                 `;
 

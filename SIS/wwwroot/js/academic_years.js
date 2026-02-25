@@ -560,7 +560,7 @@
         for (let i = 1; i <= totalPages; i++) {
             const button = document.createElement('button');
             button.textContent = i;
-            button.className = `px-3 py-1 text-sm ${i === currentPage ? 'bg-primary-100 text-primary-600' : 'text-gray-600 hover:bg-gray-100'} rounded-md`;
+            button.className = `px-3 py-1 text-sm ${i === currentPage ? 'bg-primary-100 text-primary-600' : 'text-secondary-600 hover:bg-gray-100'} rounded-md`;
             button.addEventListener('click', () => {
                 currentPage = i;
                 renderTable();
@@ -611,7 +611,7 @@
         const pageButtons = paginationButtons.querySelectorAll('button');
         pageButtons.forEach((button, index) => {
             const pageNum = index + 1;
-            button.className = `px-3 py-1 text-sm ${pageNum === currentPage ? 'bg-primary-100 text-primary-600' : 'text-gray-600 hover:bg-gray-100'} rounded-md`;
+            button.className = `px-3 py-1 text-sm ${pageNum === currentPage ? 'bg-primary-100 text-primary-600' : 'text-secondary-600 hover:bg-gray-100'} rounded-md`;
         });
 
         const totalPages = Math.ceil(filteredRows.length / rowsPerPage);

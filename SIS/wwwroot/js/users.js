@@ -132,7 +132,7 @@
             // Style pagination buttons
             const paginationButtons = document.querySelectorAll('.datatable-pagination-button');
             paginationButtons.forEach(button => {
-                button.className = 'datatable-pagination-button px-3 py-1 text-sm text-gray-600 rounded-md transition-colors';
+                button.className = 'datatable-pagination-button px-3 py-1 text-sm text-secondary-600 rounded-md transition-colors';
 
                 if (!button.classList.contains('datatable-pagination-active') &&
                     !button.classList.contains('datatable-pagination-disabled')) {

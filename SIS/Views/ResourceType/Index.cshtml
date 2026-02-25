@@ -3,242 +3,304 @@
     ViewData["Title"] = "Resource Type Management";
 }
 
-<div class="min-h-screen bg-gray-50">
+<div class="h-[90vh] p-4">
     <!-- Header Section -->
-    <div class="bg-white border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div class="flex items-start gap-4">
-                    <div class="flex-shrink-0">
-                        <div class="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-                            </svg>
-                        </div>
-                    </div>
-                    <div>
-                        <h1 class="text-2xl font-bold text-gray-900">Resource Type Management</h1>
-                        <p class="text-sm text-gray-600 mt-1">Manage room resource types for student accommodation</p>
-                    </div>
-                </div>
-                <button type="button" onclick="openCreateModal()" class="inline-flex items-center px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-lg shadow-sm transition-colors duration-150">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                    </svg>
-                    Create Resource Type
-                </button>
-            </div>
-        </div>
+    <div class="flex justify-between items-center mb-4">
+        <h1 class="text-2xl font-bold text-secondary-800 flex items-center">
+            <i class="material-icons mr-2">inventory_2</i>
+            Accommodation Resource Type Management
+        </h1>
+        <button type="button"
+                class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-900 transition-colors flex items-center"
+                onclick="openCreateModal()">
+            <i class="material-icons mr-2">add</i>
+            Create Resource Type
+        </button>
     </div>
 
-    <!-- Main Content -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Quick Stats -->
-        <div class="mb-6">
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                            </svg>
-                        </div>
-                        <div>
-                            <p class="text-sm text-gray-600">Quick Stats</p>
-                            <p class="text-lg font-semibold text-gray-900">Total Resource Types</p>
-                        </div>
-                    </div>
-                    <div class="text-3xl font-bold text-teal-600">
-                        @(Model?.Count() ?? 0)
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Search Section -->
-        <div class="mb-6">
-            <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                    </svg>
-                </div>
-                <input type="text" id="searchInput" placeholder="Search resource types..." class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-2 focus:ring-teal-500 focus:border-transparent sm:text-sm">
-            </div>
-        </div>
-
-        <!-- Table Card -->
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200" id="resourceTypeTable">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">#</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Usage</th>
-                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        @if (Model != null && Model.Any())
-                        {
-                            int counter = 1;
-                            foreach (var item in Model)
-                            {
-                                <tr class="hover:bg-gray-50 transition-colors duration-150">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        @counter
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="flex items-center">
-                                            <div class="flex-shrink-0 h-10 w-10 bg-gradient-to-br from-teal-400 to-teal-600 rounded-lg flex items-center justify-center">
-                                                <span class="text-white font-semibold text-sm">@item.Name.Substring(0, Math.Min(2, item.Name.Length)).ToUpper()</span>
-                                            </div>
-                                            <div class="ml-4">
-                                                <div class="text-sm font-medium text-gray-900">@item.Name</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        @if (!string.IsNullOrEmpty(item.Description))
-                                        {
-                                            <div class="text-sm text-gray-700">@item.Description</div>
-                                        }
-                                        else
-                                        {
-                                            <div class="text-sm text-gray-400 italic">No description provided</div>
-                                        }
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        @if (item.RoomResources.Any())
-                                        {
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                @item.RoomResources.Count room(s)
-                                            </span>
-                                        }
-                                        else
-                                        {
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                                Not in use
-                                            </span>
-                                        }
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <div class="inline-flex gap-2">
-                                            <button type="button" onclick="openEditModal(@item.ResourceTypeId)" class="inline-flex items-center px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors duration-150">
-                                                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                                </svg>
-                                                Edit
-                                            </button>
-                                            <button type="button" onclick="deleteResourceType(@item.ResourceTypeId)" class="inline-flex items-center px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg transition-colors duration-150">
-                                                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                                </svg>
-                                                Delete
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                counter++;
-                            }
-                        }
-                        else
-                        {
+    <!-- Main Content Layout -->
+    <div class="flex gap-4 h-[calc(90vh-80px)]">
+        <div class="w-full">
+            <div class="bg-white rounded-lg shadow-md h-full overflow-auto">
+                <div class="p-4">
+                    <table id="resourceTypeTable" class="w-full text-sm text-secondary-600">
+                        <thead>
                             <tr>
-                                <td colspan="5" class="px-6 py-12 text-center">
-                                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
-                                    </svg>
-                                    <h3 class="mt-2 text-sm font-medium text-gray-900">No resource types found</h3>
-                                    <p class="mt-1 text-sm text-gray-500">Get started by creating a new resource type.</p>
-                                    <div class="mt-6">
-                                        <button type="button" onclick="openCreateModal()" class="inline-flex items-center px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors duration-150">
-                                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                                            </svg>
-                                            Create Resource Type
-                                        </button>
-                                    </div>
-                                </td>
+                                <th class="px-6 py-4">
+                                    <span class="flex items-center">
+                                        #
+                                        <svg class="w-4 h-4 ms-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 15 4 4 4-4m0-6-4-4-4 4" />
+                                        </svg>
+                                    </span>
+                                </th>
+                                <th class="px-6 py-4">
+                                    <span class="flex items-center">
+                                        Name
+                                        <svg class="w-4 h-4 ms-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 15 4 4 4-4m0-6-4-4-4 4" />
+                                        </svg>
+                                    </span>
+                                </th>
+                                <th class="px-6 py-4">
+                                    <span class="flex items-center">
+                                        Description
+                                        <svg class="w-4 h-4 ms-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 15 4 4 4-4m0-6-4-4-4 4" />
+                                        </svg>
+                                    </span>
+                                </th>
+                                <th class="px-6 py-4">
+                                    <span class="flex items-center">
+                                        Usage
+                                        <svg class="w-4 h-4 ms-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 15 4 4 4-4m0-6-4-4-4 4" />
+                                        </svg>
+                                    </span>
+                                </th>
+                                <th class="px-6 py-4">Actions</th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @if (Model != null && Model.Any())
+                            {
+                                int counter = 1;
+                                foreach (var item in Model)
+                                {
+                                    <tr class="border-b hover:bg-gray-50 transition-colors">
+                                        <td class="px-6 py-4 text-gray-400">@counter</td>
+                                        <td class="px-6 py-4 font-medium text-slate-600">@item.Name</td>
+                                        <td class="px-6 py-4">
+                                            @if (!string.IsNullOrEmpty(item.Description))
+                                            {
+                                                @item.Description
+                                            }
+                                            else
+                                            {
+                                                <span class="text-gray-400 italic">No description provided</span>
+                                            }
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            @if (item.RoomResources.Any())
+                                            {
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                    <i class="material-icons text-xs mr-1">meeting_room</i>
+                                                    @item.RoomResources.Count room(s)
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
+                                                    <i class="material-icons text-xs mr-1">remove_circle_outline</i>
+                                                    Not in use
+                                                </span>
+                                            }
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="flex space-x-2">
+                                                <button onclick="openEditModal(@item.ResourceTypeId)"
+                                                        class="inline-flex items-center px-3 py-1 text-sm text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
+                                                    <i class="material-icons text-sm mr-1">edit</i> Edit
+                                                </button>
+                                                <button onclick="deleteResourceType(@item.ResourceTypeId)"
+                                                        class="inline-flex items-center px-3 py-1 text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
+                                                    <i class="material-icons text-sm mr-1">delete</i> Delete
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    counter++;
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="5" class="px-6 py-4 text-center text-gray-500">No resource types found.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Create/Edit Modal -->
-<div id="resourceTypeModal" class="fixed inset-0 z-50 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <!-- Background overlay -->
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onclick="closeModal()"></div>
+<!-- Create Resource Type Modal -->
+<div id="createResourceTypeModal" class="hidden fixed inset-0 z-50">
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
 
-        <!-- Center modal -->
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-
-        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-lg shadow-xl w-full max-w-2xl">
                 <!-- Modal Header -->
-                <div class="flex items-start justify-between mb-5">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-teal-100">
-                            <svg class="h-6 w-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                            </svg>
-                        </div>
-                        <h3 class="ml-4 text-lg leading-6 font-medium text-gray-900" id="modalTitle">
-                            Add Resource Type
-                        </h3>
-                    </div>
-                    <button type="button" onclick="closeModal()" class="bg-white rounded-md text-gray-400 hover:text-gray-500 focus:outline-none">
-                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
+                <div class="bg-primary-600 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
+                    <h3 class="text-lg font-semibold flex items-center">
+                        <i class="material-icons mr-2">add</i>
+                        Create New Resource Type
+                    </h3>
+                    <button type="button" class="text-white hover:text-gray-200" onclick="closeModal('createResourceTypeModal')">
+                        <i class="material-icons">close</i>
                     </button>
                 </div>
 
                 <!-- Modal Body -->
-                <form id="resourceTypeForm">
-                    <input type="hidden" id="resourceTypeId" value="0" />
-
-                    <div class="space-y-4">
-                        <div>
-                            <label for="name" class="block text-sm font-medium text-gray-700 mb-1">
-                                Name <span class="text-red-500">*</span>
+                <div class="p-6">
+                    <div class="space-y-6">
+                        <!-- Name -->
+                        <div class="relative z-0 w-full group">
+                            <input type="text" id="createName"
+                                   class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                                   placeholder=" " />
+                            <label for="createName"
+                                   class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                Resource Type Name
                             </label>
-                            <input type="text" id="name" placeholder="e.g., Chair, Table, Bulb, Fan" required
-                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent sm:text-sm">
-                            <p class="mt-1 text-xs text-gray-500">Enter the resource type name</p>
                         </div>
 
-                        <div>
-                            <label for="description" class="block text-sm font-medium text-gray-700 mb-1">
+                        <!-- Description -->
+                        <div class="relative z-0 w-full group">
+                            <textarea id="createDescription" rows="3"
+                                      class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                                      placeholder=" "></textarea>
+                            <label for="createDescription"
+                                   class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
                                 Description
                             </label>
-                            <textarea id="description" rows="3" placeholder="Optional description of the resource type"
-                                      class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent sm:text-sm"></textarea>
                         </div>
                     </div>
-                </form>
-            </div>
+                </div>
 
-            <!-- Modal Footer -->
-            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-3">
-                <button type="button" id="saveBtn" onclick="saveResourceType()"
-                        class="w-full inline-flex justify-center items-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-teal-600 text-base font-medium text-white hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 sm:ml-3 sm:w-auto sm:text-sm transition-colors duration-150">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                    Save
-                </button>
-                <button type="button" onclick="closeModal()"
-                        class="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 sm:mt-0 sm:w-auto sm:text-sm transition-colors duration-150">
-                    Cancel
-                </button>
+                <!-- Modal Footer -->
+                <div class="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-end space-x-2">
+                    <button type="button" class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center" onclick="closeModal('createResourceTypeModal')">
+                        <i class="material-icons mr-1">close</i>Cancel
+                    </button>
+                    <button type="button" onclick="saveResourceType(false)" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-900 transition-colors flex items-center">
+                        <i class="material-icons mr-1">save</i>Create
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Update Resource Type Modal -->
+<div id="updateResourceTypeModal" class="hidden fixed inset-0 z-50">
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-lg shadow-xl w-full max-w-2xl">
+                <!-- Modal Header -->
+                <div class="bg-gray-700 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
+                    <h3 class="text-lg font-semibold flex items-center">
+                        <i class="material-icons mr-2">edit</i>
+                        Update Resource Type
+                    </h3>
+                    <button type="button" class="text-white hover:text-gray-200" onclick="closeModal('updateResourceTypeModal')">
+                        <i class="material-icons">close</i>
+                    </button>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="p-6">
+                    <input type="hidden" id="updateResourceTypeId" value="0" />
+                    <div class="space-y-6">
+                        <!-- Name -->
+                        <div class="relative z-0 w-full group">
+                            <input type="text" id="updateName"
+                                   class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                                   placeholder=" " />
+                            <label for="updateName"
+                                   class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                Resource Type Name
+                            </label>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="relative z-0 w-full group">
+                            <textarea id="updateDescription" rows="3"
+                                      class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                                      placeholder=" "></textarea>
+                            <label for="updateDescription"
+                                   class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                Description
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-end space-x-2">
+                    <button type="button" class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center" onclick="closeModal('updateResourceTypeModal')">
+                        <i class="material-icons mr-1">close</i>Cancel
+                    </button>
+                    <button type="button" onclick="saveResourceType(true)" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-900 transition-colors flex items-center">
+                        <i class="material-icons mr-1">save</i>Update
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Resource Type Modal -->
+<div id="deleteResourceTypeModal" class="hidden fixed inset-0 z-50">
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-lg shadow-xl w-full max-w-lg">
+                <!-- Modal Header -->
+                <div class="bg-red-600 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
+                    <h3 class="text-lg font-semibold flex items-center">
+                        <i class="material-icons mr-2">warning</i>
+                        Confirm Delete
+                    </h3>
+                    <button type="button" class="text-white hover:text-gray-200" onclick="closeModal('deleteResourceTypeModal')">
+                        <i class="material-icons">close</i>
+                    </button>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="p-6">
+                    <input type="hidden" id="deleteResourceTypeId" value="0" />
+
+                    <div class="space-y-4">
+                        <div class="flex items-center text-red-600 mb-4">
+                            <i class="material-icons mr-2">error_outline</i>
+                            <p class="text-lg font-medium">Delete Resource Type</p>
+                        </div>
+
+                        <p class="text-gray-700">Are you sure you want to delete this resource type?</p>
+
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                            <p class="text-gray-700 font-medium mb-2">Resource Type Details:</p>
+                            <p class="text-secondary-600">
+                                <span class="font-medium">Name:</span>
+                                <span id="deleteResourceTypeName" class="ml-2"></span>
+                            </p>
+                        </div>
+
+                        <div class="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                            <div class="flex items-center text-red-800">
+                                <i class="material-icons text-red-600 mr-2 text-sm">info</i>
+                                <p class="text-sm">This action cannot be undone. All associated data will be permanently deleted.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-end space-x-2">
+                    <button type="button" class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center" onclick="closeModal('deleteResourceTypeModal')">
+                        <i class="material-icons mr-1">close</i>Cancel
+                    </button>
+                    <button type="button" onclick="confirmDelete()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center">
+                        <i class="material-icons mr-1">delete</i>Delete
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -247,28 +309,18 @@
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        // Search functionality
-        document.getElementById('searchInput').addEventListener('keyup', function() {
-            const searchText = this.value.toLowerCase();
-            const tableRows = document.querySelectorAll('#resourceTypeTable tbody tr');
-
-            tableRows.forEach(row => {
-                const text = row.textContent.toLowerCase();
-                row.style.display = text.includes(searchText) ? '' : 'none';
-            });
-        });
-
-        function openCreateModal() {
-            document.getElementById('modalTitle').textContent = 'Add Resource Type';
-            document.getElementById('resourceTypeId').value = '0';
-            document.getElementById('resourceTypeForm').reset();
-            document.getElementById('resourceTypeModal').classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
         }
 
-        function closeModal() {
-            document.getElementById('resourceTypeModal').classList.add('hidden');
-            document.body.style.overflow = 'auto';
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        function openCreateModal() {
+            document.getElementById('createName').value = '';
+            document.getElementById('createDescription').value = '';
+            openModal('createResourceTypeModal');
         }
 
         function openEditModal(id) {
@@ -276,124 +328,70 @@
                 .then(response => response.json())
                 .then(result => {
                     if (result.success) {
-                        document.getElementById('modalTitle').textContent = 'Edit Resource Type';
-                        document.getElementById('resourceTypeId').value = result.data.resourceTypeId;
-                        document.getElementById('name').value = result.data.name;
-                        document.getElementById('description').value = result.data.description || '';
-                        document.getElementById('resourceTypeModal').classList.remove('hidden');
-                        document.body.style.overflow = 'hidden';
+                        document.getElementById('updateResourceTypeId').value = result.data.resourceTypeId;
+                        document.getElementById('updateName').value = result.data.name;
+                        document.getElementById('updateDescription').value = result.data.description || '';
+                        openModal('updateResourceTypeModal');
                     } else {
                         Swal.fire('Error', result.message, 'error');
                     }
                 })
-                .catch(error => {
-                    console.error('Error:', error);
-                    Swal.fire('Error', 'Failed to load resource type data', 'error');
-                });
+                .catch(() => Swal.fire('Error', 'Failed to load resource type data', 'error'));
         }
 
-        function saveResourceType() {
-            const id = document.getElementById('resourceTypeId').value;
-            const name = document.getElementById('name').value.trim();
-            const description = document.getElementById('description').value.trim();
+        function saveResourceType(isUpdate) {
+            const name = document.getElementById(isUpdate ? 'updateName' : 'createName').value.trim();
+            const description = document.getElementById(isUpdate ? 'updateDescription' : 'createDescription').value.trim();
+            const id = isUpdate ? document.getElementById('updateResourceTypeId').value : '0';
 
             if (!name) {
                 Swal.fire('Validation Error', 'Please enter a resource type name', 'warning');
                 return;
             }
 
-            const data = {
-                resourceTypeId: parseInt(id),
-                name: name,
-                description: description
-            };
-
-            const url = id === '0' ? '/ResourceType/Create' : '/ResourceType/Update';
-            const saveBtn = document.getElementById('saveBtn');
-            saveBtn.disabled = true;
-            saveBtn.innerHTML = '<svg class="animate-spin h-5 w-5 mr-2 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Saving...';
+            const url = isUpdate ? '/ResourceType/Update' : '/ResourceType/Create';
 
             fetch(url, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data)
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ resourceTypeId: parseInt(id), name, description })
             })
             .then(response => response.json())
             .then(result => {
                 if (result.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Success',
-                        text: result.message,
-                        showConfirmButton: false,
-                        timer: 1500
-                    }).then(() => {
-                        location.reload();
-                    });
+                    Swal.fire({ icon: 'success', title: 'Success', text: result.message, showConfirmButton: false, timer: 1500 })
+                        .then(() => location.reload());
                 } else {
                     Swal.fire('Error', result.message, 'error');
-                    saveBtn.disabled = false;
-                    saveBtn.innerHTML = '<svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Save';
                 }
             })
-            .catch(error => {
-                console.error('Error:', error);
-                Swal.fire('Error', 'An error occurred while saving', 'error');
-                saveBtn.disabled = false;
-                saveBtn.innerHTML = '<svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Save';
-            });
+            .catch(() => Swal.fire('Error', 'An error occurred while saving', 'error'));
         }
 
         function deleteResourceType(id) {
-            Swal.fire({
-                title: 'Are you sure?',
-                text: "This action cannot be undone!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#dc2626',
-                cancelButtonColor: '#6b7280',
-                confirmButtonText: 'Yes, delete it!',
-                cancelButtonText: 'Cancel',
-                customClass: {
-                    confirmButton: 'px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700',
-                    cancelButton: 'px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700'
-                }
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    fetch('/ResourceType/Delete?id=' + id, {
-                        method: 'POST'
-                    })
-                    .then(response => response.json())
-                    .then(result => {
-                        if (result.success) {
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Deleted!',
-                                text: result.message,
-                                showConfirmButton: false,
-                                timer: 1500
-                            }).then(() => {
-                                location.reload();
-                            });
-                        } else {
-                            Swal.fire('Error', result.message, 'error');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        Swal.fire('Error', 'An error occurred while deleting', 'error');
-                    });
-                }
-            });
+            // Fetch the name from the table row to populate the modal
+            const row = document.querySelector(`button[onclick="deleteResourceType(${id})"]`).closest('tr');
+            const name = row.querySelector('td:nth-child(2)').textContent.trim();
+            document.getElementById('deleteResourceTypeId').value = id;
+            document.getElementById('deleteResourceTypeName').textContent = name;
+            openModal('deleteResourceTypeModal');
         }
 
-        // Close modal with Escape key
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape') {
-                closeModal();
-            }
-        });
+        function confirmDelete() {
+            const id = document.getElementById('deleteResourceTypeId').value;
+            fetch('/ResourceType/Delete?id=' + id, { method: 'POST' })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        Swal.fire({ icon: 'success', title: 'Deleted!', text: result.message, showConfirmButton: false, timer: 1500 })
+                            .then(() => location.reload());
+                    } else {
+                        Swal.fire('Error', result.message, 'error');
+                    }
+                })
+                .catch(() => Swal.fire('Error', 'An error occurred while deleting', 'error'));
+        }
+
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') ['createResourceTypeModal', 'updateResourceTypeModal', 'deleteResourceTypeModal'].forEach(closeModal); });
     </script>
 }

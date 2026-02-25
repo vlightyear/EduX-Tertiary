@@ -3,14 +3,14 @@
 <div class="h-[90vh] p-4">
     <!-- Header Section -->
     <div class="flex justify-between items-center mb-4">
-        <h1 class="text-2xl font-bold text-gray-800 flex items-center">
+        <h1 class="text-2xl font-bold text-secondary-800 flex items-center">
             <i class="material-icons mr-2">apartment</i>
             Buildings
         </h1>
         <button type="button"
-                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+                class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-900 transition-colors flex items-center"
                 onclick="showCreateBuildingModal()">
-            <i class="material-icons mr-2">add</i>
+            <i class="material-icons mr-2">add_circle</i>
             Create Building
         </button>
     </div>
@@ -18,10 +18,10 @@
     <!-- Main Content Layout -->
     <div class="flex gap-4 h-[calc(90vh-80px)]">
         <!-- Main Table Section (3/4 width) -->
-        <div class="w-3/4">
+        <div class="w-full">
             <div class="bg-white rounded-lg shadow-md h-full overflow-hidden">
                 <div class="p-4">
-                    <table id="buildingTable" class="w-full text-sm text-gray-600">
+                    <table id="buildingTable" class="w-full text-sm text-slate-600">
                         <thead>
                             <tr>
                                 <th class="px-6 py-4">
@@ -62,28 +62,46 @@
                         <tbody>
                             @if (Model != null && Model.Any())
                             {
+                                var groupedBySchool = Model.GroupBy(b => b.School?.Name ?? "No School Assigned");
                                 int index = 1;
-                                foreach (var building in Model)
+
+                                foreach (var schoolGroup in groupedBySchool.OrderBy(g => g.Key))
                                 {
-                                    <tr class="border-b hover:bg-gray-50 transition-colors">
-                                        <td class="px-6 py-4">@index</td>
-                                        <td class="px-6 py-4 font-medium text-gray-900">@building.Name</td>
-                                        <td class="px-6 py-4">@building.School.Name</td>
-                                        <td class="px-6 py-4">@building.Description</td>
-                                        <td class="px-6 py-4">
-                                            <div class="flex space-x-2">
-                                                <button onclick="showUpdateBuildingModal('@building.Id', '@building.Name', '@building.Description', '@building.SchoolId')"
-                                                        class="inline-flex items-center px-3 py-1 text-sm text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
-                                                    <i class="material-icons text-sm mr-1">edit</i> Edit
-                                                </button>
-                                                <button onclick="showDeleteBuildingModal('@building.Id', '@building.Name')"
-                                                        class="inline-flex items-center px-3 py-1 text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
-                                                    <i class="material-icons text-sm mr-1">delete</i> Delete
-                                                </button>
-                                            </div>
+                                    <!-- School Group Header Row -->
+                                    <tr class="bg-primary-50 border-b border-primary-200">
+                                        <td colspan="5" class="px-6 py-3">
+                                            <span class="flex items-center text-primary-700 font-semibold text-sm uppercase tracking-wide">
+                                                <i class="material-icons text-primary-600 mr-2 text-base">account_balance</i>
+                                                @schoolGroup.Key
+                                                <span class="ml-2 px-2 py-0.5 bg-primary-100 text-primary-600 rounded-full text-xs font-medium">
+                                                    @schoolGroup.Count() @(schoolGroup.Count() == 1 ? "building" : "buildings")
+                                                </span>
+                                            </span>
                                         </td>
                                     </tr>
-                                    index++;
+
+                                    foreach (var building in schoolGroup)
+                                    {
+                                        <tr class="border-b hover:bg-gray-50 transition-colors">
+                                            <td class="px-6 py-4 text-gray-400">@index</td>
+                                            <td class="px-6 py-4 font-medium text-gray-900">@building.Name</td>
+                                            <td class="px-6 py-4">@building.School.Name</td>
+                                            <td class="px-6 py-4">@building.Description</td>
+                                            <td class="px-6 py-4">
+                                                <div class="flex space-x-2">
+                                                    <button onclick="showUpdateBuildingModal('@building.Id', '@building.Name', '@building.Description', '@building.SchoolId')"
+                                                            class="inline-flex items-center px-3 py-1 text-sm text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
+                                                        <i class="material-icons text-sm mr-1">edit</i> Edit
+                                                    </button>
+                                                    <button onclick="showDeleteBuildingModal('@building.Id', '@building.Name')"
+                                                            class="inline-flex items-center px-3 py-1 text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
+                                                        <i class="material-icons text-sm mr-1">delete</i> Delete
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        index++;
+                                    }
                                 }
                             }
                             else
@@ -97,59 +115,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- Statistics Sidebar (1/4 width) -->
-        <div class="w-1/4 space-y-4">
-            <!-- Statistics Cards -->
-            <div class="grid grid-cols-1 gap-4">
-                <!-- Total Buildings -->
-                <div class="bg-white rounded-lg shadow p-4">
-                    <div class="flex items-center">
-                        <div class="p-3 bg-blue-100 rounded-lg">
-                            <i class="material-icons text-blue-600 text-xl">apartment</i>
-                        </div>
-                        <div class="ml-4">
-                            <p class="text-gray-500 text-sm">Total Buildings</p>
-                            <p class="text-xl font-semibold">@Model.Count()</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Buildings per School -->
-                <div class="bg-white rounded-lg shadow p-4">
-                    <div class="flex items-center">
-                        <div class="p-3 bg-green-100 rounded-lg">
-                            <i class="material-icons text-green-600 text-xl">school</i>
-                        </div>
-                        <div class="ml-4">
-                            <p class="text-gray-500 text-sm">Schools with Buildings</p>
-                            <p class="text-xl font-semibold text-green-600">
-                                @Model.Select(b => b.SchoolId).Distinct().Count()
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Available Classrooms -->
-                <div class="bg-white rounded-lg shadow p-4">
-                    <div class="flex items-center">
-                        <div class="p-3 bg-purple-100 rounded-lg">
-                            <i class="material-icons text-purple-600 text-xl">meeting_room</i>
-                        </div>
-                        <div class="ml-4">
-                            <p class="text-gray-500 text-sm">Available Rooms</p>
-                            <p class="text-xl font-semibold text-purple-600">156</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Buildings Distribution Chart -->
-            <div class="bg-white rounded-lg shadow p-4">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Buildings by School</h3>
-                <div id="buildingStatsChart" class="min-h-64"></div>
-            </div>
-        </div>
     </div>
 </div>
 
@@ -161,7 +126,7 @@
         <div class="flex min-h-full items-center justify-center p-4">
             <div class="relative bg-white rounded-lg shadow-xl w-full max-w-2xl">
                 <!-- Modal Header -->
-                <div class="bg-blue-600 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
+                <div class="bg-primary-600 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
                     <h3 class="text-lg font-semibold flex items-center">
                         <i class="material-icons mr-2">add</i>
                         Create New Building
@@ -225,7 +190,7 @@
                     <button type="button" class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center" data-bs-dismiss="modal">
                         <i class="material-icons mr-1">close</i>Cancel
                     </button>
-                    <button type="button" id="confirmCreate" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+                    <button type="button" id="confirmCreate" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-900 transition-colors flex items-center">
                         <i class="material-icons mr-1">add</i>Create
                     </button>
                 </div>
@@ -306,7 +271,7 @@
                     <button type="button" class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center" data-bs-dismiss="modal">
                         <i class="material-icons mr-1">close</i>Cancel
                     </button>
-                    <button type="button" id="confirmUpdate" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+                    <button type="button" id="confirmUpdate" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-900 transition-colors flex items-center">
                         <i class="material-icons mr-1">save</i>Update
                     </button>
                 </div>
@@ -349,7 +314,7 @@
 
                             <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-4">
                                 <p class="text-gray-700 font-medium mb-2">Building Details:</p>
-                                <p class="text-gray-600">
+                                <p class="text-secondary-600">
                                     <span class="font-medium">Building Name:</span>
                                     <span id="deleteBuildingName" class="ml-2"></span>
                                 </p>
