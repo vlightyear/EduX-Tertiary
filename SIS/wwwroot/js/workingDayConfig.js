@@ -29,7 +29,7 @@
                                     peer-checked:after:border-white after:content-[''] after:absolute 
                                     after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 
                                     after:border after:rounded-full after:h-5 after:w-5 after:transition-all 
-                                    peer-checked:bg-blue-600"></div>
+                                    peer-checked:bg-primary-600"></div>
                     </label>
                 </td>
                 <td class="px-4 py-3">

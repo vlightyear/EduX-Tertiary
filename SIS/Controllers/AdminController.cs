@@ -3213,6 +3213,8 @@ public async Task<IActionResult> GetFeeConfigurationsData([FromBody] FeeConfigFi
                 fc.DebitNCode,
                 fc.RegistrationPaymentRequired
             })
+            .OrderBy(fc => fc.SchoolName)
+                .ThenBy(fc => fc.ProgrammeName)
             .ToListAsync();
 
         // Add row numbers

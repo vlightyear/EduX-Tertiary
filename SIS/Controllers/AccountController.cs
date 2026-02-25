@@ -8,6 +8,7 @@ using SIS.enums;
 using SIS.Enums;
 using SIS.Models.Admin;
 using SIS.Models.StudentApplication;
+using System.Security.Claims;
 
 namespace SIS.Controllers
 {
@@ -194,7 +195,15 @@ namespace SIS.Controllers
                 {
                     // 🎯 Allow default password bypass for all students
                     isStudentDefaultPasswordUsed = true;
-                    await _signInManager.SignInAsync(user, model.RememberMe);
+                    //await _signInManager.SignInAsync(user, model.RememberMe);
+                    await _signInManager.SignInWithClaimsAsync(
+                        user,
+                        model.RememberMe,
+                        new List<Claim>
+                        {
+                            new Claim(ClaimTypes.Name, user.FullName ?? user.Email),
+                            new Claim("FullName", user.FullName ?? user.Email)
+                        });
 
                     // 🚨 Set warning message for default password usage
                     SetDefaultPasswordWarning();
@@ -248,7 +257,15 @@ namespace SIS.Controllers
                 }
 
                 // Force sign in to ensure User.IsInRole works correctly
-                await _signInManager.SignInAsync(user, model.RememberMe);
+                //await _signInManager.SignInAsync(user, model.RememberMe);
+                await _signInManager.SignInWithClaimsAsync(
+                    user,
+                    model.RememberMe,
+                    new List<Claim>
+                    {
+                        new Claim(ClaimTypes.Name, user.FullName ?? user.Email),
+                        new Claim("FullName", user.FullName ?? user.Email)
+                    });
             }
 
             // 🎯 STEP 4: Role-based redirection

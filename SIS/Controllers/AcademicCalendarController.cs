@@ -35,6 +35,7 @@ namespace SIS.Controllers
         {
             // Get current and available academic years
             var academicYears = await _context.AcademicYears
+                .Where(ay => ay.IsActive)
                 .OrderByDescending(y => y.StartDate)
                 .Select(y => new SelectListItem
                 {
