@@ -277,7 +277,7 @@ namespace SIS.Controllers
             return Ok(new CancellationPolicyResponse
             {
                 Success = false,
-                Message = "Invoices cannot be cancelled directly in the eCampus system. To reverse a penalty fee, a Credit Note must be created by the Finance Department.",
+                Message = "Invoices cannot be cancelled directly in the system. To reverse a penalty fee, a Credit Note must be created by the Finance Department.",
                 Instructions = new List<string>
                 {
                     "Contact the Finance Department with the invoice reference number",

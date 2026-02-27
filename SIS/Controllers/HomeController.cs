@@ -732,10 +732,10 @@ namespace SIS.Controllers
         {
             string recipientEmail = "chishaonesimus@gmail.com"; // Replace with actual email
             var institution = _institutionConfig.GetCurrentInstitution();
-            string subject = $"Test Email from {institution.Name} eCampus";
+            string subject = $"Test Email from {institution.Name}";
             string body = $@"
                 <h2>Hello from {institution.Name}!</h2>
-                <p>This is a test email from our eCampus system.</p>
+                <p>This is a test email from our system.</p>
                 <p>If you receive this, our email configuration is working correctly.</p>
                 <br>
                 <p>Best regards,<br>{institution.Name} Administration</p>
