@@ -267,6 +267,9 @@ builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
 builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
+builder.Services.AddHttpClient("PayBoss");
+builder.Services.AddSingleton<IPayBossService, PayBossService>();
+
 builder.Services.AddAuthorization();
 
 var app = builder.Build();

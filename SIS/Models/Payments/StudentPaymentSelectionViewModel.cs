@@ -21,7 +21,7 @@ namespace SIS.Models.Payments
         public List<FeeDetailViewModel> FeeDetails { get; set; } = new List<FeeDetailViewModel>();
     }
 
-    public class StudentCardPaymentViewModel
+    public class StudentCardPaymentViewModelOld
     {
         public string TransactionReference { get; set; }
 

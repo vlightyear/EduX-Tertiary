@@ -1,22 +1,23 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
+using PdfSharpCore.Drawing;
+using PdfSharpCore.Pdf;
 using SIS.Data;
 using SIS.DTOs.StudentApplication;
 using SIS.Enums;
+using SIS.Models.Accounting;
 using SIS.Models.Accounts;
 using SIS.Models.Fees;
 using SIS.Models.Payments;
 using SIS.Models.StudentApplication;
-using SIS.Services.Payment;
-using SIS.Services.Emails;
+using SIS.Services;
 using SIS.Services.Accounting;
-using PdfSharpCore.Pdf;
-using PdfSharpCore.Drawing;
-using SIS.Models.Accounting;
+using SIS.Services.Emails;
+using SIS.Services.Payment;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace SIS.Controllers
 {
@@ -31,6 +32,7 @@ namespace SIS.Controllers
         private readonly IAccountingService _accountingService;
         private readonly IBackgroundEmailService _backgroundEmailService;
         private readonly IStudentInvoiceService _studentInvoiceService;
+        private readonly IPayBossService _payBoss;
 
         public PaymentsController(
             ApplicationDbContext context,
@@ -41,7 +43,8 @@ namespace SIS.Controllers
             IEmailService emailService,
             IAccountingService accountingService,
             IBackgroundEmailService backgroundEmailService,
-            IStudentInvoiceService studentInvoiceService)
+            IStudentInvoiceService studentInvoiceService,
+            IPayBossService payBoss)
         {
             _context = context;
             _paymentService = paymentService;
@@ -52,6 +55,7 @@ namespace SIS.Controllers
             _accountingService = accountingService;
             _backgroundEmailService = backgroundEmailService;
             _studentInvoiceService = studentInvoiceService;
+            _payBoss = payBoss;
         }
 
         #region Existing Methods (PayNow, PaymentSuccess, GetApplicableFees, etc.)
@@ -89,7 +93,7 @@ namespace SIS.Controllers
 
         // Process credit card payment for student fees - UPDATED
         [HttpPost]
-        public async Task<IActionResult> ProcessStudentCardPayment(StudentCardPaymentViewModel model)
+        /*public async Task<IActionResult> ProcessStudentCardPayment(StudentCardPaymentViewModel model)
         {
             if (!ModelState.IsValid)
             {
@@ -239,8 +243,8 @@ namespace SIS.Controllers
                 TempData["Error"] = "An error occurred while processing the payment.";
                 return RedirectToAction("StudentFinance");
             }
-        }
-        public async Task<IActionResult> ProcessStudentMobilePayment(StudentMobilePaymentViewModel model)
+        }*/
+        /*public async Task<IActionResult> ProcessStudentMobilePayment(StudentMobilePaymentViewModel model)
         {
             if (!ModelState.IsValid)
             {
@@ -254,7 +258,7 @@ namespace SIS.Controllers
                 if (model.Amount <= 0)
                 {
                     TempData["Error"] = "Payment amount must be greater than zero.";
-                    return RedirectToAction("StudentPaymentSelection");
+                    return RedirectToAction("Student_Dashboard", "Home");
                 }
 
                 // Extract student ID from transaction reference
@@ -269,14 +273,7 @@ namespace SIS.Controllers
                 if (student == null)
                 {
                     TempData["Error"] = "Payment failed. Student not found.";
-                    return RedirectToAction("StudentFinance");
-                }
-
-                // Validate that payment doesn't exceed outstanding balance
-                if (model.Amount > student.OutstandingFees)
-                {
-                    TempData["Error"] = $"Payment amount (K{model.Amount:F2}) cannot exceed outstanding balance (K{student.OutstandingFees:F2}).";
-                    return RedirectToAction("StudentPaymentSelection");
+                    return RedirectToAction("Student_Dashboard", "Home");
                 }
 
                 // Create transaction reference
@@ -330,65 +327,6 @@ namespace SIS.Controllers
                 // Original processing logic (only reached if Tingg API fails)
                 await Task.Delay(2000);
 
-                // STEP 1 POST PAYMENT TO ACCOUNTING SYSTEM
-                /*
-                try
-                {
-                    var accountingResult = await _accountingService.PostPaymentAsync(student.StudentId_Number, model.Amount);
-
-                    if (!accountingResult.Success)
-                    {
-                        _logger.LogWarning($"Failed to post payment to accounting system: {accountingResult.Message}");
-                    }
-                    else
-                    {
-                        _logger.LogInformation($"Successfully posted payment to accounting system for student {student.StudentId_Number}");
-                    }
-                }
-                catch (Exception accountingEx)
-                {
-                    _logger.LogError(accountingEx, $"Error posting payment to accounting system for student {student.StudentId_Number}");
-                }
-                */
-
-                // STEP 2
-                /*
-                // Calculate total payments and registration requirements
-                var feesPaid = student.FinancialStatements?.Sum(fs => fs.AmountPaid) ?? 0;
-                decimal totalPaid = feesPaid + model.Amount;
-                decimal totalFees = student.OutstandingFees + feesPaid;
-                var minRegistrationPayment = totalFees * student.AcademicYear.MinRegistrationPaymentPercentage / 100;
-
-                // Create financial statement entry
-                var financialStatement = new FinancialStatement
-                {
-                    StudentId = student.Id,
-                    AmountPaid = model.Amount,
-                    PaymentDate = DateTime.UtcNow,
-                    PaymentMethod = $"Mobile Money ({model.Provider})",
-                    TransactionReference = transactionReference,
-                    AcademicYearId = student.AcademicYearId,
-                    OutstandingAmount = student.OutstandingFees - model.Amount,
-            Semester = student.CurrentSemester ?? 1
-                };
-
-                // Update student's outstanding balance
-                student.OutstandingFees -= model.Amount;
-
-                // Check and update registration status if minimum payment is met
-                bool registrationCompleted = false;
-                if (totalPaid >= minRegistrationPayment && student.RegistrationStatus != Status.Registered)
-                {
-                    student.RegistrationStatus = Status.Registered;
-                    registrationCompleted = true;
-                }
-
-                // Save changes
-                _context.FinancialStatements.Add(financialStatement);
-                _context.Entry(student).State = EntityState.Modified;
-                await _context.SaveChangesAsync();
-                */
-
                 return Json(new
                 {
                     success = true,
@@ -410,7 +348,7 @@ namespace SIS.Controllers
                 });
             }
         }
-
+*/
         private List<FeeConfiguration> GetApplicableFees(Student student)
         {
             bool hasActiveAllocation = _context.Allocations
@@ -702,7 +640,7 @@ namespace SIS.Controllers
 
         #region Mobile Payment Processing
 
-        [HttpPost]
+        /*[HttpPost]
         public async Task<IActionResult> ProcessMobilePayment(MobilePaymentViewModel model)
         {
             if (!ModelState.IsValid)
@@ -769,6 +707,214 @@ namespace SIS.Controllers
                 TempData["Error"] = "Payment processing failed. Please try again.";
                 return RedirectToAction("PaymentSelection", new { referenceNumber = model.ApplicationReference });
             }
+        }*/
+
+        [HttpPost]
+        /*[ValidateAntiForgeryToken]*/
+        public async Task<IActionResult> ProcessStudentMobilePayment(StudentMobilePaymentViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                TempData["Error"] = "Please correct the errors in the form.";
+                return RedirectToAction("Student_Dashboard", "Home");
+            }
+
+            if (model.Amount <= 0)
+            {
+                TempData["Error"] = "Payment amount must be greater than zero.";
+                return RedirectToAction("Student_Dashboard", "Home");
+            }
+
+            var studentId = model.TransactionReference.Split('_').Last();
+            var student = await _context.Students
+                .Include(s => s.AcademicYear)
+                .Include(s => s.FinancialStatements)
+                .FirstOrDefaultAsync(s => s.Id == Int32.Parse(studentId));
+
+            if (student == null)
+            {
+                TempData["Error"] = "Payment failed. Student not found.";
+                return RedirectToAction("/Home/Student_Dashboard");
+            }
+
+            // Build a unique, traceable transaction ID for PayBoss
+            var txnId = $"STDFEE_MOB_{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString()[..8].ToUpper()}";
+
+            try
+            {
+                // Strip non-digits from phone number
+                var phone = new string(model.PhoneNumber.Where(char.IsDigit).ToArray());
+                var narration = $"Student Fee Payment - {student.StudentId_Number}";
+
+                // Step 1 (token obtained automatically in service) + Step 2A
+                var result = await _payBoss.CollectMobileAsync(
+                    phone: phone,
+                    amount: model.Amount,
+                    narration: narration,
+                    txnId: txnId);
+
+                _logger.LogInformation(
+                    "PayBoss mobile initiated | Student: {Id} | TxnId: {TxnId} | Status: {Status}",
+                    student.StudentId_Number, txnId, result.Status);
+
+                // Mobile payments are async (USSD push). Redirect to a pending/polling page.
+                return RedirectToAction("PaymentPending", new
+                {
+                    transactionId = txnId,
+                    amount = model.Amount,
+                    method = "Mobile Money",
+                    studentId = student.StudentId_Number
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "PayBoss mobile payment failed for student {Id}", student.StudentId_Number);
+                TempData["Error"] = "Payment could not be initiated. Please try again or contact support.";
+                return RedirectToAction("/Home/Student_Dashboard");
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ProcessStudentCardPayment(StudentCardPaymentViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                TempData["Error"] = "Please correct the card details and try again.";
+                return RedirectToAction("Student_Dashboard", "Home");
+            }
+
+            if (model.Amount <= 0)
+            {
+                TempData["Error"] = "Payment amount must be greater than zero.";
+                return RedirectToAction("Student_Dashboard", "Home");
+            }
+
+            var studentId = model.TransactionReference.Split('_').Last();
+            var student = await _context.Students
+                .Include(s => s.AcademicYear)
+                .Include(s => s.FinancialStatements)
+                .FirstOrDefaultAsync(s => s.Id == Int32.Parse(studentId));
+
+            if (student == null)
+            {
+                TempData["Error"] = "Payment failed. Student not found.";
+                return RedirectToAction("Student_Dashboard", "Home");
+            }
+
+            var txnId = $"STDFEE_CARD_{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString()[..8].ToUpper()}";
+            var narration = $"Student Fee Payment - {student.StudentId_Number}";
+
+            // PayBoss will redirect back here after the card / 3DS flow
+            var callbackUrl = Url.Action("PaymentCallback", "Payments",
+                new { txnId, studentId = student.StudentId_Number }, Request.Scheme)!;
+
+            try
+            {
+                // Step 1 (automatic) + Step 2B
+                var result = await _payBoss.CollectCardAsync(
+                    model: model,
+                    narration: narration,
+                    txnId: txnId,
+                    redirectUrl: callbackUrl);
+
+                _logger.LogInformation(
+                    "PayBoss card submitted | Student: {Id} | TxnId: {TxnId} | RedirectUrl: {Url}",
+                    student.StudentId_Number, txnId, result.RedirectUrl);
+
+                // PayBoss returns a redirectUrl to its hosted 3DS card-processing page
+                if (!string.IsNullOrEmpty(result.RedirectUrl))
+                    return Redirect(result.RedirectUrl);
+
+                TempData["Error"] = "Could not initiate card payment. Please try again.";
+                return RedirectToAction("Student_Dashboard", "Home");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "PayBoss card payment failed for student {Id}", student.StudentId_Number);
+                TempData["Error"] = "Card payment could not be processed. Please try again or contact support.";
+                return RedirectToAction("Student_Dashboard", "Home");
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> PaymentCallback(string txnId, string studentId)
+        {
+            if (string.IsNullOrEmpty(txnId))
+                return RedirectToAction("Student_Dashboard", "Home");
+
+            try
+            {
+                // Step 3: Status query
+                var status = await _payBoss.GetStatusAsync(txnId);
+
+                _logger.LogInformation(
+                    "PayBoss callback | TxnId: {TxnId} | Status: {Status} | Code: {Code} | Ref: {Ref}",
+                    txnId, status.Status, status.StatusCode, status.ServiceProviderRef);
+
+                if (status.Status.Equals("success", StringComparison.OrdinalIgnoreCase))
+                {
+                    TempData["Success"] = $"Payment successful! Reference: {status.ServiceProviderRef ?? txnId}";
+                    return RedirectToAction("StudentPaymentSuccess", new
+                    {
+                        transactionReference = txnId,
+                        providerRef = status.ServiceProviderRef
+                    });
+                }
+
+                if (status.Status.Equals("failed", StringComparison.OrdinalIgnoreCase))
+                {
+                    TempData["Error"] = $"Payment failed: {status.ServiceProviderStatusDescription ?? status.Message}";
+                    return RedirectToAction("Student_Dashboard", "Home");
+                }
+
+                // Still pending
+                TempData["Info"] = "Your payment is being processed. We will update you shortly.";
+                return RedirectToAction("PaymentPending", new
+                {
+                    transactionId = txnId,
+                    method = "Card",
+                    studentId
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error verifying payment status for {TxnId}", txnId);
+                TempData["Error"] = "Could not verify payment status. Quote reference " + txnId + " when contacting support.";
+                return RedirectToAction("Student_Dashboard", "Home");
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> CheckPaymentStatus(string txnId)
+        {
+            try
+            {
+                var status = await _payBoss.GetStatusAsync(txnId);
+                return Json(new
+                {
+                    status = status.Status,          // "success" | "failed" | "pending"
+                    statusCode = status.StatusCode,
+                    message = status.Message,
+                    providerRef = status.ServiceProviderRef,
+                    description = status.ServiceProviderStatusDescription
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error polling status for {TxnId}", txnId);
+                return Json(new { status = "error", message = "Could not retrieve payment status." });
+            }
+        }
+
+        [HttpGet]
+        public IActionResult PaymentPending(string transactionId, decimal amount, string method, string studentId)
+        {
+            ViewBag.TransactionId = transactionId;
+            ViewBag.Amount = amount;
+            ViewBag.Method = method;
+            ViewBag.StudentId = studentId;
+            return View();
         }
 
         #endregion

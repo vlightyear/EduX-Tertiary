@@ -165,6 +165,7 @@ namespace SIS.Controllers
 
                 ViewData["TotalBilled"] = TotalBilled;
                 ViewData["TotalPaid"] = TotalPaid;
+                ViewData["TransactionReference"] = Guid.NewGuid() + "_" + student.Id;
 
                 if (student.OutstandingFees != outstandingFees)
                 {

@@ -1,0 +1,776 @@
+﻿@* ═══════════════════════════════════════════════════════════
+   _PaymentModal.cshtml  — Tabbed: Mobile Money + Card
+   Replaces both _MobilePaymentModal and _CardPaymentModal
+═══════════════════════════════════════════════════════════ *@
+
+<style>
+    /* ── Modal shell ─────────────────────────────────────────── */
+    #payment-modal {
+        backdrop-filter: blur(3px);
+        background: rgba(30,45,94,.55) !important;
+    }
+
+        #payment-modal .pm-box {
+            background: var(--surface, #fff);
+            border-radius: var(--radius-xl, 18px);
+            box-shadow: var(--shadow-lg, 0 16px 48px rgba(30,45,94,.15));
+            max-width: 520px;
+            width: calc(100% - 2rem);
+            max-height: 94vh;
+            overflow-y: auto;
+            animation: pmIn .32s cubic-bezier(.4,0,.2,1);
+        }
+
+    @@keyframes pmIn {
+        from {
+            opacity: 0;
+            transform: scale(.95) translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+    }
+
+    /* ── Header ──────────────────────────────────────────────── */
+    .pm-header {
+        background: linear-gradient(110deg, var(--navy-deep,#141e42) 0%, var(--navy,#1e2d5e) 60%, #2e45a0 100%);
+        padding: 1.25rem 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: relative;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+
+        .pm-header::before {
+            content: '';
+            position: absolute;
+            right: -40px;
+            top: -40px;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(232,92,92,.15) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+    .pm-header-left {
+        display: flex;
+        align-items: center;
+        gap: .875rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .pm-header-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 11px;
+        background: rgba(255,255,255,.14);
+        border: 1px solid rgba(255,255,255,.18);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: all .25s;
+    }
+
+        .pm-header-icon .material-icons {
+            color: #fff;
+            font-size: 22px;
+        }
+
+    .pm-header-title {
+        font-size: 1rem;
+        font-weight: 800;
+        color: #fff;
+        line-height: 1.15;
+    }
+
+    .pm-header-sub {
+        font-size: .72rem;
+        color: rgba(255,255,255,.65);
+        margin-top: 2px;
+        transition: opacity .2s;
+    }
+
+    .pm-close-btn {
+        position: relative;
+        z-index: 1;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: rgba(255,255,255,.12);
+        border: 1px solid rgba(255,255,255,.18);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background .18s;
+        flex-shrink: 0;
+    }
+
+        .pm-close-btn:hover {
+            background: rgba(255,255,255,.22);
+        }
+
+        .pm-close-btn .material-icons {
+            color: #fff;
+            font-size: 18px;
+        }
+
+    /* ── Tab bar ─────────────────────────────────────────────── */
+    .pm-tabs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        border-bottom: 1px solid var(--border, #e2e8f0);
+        background: #fafbff;
+    }
+
+    .pm-tab {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: .45rem;
+        padding: .85rem 1rem;
+        font-size: .82rem;
+        font-weight: 700;
+        color: var(--muted, #64748b);
+        cursor: pointer;
+        border: none;
+        background: none;
+        position: relative;
+        transition: color .18s;
+    }
+
+        .pm-tab .material-icons {
+            font-size: 18px;
+            transition: color .18s;
+        }
+
+        .pm-tab::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 12%;
+            right: 12%;
+            height: 2.5px;
+            background: var(--coral, #e85c5c);
+            border-radius: 2px 2px 0 0;
+            opacity: 0;
+            transform: scaleX(.6);
+            transition: opacity .2s, transform .2s;
+        }
+
+        .pm-tab.active {
+            color: var(--navy, #1e2d5e);
+        }
+
+            .pm-tab.active .material-icons {
+                color: var(--coral, #e85c5c);
+            }
+
+            .pm-tab.active::after {
+                opacity: 1;
+                transform: scaleX(1);
+            }
+
+        .pm-tab:not(.active):hover {
+            color: var(--navy, #1e2d5e);
+            background: var(--navy-lt, #eef2ff);
+        }
+
+    /* ── Tab panels ──────────────────────────────────────────── */
+    .pm-panel {
+        display: none;
+    }
+
+        .pm-panel.active {
+            display: block;
+        }
+
+    /* ── Shared field styles ─────────────────────────────────── */
+    .pm-body {
+        padding: 1.25rem 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .pm-amount-box {
+        background: var(--navy-lt, #eef2ff);
+        border: 1px solid var(--navy-mid, #c2d0ff);
+        border-radius: var(--radius-md, 10px);
+        padding: 1rem 1.1rem;
+    }
+
+    .pm-field-label {
+        display: flex;
+        align-items: center;
+        gap: .35rem;
+        font-size: .69rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        color: var(--navy, #1e2d5e);
+        margin-bottom: .5rem;
+    }
+
+        .pm-field-label .material-icons {
+            font-size: 14px;
+            color: var(--coral, #e85c5c);
+        }
+
+    .pm-amount-wrap {
+        position: relative;
+    }
+
+    .pm-amount-prefix {
+        position: absolute;
+        left: .85rem;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: .95rem;
+        font-weight: 800;
+        color: var(--navy, #1e2d5e);
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .pm-input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: .6rem .85rem;
+        font-size: .86rem;
+        font-weight: 600;
+        font-family: inherit;
+        border: 1.5px solid var(--border, #e2e8f0);
+        border-radius: var(--radius-sm, 7px);
+        background: var(--surface, #fff);
+        color: var(--navy, #1e2d5e);
+        outline: none;
+        transition: border-color .18s, box-shadow .18s;
+    }
+
+    .pm-input.amount {
+        padding-left: 2rem;
+    }
+
+    .pm-input:focus {
+        border-color: var(--coral, #e85c5c);
+        box-shadow: 0 0 0 3px rgba(232,92,92,.11);
+    }
+
+    .pm-input::placeholder {
+        color: var(--faint, #94a3b8);
+        font-weight: 400;
+    }
+
+    .pm-input-hint {
+        font-size: .68rem;
+        color: var(--faint, #94a3b8);
+        margin-top: .3rem;
+        line-height: 1.4;
+    }
+
+    .pm-amount-hints {
+        display: flex;
+        justify-content: space-between;
+        font-size: .7rem;
+        color: var(--muted, #64748b);
+        margin-top: .4rem;
+    }
+
+    .pm-outstanding {
+        display: inline-flex;
+        align-items: center;
+        gap: .25rem;
+        font-weight: 700;
+        color: var(--coral-dk, #d43f3f);
+    }
+
+    .pm-outstanding .material-icons {
+        font-size: 12px;
+    }
+
+    .pm-field {
+        display: flex;
+        flex-direction: column;
+        gap: .45rem;
+    }
+
+    .pm-grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: .65rem;
+    }
+
+    @@media(max-width:440px) {
+        .pm-grid-2 {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .pm-ref-strip {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: .65rem .9rem;
+        background: var(--bg, #f0f4f8);
+        border: 1px solid var(--border, #e2e8f0);
+        border-radius: var(--radius-sm, 7px);
+        font-size: .75rem;
+    }
+
+    .pm-ref-label {
+        color: var(--muted, #64748b);
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: .3rem;
+    }
+
+    .pm-ref-label .material-icons {
+        font-size: 13px;
+        color: var(--faint, #94a3b8);
+    }
+
+    .pm-ref-value {
+        font-family: 'Courier New', monospace;
+        font-weight: 700;
+        color: var(--navy, #1e2d5e);
+        font-size: .72rem;
+    }
+
+    .pm-divider {
+        height: 1px;
+        background: var(--border, #e2e8f0);
+    }
+
+    /* Card-specific */
+    .pm-section-label {
+        display: flex;
+        align-items: center;
+        gap: .35rem;
+        font-size: .69rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        color: var(--navy, #1e2d5e);
+        margin-bottom: .5rem;
+    }
+
+    .pm-section-label .material-icons {
+        font-size: 14px;
+        color: var(--coral, #e85c5c);
+    }
+
+    .pm-card-brands {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        flex-wrap: wrap;
+        margin-bottom: .35rem;
+    }
+
+    .pm-card-brand {
+        padding: .2rem .55rem;
+        border-radius: 4px;
+        font-size: .65rem;
+        font-weight: 800;
+        letter-spacing: .02em;
+        border: 1.5px solid var(--border, #e2e8f0);
+    }
+
+    .pm-card-brand.visa {
+        color: #1a1f71;
+        border-color: #1a1f71;
+    }
+
+    .pm-card-brand.mastercard {
+        color: #eb001b;
+        border-color: #eb001b;
+    }
+
+    .pm-card-brand.amex {
+        color: #007bc1;
+        border-color: #007bc1;
+    }
+
+    .pm-security-note {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        padding: .65rem .9rem;
+        background: var(--green-lt, #f0fdf4);
+        border: 1px solid #bbf7d0;
+        border-radius: var(--radius-sm, 7px);
+        font-size: .72rem;
+        color: #15803d;
+        font-weight: 600;
+        line-height: 1.45;
+    }
+
+    .pm-security-note .material-icons {
+        font-size: 16px;
+        flex-shrink: 0;
+    }
+
+    /* ── Footer / submit ─────────────────────────────────────── */
+    .pm-footer {
+        padding: 0 1.5rem 1.5rem;
+    }
+
+    .pm-submit-btn {
+        width: 100%;
+        padding: .8rem 1rem;
+        background: linear-gradient(135deg, var(--coral, #e85c5c), var(--coral-dk, #d43f3f));
+        color: #fff;
+        border: none;
+        border-radius: var(--radius-md, 10px);
+        font-size: .88rem;
+        font-weight: 800;
+        font-family: inherit;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: .5rem;
+        box-shadow: 0 4px 14px rgba(232,92,92,.32);
+        transition: box-shadow .2s, opacity .2s, transform .15s;
+    }
+
+    .pm-submit-btn:hover {
+        box-shadow: 0 6px 20px rgba(232,92,92,.42);
+        transform: translateY(-1px);
+    }
+
+    .pm-submit-btn:active {
+        transform: translateY(0);
+    }
+
+    .pm-submit-btn:disabled {
+        opacity: .55;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .pm-submit-btn .material-icons {
+        font-size: 18px;
+    }
+
+    .pm-spinner {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        border: 2.5px solid rgba(255,255,255,.35);
+        border-top-color: #fff;
+        animation: pmSpin .7s linear infinite;
+        display: none;
+        flex-shrink: 0;
+    }
+
+    @@keyframes pmSpin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+</style>
+
+<div id="payment-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+    <div class="pm-box">
+        <div class="pm-header">
+            <div class="pm-header-left">
+                <div class="pm-header-icon" id="pmHeaderIcon">
+                    <i class="material-icons" id="pmHeaderIconGlyph">phone_android</i>
+                </div>
+                <div>
+                    <div class="pm-header-title" id="pmHeaderTitle">Mobile Money Payment</div>
+                    <div class="pm-header-sub" id="pmHeaderSub">Airtel · MTN · Zamtel</div>
+                </div>
+            </div>
+            <button type="button" class="pm-close-btn"
+                    onclick="document.getElementById('payment-modal').classList.add('hidden')"
+                    title="Close">
+                <i class="material-icons">close</i>
+            </button>
+        </div>
+
+        <div class="pm-tabs">
+            <button type="button" class="pm-tab active" id="tabMobile"
+                    onclick="switchPaymentTab('mobile')">
+                <i class="material-icons">phone_android</i>
+                Mobile Money
+            </button>
+            <button type="button" class="pm-tab" id="tabCard"
+                    onclick="switchPaymentTab('card')">
+                <i class="material-icons">credit_card</i>
+                Debit / Credit Card
+            </button>
+        </div>
+
+        <div class="pm-panel active" id="panelMobile">
+            <form id="mobile-payment-form"
+                  action="@Url.Action("ProcessStudentMobilePayment", "Payments")"
+                  method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="TransactionReference" value="@ViewData["TransactionReference"]">
+                <input type="hidden" name="Provider" value="Mobile Money">
+
+                <div class="pm-body">
+                    <div class="pm-amount-box">
+                        <div class="pm-field-label">
+                            <i class="material-icons">payments</i>
+                            Payment Amount
+                        </div>
+                        <div class="pm-amount-wrap">
+                            <span class="pm-amount-prefix">K</span>
+                            <input type="number" id="MobileAmount" name="Amount"
+                                   class="pm-input amount"
+                                   placeholder="0.00" step="0.01" min="1" required>
+                        </div>
+                        <div class="pm-amount-hints">
+                            <span>Minimum: K1.00</span>
+                            <span class="pm-outstanding">
+                                <i class="material-icons">account_balance_wallet</i>
+                                Outstanding: K @Model.OutstandingFees.ToString("N2")
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="pm-field">
+                        <div class="pm-field-label">
+                            <i class="material-icons">call</i>
+                            Phone Number
+                        </div>
+                        <input type="tel" id="MobilePhone" name="PhoneNumber"
+                               class="pm-input"
+                               placeholder="e.g. 0971234567"
+                               pattern="\d{10}" maxlength="10" required>
+                        <span class="pm-input-hint">Enter the phone number registered with your mobile money account.</span>
+                    </div>
+
+                    <div class="pm-ref-strip">
+                        <span class="pm-ref-label">
+                            <i class="material-icons">tag</i>
+                            Transaction Ref
+                        </span>
+                        <span class="pm-ref-value">@ViewData["TransactionReference"]</span>
+                    </div>
+
+                </div>
+
+                <div class="pm-footer">
+                    <div class="pm-divider" style="margin-bottom:1rem;"></div>
+                    <button type="submit" id="mobile-payment-btn" class="pm-submit-btn">
+                        <div class="pm-spinner" id="mobile-loading-spinner"></div>
+                        <i class="material-icons" id="mobile-submit-icon">phone_android</i>
+                        <span id="mobile-pay-button-text">Send Payment Request</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="pm-panel" id="panelCard">
+            <form id="card-payment-form"
+                  action="@Url.Action("ProcessStudentCardPayment", "Payments")"
+                  method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="TransactionReference" value="@ViewData["TransactionReference"]">
+
+                <div class="pm-body">
+                    <div class="pm-amount-box">
+                        <div class="pm-field-label">
+                            <i class="material-icons">payments</i>
+                            Payment Amount
+                        </div>
+                        <div class="pm-amount-wrap">
+                            <span class="pm-amount-prefix">K</span>
+                            <input type="number" id="CardAmount" name="Amount"
+                                   class="pm-input amount"
+                                   placeholder="0.00" step="0.01" min="1">
+                        </div>
+                        <div class="pm-amount-hints">
+                            <span>Minimum: K1.00</span>
+                            <span class="pm-outstanding">
+                                <i class="material-icons">account_balance_wallet</i>
+                                Outstanding: K @Model.OutstandingFees.ToString("N2")
+                            </span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="pm-section-label">
+                            <i class="material-icons">style</i>
+                            Accepted Cards
+                        </div>
+                        <div class="pm-card-brands">
+                            <span class="pm-card-brand visa">VISA</span>
+                            <span class="pm-card-brand mastercard">MASTERCARD</span>
+                            <span class="pm-card-brand amex">AMEX</span>
+                        </div>
+                        <div class="pm-input-hint">You will be redirected to a secure 3D Secure page to complete payment.</div>
+                    </div>
+
+                    <div class="pm-divider"></div>
+
+                    <div>
+                        <div class="pm-section-label">
+                            <i class="material-icons">person</i>
+                            Cardholder Details
+                        </div>
+                        <div class="pm-grid-2">
+                            <input type="text" name="FirstName" class="pm-input"
+                                   placeholder="First name" required autocomplete="given-name">
+                            <input type="text" name="LastName" class="pm-input"
+                                   placeholder="Last name" required autocomplete="family-name">
+                        </div>
+                    </div>
+
+                    <div class="pm-grid-2">
+                        <div>
+                            <div class="pm-section-label" style="margin-top:0;">
+                                <i class="material-icons">email</i>
+                                Email
+                            </div>
+                            <input type="email" name="Email" class="pm-input"
+                                   placeholder="you@example.com" required autocomplete="email">
+                        </div>
+                        <div>
+                            <div class="pm-section-label" style="margin-top:0;">
+                                <i class="material-icons">call</i>
+                                Phone
+                            </div>
+                            <input type="tel" name="PhoneNumber" class="pm-input"
+                                   placeholder="097XXXXXXX" pattern="\d{10}" maxlength="10"
+                                   required autocomplete="tel">
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="pm-section-label">
+                            <i class="material-icons">location_on</i>
+                            Billing Address
+                        </div>
+                        <div style="display:flex;flex-direction:column;gap:.6rem;">
+                            <input type="text" name="Address" class="pm-input"
+                                   placeholder="Street address" required autocomplete="street-address">
+                            <div class="pm-grid-2">
+                                <input type="text" name="City" class="pm-input"
+                                       placeholder="City" value="Lusaka" required autocomplete="address-level2">
+                                <input type="text" name="Province" class="pm-input"
+                                       placeholder="Province" value="Lusaka" required autocomplete="address-level1">
+                            </div>
+                            <div class="pm-grid-2">
+                                <input type="text" name="PostalCode" class="pm-input"
+                                       placeholder="Postal code" value="10101" required autocomplete="postal-code">
+                                <input type="text" name="Country" class="pm-input"
+                                       placeholder="Country code" value="ZM" required
+                                       style="text-transform:uppercase;" maxlength="2">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pm-security-note">
+                        <i class="material-icons">lock</i>
+                        Card details are never stored on our servers. All transactions use 256-bit TLS and 3D Secure authentication.
+                    </div>
+
+                    <div class="pm-ref-strip">
+                        <span class="pm-ref-label">
+                            <i class="material-icons">tag</i>
+                            Transaction Ref
+                        </span>
+                        <span class="pm-ref-value">@ViewData["TransactionReference"]</span>
+                    </div>
+
+                </div>
+
+                <div class="pm-footer">
+                    <div class="pm-divider" style="margin-bottom:1rem;"></div>
+                    <button type="submit" id="card-payment-btn" class="pm-submit-btn">
+                        <div class="pm-spinner" id="card-loading-spinner"></div>
+                        <i class="material-icons" id="card-submit-icon">lock</i>
+                        <span id="card-pay-button-text">Pay Securely</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ── Tab switcher ────────────────────────────────────────────────
+    var PM_HEADER_META = {
+        mobile: {
+            icon:  'phone_android',
+            title: 'Mobile Money Payment',
+            sub:   'Airtel \u00b7 MTN \u00b7 Zamtel'
+        },
+        card: {
+            icon:  'credit_card',
+            title: 'Debit / Credit Card Payment',
+            sub:   'VISA \u00b7 Mastercard \u00b7 Amex'
+        }
+    };
+
+    function switchPaymentTab(tab) {
+        // Panels
+        document.getElementById('panelMobile').classList.toggle('active', tab === 'mobile');
+        document.getElementById('panelCard').classList.toggle('active', tab === 'card');
+        // Tab buttons
+        document.getElementById('tabMobile').classList.toggle('active', tab === 'mobile');
+        document.getElementById('tabCard').classList.toggle('active', tab === 'card');
+        // Header
+        var meta = PM_HEADER_META[tab];
+        document.getElementById('pmHeaderIconGlyph').textContent = meta.icon;
+        document.getElementById('pmHeaderTitle').textContent     = meta.title;
+        document.getElementById('pmHeaderSub').textContent       = meta.sub;
+        // Sync amount fields so the user doesn't lose what they typed
+        var mAmt = document.getElementById('MobileAmount').value;
+        var cAmt = document.getElementById('CardAmount').value;
+        if (tab === 'card'   && !cAmt && mAmt) document.getElementById('CardAmount').value  = mAmt;
+        if (tab === 'mobile' && !mAmt && cAmt) document.getElementById('MobileAmount').value = cAmt;
+    }
+
+    // ── Loading state helpers ───────────────────────────────────────
+    function setFormLoading(submitBtnId, spinnerId, iconId, textId, loadingText) {
+        var btn     = document.getElementById(submitBtnId);
+        var spinner = document.getElementById(spinnerId);
+        var icon    = document.getElementById(iconId);
+        var txt     = document.getElementById(textId);
+        if (!btn) return;
+        btn.disabled          = true;
+        spinner.style.display = 'block';
+        icon.style.display    = 'none';
+        txt.textContent       = loadingText;
+    }
+
+    (function attachSubmitListeners() {
+        var mForm = document.getElementById('mobile-payment-form');
+        var cForm = document.getElementById('card-payment-form');
+        if (mForm) {
+            mForm.addEventListener('submit', function () {
+                setFormLoading('mobile-payment-btn','mobile-loading-spinner',
+                               'mobile-submit-icon','mobile-pay-button-text','Processing\u2026');
+            });
+        }
+        if (cForm) {
+            cForm.addEventListener('submit', function () {
+                setFormLoading('card-payment-btn','card-loading-spinner',
+                               'card-submit-icon','card-pay-button-text','Redirecting to secure payment\u2026');
+            });
+        }
+    })();
+
+    // ── Public opener ───────────────────────────────────────────────
+    // showPaymentModal()           -> opens on mobile tab (default)
+    // showPaymentModal('card')     -> opens directly on card tab
+    function showPaymentModal(tab) {
+        document.getElementById('payment-modal').classList.remove('hidden');
+        switchPaymentTab(tab || 'mobile');
+    }
+</script>

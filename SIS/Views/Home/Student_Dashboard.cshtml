@@ -97,6 +97,10 @@
         color: var(--text);
     }
 
+    .sd-hidden {
+        display: none !important;
+    }
+
     /* ── Animations ── */
     @@keyframes fadeUp {
         from {
@@ -1786,8 +1790,8 @@
                 </div>
             </div>
 
-            @* <!-- GPA Card -->
-            <div class="sd-card fu d2">
+            <!-- GPA Card -->
+            <div class="sd-card fu d2 sd-hidden">
                 <div class="sd-card-header">
                     <div class="sd-card-title">
                         <i class="material-icons">analytics</i>
@@ -1841,7 +1845,7 @@
             </div>
 
             <!-- Today's Schedule -->
-            <div class="sd-card fu d3">
+            <div class="sd-card fu d3 sd-hidden">
                 <div class="sd-card-header">
                     <div class="sd-card-title">
                         <i class="material-icons">schedule</i>
@@ -1858,7 +1862,7 @@
                         Loading today's schedule…
                     </div>
                 </div>
-            </div> *@
+            </div>
 
         </div><!-- /left column -->
         <!-- ──────────────────────────
@@ -1867,7 +1871,7 @@
         <div style="display:flex;flex-direction:column;gap:1.25rem;">
 
             <!-- Quick Actions -->
-            @* <div class="sd-card fu d1">
+            <div class="sd-card fu d1 sd-hidden">
                 <div class="sd-card-header">
                     <div class="sd-card-title">
                         <i class="material-icons">apps</i>
@@ -1908,7 +1912,7 @@
                         <div class="qa-label">Profile</div>
                     </a>
                 </div>
-            </div> *@
+            </div>
 
             <!-- Fee Balance Card -->
             <div class="sd-card fu d2">
@@ -1935,7 +1939,7 @@
                         </div>
                         @if (Model.OutstandingFees > 0)
                         {
-                            <button class="fee-cta" onclick="showPaymentForm('mobile-payment-modal')">
+                            <button type="button" class="fee-cta" onclick="showPaymentModal()">
                                 <i class="material-icons">payment</i>
                                 Pay Now
                             </button>
@@ -1988,8 +1992,8 @@
                 </div>
             </div>
 
-            @* <!-- Semester Progress -->
-            <div class="sd-card fu d3">
+            <!-- Semester Progress -->
+            <div class="sd-card fu d3 sd-hidden">
                 <div class="sd-card-header">
                     <div class="sd-card-title">
                         <i class="material-icons">timeline</i>
@@ -2021,7 +2025,7 @@
             </div>
 
             <!-- Notifications -->
-            <div class="sd-card fu d4">
+            <div class="sd-card fu d4 sd-hidden">
                 <div class="sd-card-header">
                     <div class="sd-card-title">
                         <i class="material-icons">notifications</i>
@@ -2033,425 +2037,11 @@
                 <div class="notif-feed" id="notifFeed">
                     <!-- Populated by JS -->
                 </div>
-            </div> *@
+            </div>
 
         </div><!-- /right column -->
     </div><!-- /sd-grid -->
 </div><!-- /sd-page -->
-<!-- Mobile Money Payment Modal -->
-<div id="mobile-payment-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden">
-    <div class="mp-box">
-
-        <!-- ── Header ── -->
-        <div class="mp-header">
-            <div class="mp-header-left">
-                <div class="mp-header-icon">
-                    <i class="material-icons">phone_android</i>
-                </div>
-                <div>
-                    <div class="mp-header-title">Mobile Money / Card Payment</div>
-                    <div class="mp-header-sub">Secure online payment portal</div>
-                </div>
-            </div>
-            <button type="button" class="mp-close-btn" onclick="hidePaymentForm('mobile-payment-modal')" title="Close">
-                <i class="material-icons">close</i>
-            </button>
-        </div>
-
-        <!-- ── Form ── -->
-        <form id="mobile-payment-form" action="@Url.Action("ProcessStudentMobilePayment", "Payments")" method="post">
-            <input type="hidden" name="TransactionReference" value="@ViewData["TransactionReference"]">
-            <input type="hidden" name="Provider" value="Payment">
-
-            <div class="mp-body">
-
-                <!-- Amount -->
-                <div class="mp-amount-box">
-                    <div class="mp-field-label">
-                        <i class="material-icons">payments</i>
-                        Payment Amount
-                    </div>
-                    <div class="mp-amount-input-wrap">
-                        <span class="mp-amount-prefix">K</span>
-                        <input type="number" id="MobileAmount" name="Amount"
-                               class="mp-input"
-                               placeholder="0.00" step="0.01" min="1" required>
-                    </div>
-                    <div class="mp-amount-hints">
-                        <span>Minimum: K1.00</span>
-                        <span class="mp-outstanding">
-                            <i class="material-icons">account_balance_wallet</i>
-                            Outstanding: K @Model.OutstandingFees
-                        </span>
-                    </div>
-                </div>
-
-                <!-- Phone Number -->
-                <div class="mp-field">
-                    <div class="mp-field-label">
-                        <i class="material-icons">call</i>
-                        Phone Number
-                    </div>
-                    <input type="tel" id="PhoneNumber" name="PhoneNumber"
-                           class="mp-input phone"
-                           placeholder="e.g. 0971234567"
-                           pattern="\d{10}" maxlength="10" required>
-                    <span class="mp-field-hint">Enter the phone number registered with your mobile money account.</span>
-                </div>
-
-                <!-- Transaction Reference -->
-                <div class="mp-ref-strip">
-                    <span class="mp-ref-label">
-                        <i class="material-icons">tag</i>
-                        Transaction Ref
-                    </span>
-                    <span class="mp-ref-value">@ViewData["TransactionReference"]</span>
-                </div>
-
-            </div><!-- /mp-body -->
-            <!-- ── Footer ── -->
-            <div class="mp-footer">
-                <div class="mp-divider"></div>
-                <button type="submit" id="mobile-payment-btn" class="mp-submit-btn">
-                    <div class="mp-spinner" id="mobile-loading-spinner"></div>
-                    <i class="material-icons" id="mobile-submit-icon">lock</i>
-                    <span id="mobile-pay-button-text">Complete Payment</span>
-                </button>
-            </div>
-        </form>
-
-    </div><!-- /mp-box -->
-</div>
-
-<style>
-    /* ── Mobile Payment Modal ── */
-    #mobile-payment-modal .mp-box {
-        background: var(--surface);
-        border-radius: var(--radius-xl);
-        box-shadow: var(--shadow-lg);
-        max-width: 460px;
-        width: calc(100% - 2rem);
-        overflow: hidden;
-        animation: scaleIn .32s cubic-bezier(.4,0,.2,1);
-    }
-
-    @@keyframes scaleIn {
-        from {
-            opacity: 0;
-            transform: scale(.94) translateY(10px);
-        }
-
-        to {
-            opacity: 1;
-            transform: scale(1) translateY(0);
-        }
-    }
-
-    /* Header */
-    .mp-header {
-        background: linear-gradient(110deg, var(--navy-deep, #141e42) 0%, var(--navy, #1e2d5e) 60%, #2e45a0 100%);
-        padding: 1.25rem 1.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        position: relative;
-        overflow: hidden;
-    }
-
-        .mp-header::before {
-            content: '';
-            position: absolute;
-            right: -40px;
-            top: -40px;
-            width: 180px;
-            height: 180px;
-            background: radial-gradient(circle, rgba(232,92,92,.15) 0%, transparent 70%);
-            border-radius: 50%;
-            pointer-events: none;
-        }
-
-    .mp-header-left {
-        display: flex;
-        align-items: center;
-        gap: .875rem;
-        position: relative;
-        z-index: 1;
-    }
-
-    .mp-header-icon {
-        width: 44px;
-        height: 44px;
-        border-radius: 11px;
-        background: rgba(255,255,255,.14);
-        border: 1px solid rgba(255,255,255,.18);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-    }
-
-        .mp-header-icon .material-icons {
-            color: #fff;
-            font-size: 22px;
-        }
-
-    .mp-header-title {
-        font-size: 1rem;
-        font-weight: 800;
-        color: #fff;
-        line-height: 1.15;
-    }
-
-    .mp-header-sub {
-        font-size: .72rem;
-        color: rgba(255,255,255,.65);
-        margin-top: 2px;
-    }
-
-    .mp-close-btn {
-        position: relative;
-        z-index: 1;
-        width: 32px;
-        height: 32px;
-        border-radius: 8px;
-        background: rgba(255,255,255,.12);
-        border: 1px solid rgba(255,255,255,.18);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: background .18s;
-        flex-shrink: 0;
-    }
-
-        .mp-close-btn:hover {
-            background: rgba(255,255,255,.22);
-        }
-
-        .mp-close-btn .material-icons {
-            color: #fff;
-            font-size: 18px;
-        }
-
-    /* Body */
-    .mp-body {
-        padding: 1.5rem;
-        display: flex;
-        flex-direction: column;
-        gap: 1.1rem;
-    }
-
-    /* Amount section */
-    .mp-amount-box {
-        background: var(--navy-lt, #eef2ff);
-        border: 1px solid var(--navy-mid, #c2d0ff);
-        border-radius: var(--radius-md, 10px);
-        padding: 1rem 1.1rem;
-    }
-
-    .mp-field-label {
-        display: flex;
-        align-items: center;
-        gap: .35rem;
-        font-size: .72rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: .05em;
-        color: var(--navy, #1e2d5e);
-        margin-bottom: .5rem;
-    }
-
-        .mp-field-label .material-icons {
-            font-size: 14px;
-            color: var(--coral, #e85c5c);
-        }
-
-    .mp-amount-input-wrap {
-        position: relative;
-    }
-
-    .mp-amount-prefix {
-        position: absolute;
-        left: .85rem;
-        top: 50%;
-        transform: translateY(-50%);
-        font-size: .95rem;
-        font-weight: 800;
-        color: var(--navy, #1e2d5e);
-        pointer-events: none;
-        z-index: 1;
-    }
-
-    .mp-input {
-        width: 100%;
-        box-sizing: border-box;
-        padding: .65rem .85rem .65rem 2rem;
-        font-size: .95rem;
-        font-weight: 700;
-        font-family: inherit;
-        border: 1.5px solid var(--border, #e2e8f0);
-        border-radius: var(--radius-sm, 7px);
-        background: var(--surface, #fff);
-        color: var(--navy, #1e2d5e);
-        outline: none;
-        transition: border-color .18s, box-shadow .18s;
-    }
-
-        .mp-input:focus {
-            border-color: var(--coral, #e85c5c);
-            box-shadow: 0 0 0 3px rgba(232,92,92,.11);
-        }
-
-        .mp-input::placeholder {
-            color: var(--faint, #94a3b8);
-            font-weight: 400;
-        }
-
-    .mp-amount-hints {
-        display: flex;
-        justify-content: space-between;
-        font-size: .7rem;
-        color: var(--muted, #64748b);
-        margin-top: .45rem;
-    }
-
-    .mp-outstanding {
-        display: inline-flex;
-        align-items: center;
-        gap: .25rem;
-        font-weight: 700;
-        color: var(--coral-dk, #d43f3f);
-    }
-
-        .mp-outstanding .material-icons {
-            font-size: 12px;
-        }
-
-    /* Regular field */
-    .mp-field {
-        display: flex;
-        flex-direction: column;
-        gap: .45rem;
-    }
-
-    .mp-input.phone {
-        padding-left: .85rem;
-        font-size: .88rem;
-        font-weight: 600;
-        letter-spacing: .02em;
-    }
-
-    .mp-field-hint {
-        font-size: .7rem;
-        color: var(--faint, #94a3b8);
-        line-height: 1.4;
-    }
-
-    /* Transaction reference strip */
-    .mp-ref-strip {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: .65rem .9rem;
-        background: var(--bg, #f0f4f8);
-        border: 1px solid var(--border, #e2e8f0);
-        border-radius: var(--radius-sm, 7px);
-        font-size: .75rem;
-    }
-
-    .mp-ref-label {
-        color: var(--muted, #64748b);
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: .3rem;
-    }
-
-        .mp-ref-label .material-icons {
-            font-size: 13px;
-            color: var(--faint, #94a3b8);
-        }
-
-    .mp-ref-value {
-        font-family: 'Courier New', monospace;
-        font-weight: 700;
-        color: var(--navy, #1e2d5e);
-        font-size: .72rem;
-    }
-
-    /* Footer / submit */
-    .mp-footer {
-        padding: 0 1.5rem 1.5rem;
-    }
-
-    .mp-divider {
-        height: 1px;
-        background: var(--border, #e2e8f0);
-        margin-bottom: 1.1rem;
-    }
-
-    .mp-submit-btn {
-        width: 100%;
-        padding: .8rem 1rem;
-        background: linear-gradient(135deg, var(--coral, #e85c5c), var(--coral-dk, #d43f3f));
-        color: #fff;
-        border: none;
-        border-radius: var(--radius-md, 10px);
-        font-size: .88rem;
-        font-weight: 800;
-        font-family: inherit;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: .5rem;
-        box-shadow: 0 4px 14px rgba(232,92,92,.32);
-        transition: box-shadow .2s, opacity .2s, transform .15s;
-    }
-
-        .mp-submit-btn:hover {
-            box-shadow: 0 6px 20px rgba(232,92,92,.42);
-            transform: translateY(-1px);
-        }
-
-        .mp-submit-btn:active {
-            transform: translateY(0);
-        }
-
-        .mp-submit-btn:disabled {
-            opacity: .55;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .mp-submit-btn .material-icons {
-            font-size: 18px;
-        }
-
-    /* Spinner inside button */
-    .mp-spinner {
-        width: 18px;
-        height: 18px;
-        border-radius: 50%;
-        border: 2.5px solid rgba(255,255,255,.35);
-        border-top-color: #fff;
-        animation: mpSpin .7s linear infinite;
-        display: none;
-    }
-
-    @@keyframes mpSpin {
-        to {
-            transform: rotate(360deg);
-        }
-    }
-
-    /* Overlay backdrop */
-    #mobile-payment-modal {
-        backdrop-filter: blur(3px);
-        background: rgba(30,45,94,.55) !important;
-    }
-</style>
-
 @section Scripts {
     <script>
         /* ════════════════════════════════════════════
@@ -2470,13 +2060,13 @@
         /* ════════════════════════════════════════════
            TODAY'S DATE BADGE
         ════════════════════════════════════════════ */
-        /*document.getElementById('todayDate').textContent =
-            new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'short', year:'numeric' });*/
+        document.getElementById('todayDate').textContent =
+            new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'short', year:'numeric' });
 
         /* ════════════════════════════════════════════
            SEMESTER PROGRESS  (mock — replace with server data)
         ════════════════════════════════════════════ */
-        /*(function buildSemProgress() {
+        (function buildSemProgress() {
             const totalWeeks  = 15;
             const currentWeek = 8;   // TODO: derive from dates
             const track       = document.getElementById('semWeekTrack');
@@ -2494,7 +2084,7 @@
             document.getElementById('semCoursesEnrolled').textContent = '5';
             document.getElementById('semCreditHours').textContent     = '20';
             document.getElementById('semAttendancePct').textContent   = '86%';
-        })();*/
+        })();
 
         /* ════════════════════════════════════════════
            FEE PROGRESS BAR ANIMATION
@@ -2555,7 +2145,7 @@
         /* ════════════════════════════════════════════
            NOTIFICATIONS  (mock — replace with AJAX)
         ════════════════════════════════════════════ */
-        /*(function buildNotifications() {
+        (function buildNotifications() {
             const notifs = [
                 { type:'warn',  icon:'schedule',     title:'Fee Payment Reminder',       body:'Your semester fees are due by end of month.',           time:'2 hours ago',  unread:true  },
                 { type:'ok',    icon:'check_circle', title:'Registration Confirmed',     body:'Your course registration for Semester 2 is confirmed.', time:'Yesterday',   unread:true  },
@@ -2581,7 +2171,7 @@
                     ${n.unread ? '<div class="notif-unread-dot"></div>' : ''}
                 </div>
             `).join('');
-        })();*/
+        })();
 
         function markAllRead() {
             document.querySelectorAll('.notif-item.unread').forEach(el => el.classList.remove('unread'));
@@ -2589,59 +2179,12 @@
             document.getElementById('unreadCount').textContent = '0';
         }
 
-        const maxAmount = window.studentData.outstandingFees;
-
-        function showPaymentForm(modalId) {
-            document.getElementById(modalId).classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-        }
-
-        function hidePaymentForm(modalId) {
-            const cardBtn = document.getElementById('card-payment-btn');
-            const mobileBtn = document.getElementById('mobile-payment-btn');
-
-            // Don't allow closing if payment is being processed
-            /*if (cardBtn.disabled || mobileBtn.disabled) {
-                return;
-            }*/
-
-            document.getElementById(modalId).classList.add('hidden');
-            document.body.style.overflow = 'auto';
-        }
-
-        document.querySelectorAll('#card-payment-modal, #mobile-payment-modal').forEach(modal => {
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    const cardBtn = document.getElementById('card-payment-btn');
-                    const mobileBtn = document.getElementById('mobile-payment-btn');
-
-                    // Only allow closing if neither button is disabled (processing)
-                    /*if (!cardBtn.disabled && !mobileBtn.disabled) {
-                        hidePaymentForm(modal.id);
-                    }*/
-                }
-            });
-        });
+        /* ════════════════════════════════════════════
+           EXISTING SCRIPTS (preserved)
+        ════════════════════════════════════════════ */
     </script>
-
-    <script>
-        (function () {
-            const form   = document.getElementById('mobile-payment-form');
-            const btn    = document.getElementById('mobile-payment-btn');
-            const icon   = document.getElementById('mobile-submit-icon');
-            const spinner = document.getElementById('mobile-loading-spinner');
-            const txt    = document.getElementById('mobile-pay-button-text');
-
-            if (!form) return;
-
-            form.addEventListener('submit', function () {
-                btn.disabled            = true;
-                icon.style.display      = 'none';
-                spinner.style.display   = 'block';
-                txt.textContent         = 'Processing…';
-            });
-        })();
-    </script>
-
     <script src="~/js/student_dashboard.js"></script>
 }
+
+@* ── Payment Modal (tabbed: Mobile Money + Card) ── *@
+@await Html.PartialAsync("_PaymentModal")
