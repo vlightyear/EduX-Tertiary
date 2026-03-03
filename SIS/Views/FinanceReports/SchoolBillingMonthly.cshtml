@@ -1,0 +1,1564 @@
+﻿@model SIS.Models.ViewModels.SchoolBillingMonthly
+@{
+    ViewData["Title"] = "School Billing – Monthly Report";
+
+    // Serialise chart data safely for JS
+    var trendLabels = System.Text.Json.JsonSerializer.Serialize(Model.MonthlyTrend.Keys.ToList());
+    var trendInvoices = System.Text.Json.JsonSerializer.Serialize(Model.MonthlyTrend.Values.Select(v => v.Invoices).ToList());
+    var trendPayments = System.Text.Json.JsonSerializer.Serialize(Model.MonthlyTrend.Values.Select(v => v.Payments).ToList());
+
+    var schoolLabels = System.Text.Json.JsonSerializer.Serialize(Model.SchoolTotals.Keys.ToList());
+    var schoolInvoices = System.Text.Json.JsonSerializer.Serialize(Model.SchoolTotals.Values.Select(v => v.Invoices).ToList());
+    var schoolPayments = System.Text.Json.JsonSerializer.Serialize(Model.SchoolTotals.Values.Select(v => v.Payments).ToList());
+
+    string Fmt(decimal v) => v.ToString("N2");
+    string FmtK(decimal v) => v >= 1_000_000 ? $"K {(v / 1_000_000m):N2}M" : v >= 1_000 ? $"K {(v / 1_000m):N1}K" : $"K {v:N2}";
+}
+
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+    /* ═══════════════════════════════════════════════
+       BGS BILLING REPORT — design tokens & base
+    ═══════════════════════════════════════════════ */
+    :root {
+        --coral: #e85c5c;
+        --coral-dk: #d43f3f;
+        --coral-lt: #fff1f1;
+        --coral-mid: #ffc5c5;
+        --navy: #1e2d5e;
+        --navy-lt: #eef2ff;
+        --navy-mid: #c2d0ff;
+        --bg: #f0f4f8;
+        --surface: #ffffff;
+        --border: #e2e8f0;
+        --text: #1e2d5e;
+        --muted: #64748b;
+        --faint: #94a3b8;
+        --green: #22c55e;
+        --green-lt: #f0fdf4;
+        --amber: #f59e0b;
+        --amber-lt: #fffbeb;
+        --radius-lg: 14px;
+        --radius-md: 10px;
+        --radius-sm: 7px;
+        --shadow-sm: 0 2px 8px rgba(30,45,94,.07);
+        --shadow-md: 0 6px 20px rgba(30,45,94,.10);
+    }
+
+    .rpt-page {
+        background: var(--bg);
+        min-height: 100vh;
+        padding: 1.5rem;
+        font-family: 'DM Sans', 'Segoe UI', system-ui, sans-serif;
+        color: var(--text);
+    }
+
+    /* ── Fade-in animation ── */
+    @@keyframes fadeUp {
+        from {
+            opacity: 0;
+            transform: translateY(14px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .fade-up {
+        animation: fadeUp .4s ease both;
+    }
+
+    .delay-1 {
+        animation-delay: .07s;
+    }
+
+    .delay-2 {
+        animation-delay: .14s;
+    }
+
+    .delay-3 {
+        animation-delay: .21s;
+    }
+
+    .delay-4 {
+        animation-delay: .28s;
+    }
+
+    .delay-5 {
+        animation-delay: .35s;
+    }
+
+    /* ── Page Header ── */
+    .rpt-header {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    @@media(min-width:768px) {
+        .rpt-header {
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+        }
+    }
+
+    .rpt-title-block {
+        display: flex;
+        align-items: center;
+        gap: .9rem;
+    }
+
+    .rpt-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 13px;
+        background: linear-gradient(135deg, var(--coral), var(--coral-dk));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 14px rgba(232,92,92,.32);
+        flex-shrink: 0;
+    }
+
+        .rpt-icon .material-icons {
+            color: #fff;
+            font-size: 26px;
+        }
+
+    .rpt-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--navy);
+        margin: 0;
+        line-height: 1.15;
+    }
+
+    .rpt-sub {
+        font-size: .78rem;
+        color: var(--muted);
+        margin: 0;
+        margin-top: 3px;
+    }
+
+    .rpt-header-right {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        flex-wrap: wrap;
+    }
+
+    .export-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        padding: .5rem 1.1rem;
+        background: var(--navy);
+        color: #fff;
+        font-size: .8rem;
+        font-weight: 600;
+        border-radius: var(--radius-sm);
+        border: none;
+        cursor: pointer;
+        text-decoration: none;
+        transition: background .18s, box-shadow .18s;
+        box-shadow: 0 2px 8px rgba(30,45,94,.22);
+    }
+
+        .export-btn:hover {
+            background: #16224a;
+            color: #fff;
+            text-decoration: none;
+        }
+
+        .export-btn .material-icons {
+            font-size: 16px;
+        }
+
+    .period-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        padding: .4rem .9rem;
+        background: var(--navy-lt);
+        border: 1px solid var(--navy-mid);
+        border-radius: 999px;
+        font-size: .75rem;
+        font-weight: 600;
+        color: var(--navy);
+    }
+
+        .period-badge .material-icons {
+            font-size: 14px;
+            color: var(--coral);
+        }
+
+    /* ── Filter Card ── */
+    .filter-card {
+        background: var(--surface);
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+
+    .filter-card-header {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        padding: .9rem 1.25rem;
+        border-bottom: 1px solid var(--border);
+        background: linear-gradient(to right, #fafbff, var(--surface));
+        cursor: pointer;
+        user-select: none;
+    }
+
+        .filter-card-header h2 {
+            font-size: .88rem;
+            font-weight: 700;
+            color: var(--navy);
+            margin: 0;
+        }
+
+        .filter-card-header .material-icons {
+            color: var(--coral);
+            font-size: 19px;
+        }
+
+    .filter-toggle-icon {
+        margin-left: auto;
+        color: var(--muted);
+        font-size: 20px;
+        transition: transform .25s;
+    }
+
+        .filter-toggle-icon.open {
+            transform: rotate(180deg);
+        }
+
+    .filter-card-body {
+        padding: 1.1rem 1.25rem 1.25rem;
+    }
+
+    .filter-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: .875rem;
+        align-items: end;
+    }
+
+    @@media(min-width:640px) {
+        .filter-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @@media(min-width:1024px) {
+        .filter-grid {
+            grid-template-columns: 1fr 200px 200px auto auto;
+        }
+    }
+
+    .fld-label {
+        display: block;
+        font-size: .7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        color: var(--navy);
+        margin-bottom: .4rem;
+    }
+
+    .fld-control {
+        width: 100%;
+        padding: .62rem .9rem;
+        font-size: .84rem;
+        font-family: inherit;
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: #fafbfc;
+        color: var(--text);
+        outline: none;
+        transition: border-color .18s, box-shadow .18s;
+        box-sizing: border-box;
+    }
+
+        .fld-control:focus {
+            border-color: var(--coral);
+            box-shadow: 0 0 0 3px rgba(232,92,92,.11);
+            background: #fff;
+        }
+
+    .btn-apply {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: .35rem;
+        width: 100%;
+        padding: .62rem 1.2rem;
+        background: var(--coral);
+        color: #fff;
+        font-size: .82rem;
+        font-weight: 700;
+        font-family: inherit;
+        border: none;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(232,92,92,.28);
+        transition: background .18s, box-shadow .18s;
+        white-space: nowrap;
+    }
+
+        .btn-apply:hover {
+            background: var(--coral-dk);
+            box-shadow: 0 4px 14px rgba(232,92,92,.36);
+        }
+
+        .btn-apply .material-icons {
+            font-size: 17px;
+        }
+
+    .btn-reset {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: .35rem;
+        width: 100%;
+        padding: .62rem 1rem;
+        background: #f1f5f9;
+        color: var(--muted);
+        font-size: .82rem;
+        font-weight: 600;
+        font-family: inherit;
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        transition: background .18s;
+        white-space: nowrap;
+    }
+
+        .btn-reset:hover {
+            background: #e2e8f0;
+            color: var(--navy);
+        }
+
+        .btn-reset .material-icons {
+            font-size: 17px;
+        }
+
+    /* ── KPI Cards ── */
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    @@media(min-width:640px) {
+        .kpi-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @@media(min-width:1024px) {
+        .kpi-grid {
+            grid-template-columns: repeat(4,1fr);
+        }
+    }
+
+    .kpi-card {
+        background: var(--surface);
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-sm);
+        padding: 1.25rem;
+        position: relative;
+        overflow: hidden;
+        transition: transform .2s, box-shadow .2s;
+    }
+
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+        }
+
+        .kpi-card.coral::before {
+            background: linear-gradient(90deg, var(--coral), var(--coral-dk));
+        }
+
+        .kpi-card.navy::before {
+            background: linear-gradient(90deg, var(--navy), #2e45a0);
+        }
+
+        .kpi-card.green::before {
+            background: linear-gradient(90deg, var(--green), #16a34a);
+        }
+
+        .kpi-card.amber::before {
+            background: linear-gradient(90deg, var(--amber), #d97706);
+        }
+
+    .kpi-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: .875rem;
+    }
+
+    .kpi-icon-wrap {
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .kpi-card.coral .kpi-icon-wrap {
+        background: var(--coral-lt);
+    }
+
+    .kpi-card.navy .kpi-icon-wrap {
+        background: var(--navy-lt);
+    }
+
+    .kpi-card.green .kpi-icon-wrap {
+        background: var(--green-lt);
+    }
+
+    .kpi-card.amber .kpi-icon-wrap {
+        background: var(--amber-lt);
+    }
+
+    .kpi-icon-wrap .material-icons {
+        font-size: 21px;
+    }
+
+    .kpi-card.coral .kpi-icon-wrap .material-icons {
+        color: var(--coral);
+    }
+
+    .kpi-card.navy .kpi-icon-wrap .material-icons {
+        color: var(--navy);
+    }
+
+    .kpi-card.green .kpi-icon-wrap .material-icons {
+        color: var(--green);
+    }
+
+    .kpi-card.amber .kpi-icon-wrap .material-icons {
+        color: var(--amber);
+    }
+
+    .kpi-trend-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: .2rem;
+        font-size: .68rem;
+        font-weight: 700;
+        padding: .2rem .55rem;
+        border-radius: 999px;
+    }
+
+        .kpi-trend-badge.up {
+            background: #f0fdf4;
+            color: #15803d;
+        }
+
+        .kpi-trend-badge.down {
+            background: var(--coral-lt);
+            color: var(--coral-dk);
+        }
+
+        .kpi-trend-badge.neu {
+            background: var(--navy-lt);
+            color: var(--navy);
+        }
+
+        .kpi-trend-badge .material-icons {
+            font-size: 12px;
+        }
+
+    .kpi-value {
+        font-size: 1.55rem;
+        font-weight: 700;
+        color: var(--navy);
+        line-height: 1.1;
+    }
+
+    .kpi-label {
+        font-size: .73rem;
+        color: var(--muted);
+        margin-top: .3rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+    }
+
+    .kpi-sub {
+        font-size: .72rem;
+        color: var(--faint);
+        margin-top: .35rem;
+    }
+
+    /* ── Charts Row ── */
+    .charts-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+
+    @@media(min-width:1024px) {
+        .charts-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @@media(min-width:1280px) {
+        .charts-grid {
+            grid-template-columns: 2fr 1fr;
+        }
+    }
+
+    .charts-grid-3 {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+
+    @@media(min-width:768px) {
+        .charts-grid-3 {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @@media(min-width:1280px) {
+        .charts-grid-3 {
+            grid-template-columns: 2fr 1fr 1fr;
+        }
+    }
+
+    .chart-card {
+        background: var(--surface);
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+    }
+
+    .chart-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: .95rem 1.25rem;
+        border-bottom: 1px solid var(--border);
+        background: linear-gradient(to right, #fafbff, var(--surface));
+    }
+
+    .chart-card-title {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        font-size: .88rem;
+        font-weight: 700;
+        color: var(--navy);
+    }
+
+        .chart-card-title .material-icons {
+            font-size: 18px;
+            color: var(--coral);
+        }
+
+    .chart-legend {
+        display: flex;
+        align-items: center;
+        gap: .875rem;
+        flex-wrap: wrap;
+    }
+
+    .legend-dot {
+        display: inline-flex;
+        align-items: center;
+        gap: .3rem;
+        font-size: .72rem;
+        font-weight: 500;
+        color: var(--muted);
+    }
+
+        .legend-dot span {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+    .chart-body {
+        padding: 1.1rem 1.25rem 1.25rem;
+        position: relative;
+    }
+
+        .chart-body canvas {
+            display: block;
+        }
+
+    /* ── Data Table ── */
+    .table-card {
+        background: var(--surface);
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+
+    .table-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: .75rem;
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--border);
+        background: linear-gradient(to right, #fafbff, var(--surface));
+    }
+
+    .table-card-title {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        font-size: .88rem;
+        font-weight: 700;
+        color: var(--navy);
+    }
+
+        .table-card-title .material-icons {
+            font-size: 18px;
+            color: var(--coral);
+        }
+
+    .table-search-wrap {
+        position: relative;
+    }
+
+        .table-search-wrap .material-icons {
+            position: absolute;
+            left: .65rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 16px;
+            color: var(--faint);
+            pointer-events: none;
+        }
+
+    #tableSearch {
+        padding: .5rem .8rem .5rem 2.1rem;
+        font-size: .8rem;
+        font-family: inherit;
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: #fafbfc;
+        color: var(--text);
+        outline: none;
+        width: 220px;
+        transition: border-color .18s, box-shadow .18s;
+    }
+
+        #tableSearch:focus {
+            border-color: var(--coral);
+            box-shadow: 0 0 0 3px rgba(232,92,92,.11);
+            background: #fff;
+        }
+
+    .rpt-table-wrap {
+        overflow-x: auto;
+    }
+
+    .rpt-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: .82rem;
+    }
+
+        .rpt-table thead tr {
+            background: linear-gradient(to right, var(--navy-lt), #f5f7ff);
+        }
+
+        .rpt-table thead th {
+            padding: .75rem 1rem;
+            font-size: .7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            color: var(--navy);
+            border-bottom: 2px solid var(--navy-mid);
+            white-space: nowrap;
+            cursor: pointer;
+            user-select: none;
+        }
+
+            .rpt-table thead th:hover {
+                color: var(--coral);
+            }
+
+            .rpt-table thead th .sort-icon {
+                font-size: 13px;
+                vertical-align: middle;
+                opacity: .4;
+            }
+
+            .rpt-table thead th.sorted .sort-icon {
+                opacity: 1;
+                color: var(--coral);
+            }
+
+        .rpt-table tbody tr {
+            border-bottom: 1px solid #f3f4f6;
+            transition: background .15s;
+        }
+
+            .rpt-table tbody tr:last-child {
+                border-bottom: none;
+            }
+
+            .rpt-table tbody tr:hover {
+                background: var(--coral-lt);
+            }
+
+        .rpt-table td {
+            padding: .7rem 1rem;
+            color: var(--text);
+            vertical-align: middle;
+        }
+
+    .school-cell {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+    }
+
+    .school-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .mono {
+        font-family: 'DM Mono', 'Courier New', monospace;
+        font-size: .79rem;
+    }
+
+    .rate-bar-wrap {
+        display: flex;
+        align-items: center;
+        gap: .6rem;
+    }
+
+    .rate-bar-bg {
+        flex: 1;
+        height: 6px;
+        background: #f1f5f9;
+        border-radius: 999px;
+        overflow: hidden;
+        min-width: 60px;
+    }
+
+    .rate-bar-fill {
+        height: 100%;
+        border-radius: 999px;
+        transition: width .5s ease;
+    }
+
+    .rate-label {
+        font-size: .75rem;
+        font-weight: 600;
+        min-width: 38px;
+        text-align: right;
+    }
+
+    .balance-pos {
+        color: #15803d;
+    }
+
+    .balance-neg {
+        color: var(--coral-dk);
+    }
+
+    /* ── Table Footer / Totals Row ── */
+    .rpt-table tfoot td {
+        padding: .8rem 1rem;
+        font-weight: 700;
+        color: var(--navy);
+        background: linear-gradient(to right, var(--navy-lt), #f5f7ff);
+        border-top: 2px solid var(--navy-mid);
+        font-size: .82rem;
+    }
+
+    /* ── Empty state ── */
+    .tbl-empty {
+        padding: 3rem 1rem;
+        text-align: center;
+        color: var(--faint);
+    }
+
+        .tbl-empty .material-icons {
+            font-size: 3rem;
+            color: var(--navy-mid);
+            display: block;
+            margin-bottom: .75rem;
+        }
+
+    /* ── Pagination ── */
+    .table-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: .75rem;
+        padding: .875rem 1.25rem;
+        border-top: 1px solid var(--border);
+        background: #fafbfc;
+    }
+
+    .tbl-count {
+        font-size: .78rem;
+        color: var(--muted);
+        font-weight: 500;
+    }
+
+    .pagination {
+        display: flex;
+        align-items: center;
+        gap: .3rem;
+    }
+
+    .page-btn {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: .78rem;
+        font-weight: 600;
+        border: 1.5px solid var(--border);
+        border-radius: 6px;
+        background: #fff;
+        color: var(--muted);
+        cursor: pointer;
+        transition: all .15s;
+    }
+
+        .page-btn:hover {
+            border-color: var(--coral);
+            color: var(--coral);
+        }
+
+        .page-btn.active {
+            background: var(--coral);
+            border-color: var(--coral);
+            color: #fff;
+        }
+
+        .page-btn:disabled {
+            opacity: .4;
+            cursor: default;
+        }
+
+        .page-btn .material-icons {
+            font-size: 17px;
+        }
+
+    /* ── Scroll helpers ── */
+    .rpt-table-wrap::-webkit-scrollbar {
+        height: 5px;
+    }
+
+    .rpt-table-wrap::-webkit-scrollbar-thumb {
+        background: var(--coral-mid);
+        border-radius: 4px;
+    }
+
+    /* ── Responsive tweaks ── */
+    @@media(max-width:640px) {
+        .rpt-page {
+            padding: 1rem;
+        }
+
+        .kpi-value {
+            font-size: 1.25rem;
+        }
+    }
+</style>
+
+<!-- ═══════════════════ PAGE ═══════════════════ -->
+<div class="rpt-page">
+
+    <!-- Header -->
+    <div class="rpt-header fade-up">
+        <div class="rpt-title-block">
+            <div class="rpt-icon">
+                <i class="material-icons">bar_chart</i>
+            </div>
+            <div>
+                <h1 class="rpt-title">School Billing Report</h1>
+                <p class="rpt-sub">Monthly invoices, payments &amp; balances by school</p>
+            </div>
+        </div>
+
+        <div class="rpt-header-right">
+            <div class="period-badge">
+                <i class="material-icons">date_range</i>
+                @(string.IsNullOrEmpty(Model.MonthFrom) && string.IsNullOrEmpty(Model.MonthTo)
+                                ? "All Periods"
+                                : $"{Model.MonthFrom ?? "Start"} → {Model.MonthTo ?? "Latest"}")
+            </div>
+            <a href="@Url.Action("ExportBillingReport", "Reports")" class="export-btn">
+                <i class="material-icons">download</i>
+                Export CSV
+            </a>
+        </div>
+    </div>
+
+    <!-- ── FILTER CARD ── -->
+    <div class="filter-card fade-up delay-1" id="filterCard">
+        <div class="filter-card-header" id="filterToggle">
+            <i class="material-icons">tune</i>
+            <h2>Filters</h2>
+            <i class="material-icons filter-toggle-icon open" id="filterChevron">expand_more</i>
+        </div>
+
+        <div class="filter-card-body" id="filterBody">
+            <form method="get" action="@Url.Action("SchoolBillingMonthly", "Reports")">
+                <div class="filter-grid">
+
+                    <!-- School -->
+                    <div>
+                        <label class="fld-label" for="fSchool">School</label>
+                        <select id="fSchool" name="SelectedSchool" class="fld-control">
+                            <option value="">All Schools</option>
+                            @foreach (var s in Model.Schools)
+                            {
+                                <option value="@s" selected="@(Model.SelectedSchool == s ? "selected" : null)">@s</option>
+                            }
+                        </select>
+                    </div>
+
+                    <!-- Month From -->
+                    <div>
+                        <label class="fld-label" for="fFrom">Month From</label>
+                        <input type="month" id="fFrom" name="MonthFrom"
+                               class="fld-control"
+                               value="@Model.MonthFrom" />
+                    </div>
+
+                    <!-- Month To -->
+                    <div>
+                        <label class="fld-label" for="fTo">Month To</label>
+                        <input type="month" id="fTo" name="MonthTo"
+                               class="fld-control"
+                               value="@Model.MonthTo" />
+                    </div>
+
+                    <!-- Apply -->
+                    <div>
+                        <label class="fld-label">&nbsp;</label>
+                        <button type="submit" class="btn-apply">
+                            <i class="material-icons">search</i>
+                            Apply
+                        </button>
+                    </div>
+
+                    <!-- Reset -->
+                    <div>
+                        <label class="fld-label">&nbsp;</label>
+                        <a href="@Url.Action("SchoolBillingMonthly", "Reports")" class="btn-reset">
+                            <i class="material-icons">refresh</i>
+                            Reset
+                        </a>
+                    </div>
+
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ── KPI CARDS ── -->
+    <div class="kpi-grid">
+
+        <!-- Total Invoiced -->
+        <div class="kpi-card coral fade-up delay-1">
+            <div class="kpi-top">
+                <div class="kpi-icon-wrap">
+                    <i class="material-icons">receipt_long</i>
+                </div>
+                <span class="kpi-trend-badge neu">
+                    <i class="material-icons">calendar_month</i>
+                    @Model.PeriodMonths mo
+                </span>
+            </div>
+            <div class="kpi-value">@FmtK(Model.TotalInvoices)</div>
+            <div class="kpi-label">Total Invoiced</div>
+            <div class="kpi-sub">Across @Model.ActiveSchools school@(Model.ActiveSchools != 1 ? "s" : "")</div>
+        </div>
+
+        <!-- Total Payments -->
+        <div class="kpi-card green fade-up delay-2">
+            <div class="kpi-top">
+                <div class="kpi-icon-wrap">
+                    <i class="material-icons">payments</i>
+                </div>
+                <span class="kpi-trend-badge up">
+                    <i class="material-icons">trending_up</i>
+                    @Model.CollectionRate%
+                </span>
+            </div>
+            <div class="kpi-value">@FmtK(Model.TotalPayments)</div>
+            <div class="kpi-label">Total Collected</div>
+            <div class="kpi-sub">ZMW @Fmt(Model.TotalPayments) received</div>
+        </div>
+
+        <!-- Outstanding Balance -->
+        <div class="kpi-card @(Model.TotalBalance > 0 ? "amber" : "navy") fade-up delay-3">
+            <div class="kpi-top">
+                <div class="kpi-icon-wrap">
+                    <i class="material-icons">account_balance_wallet</i>
+                </div>
+                <span class="kpi-trend-badge @(Model.TotalBalance > 0 ? "down" : "up")">
+                    <i class="material-icons">@(Model.TotalBalance > 0 ? "warning" : "check_circle")</i>
+                    @(Model.TotalBalance > 0 ? "Outstanding" : "Cleared")
+                </span>
+            </div>
+            <div class="kpi-value">@FmtK(Model.TotalBalance)</div>
+            <div class="kpi-label">Outstanding Balance</div>
+            <div class="kpi-sub">ZMW @Fmt(Model.TotalBalance) remaining</div>
+        </div>
+
+        <!-- Collection Rate -->
+        <div class="kpi-card navy fade-up delay-4">
+            <div class="kpi-top">
+                <div class="kpi-icon-wrap">
+                    <i class="material-icons">percent</i>
+                </div>
+                <span class="kpi-trend-badge @(Model.CollectionRate >= 80 ? "up" : Model.CollectionRate >= 50 ? "neu" : "down")">
+                    <i class="material-icons">@(Model.CollectionRate >= 80 ? "thumb_up" : "info")</i>
+                    @(Model.CollectionRate >= 80 ? "Good" : Model.CollectionRate >= 50 ? "Fair" : "Low")
+                </span>
+            </div>
+            <div class="kpi-value">@Model.CollectionRate%</div>
+            <div class="kpi-label">Collection Rate</div>
+            <div class="kpi-sub">@Model.ActiveSchools active school@(Model.ActiveSchools != 1 ? "s" : "")</div>
+        </div>
+
+    </div><!-- /kpi-grid -->
+    <!-- ── CHARTS ── -->
+    <div class="charts-grid-3">
+
+        <!-- Line Chart: Monthly Trend -->
+        <div class="chart-card fade-up delay-2">
+            <div class="chart-card-header">
+                <div class="chart-card-title">
+                    <i class="material-icons">show_chart</i>
+                    Monthly Trend — Invoices vs Payments
+                </div>
+                <div class="chart-legend">
+                    <span class="legend-dot"><span style="background:var(--coral);"></span>Invoices</span>
+                    <span class="legend-dot"><span style="background:var(--green);"></span>Payments</span>
+                </div>
+            </div>
+            <div class="chart-body" style="height:260px;">
+                <canvas id="trendChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Doughnut: Collection Rate -->
+        <div class="chart-card fade-up delay-3">
+            <div class="chart-card-header">
+                <div class="chart-card-title">
+                    <i class="material-icons">donut_large</i>
+                    Collection Rate
+                </div>
+            </div>
+            <div class="chart-body" style="height:260px; display:flex; align-items:center; justify-content:center; position:relative;">
+                <canvas id="donutChart"></canvas>
+                <div style="position:absolute; text-align:center; pointer-events:none;">
+                    <div style="font-size:1.6rem; font-weight:700; color:var(--navy);">@Model.CollectionRate%</div>
+                    <div style="font-size:.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:.05em;">Collected</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Bar Chart: Per School -->
+    <div class="chart-card fade-up delay-3" style="margin-bottom:1.5rem;">
+        <div class="chart-card-header">
+            <div class="chart-card-title">
+                <i class="material-icons">bar_chart</i>
+                School Comparison — Total Invoiced vs Collected
+            </div>
+            <div class="chart-legend">
+                <span class="legend-dot"><span style="background:var(--coral);"></span>Invoiced</span>
+                <span class="legend-dot"><span style="background:var(--green);"></span>Collected</span>
+            </div>
+        </div>
+        <div class="chart-body" style="height:300px;">
+            <canvas id="schoolBarChart"></canvas>
+        </div>
+    </div>
+
+    <!-- ── DATA TABLE ── -->
+    <div class="table-card fade-up delay-4">
+        <div class="table-card-header">
+            <div class="table-card-title">
+                <i class="material-icons">table_chart</i>
+                Monthly Billing Detail
+                <span style="font-size:.72rem; font-weight:500; color:var(--muted); background:var(--navy-lt);
+                             border:1px solid var(--navy-mid); border-radius:999px; padding:.1rem .6rem; margin-left:.35rem;">
+                    @Model.Rows.Count rows
+                </span>
+            </div>
+            <div class="table-search-wrap">
+                <i class="material-icons">search</i>
+                <input type="text" id="tableSearch" placeholder="Filter table…" />
+            </div>
+        </div>
+
+        <div class="rpt-table-wrap">
+            <table class="rpt-table" id="billingTable">
+                <thead>
+                    <tr>
+                        <th data-col="0">School <i class="material-icons sort-icon">unfold_more</i></th>
+                        <th data-col="1">Month <i class="material-icons sort-icon">unfold_more</i></th>
+                        <th data-col="2" style="text-align:right;">Invoiced (ZMW) <i class="material-icons sort-icon">unfold_more</i></th>
+                        <th data-col="3" style="text-align:right;">Payments (ZMW) <i class="material-icons sort-icon">unfold_more</i></th>
+                        <th data-col="4" style="text-align:right;">Balance (ZMW) <i class="material-icons sort-icon">unfold_more</i></th>
+                        <th data-col="5">Collection Rate</th>
+                    </tr>
+                </thead>
+                <tbody id="billingTbody">
+                    @if (!Model.Rows.Any())
+                    {
+                        <tr>
+                            <td colspan="6" class="tbl-empty">
+                                <i class="material-icons">inbox</i>
+                                No data for the selected filters
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var row in Model.Rows)
+                        {
+                            var rateClass = row.CollectionRate >= 80 ? "#22c55e"
+                            : row.CollectionRate >= 50 ? "#f59e0b"
+                            : "#e85c5c";
+                            var balClass = row.MonthlyBalance <= 0 ? "balance-pos" : "balance-neg";
+
+                            <tr data-school="@row.School.ToLower()" data-month="@row.MonthKey">
+                                <td>
+                                    <div class="school-cell">
+                                        <span class="school-dot" style="background:var(--coral);"></span>
+                                        @row.School
+                                    </div>
+                                </td>
+                                <td>@row.MonthLabel</td>
+                                <td class="mono" style="text-align:right;">@Fmt(row.MonthlyInvoices)</td>
+                                <td class="mono" style="text-align:right;">@Fmt(row.MonthlyPayments)</td>
+                                <td class="mono @balClass" style="text-align:right;">@Fmt(row.MonthlyBalance)</td>
+                                <td>
+                                    <div class="rate-bar-wrap">
+                                        <div class="rate-bar-bg">
+                                            <div class="rate-bar-fill"
+                                                 style="width:@(Math.Min(row.CollectionRate, 100))%; background:@rateClass;"></div>
+                                        </div>
+                                        <span class="rate-label" style="color:@rateClass;">@row.CollectionRate%</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+                @if (Model.Rows.Any())
+                {
+                    <tfoot>
+                        <tr>
+                            <td colspan="2">Totals</td>
+                            <td class="mono" style="text-align:right;">@Fmt(Model.TotalInvoices)</td>
+                            <td class="mono" style="text-align:right;">@Fmt(Model.TotalPayments)</td>
+                            <td class="mono @(Model.TotalBalance <= 0 ? "balance-pos" : "balance-neg")" style="text-align:right;">@Fmt(Model.TotalBalance)</td>
+                            <td>
+                                <div class="rate-bar-wrap">
+                                    <div class="rate-bar-bg">
+                                        <div class="rate-bar-fill"
+                                             style="width:@(Math.Min(Model.CollectionRate, 100))%;
+                                                        background:@(Model.CollectionRate >= 80 ? "#22c55e" : Model.CollectionRate >= 50 ? "#f59e0b" : "#e85c5c");"></div>
+                                    </div>
+                                    <span class="rate-label"
+                                          style="color:@(Model.CollectionRate >= 80 ? "#22c55e" : Model.CollectionRate >= 50 ? "#f59e0b" : "#e85c5c");">
+                                        @Model.CollectionRate%
+                                    </span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tfoot>
+                }
+            </table>
+        </div>
+
+        <div class="table-footer">
+            <span class="tbl-count" id="tblCount">Showing <strong id="tblShowing">@Model.Rows.Count</strong> of @Model.Rows.Count rows</span>
+            <div class="pagination" id="paginationWrap"></div>
+        </div>
+    </div>
+
+</div><!-- /rpt-page -->
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script>
+        (function () {
+            'use strict';
+
+            /* ── Design tokens for JS ── */
+            const CORAL     = '#e85c5c';
+            const CORAL_LT  = 'rgba(232,92,92,.13)';
+            const GREEN     = '#22c55e';
+            const GREEN_LT  = 'rgba(34,197,94,.13)';
+            const NAVY      = '#1e2d5e';
+            const NAVY_LT   = 'rgba(30,45,94,.08)';
+            const MUTED     = '#94a3b8';
+
+            Chart.defaults.font.family = "'DM Sans', 'Segoe UI', system-ui, sans-serif";
+            Chart.defaults.font.size   = 12;
+            Chart.defaults.color       = '#64748b';
+
+            const gridCfg = { color: 'rgba(30,45,94,.07)', drawBorder: false };
+            const tickCfg = { color: '#94a3b8' };
+
+            /* ─────────────────────────────────────────
+               1. TREND LINE CHART
+            ───────────────────────────────────────── */
+            const trendLabels   = @Html.Raw(trendLabels);
+            const trendInvoices = @Html.Raw(trendInvoices);
+            const trendPayments = @Html.Raw(trendPayments);
+
+            if (trendLabels.length > 0) {
+                new Chart(document.getElementById('trendChart'), {
+                    type: 'line',
+                    data: {
+                        labels: trendLabels,
+                        datasets: [
+                            {
+                                label: 'Invoices',
+                                data: trendInvoices,
+                                borderColor: CORAL,
+                                backgroundColor: CORAL_LT,
+                                fill: true,
+                                tension: .4,
+                                pointRadius: 4,
+                                pointBackgroundColor: CORAL,
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
+                                pointHoverRadius: 6,
+                                borderWidth: 2.5,
+                            },
+                            {
+                                label: 'Payments',
+                                data: trendPayments,
+                                borderColor: GREEN,
+                                backgroundColor: GREEN_LT,
+                                fill: true,
+                                tension: .4,
+                                pointRadius: 4,
+                                pointBackgroundColor: GREEN,
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
+                                pointHoverRadius: 6,
+                                borderWidth: 2.5,
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: '#fff',
+                                titleColor: NAVY,
+                                bodyColor: '#64748b',
+                                borderColor: '#e2e8f0',
+                                borderWidth: 1,
+                                padding: 10,
+                                callbacks: {
+                                    label: ctx => ` ${ctx.dataset.label}: ZMW ${ctx.parsed.y.toLocaleString('en', {minimumFractionDigits:2})}`
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { grid: gridCfg, ticks: tickCfg },
+                            y: {
+                                grid: gridCfg, ticks: {
+                                    ...tickCfg,
+                                    callback: v => 'K ' + (v >= 1e6 ? (v/1e6).toFixed(1)+'M' : v >= 1e3 ? (v/1e3).toFixed(0)+'K' : v)
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            /* ─────────────────────────────────────────
+               2. DONUT — Collection Rate
+            ───────────────────────────────────────── */
+            const collRate = @Model.CollectionRate;
+            new Chart(document.getElementById('donutChart'), {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [collRate, Math.max(0, 100 - collRate)],
+                        backgroundColor: [
+                            collRate >= 80 ? GREEN : collRate >= 50 ? '#f59e0b' : CORAL,
+                            '#f1f5f9'
+                        ],
+                        borderWidth: 0,
+                        hoverOffset: 4,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '72%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => ctx.dataIndex === 0
+                                    ? ` Collected: ${ctx.parsed.toFixed(1)}%`
+                                    : ` Outstanding: ${ctx.parsed.toFixed(1)}%`
+                            }
+                        }
+                    }
+                }
+            });
+
+            /* ─────────────────────────────────────────
+               3. BAR CHART — Per School
+            ───────────────────────────────────────── */
+            const schoolLabels   = @Html.Raw(schoolLabels);
+            const schoolInvoices = @Html.Raw(schoolInvoices);
+            const schoolPayments = @Html.Raw(schoolPayments);
+
+            if (schoolLabels.length > 0) {
+                new Chart(document.getElementById('schoolBarChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: schoolLabels,
+                        datasets: [
+                            {
+                                label: 'Invoiced',
+                                data: schoolInvoices,
+                                backgroundColor: CORAL,
+                                borderRadius: 5,
+                                borderSkipped: false,
+                                barPercentage: .7,
+                                categoryPercentage: .6,
+                            },
+                            {
+                                label: 'Collected',
+                                data: schoolPayments,
+                                backgroundColor: GREEN,
+                                borderRadius: 5,
+                                borderSkipped: false,
+                                barPercentage: .7,
+                                categoryPercentage: .6,
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: '#fff',
+                                titleColor: NAVY,
+                                bodyColor: '#64748b',
+                                borderColor: '#e2e8f0',
+                                borderWidth: 1,
+                                padding: 10,
+                                callbacks: {
+                                    label: ctx => ` ${ctx.dataset.label}: ZMW ${ctx.parsed.y.toLocaleString('en', {minimumFractionDigits:2})}`
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { grid: { display: false }, ticks: tickCfg },
+                            y: {
+                                grid: gridCfg,
+                                ticks: {
+                                    ...tickCfg,
+                                    callback: v => 'K ' + (v >= 1e6 ? (v/1e6).toFixed(1)+'M' : v >= 1e3 ? (v/1e3).toFixed(0)+'K' : v)
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            /* ─────────────────────────────────────────
+               FILTER CARD TOGGLE
+            ───────────────────────────────────────── */
+            const filterBody    = document.getElementById('filterBody');
+            const filterChevron = document.getElementById('filterChevron');
+            document.getElementById('filterToggle').addEventListener('click', () => {
+                const hidden = filterBody.style.display === 'none';
+                filterBody.style.display = hidden ? '' : 'none';
+                filterChevron.classList.toggle('open', hidden);
+            });
+
+            /* ─────────────────────────────────────────
+               TABLE: Search + Sort + Pagination
+            ───────────────────────────────────────── */
+            const tbody      = document.getElementById('billingTbody');
+            const searchBox  = document.getElementById('tableSearch');
+            const tblCount   = document.getElementById('tblShowing');
+            const pgWrap     = document.getElementById('paginationWrap');
+
+            if (!tbody) return;
+
+            const ROWS_PER_PAGE = 15;
+            let allRows     = Array.from(tbody.querySelectorAll('tr[data-school]'));
+            let filtered    = [...allRows];
+            let currentPage = 1;
+            let sortCol     = -1;
+            let sortAsc     = true;
+
+            // Assign school colours
+            const schoolColors = ['#e85c5c','#1e2d5e','#22c55e','#f59e0b','#8b5cf6','#06b6d4','#ec4899','#64748b'];
+            const schoolMap    = {};
+            let   colorIdx     = 0;
+            allRows.forEach(row => {
+                const school = row.dataset.school;
+                if (!schoolMap[school]) schoolMap[school] = schoolColors[colorIdx++ % schoolColors.length];
+                const dot = row.querySelector('.school-dot');
+                if (dot) dot.style.background = schoolMap[school];
+            });
+
+            function render() {
+                const start = (currentPage - 1) * ROWS_PER_PAGE;
+                const page  = filtered.slice(start, start + ROWS_PER_PAGE);
+
+                allRows.forEach(r => r.style.display = 'none');
+                page.forEach(r => r.style.display = '');
+
+                tblCount.textContent = filtered.length;
+                renderPagination();
+            }
+
+            function renderPagination() {
+                const total = Math.ceil(filtered.length / ROWS_PER_PAGE);
+                pgWrap.innerHTML = '';
+
+                if (total <= 1) return;
+
+                const mkBtn = (label, page, icon) => {
+                    const b = document.createElement('button');
+                    b.className = 'page-btn' + (page === currentPage ? ' active' : '');
+                    b.innerHTML = icon ? `<i class="material-icons">${label}</i>` : label;
+                    if (page === currentPage && !icon) b.disabled = true;
+                    b.addEventListener('click', () => { currentPage = page; render(); });
+                    return b;
+                };
+
+                pgWrap.appendChild(mkBtn('chevron_left', Math.max(1, currentPage - 1), true));
+
+                let pages = [];
+                if (total <= 7) {
+                    pages = Array.from({length:total}, (_,i) => i+1);
+                } else {
+                    pages = [1];
+                    if (currentPage > 3) pages.push('…');
+                    for (let p = Math.max(2, currentPage-1); p <= Math.min(total-1, currentPage+1); p++) pages.push(p);
+                    if (currentPage < total - 2) pages.push('…');
+                    pages.push(total);
+                }
+
+                pages.forEach(p => {
+                    if (p === '…') {
+                        const s = document.createElement('span');
+                        s.textContent = '…'; s.style.padding = '0 .25rem'; s.style.color = '#94a3b8';
+                        pgWrap.appendChild(s);
+                    } else {
+                        pgWrap.appendChild(mkBtn(p, p, false));
+                    }
+                });
+
+                pgWrap.appendChild(mkBtn('chevron_right', Math.min(total, currentPage + 1), true));
+            }
+
+            // Search
+            searchBox.addEventListener('input', () => {
+                const q = searchBox.value.toLowerCase();
+                filtered = allRows.filter(r => r.textContent.toLowerCase().includes(q));
+                currentPage = 1;
+                render();
+            });
+
+            // Sort
+            document.querySelectorAll('.rpt-table thead th[data-col]').forEach(th => {
+                th.addEventListener('click', () => {
+                    const col = parseInt(th.dataset.col);
+                    if (sortCol === col) sortAsc = !sortAsc;
+                    else { sortCol = col; sortAsc = true; }
+
+                    document.querySelectorAll('.rpt-table thead th').forEach(t => {
+                        t.classList.remove('sorted');
+                        const ic = t.querySelector('.sort-icon');
+                        if (ic) ic.textContent = 'unfold_more';
+                    });
+                    th.classList.add('sorted');
+                    const icon = th.querySelector('.sort-icon');
+                    if (icon) icon.textContent = sortAsc ? 'keyboard_arrow_up' : 'keyboard_arrow_down';
+
+                    filtered.sort((a, b) => {
+                        const aCell = a.querySelectorAll('td')[col];
+                        const bCell = b.querySelectorAll('td')[col];
+                        const aVal  = aCell ? aCell.textContent.trim().replace(/[,]/g,'') : '';
+                        const bVal  = bCell ? bCell.textContent.trim().replace(/[,]/g,'') : '';
+                        const aNum  = parseFloat(aVal);
+                        const bNum  = parseFloat(bVal);
+                        const cmp   = isNaN(aNum) || isNaN(bNum)
+                            ? aVal.localeCompare(bVal)
+                            : aNum - bNum;
+                        return sortAsc ? cmp : -cmp;
+                    });
+
+                    currentPage = 1;
+                    render();
+                });
+            });
+
+            render();
+        })();
+    </script>
+}

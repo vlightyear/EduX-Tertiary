@@ -185,6 +185,9 @@ namespace SIS.Data
         //Dockets
         public DbSet<StudentData> StudentDockets { get; set; } = null!;
 
+        //Reports
+        public DbSet<Models.ViewModels.VwBiSchoolBillingMonthly> VwBiSchoolBillingMonthly { get; set; } = null!;
+
         //Study Permits
         public DbSet<StudyPermit> StudyPermits { get; set; }
         public DbSet<StudyPermitConfig> StudyPermitConfigs { get; set; }
@@ -1343,6 +1346,12 @@ namespace SIS.Data
             builder.Entity<StudentData>()
                 .HasNoKey() // Views don't have primary keys
                 .ToView("vwStudentCourses"); // Map it to the actual view
+
+            builder.Entity<Models.ViewModels.VwBiSchoolBillingMonthly>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToView("VW_BI_SchoolBilling_Monthly");
+            });
 
             builder.Entity<WorkflowApproval>()
                 .HasOne(a => a.WorkflowInstance)

@@ -1,8 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using SIS.Data;
 using Newtonsoft.Json;
+using SIS.Data;
+using SIS.Models.ViewModels;
 
 namespace SIS.Controllers
 {
@@ -130,6 +131,104 @@ namespace SIS.Controllers
             {
                 _logger.LogError(ex, "Error in LoadReportsData");
             }
+        }
+
+        // Add this action to your ReportsController (or whichever controller you prefer)
+        // Requires: using SIS.Models.ViewModels;
+
+        [HttpGet]
+        public async Task<IActionResult> SchoolBillingMonthly(
+            string? selectedSchool = null,
+            string? monthFrom = null,
+            string? monthTo = null)
+        {
+            // ── 1. Pull raw data from the view ────────────────────────────────────
+            var query = _context.VwBiSchoolBillingMonthly.AsQueryable();  // DbSet for VW_BI_SchoolBilling_Monthly
+
+            if (!string.IsNullOrEmpty(selectedSchool))
+                query = query.Where(r => r.School == selectedSchool);
+
+            if (!string.IsNullOrEmpty(monthFrom))
+                query = query.Where(r => string.Compare(r.MonthKey, monthFrom) >= 0);
+
+            if (!string.IsNullOrEmpty(monthTo))
+                query = query.Where(r => string.Compare(r.MonthKey, monthTo) <= 0);
+
+            var raw = await query.OrderBy(r => r.MonthKey).ThenBy(r => r.School).ToListAsync();
+
+            // ── 2. Build ViewModel ────────────────────────────────────────────────
+            var vm = new SchoolBillingMonthly
+            {
+                SelectedSchool = selectedSchool,
+                MonthFrom = monthFrom,
+                MonthTo = monthTo,
+
+                // Dropdown options (always unfiltered)
+                Schools = await _context.VwBiSchoolBillingMonthly
+                               .Select(r => r.School).Distinct().OrderBy(s => s).ToListAsync(),
+                AllMonths = await _context.VwBiSchoolBillingMonthly
+                               .Select(r => r.MonthKey).Distinct().OrderBy(m => m).ToListAsync(),
+
+                // Rows
+                Rows = raw.Select(r => new SchoolBillingRow
+                {
+                    School = r.School,
+                    MonthKey = r.MonthKey,
+                    MonthlyInvoices = r.MonthlyInvoices,
+                    MonthlyPayments = r.MonthlyPayments,
+                    MonthlyBalance = r.MonthlyBalance,
+                }).ToList(),
+            };
+
+            // ── 3. Aggregates ──────────────────────────────────────────────────────
+            vm.TotalInvoices = vm.Rows.Sum(r => r.MonthlyInvoices);
+            vm.TotalPayments = vm.Rows.Sum(r => r.MonthlyPayments);
+            vm.TotalBalance = vm.Rows.Sum(r => r.MonthlyBalance);
+            vm.ActiveSchools = vm.Rows.Select(r => r.School).Distinct().Count();
+            vm.PeriodMonths = vm.Rows.Select(r => r.MonthKey).Distinct().Count();
+
+            // ── 4. Monthly trend (line chart) ─────────────────────────────────────
+            vm.MonthlyTrend = vm.Rows
+                .GroupBy(r => r.MonthKey)
+                .OrderBy(g => g.Key)
+                .ToDictionary(
+                    g => g.Key,
+                    g => (Invoices: g.Sum(r => r.MonthlyInvoices),
+                          Payments: g.Sum(r => r.MonthlyPayments)));
+
+            // ── 5. Per-school totals (bar chart) ──────────────────────────────────
+            vm.SchoolTotals = vm.Rows
+                .GroupBy(r => r.School)
+                .OrderBy(g => g.Key)
+                .ToDictionary(
+                    g => g.Key,
+                    g => (Invoices: g.Sum(r => r.MonthlyInvoices),
+                          Payments: g.Sum(r => r.MonthlyPayments)));
+
+            return View("~/Views/FinanceReports/SchoolBillingMonthly.cshtml", vm);
+        }
+
+        // ── Optional CSV export ────────────────────────────────────────────────────
+        [HttpGet]
+        public async Task<IActionResult> ExportBillingReport(
+            string? selectedSchool = null,
+            string? monthFrom = null,
+            string? monthTo = null)
+        {
+            var query = _context.VwBiSchoolBillingMonthly.AsQueryable();
+            if (!string.IsNullOrEmpty(selectedSchool)) query = query.Where(r => r.School == selectedSchool);
+            if (!string.IsNullOrEmpty(monthFrom)) query = query.Where(r => string.Compare(r.MonthKey, monthFrom) >= 0);
+            if (!string.IsNullOrEmpty(monthTo)) query = query.Where(r => string.Compare(r.MonthKey, monthTo) <= 0);
+
+            var rows = await query.OrderBy(r => r.MonthKey).ThenBy(r => r.School).ToListAsync();
+
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("School,MonthKey,MonthlyInvoices,MonthlyPayments,MonthlyBalance");
+            foreach (var r in rows)
+                sb.AppendLine($"\"{r.School}\",{r.MonthKey},{r.MonthlyInvoices},{r.MonthlyPayments},{r.MonthlyBalance}");
+
+            var bytes = System.Text.Encoding.UTF8.GetBytes(sb.ToString());
+            return File(bytes, "text/csv", $"SchoolBilling_{DateTime.Now:yyyyMMdd}.csv");
         }
     }
 }
