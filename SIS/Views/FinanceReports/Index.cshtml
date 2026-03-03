@@ -1,1187 +1,1898 @@
 @{
-    ViewData["Title"] = "Financial Reports";
+    ViewData["Title"] = "Daily Collections";
 }
 
-<div class="p-6 space-y-6 bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
-    <!-- Header -->
-    <div class="flex items-center justify-between mb-8">
-        <div class="flex items-center gap-4">
-            <div class="bg-gradient-to-r from-blue-600 to-purple-600 p-4 rounded-2xl shadow-lg">
-                <i class="material-icons text-white text-3xl">assessment</i>
-            </div>
+<style>
+    :root {
+        --coral: #e85c5c;
+        --coral-dk: #d43f3f;
+        --coral-lt: #fff1f1;
+        --coral-mid: #ffc5c5;
+        --navy: #1e2d5e;
+        --navy-lt: #eef2ff;
+        --navy-mid: #c2d0ff;
+        --bg: #f0f4f8;
+        --surface: #ffffff;
+        --border: #e2e8f0;
+        --text: #1e2d5e;
+        --muted: #64748b;
+        --faint: #94a3b8;
+        --green: #22c55e;
+        --green-lt: #f0fdf4;
+        --amber: #f59e0b;
+        --amber-lt: #fffbeb;
+        --radius-lg: 14px;
+        --radius-md: 10px;
+        --radius-sm: 7px;
+        --shadow-sm: 0 2px 8px rgba(30,45,94,.07);
+        --shadow-md: 0 6px 20px rgba(30,45,94,.10);
+    }
+
+    .dc-page {
+        background: var(--bg);
+        min-height: 100vh;
+        padding: 1.5rem;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        color: var(--text);
+    }
+
+    @@keyframes fadeUp {
+        from {
+            opacity: 0;
+            transform: translateY(12px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .fade-up {
+        animation: fadeUp .38s ease both;
+    }
+
+    .delay-1 {
+        animation-delay: .07s;
+    }
+
+    .delay-2 {
+        animation-delay: .14s;
+    }
+
+    .delay-3 {
+        animation-delay: .21s;
+    }
+
+    .delay-4 {
+        animation-delay: .28s;
+    }
+
+    .delay-5 {
+        animation-delay: .35s;
+    }
+
+    /* ── Page Header ── */
+    .dc-header {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    @@media(min-width:768px) {
+        .dc-header {
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+        }
+    }
+
+    .dc-title-block {
+        display: flex;
+        align-items: center;
+        gap: .9rem;
+    }
+
+    .dc-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 13px;
+        background: linear-gradient(135deg, var(--coral), var(--coral-dk));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 14px rgba(232,92,92,.32);
+        flex-shrink: 0;
+    }
+
+        .dc-icon .material-icons {
+            color: #fff;
+            font-size: 26px;
+        }
+
+    .dc-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--navy);
+        margin: 0;
+        line-height: 1.15;
+    }
+
+    .dc-sub {
+        font-size: .78rem;
+        color: var(--muted);
+        margin: 0;
+        margin-top: 3px;
+    }
+
+    /* ── Cards ── */
+    .dc-card {
+        background: var(--surface);
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+    }
+
+    .dc-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: .75rem;
+        padding: .95rem 1.25rem;
+        border-bottom: 1px solid var(--border);
+        background: linear-gradient(to right, #fafbff, var(--surface));
+    }
+
+    .dc-card-header-title {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        font-size: .9rem;
+        font-weight: 700;
+        color: var(--navy);
+    }
+
+        .dc-card-header-title .material-icons {
+            font-size: 19px;
+            color: var(--coral);
+        }
+
+    .dc-card-body {
+        padding: 1.1rem 1.25rem 1.25rem;
+    }
+
+    /* ── Collapsible filter toggle ── */
+    .filter-toggle-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: .75rem;
+        padding: .95rem 1.25rem;
+        border-bottom: 1px solid var(--border);
+        background: linear-gradient(to right, #fafbff, var(--surface));
+        cursor: pointer;
+        user-select: none;
+        transition: background .18s;
+    }
+
+        .filter-toggle-header:hover {
+            background: linear-gradient(to right, var(--navy-lt), #f5f7ff);
+        }
+
+    .filter-toggle-left {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+    }
+
+        .filter-toggle-left > span {
+            font-size: .9rem;
+            font-weight: 700;
+            color: var(--navy);
+        }
+
+        .filter-toggle-left .material-icons {
+            font-size: 19px;
+            color: var(--coral);
+        }
+
+    .filter-toggle-right {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+    }
+
+    .filter-active-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: .3rem;
+        padding: .18rem .6rem;
+        background: var(--coral-lt);
+        border: 1px solid var(--coral-mid);
+        border-radius: 999px;
+        font-size: .7rem;
+        font-weight: 700;
+        color: var(--coral-dk);
+    }
+
+        .filter-active-badge .material-icons {
+            font-size: 12px;
+        }
+
+    .chevron-icon {
+        font-size: 22px;
+        color: var(--muted);
+        transition: transform .28s cubic-bezier(.4,0,.2,1);
+    }
+
+        .chevron-icon.open {
+            transform: rotate(180deg);
+        }
+
+    .filter-collapsible {
+        overflow: hidden;
+        max-height: 800px;
+        transition: max-height .35s cubic-bezier(.4,0,.2,1), opacity .25s ease;
+        opacity: 1;
+    }
+
+        .filter-collapsible.collapsed {
+            max-height: 0;
+            opacity: 0;
+        }
+
+    /* ── Filter grid ── */
+    .filter-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: .875rem;
+    }
+
+    @@media(min-width:640px) {
+        .filter-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @@media(min-width:1024px) {
+        .filter-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    .filter-section-label {
+        display: flex;
+        align-items: center;
+        gap: .4rem;
+        font-size: .72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        color: var(--navy);
+        margin-bottom: .75rem;
+    }
+
+        .filter-section-label .material-icons {
+            font-size: 15px;
+            color: var(--coral);
+        }
+
+    .fld-label {
+        display: block;
+        font-size: .7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        color: var(--muted);
+        margin-bottom: .35rem;
+    }
+
+    .fld-control {
+        width: 100%;
+        padding: .6rem .85rem;
+        font-size: .83rem;
+        font-family: inherit;
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: #fafbfc;
+        color: var(--text);
+        outline: none;
+        transition: border-color .18s, box-shadow .18s;
+        box-sizing: border-box;
+    }
+
+        .fld-control:focus {
+            border-color: var(--coral);
+            box-shadow: 0 0 0 3px rgba(232,92,92,.11);
+            background: #fff;
+        }
+
+    .date-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: .75rem;
+    }
+
+    .filter-stacked {
+        display: flex;
+        flex-direction: column;
+        gap: .65rem;
+    }
+
+    .filter-actions {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: .75rem;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border);
+    }
+
+    .btn-apply {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        padding: .55rem 1.3rem;
+        background: var(--coral);
+        color: #fff;
+        font-size: .82rem;
+        font-weight: 700;
+        font-family: inherit;
+        border: none;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(232,92,92,.28);
+        transition: background .18s, box-shadow .18s;
+    }
+
+        .btn-apply:hover {
+            background: var(--coral-dk);
+            box-shadow: 0 4px 14px rgba(232,92,92,.36);
+        }
+
+        .btn-apply .material-icons {
+            font-size: 17px;
+        }
+
+    .btn-reset {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        padding: .55rem 1.1rem;
+        background: #f1f5f9;
+        color: var(--muted);
+        font-size: .82rem;
+        font-weight: 600;
+        font-family: inherit;
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        transition: background .18s, color .18s;
+    }
+
+        .btn-reset:hover {
+            background: #e2e8f0;
+            color: var(--navy);
+        }
+
+        .btn-reset .material-icons {
+            font-size: 17px;
+        }
+
+    /* ── KPI Grid ── */
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    @@media(min-width:640px) {
+        .kpi-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @@media(min-width:1024px) {
+        .kpi-grid {
+            grid-template-columns: repeat(5, 1fr);
+        }
+    }
+
+    .kpi-card {
+        background: var(--surface);
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-sm);
+        padding: 1.1rem;
+        position: relative;
+        overflow: hidden;
+        transition: transform .2s, box-shadow .2s;
+    }
+
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+        }
+
+        .kpi-card.coral::before {
+            background: linear-gradient(90deg, var(--coral), var(--coral-dk));
+        }
+
+        .kpi-card.navy::before {
+            background: linear-gradient(90deg, var(--navy), #2e45a0);
+        }
+
+        .kpi-card.green::before {
+            background: linear-gradient(90deg, var(--green), #16a34a);
+        }
+
+        .kpi-card.amber::before {
+            background: linear-gradient(90deg, var(--amber), #d97706);
+        }
+
+        .kpi-card.purple::before {
+            background: linear-gradient(90deg, #8b5cf6, #7c3aed);
+        }
+
+    .kpi-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: .75rem;
+    }
+
+    .kpi-icon-wrap {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .kpi-card.coral .kpi-icon-wrap {
+        background: var(--coral-lt);
+    }
+
+    .kpi-card.navy .kpi-icon-wrap {
+        background: var(--navy-lt);
+    }
+
+    .kpi-card.green .kpi-icon-wrap {
+        background: var(--green-lt);
+    }
+
+    .kpi-card.amber .kpi-icon-wrap {
+        background: var(--amber-lt);
+    }
+
+    .kpi-card.purple .kpi-icon-wrap {
+        background: #f5f3ff;
+    }
+
+    .kpi-icon-wrap .material-icons {
+        font-size: 20px;
+    }
+
+    .kpi-card.coral .kpi-icon-wrap .material-icons {
+        color: var(--coral);
+    }
+
+    .kpi-card.navy .kpi-icon-wrap .material-icons {
+        color: var(--navy);
+    }
+
+    .kpi-card.green .kpi-icon-wrap .material-icons {
+        color: var(--green);
+    }
+
+    .kpi-card.amber .kpi-icon-wrap .material-icons {
+        color: var(--amber);
+    }
+
+    .kpi-card.purple .kpi-icon-wrap .material-icons {
+        color: #8b5cf6;
+    }
+
+    .kpi-value {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: var(--navy);
+        line-height: 1.1;
+    }
+
+    .kpi-label {
+        font-size: .68rem;
+        color: var(--muted);
+        margin-top: .25rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+    }
+
+    /* ── Tabs ── */
+    .tabs-bar {
+        background: var(--surface);
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-sm);
+        padding: .5rem .75rem;
+        margin-bottom: 1.25rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: .35rem;
+    }
+
+    .tab-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        padding: .55rem 1.1rem;
+        font-size: .82rem;
+        font-weight: 600;
+        font-family: inherit;
+        border: none;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        transition: background .18s, color .18s;
+        color: var(--muted);
+        background: transparent;
+    }
+
+        .tab-btn:hover {
+            background: var(--navy-lt);
+            color: var(--navy);
+        }
+
+        .tab-btn.active {
+            background: var(--coral);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(232,92,92,.28);
+        }
+
+        .tab-btn .material-icons {
+            font-size: 16px;
+        }
+
+    /* ── Section header right ── */
+    .section-header-right {
+        display: flex;
+        align-items: center;
+        gap: .875rem;
+        flex-wrap: wrap;
+    }
+
+    .count-badge {
+        background: var(--navy-lt);
+        border: 1px solid var(--navy-mid);
+        border-radius: var(--radius-sm);
+        padding: .45rem .875rem;
+        text-align: center;
+    }
+
+        .count-badge .cb-label {
+            font-size: .68rem;
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        .count-badge .cb-value {
+            font-size: .92rem;
+            font-weight: 700;
+            color: var(--navy);
+        }
+
+    .btn-export {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        padding: .5rem 1rem;
+        background: var(--navy);
+        color: #fff;
+        font-size: .8rem;
+        font-weight: 600;
+        font-family: inherit;
+        border: none;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(30,45,94,.2);
+        transition: background .18s;
+    }
+
+        .btn-export:hover {
+            background: #16224a;
+        }
+
+        .btn-export .material-icons {
+            font-size: 16px;
+        }
+
+    /* ── View mode toggle ── */
+    .view-toggle {
+        display: flex;
+        align-items: center;
+        gap: .3rem;
+    }
+
+    .view-toggle-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: .3rem;
+        padding: .4rem .8rem;
+        font-size: .78rem;
+        font-weight: 600;
+        font-family: inherit;
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        background: #f1f5f9;
+        color: var(--muted);
+        transition: all .18s;
+    }
+
+        .view-toggle-btn:hover {
+            border-color: var(--navy-mid);
+            color: var(--navy);
+        }
+
+        .view-toggle-btn.active {
+            background: var(--navy-lt);
+            border-color: var(--navy-mid);
+            color: var(--navy);
+        }
+
+        .view-toggle-btn .material-icons {
+            font-size: 15px;
+        }
+
+    /* ── Table ── */
+    .dc-table-wrap {
+        overflow-x: auto;
+    }
+
+        .dc-table-wrap::-webkit-scrollbar {
+            height: 5px;
+        }
+
+        .dc-table-wrap::-webkit-scrollbar-thumb {
+            background: var(--coral-mid);
+            border-radius: 4px;
+        }
+
+    .dc-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: .82rem;
+    }
+
+        .dc-table thead tr {
+            background: linear-gradient(to right, var(--navy-lt), #f5f7ff);
+        }
+
+        .dc-table thead th {
+            padding: .75rem 1.1rem;
+            font-size: .69rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            color: var(--navy);
+            border-bottom: 2px solid var(--navy-mid);
+            white-space: nowrap;
+        }
+
+        .dc-table tbody tr {
+            border-bottom: 1px solid #f3f4f6;
+            transition: background .15s;
+        }
+
+            .dc-table tbody tr:last-child {
+                border-bottom: none;
+            }
+
+            .dc-table tbody tr:hover {
+                background: var(--coral-lt);
+            }
+
+        .dc-table td {
+            padding: .7rem 1.1rem;
+            vertical-align: middle;
+        }
+
+        .dc-table tbody tr:nth-child(even) td {
+            background: rgba(248,250,252,.6);
+        }
+
+        .dc-table tbody tr:nth-child(even):hover td {
+            background: var(--coral-lt);
+        }
+
+    /* ── Group header row ── */
+    .group-header-row td {
+        background: linear-gradient(to right, var(--navy-lt), #f0f4ff) !important;
+        padding: .6rem 1.1rem;
+        border-top: 2px solid var(--navy-mid);
+        border-bottom: 1px solid var(--navy-mid);
+    }
+
+    .group-header-row:hover td {
+        background: linear-gradient(to right, var(--navy-lt), #f0f4ff) !important;
+    }
+
+    .group-header-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: .5rem;
+    }
+
+    .group-title {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        font-size: .8rem;
+        font-weight: 700;
+        color: var(--navy);
+    }
+
+    .group-method-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 7px;
+        background: var(--coral);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+        .group-method-icon .material-icons {
+            font-size: 15px;
+            color: #fff;
+        }
+
+    .group-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: .3rem;
+        padding: .18rem .65rem;
+        border-radius: 999px;
+        font-size: .7rem;
+        font-weight: 600;
+        background: var(--navy);
+        color: #fff;
+    }
+
+    .group-subtotal-amt {
+        font-size: .8rem;
+        font-weight: 700;
+        color: var(--green);
+    }
+
+    .group-collapse-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+        color: var(--navy);
+        display: flex;
+        align-items: center;
+        transition: color .15s;
+    }
+
+        .group-collapse-btn:hover {
+            color: var(--coral);
+        }
+
+        .group-collapse-btn .material-icons {
+            font-size: 20px;
+            transition: transform .25s;
+        }
+
+        .group-collapse-btn.collapsed .material-icons {
+            transform: rotate(-90deg);
+        }
+
+    /* ── Group subtotal footer row ── */
+    .group-footer-row td {
+        background: linear-gradient(to right, var(--green-lt), #f8fffe) !important;
+        padding: .55rem 1.1rem;
+        border-top: 1px solid #bbf7d0;
+        border-bottom: 2px solid #86efac;
+        font-size: .78rem;
+        font-weight: 700;
+        color: var(--navy);
+    }
+
+    .group-footer-row:hover td {
+        background: linear-gradient(to right, var(--green-lt), #f8fffe) !important;
+    }
+
+    .student-name {
+        font-weight: 700;
+        font-size: .84rem;
+        color: var(--navy);
+    }
+
+    .student-id {
+        font-size: .72rem;
+        color: var(--faint);
+        margin-top: 2px;
+    }
+
+    .programme-cell {
+        font-size: .8rem;
+        color: var(--muted);
+    }
+
+    .amount-pos {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--green);
+    }
+
+    .amount-neg {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--coral-dk);
+    }
+
+    .method-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: .2rem .7rem;
+        border-radius: 999px;
+        font-size: .72rem;
+        font-weight: 600;
+        background: var(--navy-lt);
+        color: var(--navy);
+        border: 1px solid var(--navy-mid);
+    }
+
+    .ref-mono {
+        font-family: 'Courier New', monospace;
+        font-size: .77rem;
+        color: var(--muted);
+    }
+
+    .date-main {
+        font-size: .8rem;
+        color: var(--text);
+    }
+
+    .date-time {
+        font-size: .7rem;
+        color: var(--faint);
+    }
+
+    .action-btn-sm {
+        width: 30px;
+        height: 30px;
+        border-radius: 7px;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background .15s, color .15s;
+    }
+
+        .action-btn-sm.email {
+            background: var(--navy-lt);
+            color: var(--navy);
+        }
+
+            .action-btn-sm.email:hover {
+                background: var(--navy-mid);
+            }
+
+        .action-btn-sm.view {
+            background: #f1f5f9;
+            color: var(--muted);
+        }
+
+            .action-btn-sm.view:hover {
+                background: #e2e8f0;
+                color: var(--navy);
+            }
+
+        .action-btn-sm .material-icons {
+            font-size: 15px;
+        }
+
+    .chk-cell input[type="checkbox"] {
+        width: 15px;
+        height: 15px;
+        accent-color: var(--coral);
+        cursor: pointer;
+    }
+
+    .empty-row td {
+        padding: 3rem 1rem;
+        text-align: center;
+        color: var(--faint);
+        font-size: .84rem;
+    }
+
+    .empty-row .material-icons {
+        font-size: 2.5rem;
+        color: var(--navy-mid);
+        display: block;
+        margin-bottom: .6rem;
+    }
+
+    /* ── Pagination bar ── */
+    .pg-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: .75rem;
+        padding: .875rem 1.25rem;
+        border-top: 1px solid var(--border);
+        background: #fafbfc;
+        font-size: .78rem;
+        color: var(--muted);
+    }
+
+    .pg-info strong {
+        color: var(--navy);
+    }
+
+    .pg-buttons {
+        display: flex;
+        align-items: center;
+        gap: .3rem;
+    }
+
+    .pg-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1.5px solid var(--border);
+        background: #fff;
+        color: var(--muted);
+        cursor: pointer;
+        font-size: .78rem;
+        font-weight: 600;
+        transition: all .15s;
+    }
+
+        .pg-btn:hover {
+            border-color: var(--coral);
+            color: var(--coral);
+        }
+
+        .pg-btn.active {
+            background: var(--coral);
+            border-color: var(--coral);
+            color: #fff;
+        }
+
+        .pg-btn:disabled {
+            opacity: .4;
+            pointer-events: none;
+        }
+
+        .pg-btn .material-icons {
+            font-size: 17px;
+        }
+
+    /* ── Loading overlay ── */
+    .loading-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(30,45,94,.45);
+        backdrop-filter: blur(3px);
+        z-index: 40;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .loading-overlay.hidden {
+            display: none;
+        }
+
+    .loading-box {
+        background: #fff;
+        border-radius: var(--radius-lg);
+        padding: 1.75rem 2rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: var(--shadow-md);
+    }
+
+    .spinner {
+        width: 28px;
+        height: 28px;
+        border: 3px solid var(--coral-mid);
+        border-top-color: var(--coral);
+        border-radius: 50%;
+        animation: spin .75s linear infinite;
+    }
+
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .loading-box span {
+        font-size: .88rem;
+        font-weight: 600;
+        color: var(--navy);
+    }
+
+    /* ── Toast ── */
+    .toast {
+        position: fixed;
+        top: 1.25rem;
+        right: 1.25rem;
+        z-index: 50;
+        padding: .875rem 1.25rem;
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-md);
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        font-size: .84rem;
+        font-weight: 500;
+        transform: translateX(calc(100% + 2rem));
+        transition: transform .3s ease;
+        min-width: 260px;
+    }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast .material-icons {
+            font-size: 19px;
+        }
+
+        .toast.success {
+            background: #f0fdf4;
+            color: #15803d;
+            border: 1px solid #bbf7d0;
+        }
+
+        .toast.error {
+            background: var(--coral-lt);
+            color: var(--coral-dk);
+            border: 1px solid var(--coral-mid);
+        }
+
+        .toast.info {
+            background: var(--navy-lt);
+            color: var(--navy);
+            border: 1px solid var(--navy-mid);
+        }
+</style>
+
+<div class="dc-page">
+
+    <!-- ── Header ── -->
+    <div class="dc-header fade-up">
+        <div class="dc-title-block">
+            <div class="dc-icon"><i class="material-icons">assessment</i></div>
             <div>
-                <h1 class="text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
-                    Financial Reports Dashboard
-                </h1>
-                <p class="text-slate-600 text-lg">Comprehensive Transaction & Payment Reports</p>
+                <h1 class="dc-title">Daily Collections Report</h1>
+                <p class="dc-sub">Comprehensive transaction &amp; payment records</p>
             </div>
         </div>
     </div>
 
-    <!-- Date Filter & Search -->
-    <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-white/20 mb-6">
-        <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            <!-- Date & Search Filters Row 1 -->
-            <div class="lg:col-span-2 xl:col-span-3">
-                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                    <!-- Date Filter -->
+    <!-- ── Filters (collapsible) ── -->
+    <div class="dc-card fade-up delay-1" style="margin-bottom:1.25rem;">
+
+        <!-- Clickable toggle header -->
+        <div class="filter-toggle-header" onclick="toggleFilters()">
+            <div class="filter-toggle-left">
+                <i class="material-icons">tune</i>
+                <span>Filters</span>
+                <span class="filter-active-badge" id="activeFiltersBadge" style="display:none;">
+                    <i class="material-icons">filter_alt</i>
+                    <span id="activeFiltersCount">0</span> active
+                </span>
+            </div>
+            <div class="filter-toggle-right">
+                <span style="font-size:.75rem; color:var(--muted); font-weight:500;" id="filterToggleHint">Click to collapse</span>
+                <i class="material-icons chevron-icon open" id="filterChevron">expand_more</i>
+            </div>
+        </div>
+
+        <!-- Collapsible body -->
+        <div class="filter-collapsible" id="filterCollapsible">
+            <div class="dc-card-body">
+                <div class="filter-grid">
+
+                    <!-- Date range -->
                     <div>
-                        <div class="flex items-center gap-2 mb-4">
-                            <i class="material-icons text-slate-600">date_range</i>
-                            <span class="text-sm font-medium text-slate-700">Filter by Date:</span>
+                        <div class="filter-section-label">
+                            <i class="material-icons">date_range</i>
+                            Date Range
                         </div>
-                        <div class="flex items-center gap-4">
-                            <div class="flex-1">
-                                <label class="block text-xs text-slate-500 mb-1">From Date</label>
-                                <input type="date" id="fromDate" 
-                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
-                            </div>
-                            <div class="flex-1">
-                                <label class="block text-xs text-slate-500 mb-1">To Date</label>
-                                <input type="date" id="toDate" 
-                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Search Filters -->
-                    <div>
-                        <div class="flex items-center gap-2 mb-4">
-                            <i class="material-icons text-slate-600">search</i>
-                            <span class="text-sm font-medium text-slate-700">Search Records:</span>
-                        </div>
-                        <div class="space-y-3">
+                        <div class="date-row">
                             <div>
-                                <label class="block text-xs text-slate-500 mb-1">Student Number</label>
-                                <input type="text" id="studentNumber" placeholder="Enter student number..." 
-                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                                <label class="fld-label" for="fromDate">From</label>
+                                <input type="date" id="fromDate" class="fld-control" oninput="updateActiveFiltersBadge()">
                             </div>
                             <div>
-                                <label class="block text-xs text-slate-500 mb-1">Transaction Reference</label>
-                                <input type="text" id="transactionRef" placeholder="Enter transaction reference..." 
-                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                                <label class="fld-label" for="toDate">To</label>
+                                <input type="date" id="toDate" class="fld-control" oninput="updateActiveFiltersBadge()">
                             </div>
                         </div>
                     </div>
 
-                    <!-- Dropdown Filters -->
+                    <!-- Search fields -->
                     <div>
-                        <div class="flex items-center gap-2 mb-4">
-                            <i class="material-icons text-slate-600">filter_list</i>
-                            <span class="text-sm font-medium text-slate-700">Category Filters:</span>
+                        <div class="filter-section-label">
+                            <i class="material-icons">search</i>
+                            Search
                         </div>
-                        <div class="space-y-3">
+                        <div class="filter-stacked">
                             <div>
-                                <label class="block text-xs text-slate-500 mb-1">Payment Method</label>
-                                <select id="paymentMethod" 
-                                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
-                                    <option value="">All Payment Methods</option>
+                                <label class="fld-label" for="studentNumber">Student Number</label>
+                                <input type="text" id="studentNumber" placeholder="Enter student number…" class="fld-control" oninput="updateActiveFiltersBadge()">
+                            </div>
+                            <div>
+                                <label class="fld-label" for="transactionRef">Transaction Reference</label>
+                                <input type="text" id="transactionRef" placeholder="Enter reference…" class="fld-control" oninput="updateActiveFiltersBadge()">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dropdowns -->
+                    <div>
+                        <div class="filter-section-label">
+                            <i class="material-icons">filter_list</i>
+                            Categories
+                        </div>
+                        <div class="filter-stacked">
+                            <div>
+                                <label class="fld-label" for="paymentMethod">Payment Method</label>
+                                <select id="paymentMethod" class="fld-control" onchange="updateActiveFiltersBadge()">
+                                    <option value="">All Methods</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-xs text-slate-500 mb-1">Programme</label>
-                                <select id="programme" 
-                                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                                <label class="fld-label" for="programme">Programme</label>
+                                <select id="programme" class="fld-control" onchange="updateActiveFiltersBadge()">
                                     <option value="">All Programmes</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-xs text-slate-500 mb-1">School</label>
-                                <select id="school" 
-                                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                                <label class="fld-label" for="school">School</label>
+                                <select id="school" class="fld-control" onchange="updateActiveFiltersBadge()">
                                     <option value="">All Schools</option>
                                 </select>
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Action Buttons -->
-        <div class="flex items-center justify-center gap-4 mt-6 pt-4 border-t border-slate-200">
-            <button onclick="applyFilters()" 
-                    class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors flex items-center gap-2 text-sm">
-                <i class="material-icons text-sm">search</i>
-                Apply Filters
-            </button>
-            <button onclick="clearAllFilters()" 
-                    class="bg-slate-500 hover:bg-slate-600 text-white px-6 py-2 rounded-lg transition-colors text-sm">
-                Clear All
-            </button>
-        </div>
-    </div>
 
-    <!-- Summary Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-        <!-- Total Revenue Card -->
-        <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-white/20 hover:shadow-2xl transition-all duration-300">
-            <div class="flex items-center gap-4">
-                <div class="bg-gradient-to-r from-green-500 to-emerald-600 p-3 rounded-xl">
-                    <i class="material-icons text-white text-2xl">account_balance_wallet</i>
                 </div>
-                <div>
-                    <h3 class="text-slate-600 font-medium">Total Revenue</h3>
-                    <p class="text-2xl font-bold text-green-600" id="totalRevenue">K0</p>
-                </div>
-            </div>
-        </div>
 
-        <!-- Outstanding Fees Card -->
-        <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-white/20 hover:shadow-2xl transition-all duration-300">
-            <div class="flex items-center gap-4">
-                <div class="bg-gradient-to-r from-amber-500 to-orange-600 p-3 rounded-xl">
-                    <i class="material-icons text-white text-2xl">pending_actions</i>
-                </div>
-                <div>
-                    <h3 class="text-slate-600 font-medium">Outstanding Fees</h3>
-                    <p class="text-2xl font-bold text-amber-600" id="totalOutstanding">K0</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Collection Rate Card -->
-        <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-white/20 hover:shadow-2xl transition-all duration-300">
-            <div class="flex items-center gap-4">
-                <div class="bg-gradient-to-r from-blue-500 to-blue-600 p-3 rounded-xl">
-                    <i class="material-icons text-white text-2xl">trending_up</i>
-                </div>
-                <div>
-                    <h3 class="text-slate-600 font-medium">Collection Rate</h3>
-                    <p class="text-2xl font-bold text-blue-600" id="collectionRate">0%</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Students Affected Card -->
-        <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-white/20 hover:shadow-2xl transition-all duration-300">
-            <div class="flex items-center gap-4">
-                <div class="bg-gradient-to-r from-red-500 to-red-600 p-3 rounded-xl">
-                    <i class="material-icons text-white text-2xl">people</i>
-                </div>
-                <div>
-                    <h3 class="text-slate-600 font-medium">Students w/ Outstanding</h3>
-                    <p class="text-2xl font-bold text-red-600" id="studentsWithOutstanding">0</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Average Outstanding Card -->
-        <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-white/20 hover:shadow-2xl transition-all duration-300">
-            <div class="flex items-center gap-4">
-                <div class="bg-gradient-to-r from-purple-500 to-purple-600 p-3 rounded-xl">
-                    <i class="material-icons text-white text-2xl">calculate</i>
-                </div>
-                <div>
-                    <h3 class="text-slate-600 font-medium">Avg Outstanding</h3>
-                    <p class="text-2xl font-bold text-purple-600" id="averageOutstanding">K0</p>
+                <div class="filter-actions">
+                    <button onclick="applyFilters()" class="btn-apply">
+                        <i class="material-icons">search</i>
+                        Apply Filters
+                    </button>
+                    <button onclick="clearAllFilters()" class="btn-reset">
+                        <i class="material-icons">refresh</i>
+                        Clear All
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Report Navigation Tabs -->
-    <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-2 mb-6 border border-white/20">
-        <div class="flex flex-wrap gap-2">
-            <button onclick="showSection('transactions')" id="transactionsTab" 
-                    class="px-4 py-2 rounded-lg font-medium transition-all duration-200 bg-blue-600 text-white">
-                Student Payments
-            </button>
-            <button onclick="showSection('outstanding')" id="outstandingTab" 
-                    class="px-4 py-2 rounded-lg font-medium transition-all duration-200 text-slate-600 hover:bg-slate-100">
-                Outstanding Payments
-            </button>
+    <!-- ── KPI Cards ── -->
+    <div class="kpi-grid">
+        <div class="kpi-card green fade-up delay-1">
+            <div class="kpi-top">
+                <div class="kpi-icon-wrap"><i class="material-icons">account_balance_wallet</i></div>
+            </div>
+            <div class="kpi-value" id="totalRevenue">K0</div>
+            <div class="kpi-label">Total Collections</div>
         </div>
     </div>
 
-    <!-- High-Value Transactions Section -->
-    <div id="transactionsSection" class="report-section">
-        <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 mb-6">
-            <div class="p-6 border-b border-slate-200">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <div class="bg-emerald-100 p-3 rounded-xl">
-                            <i class="material-icons text-emerald-600 text-2xl">receipt_long</i>
-                        </div>
-                        <div>
-                            <h2 class="text-2xl font-bold text-slate-800">Student Payments</h2>
-                            <p class="text-slate-600">Payment records and transaction history</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-4">
-                        <div class="text-right bg-slate-50 rounded-xl p-4">
-                            <p class="text-sm text-slate-500">Total Records</p>
-                            <p class="font-semibold text-slate-800" id="transactionsTotalCount">0</p>
-                        </div>
-                        <button onclick="exportTransactionsToExcel()" 
-                                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2 text-sm">
-                            <i class="material-icons text-sm">download</i>
-                            Export to Excel
+    <!-- ── Tabs ── -->
+    <div class="tabs-bar fade-up delay-2">
+        <button onclick="showSection('transactions')" id="transactionsTab" class="tab-btn active">
+            <i class="material-icons">receipt_long</i>
+            Collections
+        </button>
+        <button onclick="showSection('outstanding')" id="outstandingTab" class="tab-btn">
+            <i class="material-icons">warning</i>
+            Outstanding Payments
+        </button>
+    </div>
+
+    <!-- ── Student Payments Section ── -->
+    <div id="transactionsSection" class="report-section fade-up delay-3">
+        <div class="dc-card" style="margin-bottom:1.25rem;">
+            <div class="dc-card-header">
+                <div class="dc-card-header-title">
+                    <i class="material-icons">receipt_long</i>
+                    Student Payments
+                    <span style="font-size:.72rem; font-weight:500; color:var(--muted); background:var(--navy-lt);
+                                 border:1px solid var(--navy-mid); border-radius:999px; padding:.1rem .6rem; margin-left:.25rem;">
+                        payment records &amp; transaction history
+                    </span>
+                </div>
+                <div class="section-header-right">
+                    <!-- Flat / Grouped toggle -->
+                    <div class="view-toggle">
+                        <button class="view-toggle-btn active" id="flatViewBtn" onclick="setViewMode('flat')" title="Flat list">
+                            <i class="material-icons">view_list</i> Flat
+                        </button>
+                        <button class="view-toggle-btn" id="groupedViewBtn" onclick="setViewMode('grouped')" title="Group by payment method">
+                            <i class="material-icons">view_agenda</i> Grouped
                         </button>
                     </div>
+                    <div class="count-badge">
+                        <div class="cb-label">Total Records</div>
+                        <div class="cb-value" id="transactionsTotalCount">0</div>
+                    </div>
+                    <button onclick="exportTransactionsToExcel()" class="btn-export">
+                        <i class="material-icons">download</i>
+                        Export Excel
+                    </button>
                 </div>
             </div>
-            
-            <div class="overflow-x-auto">
-                <table class="min-w-full">
-                    <thead class="bg-slate-50">
+
+            <div class="dc-table-wrap">
+                <table class="dc-table">
+                    <thead>
                         <tr>
-                            <th class="py-4 px-6 text-left text-sm font-semibold text-slate-700">Student Details</th>
-                            <th class="py-4 px-6 text-left text-sm font-semibold text-slate-700">Programme</th>
-                            <th class="py-4 px-6 text-left text-sm font-semibold text-slate-700">Amount</th>
-                            <th class="py-4 px-6 text-left text-sm font-semibold text-slate-700">Payment Method</th>
-                            <th class="py-4 px-6 text-left text-sm font-semibold text-slate-700">Transaction Reference</th>
-                            <th class="py-4 px-6 text-left text-sm font-semibold text-slate-700">Date</th>
+                            <th>Student Details</th>
+                            <th>Programme</th>
+                            <th>Amount</th>
+                            <th>Payment Method</th>
+                            <th>Transaction Ref</th>
+                            <th>Date</th>
                         </tr>
                     </thead>
-                    <tbody id="transactionsTable" class="divide-y divide-slate-200">
-                        <!-- Populated by JavaScript -->
-                    </tbody>
+                    <tbody id="transactionsTable"></tbody>
                 </table>
             </div>
-            
-            <!-- Transaction Pagination -->
             <div id="transactionsPagination" class="hidden"></div>
         </div>
     </div>
 
-    <!-- Outstanding Payments Section -->
-    <div id="outstandingSection" class="report-section hidden">
-        <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 mb-6">
-            <div class="p-6 border-b border-slate-200">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <div class="bg-amber-100 p-3 rounded-xl">
-                            <i class="material-icons text-amber-600 text-2xl">warning</i>
-                        </div>
-                        <div>
-                            <h2 class="text-2xl font-bold text-slate-800">Outstanding Payment Records</h2>
-                            <p class="text-slate-600">Students with unpaid fees and balances</p>
-                        </div>
+    <!-- ── Outstanding Payments Section ── -->
+    <div id="outstandingSection" class="report-section hidden fade-up delay-3">
+        <div class="dc-card" style="margin-bottom:1.25rem;">
+            <div class="dc-card-header">
+                <div class="dc-card-header-title">
+                    <i class="material-icons">warning</i>
+                    Outstanding Payments
+                    <span style="font-size:.72rem; font-weight:500; color:var(--muted); background:var(--amber-lt);
+                                 border:1px solid #fde68a; border-radius:999px; padding:.1rem .6rem; margin-left:.25rem;">
+                        students with unpaid balances
+                    </span>
+                </div>
+                <div class="section-header-right">
+                    <div class="count-badge" style="background:var(--coral-lt); border-color:var(--coral-mid);">
+                        <div class="cb-label">Total Outstanding</div>
+                        <div class="cb-value" id="outstandingTotalAmount" style="color:var(--coral-dk);">K0</div>
                     </div>
-                    <div class="flex items-center gap-4">
-                        <div class="text-right bg-slate-50 rounded-xl p-4">
-                            <p class="text-sm text-slate-500">Total Outstanding</p>
-                            <p class="font-semibold text-red-600" id="outstandingTotalAmount">K0</p>
-                        </div>
-                        <button onclick="exportOutstandingToExcel()" 
-                                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2 text-sm">
-                            <i class="material-icons text-sm">download</i>
-                            Export to Excel
-                        </button>
-                    </div>
+                    <button onclick="exportOutstandingToExcel()" class="btn-export">
+                        <i class="material-icons">download</i>
+                        Export Excel
+                    </button>
                 </div>
             </div>
-            
-            <div class="overflow-x-auto">
-                <table class="min-w-full">
-                    <thead class="bg-slate-50">
+
+            <div class="dc-table-wrap">
+                <table class="dc-table">
+                    <thead>
                         <tr>
-                            <th class="py-4 px-6 text-left">
-                                <input type="checkbox" id="selectAllOutstanding" onchange="toggleSelectAllOutstanding()" class="rounded border-slate-300">
+                            <th class="chk-cell" style="width:40px;">
+                                <input type="checkbox" id="selectAllOutstanding" onchange="toggleSelectAllOutstanding()">
                             </th>
-                            <th class="py-4 px-6 text-left text-sm font-semibold text-slate-700">Student Details</th>
-                            <th class="py-4 px-6 text-left text-sm font-semibold text-slate-700">Programme</th>
-                            <th class="py-4 px-6 text-left text-sm font-semibold text-slate-700">School</th>
-                            <th class="py-4 px-6 text-left text-sm font-semibold text-slate-700">Outstanding Amount</th>
-                            <th class="py-4 px-6 text-left text-sm font-semibold text-slate-700">Last Payment</th>
-                            <th class="py-4 px-6 text-left text-sm font-semibold text-slate-700">Actions</th>
+                            <th>Student Details</th>
+                            <th>Programme</th>
+                            <th>School</th>
+                            <th>Outstanding</th>
+                            <th>Last Payment</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="outstandingTable" class="divide-y divide-slate-200">
-                        <!-- Populated by JavaScript -->
-                    </tbody>
+                    <tbody id="outstandingTable"></tbody>
                 </table>
             </div>
-            
-            <!-- Outstanding Pagination -->
             <div id="outstandingPagination" class="hidden"></div>
         </div>
     </div>
-</div>
 
+</div><!-- /dc-page -->
 <!-- Loading Overlay -->
-<div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-40 hidden">
-    <div class="flex items-center justify-center h-full">
-        <div class="bg-white rounded-2xl p-8 flex items-center gap-4">
-            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <span class="text-slate-700">Processing...</span>
-        </div>
+<div id="loadingOverlay" class="loading-overlay hidden">
+    <div class="loading-box">
+        <div class="spinner"></div>
+        <span>Processing…</span>
     </div>
 </div>
 
-<!-- Hidden data for JavaScript -->
+<!-- Toast -->
+<div id="toastEl" class="toast info">
+    <i class="material-icons" id="toastIcon">info</i>
+    <span id="toastMsg"></span>
+</div>
+
 <script type="application/json" id="transactionsData">@Html.Raw(ViewBag.Transactions ?? "[]")</script>
 <script type="application/json" id="outstandingData">@Html.Raw(ViewBag.OutstandingStudents ?? "[]")</script>
-
-<!-- SheetJS library for Excel export -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <script>
-let currentPage = {
-    transactions: 1,
-    outstanding: 1
-};
-let pageSize = 50;
-let filteredData = {
-    transactions: [],
-    outstanding: []
-};
-let originalData = {
-    transactions: [],
-    outstanding: []
-};
+    /* ════════════════════════════════════════════
+       STATE
+    ════════════════════════════════════════════ */
+    let currentPage    = { transactions: 1, outstanding: 1 };
+    let pageSize       = 50;
+    let filteredData   = { transactions: [], outstanding: [] };
+    let originalData   = { transactions: [], outstanding: [] };
+    let viewMode       = 'flat';       // 'flat' | 'grouped'
+    let filtersOpen    = true;
+    let collapsedGroups = new Set();   // which payment-method groups are collapsed
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Set filter values from URL
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('fromDate')) document.getElementById('fromDate').value = params.get('fromDate');
-    if (params.get('toDate')) document.getElementById('toDate').value = params.get('toDate');
-    if (params.get('studentNumber')) document.getElementById('studentNumber').value = params.get('studentNumber');
-    if (params.get('transactionRef')) document.getElementById('transactionRef').value = params.get('transactionRef');
-    if (params.get('paymentMethod')) document.getElementById('paymentMethod').value = params.get('paymentMethod');
-    if (params.get('programme')) document.getElementById('programme').value = params.get('programme');
-    if (params.get('school')) document.getElementById('school').value = params.get('school');
-    
-    loadTransactionsData();
-    loadOutstandingData();
-});
+    /* ════════════════════════════════════════════
+       INIT
+    ════════════════════════════════════════════ */
+    document.addEventListener('DOMContentLoaded', function () {
+        const params = new URLSearchParams(window.location.search);
+        ['fromDate','toDate','studentNumber','transactionRef','paymentMethod','programme','school']
+            .forEach(id => { if (params.get(id)) document.getElementById(id).value = params.get(id); });
 
-// Tab functionality
-function showSection(sectionName) {
-    // Hide all sections
-    document.querySelectorAll('.report-section').forEach(section => {
-        section.classList.add('hidden');
+        loadTransactionsData();
+        loadOutstandingData();
     });
-    
-    // Remove active class from all tabs
-    document.querySelectorAll('[id$="Tab"]').forEach(tab => {
-        tab.classList.remove('bg-blue-600', 'text-white');
-        tab.classList.add('text-slate-600', 'hover:bg-slate-100');
-    });
-    
-    // Show selected section
-    document.getElementById(sectionName + 'Section').classList.remove('hidden');
-    
-    // Make selected tab active
-    const activeTab = document.getElementById(sectionName + 'Tab');
-    activeTab.classList.add('bg-blue-600', 'text-white');
-    activeTab.classList.remove('text-slate-600', 'hover:bg-slate-100');
-}
 
-function populateDropdownFilters() {
-    const paymentMethodSelect = document.getElementById('paymentMethod');
-    const programmeSelect = document.getElementById('programme');
-    const schoolSelect = document.getElementById('school');
-    
-    const paymentMethods = new Set();
-    const programmes = new Set();
-    const schools = new Set();
-    
-    console.log('Debug: Original data structure:', {
-        transactions: originalData.transactions.length > 0 ? originalData.transactions[0] : 'No transactions',
-        outstanding: originalData.outstanding.length > 0 ? originalData.outstanding[0] : 'No outstanding'
-    });
-    
-    // Collect unique values from transaction data
-    originalData.transactions.forEach((transaction, index) => {
-        // Check all possible field names for payment method
-        const paymentMethodValue = transaction.PaymentMethod || transaction.paymentMethod || transaction.payment_method;
-        if (paymentMethodValue && String(paymentMethodValue).trim()) {
-            paymentMethods.add(String(paymentMethodValue).trim());
-        }
-        
-        // Check all possible field names for programme
-        const programmeValue = transaction.Programme || transaction.Program || transaction.programme || transaction.program;
-        if (programmeValue && String(programmeValue).trim()) {
-            programmes.add(String(programmeValue).trim());
-        }
-        
-        // Debug first few records
-        if (index < 3) {
-            console.log(`Transaction ${index}:`, {
-                PaymentMethod: transaction.PaymentMethod,
-                Programme: transaction.Programme,
-                allFields: Object.keys(transaction)
-            });
-        }
-    });
-    
-    // Collect unique values from outstanding data
-    originalData.outstanding.forEach((student, index) => {
-        // Check all possible field names for programme
-        const programmeValue = student.Programme || student.Program || student.programme || student.program;
-        if (programmeValue && String(programmeValue).trim()) {
-            programmes.add(String(programmeValue).trim());
-        }
-        
-        // Check all possible field names for school
-        const schoolValue = student.School || student.school || student.Faculty || student.faculty;
-        if (schoolValue && String(schoolValue).trim()) {
-            schools.add(String(schoolValue).trim());
-        }
-        
-        // Debug first few records
-        if (index < 3) {
-            console.log(`Outstanding ${index}:`, {
-                Programme: student.Programme,
-                School: student.School,
-                allFields: Object.keys(student)
-            });
-        }
-    });
-    
-    // Clear existing options except the first one
-    function clearSelectOptions(select) {
-        while (select.children.length > 1) {
-            select.removeChild(select.lastChild);
-        }
+    /* ════════════════════════════════════════════
+       COLLAPSIBLE FILTERS
+    ════════════════════════════════════════════ */
+    function toggleFilters() {
+        filtersOpen = !filtersOpen;
+        document.getElementById('filterCollapsible').classList.toggle('collapsed', !filtersOpen);
+        document.getElementById('filterChevron').classList.toggle('open', filtersOpen);
+        document.getElementById('filterToggleHint').textContent = filtersOpen ? 'Click to collapse' : 'Click to expand';
     }
-    
-    clearSelectOptions(paymentMethodSelect);
-    clearSelectOptions(programmeSelect);
-    clearSelectOptions(schoolSelect);
-    
-    // Add payment method options
-    Array.from(paymentMethods).sort().forEach(method => {
-        const option = document.createElement('option');
-        option.value = method;
-        option.textContent = method;
-        paymentMethodSelect.appendChild(option);
-    });
-    
-    // Add programme options
-    Array.from(programmes).sort().forEach(programme => {
-        const option = document.createElement('option');
-        option.value = programme;
-        option.textContent = programme;
-        programmeSelect.appendChild(option);
-    });
-    
-    // Add school options
-    Array.from(schools).sort().forEach(school => {
-        const option = document.createElement('option');
-        option.value = school;
-        option.textContent = school;
-        schoolSelect.appendChild(option);
-    });
-    
-    console.log('Populated filters:', {
-        paymentMethods: Array.from(paymentMethods),
-        programmes: Array.from(programmes),
-        schools: Array.from(schools),
-        counts: {
-            paymentMethods: paymentMethods.size,
-            programmes: programmes.size,
-            schools: schools.size
-        }
-    });
-    
-    // Show warning if only one option found
-    if (programmes.size <= 1) {
-        console.warn('Only found', programmes.size, 'programme(s). Check data field names.');
-    }
-    if (schools.size <= 1) {
-        console.warn('Only found', schools.size, 'school(s). Check data field names.');
-    }
-}
 
-function updateSummaryCards() {
-    // Calculate summary statistics from filtered data
-    const totalRevenue = filteredData.transactions.reduce((sum, transaction) => sum + (transaction.Amount || 0), 0);
-    const totalOutstanding = filteredData.outstanding.reduce((sum, student) => sum + (student.OutstandingAmount || 0), 0);
-    const studentsWithOutstanding = filteredData.outstanding.length;
-    const averageOutstanding = studentsWithOutstanding > 0 ? totalOutstanding / studentsWithOutstanding : 0;
-    
-    // Calculate collection rate (Revenue / (Revenue + Outstanding) * 100)
-    const totalExpected = totalRevenue + totalOutstanding;
-    const collectionRate = totalExpected > 0 ? (totalRevenue / totalExpected * 100) : 0;
-    
-    // Update the DOM
-    document.getElementById('totalRevenue').textContent = `K${totalRevenue.toLocaleString()}`;
-    document.getElementById('totalOutstanding').textContent = `K${totalOutstanding.toLocaleString()}`;
-    document.getElementById('studentsWithOutstanding').textContent = studentsWithOutstanding.toLocaleString();
-    document.getElementById('averageOutstanding').textContent = `K${averageOutstanding.toLocaleString()}`;
-    document.getElementById('collectionRate').textContent = `${collectionRate.toFixed(1)}%`;
-    
-    // Update outstanding section header
-    document.getElementById('outstandingTotalAmount').textContent = `K${totalOutstanding.toLocaleString()}`;
-    
-    console.log('Updated summary cards:', {
-        totalRevenue,
-        totalOutstanding,
-        studentsWithOutstanding,
-        averageOutstanding,
-        collectionRate
-    });
-}
+    function updateActiveFiltersBadge() {
+        const ids = ['fromDate','toDate','studentNumber','transactionRef','paymentMethod','programme','school'];
+        const count = ids.filter(id => document.getElementById(id)?.value?.trim()).length;
+        document.getElementById('activeFiltersCount').textContent = count;
+        document.getElementById('activeFiltersBadge').style.display = count > 0 ? '' : 'none';
+    }
 
-function loadTransactionsData() {
-    try {
-        const rawData = document.getElementById('transactionsData').textContent || '[]';
-        console.log('Raw transactions data:', rawData);
-        originalData.transactions = JSON.parse(rawData);
-        console.log('Parsed transactions:', originalData.transactions);
-        
-        // Populate dropdown filter options
-        populateDropdownFilters();
-        
-        // Apply initial filters (should show all if no filters set)
-        applyTransactionFilters();
+    /* ════════════════════════════════════════════
+       TABS
+    ════════════════════════════════════════════ */
+    function showSection(name) {
+        document.querySelectorAll('.report-section').forEach(s => s.classList.add('hidden'));
+        document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+        document.getElementById(name + 'Section').classList.remove('hidden');
+        document.getElementById(name + 'Tab').classList.add('active');
+    }
+
+    /* ════════════════════════════════════════════
+       VIEW MODE (flat / grouped)
+    ════════════════════════════════════════════ */
+    function setViewMode(mode) {
+        viewMode = mode;
+        collapsedGroups.clear();
+        document.getElementById('flatViewBtn').classList.toggle('active', mode === 'flat');
+        document.getElementById('groupedViewBtn').classList.toggle('active', mode === 'grouped');
         displayTransactionsPage(currentPage.transactions);
-    } catch (error) {
-        console.error('Error loading transactions:', error);
-        document.getElementById('transactionsTable').innerHTML = 
-            '<tr><td colspan="6" class="py-8 text-center text-red-500">Error loading transaction data</td></tr>';
     }
-}
 
-function loadOutstandingData() {
-    try {
-        const rawData = document.getElementById('outstandingData').textContent || '[]';
-        console.log('Raw outstanding data:', rawData);
-        originalData.outstanding = JSON.parse(rawData);
-        console.log('Parsed outstanding:', originalData.outstanding);
-        
-        // Apply initial filters (should show all if no filters set)
+    /* ════════════════════════════════════════════
+       DROPDOWN POPULATION
+    ════════════════════════════════════════════ */
+    function populateDropdownFilters() {
+        const paymentMethods = new Set();
+        const programmes     = new Set();
+        const schools        = new Set();
+
+        originalData.transactions.forEach(t => {
+            const pm = t.PaymentMethod || t.paymentMethod;
+            if (pm?.trim()) paymentMethods.add(pm.trim());
+            const pr = t.Programme || t.Program || t.programme;
+            if (pr?.trim()) programmes.add(pr.trim());
+        });
+        originalData.outstanding.forEach(s => {
+            const pr = s.Programme || s.Program || s.programme;
+            if (pr?.trim()) programmes.add(pr.trim());
+            const sc = s.School || s.school || s.Faculty;
+            if (sc?.trim()) schools.add(sc.trim());
+        });
+
+        const fill = (id, set) => {
+            const sel = document.getElementById(id);
+            while (sel.children.length > 1) sel.removeChild(sel.lastChild);
+            [...set].sort().forEach(v => {
+                const o = document.createElement('option');
+                o.value = o.textContent = v;
+                sel.appendChild(o);
+            });
+        };
+        fill('paymentMethod', paymentMethods);
+        fill('programme',     programmes);
+        fill('school',        schools);
+    }
+
+    /* ════════════════════════════════════════════
+       SUMMARY CARDS
+    ════════════════════════════════════════════ */
+    function updateSummaryCards() {
+        const totalRevenue     = filteredData.transactions.reduce((s,t) => s + (t.Amount || 0), 0);
+        const totalOutstanding = filteredData.outstanding.reduce((s,t) => s + (t.OutstandingAmount || 0), 0);
+        const studentsCount    = filteredData.outstanding.length;
+        const avgOutstanding   = studentsCount > 0 ? totalOutstanding / studentsCount : 0;
+        const totalExpected    = totalRevenue + totalOutstanding;
+        const collectionRate   = totalExpected > 0 ? (totalRevenue / totalExpected * 100) : 0;
+        const fmt = v => 'K' + v.toLocaleString(undefined, { minimumFractionDigits:2, maximumFractionDigits:2 });
+
+        document.getElementById('totalRevenue').textContent = fmt(totalRevenue);
+        const optionals = {
+            totalOutstanding:         fmt(totalOutstanding),
+            studentsWithOutstanding:  studentsCount.toLocaleString(),
+            averageOutstanding:       fmt(avgOutstanding),
+            collectionRate:           collectionRate.toFixed(1) + '%',
+            outstandingTotalAmount:   fmt(totalOutstanding),
+        };
+        Object.entries(optionals).forEach(([id, val]) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = val;
+        });
+    }
+
+    /* ════════════════════════════════════════════
+       LOAD DATA
+    ════════════════════════════════════════════ */
+    function loadTransactionsData() {
+        try {
+            originalData.transactions = JSON.parse(document.getElementById('transactionsData').textContent || '[]');
+            populateDropdownFilters();
+            applyTransactionFilters();
+            displayTransactionsPage(1);
+            updateSummaryCards();
+        } catch (e) {
+            console.error('Error loading transactions:', e);
+            document.getElementById('transactionsTable').innerHTML =
+                '<tr class="empty-row"><td colspan="6"><i class="material-icons">error_outline</i>Error loading transaction data</td></tr>';
+        }
+    }
+
+    function loadOutstandingData() {
+        try {
+            originalData.outstanding = JSON.parse(document.getElementById('outstandingData').textContent || '[]');
+            applyOutstandingFilters();
+            displayOutstandingPage(1);
+        } catch (e) {
+            console.error('Error loading outstanding:', e);
+            document.getElementById('outstandingTable').innerHTML =
+                '<tr class="empty-row"><td colspan="7"><i class="material-icons">error_outline</i>Error loading outstanding payments data</td></tr>';
+        }
+    }
+
+    /* ════════════════════════════════════════════
+       FILTERS
+    ════════════════════════════════════════════ */
+    function applyTransactionFilters() {
+        const fromDate       = document.getElementById('fromDate').value;
+        const toDate         = document.getElementById('toDate').value;
+        const studentNumber  = document.getElementById('studentNumber').value.trim().toLowerCase();
+        const transactionRef = document.getElementById('transactionRef').value.trim().toLowerCase();
+        const paymentMethod  = document.getElementById('paymentMethod').value.trim();
+        const programme      = document.getElementById('programme').value.trim();
+
+        filteredData.transactions = originalData.transactions.filter(t => {
+            if (fromDate || toDate) {
+                const d = new Date(t.PaymentDate);
+                if (fromDate && d < new Date(fromDate + 'T00:00:00')) return false;
+                if (toDate   && d > new Date(toDate   + 'T23:59:59')) return false;
+            }
+            if (studentNumber  && !String(t.StudentId     || '').toLowerCase().includes(studentNumber))  return false;
+            if (transactionRef && !String(t.TransactionRef || '').toLowerCase().includes(transactionRef)) return false;
+            if (paymentMethod  && String(t.PaymentMethod  || '').trim() !== paymentMethod)  return false;
+            if (programme      && String(t.Programme      || '').trim() !== programme)      return false;
+            return true;
+        });
+        currentPage.transactions = 1;
+    }
+
+    function applyOutstandingFilters() {
+        const studentNumber = document.getElementById('studentNumber').value.trim().toLowerCase();
+        const programme     = document.getElementById('programme').value.trim();
+        const school        = document.getElementById('school').value.trim();
+
+        filteredData.outstanding = originalData.outstanding.filter(s => {
+            if (studentNumber && !String(s.StudentId || '').toLowerCase().includes(studentNumber)) return false;
+            if (programme     && String(s.Programme  || '').trim() !== programme) return false;
+            if (school        && String(s.School     || '').trim() !== school)    return false;
+            return true;
+        });
+        currentPage.outstanding = 1;
+    }
+
+    function applyFilters() {
+        applyTransactionFilters();
         applyOutstandingFilters();
-        displayOutstandingPage(currentPage.outstanding);
-    } catch (error) {
-        console.error('Error loading outstanding data:', error);
-        document.getElementById('outstandingTable').innerHTML = 
-            '<tr><td colspan="7" class="py-8 text-center text-red-500">Error loading outstanding payments data</td></tr>';
+        collapsedGroups.clear();
+        displayTransactionsPage(1);
+        displayOutstandingPage(1);
+        updateSummaryCards();
+        updateActiveFiltersBadge();
     }
-}
 
-function applyTransactionFilters() {
-    const fromDate = document.getElementById('fromDate').value.trim();
-    const toDate = document.getElementById('toDate').value.trim();
-    const studentNumber = document.getElementById('studentNumber').value.trim().toLowerCase();
-    const transactionRef = document.getElementById('transactionRef').value.trim().toLowerCase();
-    const paymentMethod = document.getElementById('paymentMethod').value.trim();
-    const programme = document.getElementById('programme').value.trim();
-    
-    console.log('Applying transaction filters:', { fromDate, toDate, studentNumber, transactionRef, paymentMethod, programme });
-    
-    filteredData.transactions = originalData.transactions.filter(transaction => {
-        let matches = true;
-        
-        // Date filter
-        if (fromDate || toDate) {
-            const transactionDate = new Date(transaction.PaymentDate);
-            if (fromDate && transactionDate < new Date(fromDate + 'T00:00:00')) {
-                matches = false;
-            }
-            if (toDate && transactionDate > new Date(toDate + 'T23:59:59')) {
-                matches = false;
-            }
-        }
-        
-        // Student number filter
-        if (studentNumber && studentNumber.length > 0) {
-            const studentIdStr = String(transaction.StudentId || '').toLowerCase();
-            if (!studentIdStr.includes(studentNumber)) {
-                matches = false;
-            }
-        }
-        
-        // Transaction reference filter
-        if (transactionRef && transactionRef.length > 0) {
-            const transactionRefStr = String(transaction.TransactionRef || '').toLowerCase();
-            if (!transactionRefStr.includes(transactionRef)) {
-                matches = false;
-            }
-        }
-        
-        // Payment method filter
-        if (paymentMethod && paymentMethod.length > 0) {
-            const transactionPaymentMethod = String(transaction.PaymentMethod || '').trim();
-            if (transactionPaymentMethod !== paymentMethod) {
-                matches = false;
-            }
-        }
-        
-        // Programme filter
-        if (programme && programme.length > 0) {
-            const transactionProgramme = String(transaction.Programme || '').trim();
-            if (transactionProgramme !== programme) {
-                matches = false;
-            }
-        }
-        
-        return matches;
-    });
-    
-    console.log('Filtered transactions:', filteredData.transactions.length);
-    
-    // Reset to first page after filtering
-    currentPage.transactions = 1;
-}
+    function clearAllFilters() {
+        ['fromDate','toDate','studentNumber','transactionRef','paymentMethod','programme','school']
+            .forEach(id => document.getElementById(id).value = '');
+        applyFilters();
+    }
 
-function applyOutstandingFilters() {
-    const studentNumber = document.getElementById('studentNumber').value.trim().toLowerCase();
-    const programme = document.getElementById('programme').value.trim();
-    const school = document.getElementById('school').value.trim();
-    
-    console.log('Applying outstanding filters:', { studentNumber, programme, school });
-    
-    filteredData.outstanding = originalData.outstanding.filter(student => {
-        let matches = true;
-        
-        // Student number filter
-        if (studentNumber && studentNumber.length > 0) {
-            const studentIdStr = String(student.StudentId || '').toLowerCase();
-            if (!studentIdStr.includes(studentNumber)) {
-                matches = false;
-            }
-        }
-        
-        // Programme filter
-        if (programme && programme.length > 0) {
-            const studentProgramme = String(student.Programme || '').trim();
-            if (studentProgramme !== programme) {
-                matches = false;
-            }
-        }
-        
-        // School filter
-        if (school && school.length > 0) {
-            const studentSchool = String(student.School || '').trim();
-            if (studentSchool !== school) {
-                matches = false;
-            }
-        }
-        
-        return matches;
-    });
-    
-    console.log('Filtered outstanding:', filteredData.outstanding.length);
-    
-    // Reset to first page after filtering
-    currentPage.outstanding = 1;
-}
+    /* ════════════════════════════════════════════
+       HELPERS
+    ════════════════════════════════════════════ */
+    const fmtAmt  = v => 'K' + (v||0).toLocaleString(undefined, { minimumFractionDigits:2 });
+    const fmtDate = d => d ? new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : 'N/A';
+    const fmtTime = d => d ? new Date(d).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}) : '';
 
-function displayTransactionsPage(page) {
-    const tbody = document.getElementById('transactionsTable');
-    const startIndex = (page - 1) * pageSize;
-    const endIndex = Math.min(startIndex + pageSize, filteredData.transactions.length);
-    const pageData = filteredData.transactions.slice(startIndex, endIndex);
-    
-    console.log('Displaying transactions page:', page, 'Data:', pageData.length);
-    
-    tbody.innerHTML = '';
-    
-    if (pageData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-slate-500">No transactions found</td></tr>';
+    // Pick a Material Icon that fits the payment method name
+    function methodIcon(method) {
+        const m = (method || '').toLowerCase();
+        if (m.includes('cash'))                                               return 'payments';
+        if (m.includes('card') || m.includes('visa') || m.includes('master')) return 'credit_card';
+        if (m.includes('bank') || m.includes('transfer') || m.includes('eft'))return 'account_balance';
+        if (m.includes('mobile') || m.includes('momo') || m.includes('airtel') || m.includes('mtn') || m.includes('zamtel')) return 'smartphone';
+        if (m.includes('cheque') || m.includes('check'))                      return 'description';
+        return 'paid';
+    }
+
+    // Single data row template (shared by both flat and grouped)
+    function txRow(t) {
+        return `<tr>
+            <td><div class="student-name">${t.StudentName||'Unknown'}</div><div class="student-id">${t.StudentId||'N/A'}</div></td>
+            <td class="programme-cell">${t.Programme||'Unknown'}</td>
+            <td><span class="amount-pos">${fmtAmt(t.Amount)}</span></td>
+            <td><span class="method-pill">${t.PaymentMethod||'Unknown'}</span></td>
+            <td><span class="ref-mono">${t.TransactionRef||'N/A'}</span></td>
+            <td><div class="date-main">${fmtDate(t.PaymentDate)}</div><div class="date-time">${fmtTime(t.PaymentDate)}</div></td>
+        </tr>`;
+    }
+
+    /* ════════════════════════════════════════════
+       DISPLAY — FLAT MODE  (paginated)
+    ════════════════════════════════════════════ */
+    function displayFlatPage(page) {
+        const tbody = document.getElementById('transactionsTable');
+        const start = (page - 1) * pageSize;
+        const slice = filteredData.transactions.slice(start, start + pageSize);
+
+        tbody.innerHTML = slice.length === 0
+            ? `<tr class="empty-row"><td colspan="6"><i class="material-icons">search_off</i>No transactions found</td></tr>`
+            : slice.map(txRow).join('');
+
         updateTransactionsPagination();
-        return;
     }
-    
-    pageData.forEach((transaction, index) => {
-        const row = document.createElement('tr');
-        row.className = index % 2 === 0 ? 'bg-white' : 'bg-slate-50/50';
-        
-        row.innerHTML = `
-            <td class="py-4 px-6">
-                <div>
-                    <div class="font-semibold text-slate-900">${transaction.StudentName || 'Unknown'}</div>
-                    <div class="text-sm text-slate-500">${transaction.StudentId || 'N/A'}</div>
-                </div>
-            </td>
-            <td class="py-4 px-6">
-                <div class="text-sm text-slate-700">${transaction.Programme || 'Unknown'}</div>
-            </td>
-            <td class="py-4 px-6">
-                <span class="text-lg font-bold text-green-600">K${(transaction.Amount || 0).toLocaleString()}</span>
-            </td>
-            <td class="py-4 px-6">
-                <span class="inline-flex px-3 py-1 text-sm font-medium bg-blue-100 text-blue-800 rounded-full">
-                    ${transaction.PaymentMethod || 'Unknown'}
-                </span>
-            </td>
-            <td class="py-4 px-6">
-                <span class="text-sm text-slate-600 font-mono">${transaction.TransactionRef || 'N/A'}</span>
-            </td>
-            <td class="py-4 px-6">
-                <div class="text-sm text-slate-700">
-                    ${transaction.PaymentDate ? new Date(transaction.PaymentDate).toLocaleDateString('en-US', { 
-                        year: 'numeric', 
-                        month: 'short', 
-                        day: 'numeric' 
-                    }) : 'N/A'}
-                </div>
-                <div class="text-xs text-slate-500">
-                    ${transaction.PaymentDate ? new Date(transaction.PaymentDate).toLocaleTimeString('en-US', { 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
-                    }) : ''}
-                </div>
-            </td>
-        `;
-        tbody.appendChild(row);
-    });
-    
-    updateTransactionsPagination();
-}
 
-function displayOutstandingPage(page) {
-    const tbody = document.getElementById('outstandingTable');
-    const startIndex = (page - 1) * pageSize;
-    const endIndex = Math.min(startIndex + pageSize, filteredData.outstanding.length);
-    const pageData = filteredData.outstanding.slice(startIndex, endIndex);
-    
-    console.log('Displaying outstanding page:', page, 'Data:', pageData.length);
-    
-    tbody.innerHTML = '';
-    
-    if (pageData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="py-8 text-center text-slate-500">No outstanding payments found</td></tr>';
+    /* ════════════════════════════════════════════
+       DISPLAY — GROUPED MODE  (all rows, no pagination)
+    ════════════════════════════════════════════ */
+    function displayGroupedView() {
+        const tbody = document.getElementById('transactionsTable');
+
+        if (filteredData.transactions.length === 0) {
+            tbody.innerHTML = `<tr class="empty-row"><td colspan="6"><i class="material-icons">search_off</i>No transactions found</td></tr>`;
+            document.getElementById('transactionsTotalCount').textContent = '0';
+            // Hide pagination
+            const pg = document.getElementById('transactionsPagination');
+            pg.classList.add('hidden'); pg.innerHTML = '';
+            return;
+        }
+
+        // Build groups map (sorted alpha by method name)
+        const groups = {};
+        filteredData.transactions.forEach(t => {
+            const key = (t.PaymentMethod || 'Unknown').trim();
+            (groups[key] = groups[key] || []).push(t);
+        });
+        const sortedKeys = Object.keys(groups).sort();
+
+        let html = '';
+        sortedKeys.forEach(method => {
+            const rows      = groups[method];
+            const total     = rows.reduce((s,t) => s + (t.Amount||0), 0);
+            const count     = rows.length;
+            const gkey      = encodeURIComponent(method);
+            const collapsed = collapsedGroups.has(method);
+
+            // ── Group header row ──
+            html += `
+            <tr class="group-header-row">
+                <td colspan="6">
+                    <div class="group-header-inner">
+                        <div class="group-title">
+                            <button class="group-collapse-btn${collapsed?' collapsed':''}"
+                                    onclick="toggleGroup('${gkey}')"
+                                    title="${collapsed?'Expand':'Collapse'} group">
+                                <i class="material-icons">expand_more</i>
+                            </button>
+                            <div class="group-method-icon">
+                                <i class="material-icons">${methodIcon(method)}</i>
+                            </div>
+                            ${method}
+                            <span class="group-pill">
+                                <i class="material-icons" style="font-size:12px;">receipt</i>
+                                ${count} record${count!==1?'s':''}
+                            </span>
+                        </div>
+                        <span class="group-subtotal-amt">${fmtAmt(total)}</span>
+                    </div>
+                </td>
+            </tr>`;
+
+            if (!collapsed) {
+                // ── Data rows ──
+                html += rows.map(txRow).join('');
+
+                // ── Subtotal footer row ──
+                html += `
+                <tr class="group-footer-row" data-group-footer="${gkey}">
+                    <td colspan="2" style="text-align:right; color:var(--muted); font-weight:600;">
+                        <span style="font-size:.7rem; text-transform:uppercase; letter-spacing:.04em;">${method} subtotal</span>
+                    </td>
+                    <td><span class="amount-pos" style="font-size:.88rem;">${fmtAmt(total)}</span></td>
+                    <td colspan="3" style="color:var(--muted); font-size:.75rem; font-weight:500;">
+                        ${count} transaction${count!==1?'s':''} &nbsp;·&nbsp; avg ${fmtAmt(total / count)}
+                    </td>
+                </tr>`;
+            }
+        });
+
+        tbody.innerHTML = html;
+        document.getElementById('transactionsTotalCount').textContent =
+            filteredData.transactions.length.toLocaleString();
+
+        // No pagination in grouped mode
+        const pg = document.getElementById('transactionsPagination');
+        pg.classList.add('hidden'); pg.innerHTML = '';
+    }
+
+    function toggleGroup(encodedMethod) {
+        const method = decodeURIComponent(encodedMethod);
+        if (collapsedGroups.has(method)) collapsedGroups.delete(method);
+        else collapsedGroups.add(method);
+        displayGroupedView();
+    }
+
+    /* ════════════════════════════════════════════
+       DISPLAY ROUTER
+    ════════════════════════════════════════════ */
+    function displayTransactionsPage(page) {
+        currentPage.transactions = page;
+        if (viewMode === 'grouped') displayGroupedView();
+        else displayFlatPage(page);
+    }
+
+    /* ════════════════════════════════════════════
+       DISPLAY — OUTSTANDING
+    ════════════════════════════════════════════ */
+    function displayOutstandingPage(page) {
+        const tbody = document.getElementById('outstandingTable');
+        const start = (page - 1) * pageSize;
+        const slice = filteredData.outstanding.slice(start, start + pageSize);
+
+        if (slice.length === 0) {
+            tbody.innerHTML = `<tr class="empty-row"><td colspan="7"><i class="material-icons">search_off</i>No outstanding payments found</td></tr>`;
+            updateOutstandingPagination(); return;
+        }
+
+        tbody.innerHTML = slice.map(s => `
+            <tr>
+                <td class="chk-cell"><input type="checkbox" class="student-checkbox" value="${s.StudentId||''}"></td>
+                <td><div class="student-name">${s.StudentName||'Unknown'}</div><div class="student-id">${s.StudentId||'N/A'}</div></td>
+                <td class="programme-cell">${s.Programme||'Unknown'}</td>
+                <td class="programme-cell">${s.School||'Unknown'}</td>
+                <td><span class="amount-neg">${fmtAmt(s.OutstandingAmount)}</span></td>
+                <td class="date-main">${s.LastPaymentDate ? fmtDate(s.LastPaymentDate) : 'No payments'}</td>
+                <td>
+                    <div style="display:flex;gap:.35rem;">
+                        <button onclick="sendReminder('${s.StudentId||''}')" class="action-btn-sm email" title="Send Reminder">
+                            <i class="material-icons">email</i>
+                        </button>
+                        <button onclick="viewDetails('${s.StudentId||''}')" class="action-btn-sm view" title="View Details">
+                            <i class="material-icons">visibility</i>
+                        </button>
+                    </div>
+                </td>
+            </tr>`).join('');
+
         updateOutstandingPagination();
-        return;
     }
-    
-    pageData.forEach((student, index) => {
-        const row = document.createElement('tr');
-        row.className = index % 2 === 0 ? 'bg-white' : 'bg-slate-50/50';
-        
-        row.innerHTML = `
-            <td class="py-4 px-6">
-                <input type="checkbox" class="student-checkbox rounded border-slate-300" value="${student.StudentId || ''}">
-            </td>
-            <td class="py-4 px-6">
-                <div>
-                    <div class="font-semibold text-slate-900">${student.StudentName || 'Unknown'}</div>
-                    <div class="text-sm text-slate-500">${student.StudentId || 'N/A'}</div>
-                </div>
-            </td>
-            <td class="py-4 px-6">
-                <div class="text-sm text-slate-700">${student.Programme || 'Unknown'}</div>
-            </td>
-            <td class="py-4 px-6">
-                <div class="text-sm text-slate-600">${student.School || 'Unknown'}</div>
-            </td>
-            <td class="py-4 px-6">
-                <span class="text-lg font-bold text-red-600">K${(student.OutstandingAmount || 0).toLocaleString()}</span>
-            </td>
-            <td class="py-4 px-6">
-                <div class="text-sm text-slate-600">
-                    ${student.LastPaymentDate ? 
-                        new Date(student.LastPaymentDate).toLocaleDateString('en-US', { 
-                            year: 'numeric', 
-                            month: 'short', 
-                            day: 'numeric' 
-                        }) : 
-                        'No payments'
-                    }
-                </div>
-            </td>
-            <td class="py-4 px-6">
-                <div class="flex items-center gap-2">
-                    <button onclick="sendReminder('${student.StudentId || ''}')" 
-                            class="text-blue-600 hover:text-blue-800 p-1 rounded transition-colors" 
-                            title="Send Reminder">
-                        <i class="material-icons text-sm">email</i>
-                    </button>
-                    <button onclick="viewDetails('${student.StudentId || ''}')" 
-                            class="text-slate-600 hover:text-slate-800 p-1 rounded transition-colors" 
-                            title="View Details">
-                        <i class="material-icons text-sm">visibility</i>
-                    </button>
-                </div>
-            </td>
-        `;
-        tbody.appendChild(row);
-    });
-    
-    updateOutstandingPagination();
-}
 
-function updateTransactionsPagination() {
-    const totalPages = Math.ceil(filteredData.transactions.length / pageSize);
-    const totalRecords = filteredData.transactions.length;
-    
-    console.log('Updating transactions pagination:', totalRecords, 'records', totalPages, 'pages');
-    
-    // Update total records display in header
-    const headerElement = document.getElementById('transactionsTotalCount');
-    if (headerElement) {
-        headerElement.textContent = totalRecords.toLocaleString();
+    /* ════════════════════════════════════════════
+       PAGINATION
+    ════════════════════════════════════════════ */
+    function updateTransactionsPagination() {
+        const total = filteredData.transactions.length;
+        document.getElementById('transactionsTotalCount').textContent = total.toLocaleString();
+        if (viewMode === 'grouped') return;
+        renderPagination('transactions', total);
     }
-    
-    // Show/hide pagination based on number of pages
-    const paginationDiv = document.getElementById('transactionsPagination');
-    if (paginationDiv) {
-        if (totalPages > 1) {
-            paginationDiv.classList.remove('hidden');
-            updatePaginationControls('transactions', totalPages, totalRecords);
+
+    function updateOutstandingPagination() {
+        renderPagination('outstanding', filteredData.outstanding.length);
+    }
+
+    function renderPagination(section, totalRecords) {
+        const totalPages = Math.ceil(totalRecords / pageSize);
+        const current    = currentPage[section];
+        const div        = document.getElementById(section + 'Pagination');
+        if (!div) return;
+        if (totalPages <= 1) { div.classList.add('hidden'); div.innerHTML = ''; return; }
+        div.classList.remove('hidden');
+
+        const start = (current - 1) * pageSize + 1;
+        const end   = Math.min(current * pageSize, totalRecords);
+
+        let pages = [];
+        if (totalPages <= 7) {
+            pages = Array.from({length:totalPages}, (_,i) => i+1);
         } else {
-            paginationDiv.classList.add('hidden');
+            pages = [1];
+            if (current > 3) pages.push('…');
+            for (let p = Math.max(2,current-1); p <= Math.min(totalPages-1,current+1); p++) pages.push(p);
+            if (current < totalPages-2) pages.push('…');
+            pages.push(totalPages);
         }
-    }
-}
 
-function updateOutstandingPagination() {
-    const totalPages = Math.ceil(filteredData.outstanding.length / pageSize);
-    const totalRecords = filteredData.outstanding.length;
-    
-    console.log('Updating outstanding pagination:', totalRecords, 'records', totalPages, 'pages');
-    
-    // Show/hide pagination based on number of pages
-    const paginationDiv = document.getElementById('outstandingPagination');
-    if (paginationDiv) {
-        if (totalPages > 1) {
-            paginationDiv.classList.remove('hidden');
-            updatePaginationControls('outstanding', totalPages, totalRecords);
-        } else {
-            paginationDiv.classList.add('hidden');
-        }
-    }
-}
+        const pageNums = pages.map(p =>
+            p === '…'
+                ? `<span style="padding:0 .25rem;color:var(--faint);">…</span>`
+                : `<button class="pg-btn ${p===current?'active':''}" onclick="changePage('${section}',${p})">${p}</button>`
+        ).join('');
 
-function updatePaginationControls(section, totalPages, totalRecords) {
-    const current = currentPage[section];
-    const start = totalRecords === 0 ? 0 : (current - 1) * pageSize + 1;
-    const end = Math.min(current * pageSize, totalRecords);
-    
-    // Create pagination HTML dynamically
-    const totalPagesForSection = Math.ceil(filteredData[section].length / pageSize);
-    const paginationHtml = `
-        <div class="flex items-center justify-between bg-slate-50 p-4 rounded-b-2xl">
-            <div class="flex items-center gap-4">
-                <div class="flex items-center gap-2 text-sm text-slate-600">
-                    <span>Showing</span>
-                    <span class="font-semibold">${start}</span>
-                    <span>to</span>
-                    <span class="font-semibold">${end}</span>
-                    <span>of</span>
-                    <span class="font-semibold">${totalRecords.toLocaleString()}</span>
-                    <span>${section === 'transactions' ? 'payments' : 'students'}</span>
-                </div>
-                
-                <div class="flex items-center gap-2">
-                    <button onclick="jumpToPage('${section}')" 
-                            class="px-3 py-2 text-sm text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
-                            title="Jump to specific page">
-                        <i class="material-icons text-sm">skip_next</i>
+        div.innerHTML = `
+            <div class="pg-bar">
+                <span class="pg-info">
+                    Showing <strong>${start}–${end}</strong> of <strong>${totalRecords.toLocaleString()}</strong>
+                    ${section === 'transactions' ? 'payments' : 'students'}
+                </span>
+                <div class="pg-buttons">
+                    <button class="pg-btn" onclick="changePage('${section}',1)" ${current===1?'disabled':''} title="First">
+                        <i class="material-icons">first_page</i>
+                    </button>
+                    <button class="pg-btn" onclick="changePage('${section}',${current-1})" ${current===1?'disabled':''} title="Prev">
+                        <i class="material-icons">chevron_left</i>
+                    </button>
+                    ${pageNums}
+                    <button class="pg-btn" onclick="changePage('${section}',${current+1})" ${current===totalPages?'disabled':''} title="Next">
+                        <i class="material-icons">chevron_right</i>
+                    </button>
+                    <button class="pg-btn" onclick="changePage('${section}',${totalPages})" ${current===totalPages?'disabled':''} title="Last">
+                        <i class="material-icons">last_page</i>
                     </button>
                 </div>
-            </div>
-            
-            <div class="flex items-center gap-2">
-                ${current > 1 ? `
-                    <button onclick="changePage('${section}', 1)" 
-                            class="px-3 py-2 text-sm text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
-                            title="First page">
-                        <i class="material-icons text-sm">first_page</i>
-                    </button>
-                    <button onclick="changePage('${section}', ${current - 1})" 
-                            class="px-3 py-2 text-sm text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
-                            title="Previous page">
-                        <i class="material-icons text-sm">chevron_left</i>
-                    </button>
-                ` : ''}
-                
-                ${generatePageNumbers(section, current, totalPages)}
-                
-                ${current < totalPages ? `
-                    <button onclick="changePage('${section}', ${current + 1})" 
-                            class="px-3 py-2 text-sm text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
-                            title="Next page">
-                        <i class="material-icons text-sm">chevron_right</i>
-                    </button>
-                    <button onclick="changePage('${section}', ${totalPages})" 
-                            class="px-3 py-2 text-sm text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
-                            title="Last page">
-                        <i class="material-icons text-sm">last_page</i>
-                    </button>
-                ` : ''}
-                
-                <div class="ml-4 flex items-center gap-2 text-sm text-slate-600">
-                    <span>Page ${current} of ${totalPages}</span>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    const paginationDiv = document.getElementById(`${section}Pagination`);
-    if (paginationDiv) {
-        paginationDiv.innerHTML = paginationHtml;
+            </div>`;
     }
-}
 
-function generatePageNumbers(section, current, totalPages) {
-    let pageNumbers = '';
-    const startPage = Math.max(1, current - 2);
-    const endPage = Math.min(totalPages, current + 2);
-    
-    for (let i = startPage; i <= endPage; i++) {
-        const colorClass = section === 'transactions' ? 'bg-blue-600' : 'bg-amber-600';
-        if (i === current) {
-            pageNumbers += `<span class="px-3 py-2 text-sm ${colorClass} text-white rounded-lg">${i}</span>`;
-        } else {
-            pageNumbers += `<button onclick="changePage('${section}', ${i})" 
-                                   class="px-3 py-2 text-sm text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors">
-                               ${i}
-                           </button>`;
-        }
+    function changePage(section, page) {
+        if (page < 1) return;
+        const max = Math.ceil(filteredData[section].length / pageSize);
+        if (page > max) return;
+        currentPage[section] = page;
+        if (section === 'transactions') displayTransactionsPage(page);
+        else displayOutstandingPage(page);
     }
-    
-    return pageNumbers;
-}
 
-function changePage(section, page) {
-    console.log('Changing page for', section, 'to', page);
-    currentPage[section] = page;
-    if (section === 'transactions') {
-        displayTransactionsPage(page);
-    } else {
-        displayOutstandingPage(page);
+    /* ════════════════════════════════════════════
+       SELECT ALL
+    ════════════════════════════════════════════ */
+    function toggleSelectAllOutstanding() {
+        const checked = document.getElementById('selectAllOutstanding').checked;
+        document.querySelectorAll('.student-checkbox').forEach(cb => cb.checked = checked);
     }
-}
 
-function changePageSize() {
-    const newPageSize = parseInt(document.getElementById('pageSize').value);
-    console.log('Changing page size to:', newPageSize);
-    
-    pageSize = newPageSize;
-    
-    // Reset to first page
-    currentPage.transactions = 1;
-    currentPage.outstanding = 1;
-    
-    // Refresh both displays
-    displayTransactionsPage(1);
-    displayOutstandingPage(1);
-}
-
-function jumpToPage(section) {
-    const input = prompt(`Enter page number (1 to ${Math.ceil(filteredData[section].length / pageSize)}):`);
-    if (input) {
-        const page = parseInt(input);
-        const maxPages = Math.ceil(filteredData[section].length / pageSize);
-        
-        if (page >= 1 && page <= maxPages) {
-            changePage(section, page);
-        } else {
-            showNotification('Invalid page number. Please enter a valid page number.', 'error');
-        }
+    /* ════════════════════════════════════════════
+       EXCEL EXPORT
+    ════════════════════════════════════════════ */
+    function exportTransactionsToExcel() {
+        try {
+            showLoading(true);
+            const data = filteredData.transactions.map(t => ({
+                'Student Name':          t.StudentName    || 'Unknown',
+                'Student ID':            t.StudentId      || 'N/A',
+                'Programme':             t.Programme      || 'Unknown',
+                'Amount (K)':            t.Amount         || 0,
+                'Payment Method':        t.PaymentMethod  || 'Unknown',
+                'Transaction Reference': t.TransactionRef || 'N/A',
+                'Payment Date': t.PaymentDate ? fmtDate(t.PaymentDate) : 'N/A',
+                'Payment Time': t.PaymentDate ? fmtTime(t.PaymentDate) : 'N/A',
+            }));
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(data);
+            ws['!cols'] = [{wch:25},{wch:15},{wch:30},{wch:12},{wch:15},{wch:22},{wch:12},{wch:12}];
+            XLSX.utils.book_append_sheet(wb, ws, 'Student Payments');
+            XLSX.writeFile(wb, `Student_Payments_${new Date().toISOString().slice(0,10)}.xlsx`);
+            showNotification('Excel file exported successfully!', 'success');
+        } catch (e) {
+            console.error(e);
+            showNotification('Error exporting to Excel.', 'error');
+        } finally { showLoading(false); }
     }
-}
 
-function applyFilters() {
-    console.log('Apply filters clicked');
-    
-    // Apply filters and reset to first page
-    currentPage.transactions = 1;
-    currentPage.outstanding = 1;
-    
-    applyTransactionFilters();
-    applyOutstandingFilters();
-    
-    displayTransactionsPage(1);
-    displayOutstandingPage(1);
-    
-    // Update summary cards with filtered data
-    updateSummaryCards();
-    
-    console.log('Filters applied successfully');
-}
-
-function clearAllFilters() {
-    console.log('Clear all filters clicked');
-    
-    document.getElementById('fromDate').value = '';
-    document.getElementById('toDate').value = '';
-    document.getElementById('studentNumber').value = '';
-    document.getElementById('transactionRef').value = '';
-    document.getElementById('paymentMethod').value = '';
-    document.getElementById('programme').value = '';
-    document.getElementById('school').value = '';
-    
-    currentPage.transactions = 1;
-    currentPage.outstanding = 1;
-    
-    applyFilters();
-    
-    console.log('All filters cleared');
-}
-
-function toggleSelectAllOutstanding() {
-    const selectAll = document.getElementById('selectAllOutstanding');
-    const checkboxes = document.querySelectorAll('.student-checkbox');
-    
-    checkboxes.forEach(checkbox => {
-        checkbox.checked = selectAll.checked;
-    });
-}
-
-// Legacy functions for compatibility
-function loadTransactions(page) {
-    changePage('transactions', page);
-}
-
-function loadOutstanding(page) {
-    changePage('outstanding', page);
-}
-
-// Placeholder functions for missing functionality
-function sendReminder(studentId) {
-    alert('Send reminder functionality not implemented yet.');
-}
-
-function viewDetails(studentId) {
-    alert('View details functionality not implemented yet.');
-}
-
-// Excel Export Functions
-function exportTransactionsToExcel() {
-    try {
-        showLoading(true);
-        
-        // Prepare data for Excel
-        const dataToExport = filteredData.transactions.map(transaction => ({
-            'Student Name': transaction.StudentName || 'Unknown',
-            'Student ID': transaction.StudentId || 'N/A',
-            'Programme': transaction.Programme || 'Unknown',
-            'Amount (K)': transaction.Amount || 0,
-            'Payment Method': transaction.PaymentMethod || 'Unknown',
-            'Transaction Reference': transaction.TransactionRef || 'N/A',
-            'Payment Date': transaction.PaymentDate ? new Date(transaction.PaymentDate).toLocaleDateString('en-US') : 'N/A',
-            'Payment Time': transaction.PaymentDate ? new Date(transaction.PaymentDate).toLocaleTimeString('en-US') : 'N/A'
-        }));
-        
-        // Create workbook
-        const workbook = XLSX.utils.book_new();
-        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-        
-        // Set column widths
-        const columnWidths = [
-            { wch: 25 }, // Student Name
-            { wch: 15 }, // Student ID
-            { wch: 30 }, // Programme
-            { wch: 12 }, // Amount
-            { wch: 15 }, // Payment Method
-            { wch: 20 }, // Transaction Reference
-            { wch: 12 }, // Payment Date
-            { wch: 12 }  // Payment Time
-        ];
-        worksheet['!cols'] = columnWidths;
-        
-        // Add worksheet to workbook
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Student Payments');
-        
-        // Generate filename with timestamp
-        const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
-        const filename = `Student_Payments_${timestamp}.xlsx`;
-        
-        // Save file
-        XLSX.writeFile(workbook, filename);
-        
-        showNotification('Excel file exported successfully!', 'success');
-        
-    } catch (error) {
-        console.error('Error exporting transactions to Excel:', error);
-        showNotification('Error exporting to Excel. Please try again.', 'error');
-    } finally {
-        showLoading(false);
+    function exportOutstandingToExcel() {
+        try {
+            showLoading(true);
+            const data = filteredData.outstanding.map(s => ({
+                'Student Name':           s.StudentName       || 'Unknown',
+                'Student ID':             s.StudentId         || 'N/A',
+                'Programme':              s.Programme         || 'Unknown',
+                'School':                 s.School            || 'Unknown',
+                'Outstanding Amount (K)': s.OutstandingAmount || 0,
+                'Last Payment Date':      s.LastPaymentDate ? fmtDate(s.LastPaymentDate) : 'No payments',
+            }));
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(data);
+            ws['!cols'] = [{wch:25},{wch:15},{wch:30},{wch:20},{wch:18},{wch:15}];
+            XLSX.utils.book_append_sheet(wb, ws, 'Outstanding Payments');
+            XLSX.writeFile(wb, `Outstanding_Payments_${new Date().toISOString().slice(0,10)}.xlsx`);
+            showNotification('Excel file exported successfully!', 'success');
+        } catch (e) {
+            console.error(e);
+            showNotification('Error exporting to Excel.', 'error');
+        } finally { showLoading(false); }
     }
-}
 
-function exportOutstandingToExcel() {
-    try {
-        showLoading(true);
-        
-        // Prepare data for Excel
-        const dataToExport = filteredData.outstanding.map(student => ({
-            'Student Name': student.StudentName || 'Unknown',
-            'Student ID': student.StudentId || 'N/A',
-            'Programme': student.Programme || 'Unknown',
-            'School': student.School || 'Unknown',
-            'Outstanding Amount (K)': student.OutstandingAmount || 0,
-            'Last Payment Date': student.LastPaymentDate ? new Date(student.LastPaymentDate).toLocaleDateString('en-US') : 'No payments'
-        }));
-        
-        // Create workbook
-        const workbook = XLSX.utils.book_new();
-        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-        
-        // Set column widths
-        const columnWidths = [
-            { wch: 25 }, // Student Name
-            { wch: 15 }, // Student ID
-            { wch: 30 }, // Programme
-            { wch: 20 }, // School
-            { wch: 18 }, // Outstanding Amount
-            { wch: 15 }  // Last Payment Date
-        ];
-        worksheet['!cols'] = columnWidths;
-        
-        // Add worksheet to workbook
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Outstanding Payments');
-        
-        // Generate filename with timestamp
-        const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
-        const filename = `Outstanding_Payments_${timestamp}.xlsx`;
-        
-        // Save file
-        XLSX.writeFile(workbook, filename);
-        
-        showNotification('Excel file exported successfully!', 'success');
-        
-    } catch (error) {
-        console.error('Error exporting outstanding to Excel:', error);
-        showNotification('Error exporting to Excel. Please try again.', 'error');
-    } finally {
-        showLoading(false);
-    }
-}
+    /* ════════════════════════════════════════════
+       PLACEHOLDERS
+    ════════════════════════════════════════════ */
+    function sendReminder(studentId) { alert('Send reminder functionality not implemented yet.'); }
+    function viewDetails(studentId)  { alert('View details functionality not implemented yet.'); }
 
-// Utility Functions
-function showLoading(show) {
-    const overlay = document.getElementById('loadingOverlay');
-    if (overlay) {
-        if (show) {
-            overlay.classList.remove('hidden');
-        } else {
-            overlay.classList.add('hidden');
-        }
+    /* ════════════════════════════════════════════
+       UTILITIES
+    ════════════════════════════════════════════ */
+    function showLoading(show) {
+        document.getElementById('loadingOverlay').classList.toggle('hidden', !show);
     }
-}
 
-function showNotification(message, type = 'info') {
-    // Create notification element
-    const notification = document.createElement('div');
-    notification.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full`;
-    
-    // Set colors based on type
-    if (type === 'success') {
-        notification.className += ' bg-green-600 text-white';
-    } else if (type === 'error') {
-        notification.className += ' bg-red-600 text-white';
-    } else {
-        notification.className += ' bg-blue-600 text-white';
+    function showNotification(message, type = 'info') {
+        const toast   = document.getElementById('toastEl');
+        const iconMap = { success:'check_circle', error:'error', info:'info' };
+        toast.className = `toast ${type}`;
+        document.getElementById('toastIcon').textContent = iconMap[type] || 'info';
+        document.getElementById('toastMsg').textContent  = message;
+        requestAnimationFrame(() => requestAnimationFrame(() => toast.classList.add('show')));
+        setTimeout(() => toast.classList.remove('show'), 3300);
     }
-    
-    notification.innerHTML = `
-        <div class="flex items-center gap-3">
-            <i class="material-icons">${type === 'success' ? 'check_circle' : type === 'error' ? 'error' : 'info'}</i>
-            <span>${message}</span>
-        </div>
-    `;
-    
-    document.body.appendChild(notification);
-    
-    // Animate in
-    setTimeout(() => {
-        notification.classList.remove('translate-x-full');
-    }, 100);
-    
-    // Remove after 3 seconds
-    setTimeout(() => {
-        notification.classList.add('translate-x-full');
-        setTimeout(() => {
-            document.body.removeChild(notification);
-        }, 300);
-    }, 3000);
-}
+
+    /* Legacy aliases */
+    function loadTransactions(p) { changePage('transactions', p); }
+    function loadOutstanding(p)  { changePage('outstanding', p);  }
 </script>
