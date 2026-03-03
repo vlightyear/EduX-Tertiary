@@ -1,354 +1,2647 @@
 ﻿@model SIS.Models.StudentApplication.Student
 
-@* Default Password Warning Modal *@
+@* ═══════════════════════════════════════════════
+   BGS STUDENT DASHBOARD — Complete Overhaul
+   Design: Editorial / Refined — navy + coral
+═══════════════════════════════════════════════ *@
+
+@{
+    var perf = ViewData["PerformanceData"] as SIS.Models.Results.StudentPerformanceViewModel;
+    var gpa = perf?.OverallGPA ?? 0;
+    var gpaMax = 4.0;
+    var gpaPct = (double)(gpa / (decimal)gpaMax) * 100;
+    var gpaColour = gpa >= (decimal)3.5 ? "#22c55e" : gpa >= (decimal)2.5 ? "#f59e0b" : "#e85c5c";
+}
+
+@* ── Default Password Warning (BGS theme) ── *@
 @if (TempData["DefaultPasswordWarning"] != null && (bool)TempData["DefaultPasswordWarning"])
 {
-    <!-- Modal Overlay -->
-    <div id="passwordWarningModal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-70">
-        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 overflow-hidden transform transition-all">
-            <!-- Header -->
-            <div class="bg-gradient-to-r from-red-600 to-red-700 px-6 py-5">
-                <div class="flex items-center text-white">
-                    <div class="bg-white bg-opacity-20 p-2 rounded-full mr-4">
-                        <svg class="w-8 h-8 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                        </svg>
-                    </div>
-                    <div>
-                        <h3 class="text-xl font-bold">⚠️ Security Warning</h3>
-                        <p class="text-red-100 text-sm">Action Required</p>
-                    </div>
+    <div id="pwdWarningModal" class="sd-modal-overlay">
+        <div class="sd-modal-box pwd-modal">
+            <div class="sd-modal-header coral">
+                <div class="sd-modal-header-icon">
+                    <i class="material-icons" style="font-size:28px;animation:pulse 1.5s infinite;">lock</i>
+                </div>
+                <div>
+                    <div class="sd-modal-title">Security Warning</div>
+                    <div class="sd-modal-sub">Action required</div>
                 </div>
             </div>
-
-            <!-- Body -->
-            <div class="px-6 py-5">
-                <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-4 rounded-r-lg">
-                    <p class="text-red-800 font-bold text-lg">
-                        You are using a default password!
-                    </p>
+            <div class="sd-modal-body">
+                <div class="pwd-warning-strip">
+                    <i class="material-icons">warning</i>
+                    You are using a <strong>default password</strong>
                 </div>
-
-                <div class="flex items-center bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
-                    <svg class="w-6 h-6 text-amber-600 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    <p class="text-amber-800 font-semibold">
-                        Default passwords will be <span class="text-red-600">disabled in 24 hours</span>.
-                    </p>
+                <div class="pwd-timer-strip">
+                    <i class="material-icons">schedule</i>
+                    Default passwords will be <span class="danger-text">disabled in 24 hours</span>
                 </div>
-
-                <p class="text-secondary-600 text-sm">
-                    Update your password now to avoid losing access to your account.
-                </p>
+                <p class="sd-modal-note">Update your password now to avoid losing access to your account.</p>
             </div>
-
-            <!-- Footer -->
-            <div class="bg-gray-50 px-6 py-4 flex flex-col sm:flex-row justify-end gap-3">
-                <button onclick="closePasswordWarning()"
-                        class="px-4 py-2 text-secondary-600 hover:text-secondary-800 font-medium transition-colors order-2 sm:order-1">
-                    Remind Me Later
-                </button>
-                <a href="/Profile/Index"
-                   class="px-6 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors text-center order-1 sm:order-2 flex items-center justify-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
-                    </svg>
-                    Change Password Now
+            <div class="sd-modal-footer">
+                <button onclick="closePwdWarning()" class="btn-ghost-sm">Remind Me Later</button>
+                <a href="/Profile/Index" class="btn-coral-sm">
+                    <i class="material-icons">key</i>
+                    Change Password
                 </a>
             </div>
         </div>
     </div>
-
     <script>
-        function closePasswordWarning() {
-            const modal = document.getElementById('passwordWarningModal');
-            if (modal) {
-                modal.style.opacity = '0';
-                modal.style.transition = 'opacity 0.3s ease-out';
-                setTimeout(() => modal.remove(), 300);
-            }
+        function closePwdWarning() {
+            const m = document.getElementById('pwdWarningModal');
+            m.style.opacity = '0';
+            setTimeout(() => m.remove(), 300);
         }
     </script>
-
-    <style>
-        #passwordWarningModal > div {
-            animation: modalBounceIn 0.4s ease-out;
-        }
-
-        @@keyframes modalBounceIn {
-            0% {
-                transform: scale(0.8) translateY(-20px);
-                opacity: 0;
-            }
-
-            60% {
-                transform: scale(1.02) translateY(0);
-            }
-
-            100% {
-                transform: scale(1) translateY(0);
-                opacity: 1;
-            }
-        }
-    </style>
 }
 
-<div class="min-h-[88vh] p-6 bg-slate-50">
-    <div class="flex flex-col lg:flex-row gap-6">
-        <!-- Main Content -->
-        <div class="flex-1 space-y-6">
-            <!-- Header -->
-            <div class="flex items-center gap-2">
-                <i class="material-icons text-3xl text-slate-800">dashboard</i>
-                <h1 class="text-2xl font-bold text-slate-800">Student Dashboard</h1>
+<style>
+    /* ═══════════════════════════════════════════════
+       DESIGN TOKENS
+    ═══════════════════════════════════════════════ */
+    :root {
+        --coral: #e85c5c;
+        --coral-dk: #d43f3f;
+        --coral-lt: #fff1f1;
+        --coral-mid: #ffc5c5;
+        --navy: #1e2d5e;
+        --navy-lt: #eef2ff;
+        --navy-mid: #c2d0ff;
+        --navy-deep: #141e42;
+        --bg: #f0f4f8;
+        --surface: #ffffff;
+        --border: #e2e8f0;
+        --text: #1e2d5e;
+        --muted: #64748b;
+        --faint: #94a3b8;
+        --green: #22c55e;
+        --green-lt: #f0fdf4;
+        --amber: #f59e0b;
+        --amber-lt: #fffbeb;
+        --radius-xl: 18px;
+        --radius-lg: 14px;
+        --radius-md: 10px;
+        --radius-sm: 7px;
+        --shadow-sm: 0 2px 8px rgba(30,45,94,.07);
+        --shadow-md: 0 6px 24px rgba(30,45,94,.11);
+        --shadow-lg: 0 16px 48px rgba(30,45,94,.15);
+    }
+
+    /* ── Base ── */
+    .sd-page {
+        background: var(--bg);
+        min-height: 100vh;
+        padding: 1.5rem;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        color: var(--text);
+    }
+
+    /* ── Animations ── */
+    @@keyframes fadeUp {
+        from {
+            opacity: 0;
+            transform: translateY(16px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    @@keyframes pulse {
+        0%, 100% {
+            opacity: 1
+        }
+
+        50% {
+            opacity: .5
+        }
+    }
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg)
+        }
+    }
+    @@keyframes scaleIn {
+        from {
+            opacity: 0;
+            transform: scale(.94);
+        }
+
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+    @@keyframes arcFill {
+        from {
+            stroke-dashoffset: 251.2;
+        }
+    }
+
+    .fu {
+        animation: fadeUp .4s ease both;
+    }
+
+    .d1 {
+        animation-delay: .06s;
+    }
+
+    .d2 {
+        animation-delay: .12s;
+    }
+
+    .d3 {
+        animation-delay: .18s;
+    }
+
+    .d4 {
+        animation-delay: .24s;
+    }
+
+    .d5 {
+        animation-delay: .30s;
+    }
+
+    .d6 {
+        animation-delay: .36s;
+    }
+
+    /* ═══════════════════════════════════════════════
+       HERO IDENTITY CARD
+    ═══════════════════════════════════════════════ */
+    .sd-hero {
+        background: var(--surface);
+        border-radius: var(--radius-xl);
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-md);
+        overflow: hidden;
+        margin-bottom: 1.25rem;
+        position: relative;
+    }
+
+    /* Top accent band */
+    .sd-hero-band {
+        background: linear-gradient(110deg, var(--navy-deep) 0%, var(--navy) 55%, #2e45a0 100%);
+        height: 110px;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .sd-hero-band::before {
+            content: '';
+            position: absolute;
+            right: -60px;
+            top: -60px;
+            width: 260px;
+            height: 260px;
+            background: radial-gradient(circle, rgba(232,92,92,.18) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .sd-hero-band::after {
+            content: '';
+            position: absolute;
+            left: 35%;
+            bottom: 0;
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,.08), transparent);
+        }
+
+    /* Geometric accent dots */
+    .hero-dots {
+        position: absolute;
+        top: 18px;
+        right: 1.5rem;
+        display: flex;
+        gap: 6px;
+        align-items: center;
+    }
+
+    .hero-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: rgba(255,255,255,.22);
+    }
+
+        .hero-dot:first-child {
+            background: rgba(232,92,92,.6);
+        }
+
+    /* Year/semester badge */
+    .hero-level-badge {
+        position: absolute;
+        top: 16px;
+        left: 1.5rem;
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        background: rgba(255,255,255,.12);
+        border: 1px solid rgba(255,255,255,.18);
+        border-radius: 999px;
+        padding: .28rem .75rem;
+        font-size: .72rem;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+        backdrop-filter: blur(4px);
+    }
+
+        .hero-level-badge .material-icons {
+            font-size: 13px;
+            color: var(--coral);
+        }
+
+    .sd-hero-body {
+        padding: 0 1.75rem 1.75rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+    }
+    @@media(min - width:768px) {
+        .sd-hero-body {
+            flex-direction: row;
+            align-items: flex-end;
+            gap: 1.75rem;
+        }
+    }
+
+    /* Photo ring */
+    .hero-photo-wrap {
+        flex-shrink: 0;
+        margin-top: -52px;
+        position: relative;
+        width: 104px;
+        height: 104px;
+    }
+
+    .hero-photo-ring {
+        width: 104px;
+        height: 104px;
+        border-radius: 50%;
+        border: 4px solid var(--surface);
+        background: var(--navy-lt);
+        overflow: hidden;
+        position: relative;
+        box-shadow: 0 4px 20px rgba(30,45,94,.18);
+    }
+
+        .hero-photo-ring img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+    .hero-photo-loader {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--navy-lt);
+    }
+
+    .hero-photo-spinner {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        border: 2.5px solid var(--navy-mid);
+        border-top-color: var(--navy);
+        animation: spin .7s linear infinite;
+    }
+
+    /* Status dot on photo */
+    .hero-status-dot {
+        position: absolute;
+        bottom: 4px;
+        right: 4px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 2.5px solid var(--surface);
+    }
+
+        .hero-status-dot.registered {
+            background: var(--green);
+        }
+
+        .hero-status-dot.pending {
+            background: var(--amber);
+        }
+
+    /* Identity text */
+    .hero-identity {
+        flex: 1;
+        padding-bottom: .25rem;
+    }
+
+    .hero-name {
+        font-size: 1.45rem;
+        font-weight: 800;
+        color: var(--navy);
+        line-height: 1.1;
+        margin: 0 0 .3rem;
+        letter-spacing: -.01em;
+    }
+
+    .hero-id-row {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        flex-wrap: wrap;
+    }
+
+    .hero-id {
+        font-size: .8rem;
+        font-weight: 700;
+        color: var(--muted);
+        font-family: 'Courier New', monospace;
+        letter-spacing: .04em;
+    }
+
+    .hero-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: .25rem;
+        padding: .18rem .6rem;
+        border-radius: 999px;
+        font-size: .68rem;
+        font-weight: 700;
+        letter-spacing: .03em;
+    }
+
+        .hero-tag.registered {
+            background: var(--green-lt);
+            color: #15803d;
+            border: 1px solid #bbf7d0;
+        }
+
+        .hero-tag.pending {
+            background: var(--amber-lt);
+            color: #92400e;
+            border: 1px solid #fde68a;
+        }
+
+        .hero-tag .material-icons {
+            font-size: 11px;
+        }
+
+    /* School / programme subtitle */
+    .hero-prog-row {
+        display: flex;
+        align-items: center;
+        gap: .4rem;
+        margin-top: .5rem;
+        font-size: .79rem;
+        color: var(--muted);
+        flex-wrap: wrap;
+    }
+
+        .hero-prog-row .material-icons {
+            font-size: 14px;
+            color: var(--coral);
+        }
+
+    .hero-prog-sep {
+        color: var(--faint);
+    }
+
+    /* Hero quick stats strip */
+    .hero-stats {
+        display: flex;
+        align-items: flex-end;
+        gap: 1.5rem;
+        padding-bottom: .25rem;
+        flex-wrap: wrap;
+    }
+    @@media(max - width:767px) {
+        .hero-stats {
+            border-top: 1px solid var(--border);
+            padding-top: .875rem;
+        }
+    }
+
+    .hero-stat {
+        text-align: center;
+    }
+
+    .hero-stat-val {
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: var(--navy);
+        line-height: 1;
+    }
+
+        .hero-stat-val.coral {
+            color: var(--coral-dk);
+        }
+
+        .hero-stat-val.green {
+            color: #15803d;
+        }
+
+    .hero-stat-label {
+        font-size: .64rem;
+        color: var(--faint);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        margin-top: .2rem;
+    }
+
+    .hero-stat-divider {
+        width: 1px;
+        height: 36px;
+        background: var(--border);
+        align-self: center;
+    }
+
+    /* ═══════════════════════════════════════════════
+       MAIN GRID
+    ═══════════════════════════════════════════════ */
+    .sd-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+    }
+    @@media(min - width:1024px) {
+        .sd-grid {
+            grid-template-columns: 1fr 380px;
+        }
+    }
+    @@media(min - width:1280px) {
+        .sd-grid {
+            grid-template-columns: 1fr 420px;
+        }
+    }
+
+    /* ── Generic card ── */
+    .sd-card {
+        background: var(--surface);
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+    }
+
+    .sd-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--border);
+        background: linear-gradient(to right, #fafbff, var(--surface));
+    }
+
+    .sd-card-title {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        font-size: .88rem;
+        font-weight: 700;
+        color: var(--navy);
+    }
+
+        .sd-card-title .material-icons {
+            font-size: 18px;
+            color: var(--coral);
+        }
+
+    /* ═══════════════════════════════════════════════
+       DETAILS GRID CARD
+    ═══════════════════════════════════════════════ */
+    .detail-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0;
+    }
+    @@media(max - width:540px) {
+        .detail-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .detail-item {
+        display: flex;
+        align-items: flex-start;
+        gap: .75rem;
+        padding: .95rem 1.25rem;
+        border-bottom: 1px solid #f3f4f6;
+        transition: background .15s;
+    }
+
+        .detail-item:hover {
+            background: #fafbff;
+        }
+
+        .detail-item:nth-child(even) {
+            border-left: 1px solid #f3f4f6;
+        }
+    @@media(max - width:540px) {
+        .detail-item:nth-child(even) {
+            border-left: none;
+        }
+    }
+
+    .detail-icon-wrap {
+        width: 36px;
+        height: 36px;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+        .detail-icon-wrap .material-icons {
+            font-size: 18px;
+        }
+
+    .di-blue {
+        background: #eff6ff;
+    }
+
+        .di-blue .material-icons {
+            color: #3b82f6;
+        }
+
+    .di-green {
+        background: var(--green-lt);
+    }
+
+        .di-green .material-icons {
+            color: var(--green);
+        }
+
+    .di-indigo {
+        background: #eef2ff;
+    }
+
+        .di-indigo .material-icons {
+            color: #6366f1;
+        }
+
+    .di-purple {
+        background: #faf5ff;
+    }
+
+        .di-purple .material-icons {
+            color: #8b5cf6;
+        }
+
+    .di-amber {
+        background: var(--amber-lt);
+    }
+
+        .di-amber .material-icons {
+            color: var(--amber);
+        }
+
+    .di-coral {
+        background: var(--coral-lt);
+    }
+
+        .di-coral .material-icons {
+            color: var(--coral);
+        }
+
+    .di-cyan {
+        background: #ecfeff;
+    }
+
+        .di-cyan .material-icons {
+            color: #06b6d4;
+        }
+
+    .di-navy {
+        background: var(--navy-lt);
+    }
+
+        .di-navy .material-icons {
+            color: var(--navy);
+        }
+
+    .di-teal {
+        background: #f0fdfa;
+    }
+
+        .di-teal .material-icons {
+            color: #14b8a6;
+        }
+
+    .di-rose {
+        background: #fff1f2;
+    }
+
+        .di-rose .material-icons {
+            color: #f43f5e;
+        }
+
+    .detail-label {
+        font-size: .69rem;
+        color: var(--faint);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+    }
+
+    .detail-value {
+        font-size: .84rem;
+        font-weight: 700;
+        color: var(--navy);
+        margin-top: .15rem;
+        line-height: 1.25;
+    }
+
+        .detail-value.danger {
+            color: var(--coral-dk);
+        }
+
+        .detail-value.success {
+            color: #15803d;
+        }
+
+    /* ═══════════════════════════════════════════════
+       GPA GAUGE CARD
+    ═══════════════════════════════════════════════ */
+    .gpa-card-body {
+        padding: 1.5rem 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .gpa-gauge-wrap {
+        position: relative;
+        width: 100px;
+        height: 100px;
+        flex-shrink: 0;
+    }
+
+        .gpa-gauge-wrap svg {
+            transform: rotate(-90deg);
+        }
+
+    .gpa-gauge-bg {
+        fill: none;
+        stroke: #f1f5f9;
+        stroke-width: 10;
+    }
+
+    .gpa-gauge-fill {
+        fill: none;
+        stroke-width: 10;
+        stroke-linecap: round;
+        transition: stroke-dashoffset .8s ease;
+    }
+
+    .gpa-center {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .gpa-num {
+        font-size: 1.3rem;
+        font-weight: 800;
+        color: var(--navy);
+        line-height: 1;
+    }
+
+    .gpa-denom {
+        font-size: .65rem;
+        color: var(--faint);
+        font-weight: 600;
+    }
+
+    .gpa-info {
+        flex: 1;
+        min-width: 140px;
+    }
+
+    .gpa-grade-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: .3rem;
+        padding: .3rem .8rem;
+        border-radius: 999px;
+        font-size: .78rem;
+        font-weight: 800;
+        margin-bottom: .6rem;
+    }
+
+        .gpa-grade-badge.dist {
+            background: var(--green-lt);
+            color: #15803d;
+            border: 1px solid #bbf7d0;
+        }
+
+        .gpa-grade-badge.merit {
+            background: var(--navy-lt);
+            color: var(--navy);
+            border: 1px solid var(--navy-mid);
+        }
+
+        .gpa-grade-badge.pass {
+            background: var(--amber-lt);
+            color: #92400e;
+            border: 1px solid #fde68a;
+        }
+
+        .gpa-grade-badge.fail {
+            background: var(--coral-lt);
+            color: var(--coral-dk);
+            border: 1px solid var(--coral-mid);
+        }
+
+        .gpa-grade-badge .material-icons {
+            font-size: 14px;
+        }
+
+    .gpa-label {
+        font-size: .72rem;
+        color: var(--muted);
+        font-weight: 500;
+    }
+
+    /* GPA history mini bars */
+    .gpa-history {
+        display: flex;
+        align-items: flex-end;
+        gap: 4px;
+        height: 36px;
+        margin-top: .75rem;
+    }
+
+    .gpa-bar {
+        flex: 1;
+        border-radius: 3px 3px 0 0;
+        min-width: 12px;
+        background: var(--navy-lt);
+        position: relative;
+        cursor: pointer;
+        transition: background .18s;
+    }
+
+        .gpa-bar:hover {
+            background: var(--navy-mid);
+        }
+
+    .gpa-bar-fill {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        border-radius: 3px 3px 0 0;
+        background: var(--navy);
+        transition: height .6s ease;
+    }
+
+    .gpa-bar-label {
+        font-size: .58rem;
+        color: var(--faint);
+        text-align: center;
+        margin-top: 3px;
+    }
+
+    /* ═══════════════════════════════════════════════
+       TODAY'S SCHEDULE
+    ═══════════════════════════════════════════════ */
+    .schedule-body {
+        padding: 1rem 1.25rem;
+    }
+
+    .schedule-empty {
+        text-align: center;
+        padding: 2.5rem 1rem;
+        color: var(--faint);
+    }
+
+        .schedule-empty .material-icons {
+            font-size: 2.5rem;
+            color: var(--navy-mid);
+            display: block;
+            margin-bottom: .6rem;
+        }
+
+    .schedule-timeline {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .timeline-item {
+        display: flex;
+        gap: 1rem;
+        position: relative;
+        padding-bottom: 1rem;
+    }
+
+        .timeline-item:last-child {
+            padding-bottom: 0;
+        }
+
+        /* Vertical line */
+        .timeline-item:not(:last-child) .tl-left::after {
+            content: '';
+            position: absolute;
+            left: 19px;
+            top: 42px;
+            width: 2px;
+            bottom: 0;
+            background: linear-gradient(to bottom, var(--border), transparent);
+        }
+
+    .tl-left {
+        position: relative;
+        flex-shrink: 0;
+        width: 40px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .tl-dot {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        position: relative;
+        z-index: 1;
+    }
+
+        .tl-dot .material-icons {
+            font-size: 18px;
+        }
+
+        .tl-dot.current {
+            background: var(--coral);
+            box-shadow: 0 3px 10px rgba(232,92,92,.3);
+        }
+
+            .tl-dot.current .material-icons {
+                color: #fff;
+            }
+
+        .tl-dot.upcoming {
+            background: var(--navy-lt);
+        }
+
+            .tl-dot.upcoming .material-icons {
+                color: var(--navy);
+            }
+
+        .tl-dot.done {
+            background: #f1f5f9;
+        }
+
+            .tl-dot.done .material-icons {
+                color: var(--faint);
+            }
+
+    .tl-right {
+        flex: 1;
+        padding-top: .35rem;
+    }
+
+    .tl-subject {
+        font-size: .86rem;
+        font-weight: 700;
+        color: var(--navy);
+    }
+
+    .tl-meta {
+        font-size: .73rem;
+        color: var(--muted);
+        margin-top: .2rem;
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        flex-wrap: wrap;
+    }
+
+        .tl-meta .material-icons {
+            font-size: 13px;
+        }
+
+    .tl-now-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: .2rem;
+        padding: .12rem .5rem;
+        background: var(--coral-lt);
+        border: 1px solid var(--coral-mid);
+        border-radius: 999px;
+        font-size: .65rem;
+        font-weight: 700;
+        color: var(--coral-dk);
+    }
+
+    /* ═══════════════════════════════════════════════
+       SEMESTER PROGRESS
+    ═══════════════════════════════════════════════ */
+    .sem-progress-body {
+        padding: 1.1rem 1.25rem;
+    }
+
+    .sem-week-track {
+        display: flex;
+        gap: 4px;
+        margin-bottom: .75rem;
+    }
+
+    .sem-week {
+        flex: 1;
+        height: 8px;
+        border-radius: 2px;
+        background: #f1f5f9;
+        min-width: 4px;
+        transition: background .3s;
+    }
+
+        .sem-week.done {
+            background: var(--navy);
+        }
+
+        .sem-week.current {
+            background: var(--coral);
+        }
+
+        .sem-week.future {
+            background: #f1f5f9;
+        }
+
+    .sem-meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: .73rem;
+        color: var(--muted);
+    }
+
+        .sem-meta strong {
+            color: var(--navy);
+        }
+
+    .sem-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: .75rem;
+        margin-top: .875rem;
+    }
+
+    .sem-stat-box {
+        background: var(--bg);
+        border-radius: var(--radius-sm);
+        padding: .7rem .6rem;
+        text-align: center;
+        border: 1px solid var(--border);
+    }
+
+    .sem-stat-num {
+        font-size: 1.15rem;
+        font-weight: 800;
+        color: var(--navy);
+    }
+
+    .sem-stat-lbl {
+        font-size: .62rem;
+        color: var(--faint);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        margin-top: 2px;
+    }
+
+    /* ═══════════════════════════════════════════════
+       QUICK ACTIONS
+    ═══════════════════════════════════════════════ */
+    .qa-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: .75rem;
+        padding: 1.1rem 1.25rem;
+    }
+    @@media(max - width:480px) {
+        .qa-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    .qa-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: .4rem;
+        padding: .875rem .5rem;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        text-decoration: none;
+        transition: all .2s;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .qa-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2.5px;
+            border-radius: 2px 2px 0 0;
+            opacity: 0;
+            transition: opacity .2s;
+        }
+
+        .qa-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            text-decoration: none;
+            border-color: transparent;
+        }
+
+            .qa-btn:hover::before {
+                opacity: 1;
+            }
+
+        .qa-btn.coral::before {
+            background: var(--coral);
+        }
+
+        .qa-btn.navy::before {
+            background: var(--navy);
+        }
+
+        .qa-btn.green::before {
+            background: var(--green);
+        }
+
+        .qa-btn.amber::before {
+            background: var(--amber);
+        }
+
+        .qa-btn:hover.coral .qa-icon {
+            background: var(--coral-lt);
+            color: var(--coral);
+        }
+
+        .qa-btn:hover.navy .qa-icon {
+            background: var(--navy-lt);
+            color: var(--navy);
+        }
+
+        .qa-btn:hover.green .qa-icon {
+            background: var(--green-lt);
+            color: var(--green);
+        }
+
+        .qa-btn:hover.amber .qa-icon {
+            background: var(--amber-lt);
+            color: var(--amber);
+        }
+
+    .qa-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background .2s, color .2s;
+        color: var(--muted);
+    }
+
+        .qa-icon .material-icons {
+            font-size: 20px;
+        }
+
+    .qa-label {
+        font-size: .72rem;
+        font-weight: 700;
+        color: var(--navy);
+        text-align: center;
+    }
+
+    .qa-badge {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        background: var(--coral);
+        color: #fff;
+        font-size: .6rem;
+        font-weight: 800;
+        min-width: 16px;
+        height: 16px;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 4px;
+    }
+
+    /* ═══════════════════════════════════════════════
+       FEE BALANCE CARD
+    ═══════════════════════════════════════════════ */
+    .fee-body {
+        padding: 1.25rem;
+    }
+
+    .fee-total-row {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        padding-bottom: .875rem;
+        margin-bottom: .875rem;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .fee-label {
+        font-size: .72rem;
+        color: var(--faint);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+    }
+
+    .fee-amount {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: var(--coral-dk);
+        line-height: 1;
+        margin-top: .2rem;
+    }
+
+        .fee-amount.clear {
+            color: #15803d;
+        }
+
+    .fee-cta {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        padding: .45rem 1rem;
+        background: var(--coral);
+        color: #fff;
+        font-size: .78rem;
+        font-weight: 700;
+        border-radius: var(--radius-sm);
+        text-decoration: none;
+        transition: background .18s;
+    }
+
+        .fee-cta:hover {
+            background: var(--coral-dk);
+            color: #fff;
+            text-decoration: none;
+        }
+
+        .fee-cta .material-icons {
+            font-size: 15px;
+        }
+
+    /* Fee progress bar */
+    .fee-progress-wrap {
+        margin-bottom: 1rem;
+    }
+
+    .fee-progress-labels {
+        display: flex;
+        justify-content: space-between;
+        font-size: .72rem;
+        color: var(--muted);
+        margin-bottom: .4rem;
+    }
+
+    .fee-progress-bg {
+        height: 8px;
+        background: #f1f5f9;
+        border-radius: 999px;
+        overflow: hidden;
+    }
+
+    .fee-progress-fill {
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, var(--green), #16a34a);
+        transition: width .7s ease;
+    }
+
+    /* Fee breakdown items */
+    .fee-breakdown {
+        display: flex;
+        flex-direction: column;
+        gap: .5rem;
+    }
+
+    .fee-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: .8rem;
+    }
+
+    .fee-item-label {
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        gap: .35rem;
+    }
+
+        .fee-item-label .material-icons {
+            font-size: 14px;
+            color: var(--faint);
+        }
+
+    .fee-item-val {
+        font-weight: 700;
+        color: var(--navy);
+    }
+
+        .fee-item-val.paid {
+            color: var(--green);
+        }
+
+    /* ═══════════════════════════════════════════════
+       NOTIFICATIONS FEED
+    ═══════════════════════════════════════════════ */
+    .notif-feed {
+        padding: .5rem 0;
+    }
+
+    .notif-item {
+        display: flex;
+        align-items: flex-start;
+        gap: .875rem;
+        padding: .875rem 1.25rem;
+        border-bottom: 1px solid #f3f4f6;
+        transition: background .15s;
+        cursor: pointer;
+    }
+
+        .notif-item:last-child {
+            border-bottom: none;
+        }
+
+        .notif-item:hover {
+            background: #fafbff;
+        }
+
+        .notif-item.unread {
+            background: var(--navy-lt);
+        }
+
+            .notif-item.unread:hover {
+                background: #e5ebff;
+            }
+
+    .notif-icon-wrap {
+        width: 36px;
+        height: 36px;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+        .notif-icon-wrap .material-icons {
+            font-size: 17px;
+        }
+
+    .ni-info {
+        background: var(--navy-lt);
+    }
+
+        .ni-info .material-icons {
+            color: var(--navy);
+        }
+
+    .ni-warn {
+        background: var(--amber-lt);
+    }
+
+        .ni-warn .material-icons {
+            color: var(--amber);
+        }
+
+    .ni-ok {
+        background: var(--green-lt);
+    }
+
+        .ni-ok .material-icons {
+            color: var(--green);
+        }
+
+    .ni-alert {
+        background: var(--coral-lt);
+    }
+
+        .ni-alert .material-icons {
+            color: var(--coral);
+        }
+
+    .notif-text {
+        flex: 1;
+    }
+
+    .notif-title {
+        font-size: .82rem;
+        font-weight: 700;
+        color: var(--navy);
+    }
+
+    .notif-body {
+        font-size: .74rem;
+        color: var(--muted);
+        margin-top: .15rem;
+        line-height: 1.4;
+    }
+
+    .notif-time {
+        font-size: .67rem;
+        color: var(--faint);
+        margin-top: .3rem;
+    }
+
+    .notif-unread-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--coral);
+        flex-shrink: 0;
+        margin-top: 4px;
+    }
+
+    /* ═══════════════════════════════════════════════
+       PERFORMANCE CHART
+    ═══════════════════════════════════════════════ */
+    .perf-chart-body {
+        padding: 1.1rem 1.25rem 1.25rem;
+        height: 220px;
+        position: relative;
+    }
+
+    /* ═══════════════════════════════════════════════
+       MODAL (BGS theme)
+    ═══════════════════════════════════════════════ */
+    .sd-modal-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(30,45,94,.6);
+        backdrop-filter: blur(4px);
+        transition: opacity .3s;
+    }
+
+    .sd-modal-box {
+        background: var(--surface);
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-lg);
+        max-width: 420px;
+        width: calc(100% - 2rem);
+        overflow: hidden;
+        animation: scaleIn .35s ease;
+    }
+
+    .sd-modal-header {
+        padding: 1.25rem 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+        .sd-modal-header.coral {
+            background: linear-gradient(135deg, var(--coral), var(--coral-dk));
+        }
+
+        .sd-modal-header.navy {
+            background: linear-gradient(135deg, var(--navy), var(--navy-deep));
+        }
+
+    .sd-modal-header-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: rgba(255,255,255,.18);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+        .sd-modal-header-icon .material-icons {
+            color: #fff;
+        }
+
+    .sd-modal-title {
+        font-size: 1.1rem;
+        font-weight: 800;
+        color: #fff;
+    }
+
+    .sd-modal-sub {
+        font-size: .74rem;
+        color: rgba(255,255,255,.75);
+        margin-top: 2px;
+    }
+
+    .sd-modal-body {
+        padding: 1.25rem 1.5rem;
+    }
+
+    .sd-modal-footer {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: .75rem;
+        padding: .875rem 1.5rem;
+        background: #fafbfc;
+        border-top: 1px solid var(--border);
+        flex-wrap: wrap;
+    }
+
+    .sd-modal-note {
+        font-size: .78rem;
+        color: var(--muted);
+        line-height: 1.5;
+    }
+
+    .pwd-warning-strip {
+        display: flex;
+        align-items: center;
+        gap: .6rem;
+        padding: .75rem 1rem;
+        background: var(--coral-lt);
+        border-left: 3px solid var(--coral);
+        border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+        font-size: .85rem;
+        font-weight: 700;
+        color: var(--coral-dk);
+        margin-bottom: .75rem;
+    }
+
+        .pwd-warning-strip .material-icons {
+            font-size: 20px;
+        }
+
+    .pwd-timer-strip {
+        display: flex;
+        align-items: center;
+        gap: .6rem;
+        padding: .75rem 1rem;
+        background: var(--amber-lt);
+        border-left: 3px solid var(--amber);
+        border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+        font-size: .82rem;
+        font-weight: 600;
+        color: #92400e;
+        margin-bottom: .875rem;
+    }
+
+        .pwd-timer-strip .material-icons {
+            font-size: 18px;
+            color: var(--amber);
+        }
+
+    .danger-text {
+        color: var(--coral-dk);
+        font-weight: 800;
+    }
+
+    .btn-coral-sm {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        padding: .55rem 1.1rem;
+        background: var(--coral);
+        color: #fff;
+        font-size: .82rem;
+        font-weight: 700;
+        border-radius: var(--radius-sm);
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: background .18s;
+    }
+
+        .btn-coral-sm:hover {
+            background: var(--coral-dk);
+            color: #fff;
+            text-decoration: none;
+        }
+
+        .btn-coral-sm .material-icons {
+            font-size: 16px;
+        }
+
+    .btn-ghost-sm {
+        padding: .55rem .875rem;
+        background: transparent;
+        color: var(--muted);
+        font-size: .82rem;
+        font-weight: 600;
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        transition: all .18s;
+    }
+
+        .btn-ghost-sm:hover {
+            background: #f1f5f9;
+            color: var(--navy);
+        }
+
+    /* ── Responsive ── */
+    @@media(max - width:640px) {
+        .sd-page {
+            padding: 1rem;
+        }
+
+        .detail-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .detail-item:nth-child(even) {
+            border-left: none;
+        }
+    }
+</style>
+
+<div class="sd-page">
+
+    <!-- ══════════════════════════════
+         HERO IDENTITY CARD
+    ══════════════════════════════ -->
+    <div class="sd-hero fu">
+        <div class="sd-hero-band">
+            <div class="hero-level-badge">
+                <i class="material-icons">school</i>
+                Year @Model.StudentCurrentYear &nbsp;·&nbsp; Semester @Model.CurrentSemester
             </div>
-
-            <!-- Student Profile Card -->
-            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-                <!-- Profile Header -->
-                <div class="p-6 flex flex-col md:flex-row justify-between items-center border-b border-slate-200">
-                    <div class="text-center md:text-left mb-4 md:mb-0">
-                        <h2 class="text-2xl font-bold text-slate-800">@Model.FullName</h2>
-                        <p class="text-slate-600">@Model.StudentId_Number</p>
-                    </div>
-                    <div class="h-40 w-40 rounded-full bg-slate-200 flex items-center justify-center overflow-hidden border-4 border-slate-300 relative">
-                        @if (!string.IsNullOrEmpty(Model.PassportPhotoPath))
-                        {
-                            <!-- Loading indicator -->
-                            <div class="absolute inset-0 flex items-center justify-center bg-slate-200 z-10" id="photoLoader">
-                                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-400"></div>
-                            </div>
-
-                            <!-- Student photo -->
-                            <img src="/uploads/student-photos/@($"{Model.StudentId_Number}.png")"
-                                 class="h-full w-full object-cover transition-opacity duration-300"
-                                 onload="hidePhotoLoader()"
-                                 onerror="showDefaultIcon()">
-
-                            <!-- Default icon (hidden initially) -->
-                            <div class="h-full w-full flex items-center justify-center absolute inset-0" id="defaultIcon" style="display: none;">
-                                <i class="material-icons text-slate-400 text-6xl">person</i>
-                            </div>
-                        }
-                        else
-                        {
-                            <!-- Default icon when no photo -->
-                            <i class="material-icons text-slate-400 text-6xl">person</i>
-                        }
-                    </div>
-                </div>
-
-                <!-- Student Details Grid -->
-                <div class="p-6 grid md:grid-cols-2 gap-6">
-                    <!-- School -->
-                    <div class="flex items-start gap-3">
-                        <div class="bg-blue-50 p-2 rounded-lg">
-                            <i class="material-icons text-blue-600">school</i>
-                        </div>
-                        <div>
-                            <p class="text-sm text-slate-500">School</p>
-                            <p class="font-semibold text-slate-800">@Model.School.Name</p>
-                        </div>
-                    </div>
-
-                    <!-- Programme -->
-                    <div class="flex items-start gap-3">
-                        <div class="bg-green-50 p-2 rounded-lg">
-                            <i class="material-icons text-green-600">book</i>
-                        </div>
-                        <div>
-                            <p class="text-sm text-slate-500">Programme</p>
-                            <p class="font-semibold text-slate-800">@Model.Programme.Name</p>
-                        </div>
-                    </div>
-
-                    <!-- Academic Session -->
-                    <div class="flex items-start gap-3">
-                        <div class="bg-indigo-50 p-2 rounded-lg">
-                            <i class="material-icons text-indigo-600">calendar_today</i>
-                        </div>
-                        <div>
-                            <p class="text-sm text-slate-500">Academic Session</p>
-                            <p class="font-semibold text-slate-800">@Model.AcademicYear.YearName</p>
-                        </div>
-                    </div>
-
-                    <!-- Academic Level -->
-                    <div class="flex items-start gap-3">
-                        <div class="bg-purple-50 p-2 rounded-lg">
-                            <i class="material-icons text-purple-600">grade</i>
-                        </div>
-                        <div>
-                            <p class="text-sm text-slate-500">Academic Level</p>
-                            <p class="font-semibold text-slate-800">Year @Model.StudentCurrentYear Semester @Model.CurrentSemester</p>
-                        </div>
-                    </div>
-
-                    <!-- Current CGPA -->
-                    <div class="flex items-start gap-3">
-                        <div class="bg-amber-50 p-2 rounded-lg">
-                            <i class="material-icons text-amber-600">analytics</i>
-                        </div>
-                        <div>
-                            <p class="text-sm text-slate-500">Current CGPA</p>
-                            <p class="font-semibold text-slate-800">@(((ViewData["PerformanceData"] as SIS.Models.Results.StudentPerformanceViewModel)?.OverallGPA ?? 0).ToString("F2")) / 4.00</p>
-                        </div>
-                    </div>
-
-                    <!-- Registration Status -->
-                    <div class="flex items-start gap-3">
-                        <div class="@(Model.IsRegistered ? "bg-green-50" : "bg-amber-50") p-2 rounded-lg">
-                            <i class="material-icons @(Model.IsRegistered ? "text-green-600" : "text-amber-600")">
-                                @(Model.IsRegistered ? "check_circle" : "pending")
-                            </i>
-                        </div>
-                        <div>
-                            <p class="text-sm text-slate-500">Registration Status</p>
-                            <p class="font-semibold text-slate-800">
-                                @(Model.IsRegistered ? "Registered" : "Waiting student input")
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- Student Sponsor -->
-                    <div class="flex items-start gap-3">
-                        <div class="bg-red-50 p-2 rounded-lg">
-                            <i class="material-icons text-red-600">account_balance</i>
-                        </div>
-                        <div>
-                            <p class="text-sm text-slate-500">Student Sponsor</p>
-                            <p class="font-semibold text-slate-800">SELF</p>
-                        </div>
-                    </div>
-
-                    <!-- Outstanding Balance -->
-                    <div class="flex items-start gap-3">
-                        <div class="bg-cyan-50 p-2 rounded-lg">
-                            <i class="material-icons text-cyan-600">payments</i>
-                        </div>
-                        <div>
-                            <p class="text-sm text-slate-500">Outstanding Balance</p>
-                            <p class="font-semibold text-slate-800">K @Model.OutstandingFees.ToString("N2")</p>
-                        </div>
-                    </div>
-
-                    <!-- Accommodation -->
-                    <div class="flex items-start gap-3">
-                        <div class="bg-blue-50 p-2 rounded-lg">
-                            <i class="material-icons text-blue-600">apartment</i>
-                        </div>
-                        <div>
-                            <p class="text-sm text-slate-500">Accommodation</p>
-                            <p class="font-semibold text-slate-800">NON-RESIDENT</p>
-                        </div>
-                    </div>
-
-                    <!-- Remark -->
-                    <div class="flex items-start gap-3">
-                        <div class="bg-violet-50 p-2 rounded-lg">
-                            <i class="material-icons text-violet-600">comment</i>
-                        </div>
-                        <div>
-                            <p class="text-sm text-slate-500">Remark</p>
-                            <p class="font-semibold text-slate-800">NO COMMENT ADDED YET</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Today's Timetable Section -->
-            <div class="bg-white rounded-xl shadow-sm p-6">
-                <div class="flex items-center gap-2 mb-4">
-                    <i class="material-icons text-blue-600">schedule</i>
-                    <h2 class="text-lg font-semibold text-slate-800">Today's Schedule</h2>
-                </div>
-
-                <div id="timetableContent">
-                    <!-- Content will be dynamically inserted here -->
-                </div>
+            <div class="hero-dots">
+                <div class="hero-dot"></div>
+                <div class="hero-dot"></div>
+                <div class="hero-dot"></div>
             </div>
         </div>
 
-
-
-        <!-- Side Panel -->
-        <div class="lg:w-2/5 space-y-6">
-            <!-- Performance Chart -->
-            <div class="bg-white rounded-xl shadow-sm p-6">
-                <div class="flex items-center gap-2 mb-4">
-                    <i class="material-icons text-blue-600">bar_chart</i>
-                    <h2 class="text-lg font-semibold text-slate-800">Performance Summary - @DateTime.Now.Year</h2>
+        <div class="sd-hero-body">
+            <!-- Photo -->
+            <div class="hero-photo-wrap">
+                <div class="hero-photo-ring">
+                    @if (!string.IsNullOrEmpty(Model.PassportPhotoPath))
+                    {
+                        <div class="hero-photo-loader" id="heroPhotoLoader">
+                            <div class="hero-photo-spinner"></div>
+                        </div>
+                        <img src="/uploads/student-photos/@($"{Model.StudentId_Number}.png")"
+                             onload="document.getElementById('heroPhotoLoader').style.display='none'"
+                             onerror="document.getElementById('heroPhotoLoader').innerHTML='<i class=\'material-icons\' style=\'font-size:40px;color:#94a3b8\'>person</i>'"
+                             style="width:100%;height:100%;object-fit:cover;">
+                    }
+                    else
+                    {
+                        <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;">
+                            <i class="material-icons" style="font-size:40px;color:var(--faint);">person</i>
+                        </div>
+                    }
                 </div>
-                <div class="h-[300px]" id="coursePerformanceChart"></div>
+                <div class="hero-status-dot @(Model.IsRegistered ? "registered" : "pending")"></div>
             </div>
 
-            <!-- Quick Actions & Notifications -->
-            <div class="bg-white rounded-xl shadow-sm p-6">
-                <div class="flex items-center gap-2 mb-4">
-                    <i class="material-icons text-amber-600">notifications</i>
-                    <h2 class="text-lg font-semibold text-slate-800">Quick Actions & Notifications</h2>
+            <!-- Identity -->
+            <div class="hero-identity">
+                <h1 class="hero-name">@Model.FullName</h1>
+                <div class="hero-id-row">
+                    <span class="hero-id">@Model.StudentId_Number</span>
+                    @if (Model.IsRegistered)
+                    {
+                        <span class="hero-tag registered">
+                            <i class="material-icons">check_circle</i>
+                            Registered
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="hero-tag pending">
+                            <i class="material-icons">pending</i>
+                            Pending Registration
+                        </span>
+                    }
                 </div>
+                <div class="hero-prog-row">
+                    <i class="material-icons">business</i>
+                    @Model.School.Name
+                    <span class="hero-prog-sep">·</span>
+                    <i class="material-icons">menu_book</i>
+                    @Model.Programme.Name
+                </div>
+            </div>
 
-                <!-- Quick Actions -->
-                <div class="bg-slate-900 rounded-xl p-4 mb-4">
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <a href="#" class="flex flex-col items-center gap-2 text-white hover:text-blue-400 transition-colors">
-                            <i class="material-icons">app_registration</i>
-                            <span class="text-sm">Registration</span>
-                        </a>
-                        <a href="#" class="flex flex-col items-center gap-2 text-white hover:text-green-400 transition-colors">
-                            <i class="material-icons">payment</i>
-                            <span class="text-sm">Fees</span>
-                        </a>
-                        <a href="#" class="flex flex-col items-center gap-2 text-white hover:text-cyan-400 transition-colors">
-                            <i class="material-icons">calendar_today</i>
-                            <span class="text-sm">Timetable</span>
-                        </a>
-                        <a href="/StudentResults/Results" class="flex flex-col items-center gap-2 text-white hover:text-amber-400 transition-colors">
-                            <i class="material-icons">school</i>
-                            <span class="text-sm">Results</span>
-                        </a>
+            <!-- Quick stats -->
+            <div class="hero-stats">
+                <div class="hero-stat">
+                    <div class="hero-stat-val" style="color:@gpaColour">@gpa.ToString("F2")</div>
+                    <div class="hero-stat-label">CGPA</div>
+                </div>
+                <div class="hero-stat-divider"></div>
+                <div class="hero-stat">
+                    <div class="hero-stat-val @(Model.OutstandingFees > 0 ? "coral" : "green")">
+                        @(Model.OutstandingFees > 0 ? "K" + Model.OutstandingFees.ToString("N0") : "Clear")
                     </div>
+                    <div class="hero-stat-label">Balance</div>
                 </div>
-
-                <!-- Notifications -->
-                <div class="space-y-4">
+                <div class="hero-stat-divider"></div>
+                <div class="hero-stat">
+                    <div class="hero-stat-val">@Model.AcademicYear.YearName</div>
+                    <div class="hero-stat-label">Session</div>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- ══════════════════════════════
+         MAIN GRID
+    ══════════════════════════════ -->
+    <div class="sd-grid">
+
+        <!-- ──────────────────────────
+             LEFT COLUMN
+        ────────────────────────── -->
+        <div style="display:flex;flex-direction:column;gap:1.25rem;">
+
+            <!-- Student Details -->
+            <div class="sd-card fu d1">
+                <div class="sd-card-header">
+                    <div class="sd-card-title">
+                        <i class="material-icons">badge</i>
+                        Student Details
+                    </div>
+                </div>
+                <div class="detail-grid">
+
+                    <div class="detail-item">
+                        <div class="detail-icon-wrap di-blue"><i class="material-icons">business</i></div>
+                        <div>
+                            <div class="detail-label">School</div>
+                            <div class="detail-value">@Model.School.Name</div>
+                        </div>
+                    </div>
+
+                    <div class="detail-item">
+                        <div class="detail-icon-wrap di-green"><i class="material-icons">menu_book</i></div>
+                        <div>
+                            <div class="detail-label">Programme</div>
+                            <div class="detail-value">@Model.Programme.Name</div>
+                        </div>
+                    </div>
+
+                    <div class="detail-item">
+                        <div class="detail-icon-wrap di-indigo"><i class="material-icons">calendar_today</i></div>
+                        <div>
+                            <div class="detail-label">Academic Session</div>
+                            <div class="detail-value">@Model.AcademicYear.YearName</div>
+                        </div>
+                    </div>
+
+                    <div class="detail-item">
+                        <div class="detail-icon-wrap di-purple"><i class="material-icons">grade</i></div>
+                        <div>
+                            <div class="detail-label">Academic Level</div>
+                            <div class="detail-value">Year @Model.StudentCurrentYear, Sem @Model.CurrentSemester</div>
+                        </div>
+                    </div>
+
+                    <div class="detail-item">
+                        <div class="detail-icon-wrap di-amber"><i class="material-icons">analytics</i></div>
+                        <div>
+                            <div class="detail-label">Current CGPA</div>
+                            <div class="detail-value">@gpa.ToString("F2") / 4.00</div>
+                        </div>
+                    </div>
+
+                    <div class="detail-item">
+                        <div class="detail-icon-wrap @(Model.IsRegistered ? "di-green" : "di-amber")">
+                            <i class="material-icons">@(Model.IsRegistered ? "check_circle" : "pending")</i>
+                        </div>
+                        <div>
+                            <div class="detail-label">Registration Status</div>
+                            <div class="detail-value @(Model.IsRegistered ? "success" : "")">
+                                @(Model.IsRegistered ? "Registered" : "Awaiting Student Input")
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="detail-item">
+                        <div class="detail-icon-wrap di-coral"><i class="material-icons">account_balance</i></div>
+                        <div>
+                            <div class="detail-label">Sponsor</div>
+                            <div class="detail-value">SELF</div>
+                        </div>
+                    </div>
+
+                    <div class="detail-item">
+                        <div class="detail-icon-wrap di-cyan"><i class="material-icons">payments</i></div>
+                        <div>
+                            <div class="detail-label">Outstanding Balance</div>
+                            <div class="detail-value @(Model.OutstandingFees > 0 ? "danger" : "success")">
+                                K @Model.OutstandingFees.ToString("N2")
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="detail-item">
+                        <div class="detail-icon-wrap di-navy"><i class="material-icons">apartment</i></div>
+                        <div>
+                            <div class="detail-label">Accommodation</div>
+                            <div class="detail-value">NON-RESIDENT</div>
+                        </div>
+                    </div>
+
+                    <div class="detail-item">
+                        <div class="detail-icon-wrap di-teal"><i class="material-icons">comment</i></div>
+                        <div>
+                            <div class="detail-label">Remark</div>
+                            <div class="detail-value" style="color:var(--faint);font-weight:500;font-size:.78rem;">No comment added</div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            @* <!-- GPA Card -->
+            <div class="sd-card fu d2">
+                <div class="sd-card-header">
+                    <div class="sd-card-title">
+                        <i class="material-icons">analytics</i>
+                        Academic Performance
+                    </div>
+                    <a href="/StudentResults/Results" style="font-size:.75rem;color:var(--coral);font-weight:600;text-decoration:none;display:flex;align-items:center;gap:.2rem;">
+                        View Full Results <i class="material-icons" style="font-size:14px;">arrow_forward</i>
+                    </a>
+                </div>
+                <div class="gpa-card-body">
+                    <!-- Gauge -->
+                    <div class="gpa-gauge-wrap">
+                        <svg width="100" height="100" viewBox="0 0 100 100">
+                            <circle class="gpa-gauge-bg" cx="50" cy="50" r="40" />
+                            <circle class="gpa-gauge-fill"
+                                    cx="50" cy="50" r="40"
+                                    stroke="@gpaColour"
+                                    stroke-dasharray="251.2"
+                                    stroke-dashoffset="@((251.2 * (1 - gpaPct / 100)).ToString("F1"))"
+                                    style="animation:arcFill .8s .3s ease both;" />
+                        </svg>
+                        <div class="gpa-center">
+                            <div class="gpa-num">@gpa.ToString("F2")</div>
+                            <div class="gpa-denom">/ 4.00</div>
+                        </div>
+                    </div>
+
+                    <!-- Info -->
+                    <div class="gpa-info">
+                        @{
+                            string gradeClass = gpa >= (decimal)3.5 ? "dist" : gpa >= (decimal)2.5 ? "merit" : gpa >= (decimal)2.0 ? "pass" : "fail";
+                            string gradeLabel = gpa >= (decimal)3.5 ? "Distinction" : gpa >= (decimal)2.5 ? "Merit" : gpa >= (decimal)2.0 ? "Pass" : "Below Pass";
+                            string gradeIcon = gpa >= (decimal)3.5 ? "emoji_events" : gpa >= (decimal)2.5 ? "star" : gpa >= (decimal)2.0 ? "check" : "warning";
+                        }
+                        <div class="gpa-grade-badge @gradeClass">
+                            <i class="material-icons">@gradeIcon</i>
+                            @gradeLabel
+                        </div>
+                        <div class="gpa-label">Cumulative GPA across all semesters</div>
+
+                        <!-- Mini history bars (driven by performanceData JS) -->
+                        <div id="gpaHistoryBars" class="gpa-history" style="margin-top:.875rem;"></div>
+                        <div style="display:flex;gap:4px;" id="gpaHistoryLabels"></div>
+                    </div>
+                </div>
+
+                <!-- Chart container -->
+                <div style="padding:0 1.25rem 1.25rem;">
+                    <div id="coursePerformanceChart" style="height:200px;"></div>
+                </div>
+            </div>
+
+            <!-- Today's Schedule -->
+            <div class="sd-card fu d3">
+                <div class="sd-card-header">
+                    <div class="sd-card-title">
+                        <i class="material-icons">schedule</i>
+                        Today's Schedule
+                        <span id="todayDate" style="font-size:.72rem;font-weight:500;color:var(--muted);background:var(--navy-lt);border:1px solid var(--navy-mid);border-radius:999px;padding:.1rem .6rem;margin-left:.25rem;"></span>
+                    </div>
+                    <a href="#" style="font-size:.75rem;color:var(--coral);font-weight:600;text-decoration:none;display:flex;align-items:center;gap:.2rem;">
+                        Full Timetable <i class="material-icons" style="font-size:14px;">arrow_forward</i>
+                    </a>
+                </div>
+                <div class="schedule-body" id="timetableContent">
+                    <div class="schedule-empty">
+                        <i class="material-icons">event_available</i>
+                        Loading today's schedule…
+                    </div>
+                </div>
+            </div> *@
+
+        </div><!-- /left column -->
+        <!-- ──────────────────────────
+             RIGHT COLUMN
+        ────────────────────────── -->
+        <div style="display:flex;flex-direction:column;gap:1.25rem;">
+
+            <!-- Quick Actions -->
+            @* <div class="sd-card fu d1">
+                <div class="sd-card-header">
+                    <div class="sd-card-title">
+                        <i class="material-icons">apps</i>
+                        Quick Actions
+                    </div>
+                </div>
+                <div class="qa-grid">
+                    <a href="#" class="qa-btn coral">
+                        <div class="qa-icon"><i class="material-icons">app_registration</i></div>
+                        <div class="qa-label">Registration</div>
+                    </a>
+                    <a href="#" class="qa-btn navy">
+                        <div class="qa-icon"><i class="material-icons">receipt_long</i></div>
+                        <div class="qa-label">Fee Statement</div>
+                    </a>
+                    <a href="#" class="qa-btn green">
+                        <div class="qa-icon"><i class="material-icons">payment</i></div>
+                        <div class="qa-label">Pay Fees</div>
+                    </a>
+                    <a href="/StudentResults/Results" class="qa-btn amber">
+                        <div class="qa-icon"><i class="material-icons">school</i></div>
+                        <div class="qa-label">My Results</div>
+                    </a>
+                    <a href="#" class="qa-btn navy">
+                        <div class="qa-icon"><i class="material-icons">calendar_month</i></div>
+                        <div class="qa-label">Timetable</div>
+                    </a>
+                    <a href="#" class="qa-btn coral">
+                        <div class="qa-icon"><i class="material-icons">description</i></div>
+                        <div class="qa-label">Transcript</div>
+                    </a>
+                    <a href="#" class="qa-btn green">
+                        <div class="qa-icon"><i class="material-icons">library_books</i></div>
+                        <div class="qa-label">Library</div>
+                    </a>
+                    <a href="/Profile/Index" class="qa-btn amber">
+                        <div class="qa-icon"><i class="material-icons">manage_accounts</i></div>
+                        <div class="qa-label">Profile</div>
+                    </a>
+                </div>
+            </div> *@
+
+            <!-- Fee Balance Card -->
+            <div class="sd-card fu d2">
+                <div class="sd-card-header">
+                    <div class="sd-card-title">
+                        <i class="material-icons">account_balance_wallet</i>
+                        Fee Balance
+                    </div>
+                    @{
+                        var feeStatus = Model.OutstandingFees <= 0 ? "Cleared" : "Outstanding";
+                        var feeStatusClass = Model.OutstandingFees <= 0 ? "background:var(--green-lt);color:#15803d;border:1px solid #bbf7d0" : "background:var(--coral-lt);color:var(--coral-dk);border:1px solid var(--coral-mid)";
+                    }
+                    <span style="@feeStatusClass;font-size:.7rem;font-weight:700;padding:.18rem .6rem;border-radius:999px;">
+                        @feeStatus
+                    </span>
+                </div>
+                <div class="fee-body">
+                    <div class="fee-total-row">
+                        <div>
+                            <div class="fee-label">Outstanding Balance</div>
+                            <div class="fee-amount @(Model.OutstandingFees <= 0 ? "clear" : "")">
+                                K @Model.OutstandingFees.ToString("N2")
+                            </div>
+                        </div>
+                        @if (Model.OutstandingFees > 0)
+                        {
+                            <button class="fee-cta" onclick="showPaymentForm('mobile-payment-modal')">
+                                <i class="material-icons">payment</i>
+                                Pay Now
+                            </button>
+                        }
+                        else
+                        {
+                            <span style="display:inline-flex;align-items:center;gap:.3rem;font-size:.78rem;font-weight:700;color:#15803d;">
+                                <i class="material-icons" style="font-size:18px;">check_circle</i>
+                                Fully Paid
+                            </span>
+                        }
+                    </div>
+
+                    @{
+                        var totalBilled = (decimal)(ViewData["TotalBilled"] ?? 0m);
+                        var totalPaid = (decimal)(ViewData["TotalPaid"] ?? 0m);
+                        var feePaidPct = totalBilled > 0
+                        ? (int)Math.Round((double)(totalPaid / totalBilled) * 100)
+                        : (Model.OutstandingFees <= 0 ? 100 : 0);
+                    }
+
+                    <!-- Paid progress bar (server-rendered width) -->
+                    <div class="fee-progress-wrap">
+                        <div class="fee-progress-labels">
+                            <span>Amount Paid</span>
+                            <span>@feePaidPct%</span>
+                        </div>
+                        <div class="fee-progress-bg">
+                            <!-- Animate from 0 → actual via CSS transition on load -->
+                            <div class="fee-progress-fill" id="feePaidBar"
+                                 style="width:0%" data-target="@feePaidPct"></div>
+                        </div>
+                    </div>
+
+                    <!-- Breakdown -->
+                    <div class="fee-breakdown">
+                        <div class="fee-item">
+                            <span class="fee-item-label"><i class="material-icons">receipt</i> Total Billed</span>
+                            <span class="fee-item-val">K @totalBilled.ToString("N2")</span>
+                        </div>
+                        <div class="fee-item">
+                            <span class="fee-item-label"><i class="material-icons">check</i> Total Paid</span>
+                            <span class="fee-item-val paid">K @totalPaid.ToString("N2")</span>
+                        </div>
+                        <div class="fee-item">
+                            <span class="fee-item-label"><i class="material-icons">pending</i> Balance Due</span>
+                            <span class="fee-item-val" style="color:var(--coral-dk);">K @Model.OutstandingFees.ToString("N2")</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* <!-- Semester Progress -->
+            <div class="sd-card fu d3">
+                <div class="sd-card-header">
+                    <div class="sd-card-title">
+                        <i class="material-icons">timeline</i>
+                        Semester Progress
+                    </div>
+                    <span style="font-size:.75rem;color:var(--muted);font-weight:500;" id="semProgressPct"></span>
+                </div>
+                <div class="sem-progress-body">
+                    <div class="sem-week-track" id="semWeekTrack"></div>
+                    <div class="sem-meta">
+                        <span>Week <strong id="semCurrentWeek">–</strong></span>
+                        <span><strong id="semWeeksLeft">–</strong> weeks remaining</span>
+                    </div>
+                    <div class="sem-stats">
+                        <div class="sem-stat-box">
+                            <div class="sem-stat-num" id="semCoursesEnrolled">–</div>
+                            <div class="sem-stat-lbl">Courses</div>
+                        </div>
+                        <div class="sem-stat-box">
+                            <div class="sem-stat-num" id="semCreditHours">–</div>
+                            <div class="sem-stat-lbl">Credit Hrs</div>
+                        </div>
+                        <div class="sem-stat-box">
+                            <div class="sem-stat-num" id="semAttendancePct">–</div>
+                            <div class="sem-stat-lbl">Attendance</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notifications -->
+            <div class="sd-card fu d4">
+                <div class="sd-card-header">
+                    <div class="sd-card-title">
+                        <i class="material-icons">notifications</i>
+                        Notifications
+                        <span style="background:var(--coral);color:#fff;font-size:.65rem;font-weight:800;min-width:18px;height:18px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;margin-left:.25rem;" id="unreadCount">0</span>
+                    </div>
+                    <button onclick="markAllRead()" style="font-size:.72rem;color:var(--coral);font-weight:600;background:none;border:none;cursor:pointer;">Mark all read</button>
+                </div>
+                <div class="notif-feed" id="notifFeed">
+                    <!-- Populated by JS -->
+                </div>
+            </div> *@
+
+        </div><!-- /right column -->
+    </div><!-- /sd-grid -->
+</div><!-- /sd-page -->
+<!-- Mobile Money Payment Modal -->
+<div id="mobile-payment-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+    <div class="mp-box">
+
+        <!-- ── Header ── -->
+        <div class="mp-header">
+            <div class="mp-header-left">
+                <div class="mp-header-icon">
+                    <i class="material-icons">phone_android</i>
+                </div>
+                <div>
+                    <div class="mp-header-title">Mobile Money / Card Payment</div>
+                    <div class="mp-header-sub">Secure online payment portal</div>
+                </div>
+            </div>
+            <button type="button" class="mp-close-btn" onclick="hidePaymentForm('mobile-payment-modal')" title="Close">
+                <i class="material-icons">close</i>
+            </button>
+        </div>
+
+        <!-- ── Form ── -->
+        <form id="mobile-payment-form" action="@Url.Action("ProcessStudentMobilePayment", "Payments")" method="post">
+            <input type="hidden" name="TransactionReference" value="@ViewData["TransactionReference"]">
+            <input type="hidden" name="Provider" value="Payment">
+
+            <div class="mp-body">
+
+                <!-- Amount -->
+                <div class="mp-amount-box">
+                    <div class="mp-field-label">
+                        <i class="material-icons">payments</i>
+                        Payment Amount
+                    </div>
+                    <div class="mp-amount-input-wrap">
+                        <span class="mp-amount-prefix">K</span>
+                        <input type="number" id="MobileAmount" name="Amount"
+                               class="mp-input"
+                               placeholder="0.00" step="0.01" min="1" required>
+                    </div>
+                    <div class="mp-amount-hints">
+                        <span>Minimum: K1.00</span>
+                        <span class="mp-outstanding">
+                            <i class="material-icons">account_balance_wallet</i>
+                            Outstanding: K @Model.OutstandingFees
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Phone Number -->
+                <div class="mp-field">
+                    <div class="mp-field-label">
+                        <i class="material-icons">call</i>
+                        Phone Number
+                    </div>
+                    <input type="tel" id="PhoneNumber" name="PhoneNumber"
+                           class="mp-input phone"
+                           placeholder="e.g. 0971234567"
+                           pattern="\d{10}" maxlength="10" required>
+                    <span class="mp-field-hint">Enter the phone number registered with your mobile money account.</span>
+                </div>
+
+                <!-- Transaction Reference -->
+                <div class="mp-ref-strip">
+                    <span class="mp-ref-label">
+                        <i class="material-icons">tag</i>
+                        Transaction Ref
+                    </span>
+                    <span class="mp-ref-value">@ViewData["TransactionReference"]</span>
+                </div>
+
+            </div><!-- /mp-body -->
+            <!-- ── Footer ── -->
+            <div class="mp-footer">
+                <div class="mp-divider"></div>
+                <button type="submit" id="mobile-payment-btn" class="mp-submit-btn">
+                    <div class="mp-spinner" id="mobile-loading-spinner"></div>
+                    <i class="material-icons" id="mobile-submit-icon">lock</i>
+                    <span id="mobile-pay-button-text">Complete Payment</span>
+                </button>
+            </div>
+        </form>
+
+    </div><!-- /mp-box -->
 </div>
 
-<script>
-    function hidePhotoLoader() {
-        const loader = document.getElementById('photoLoader');
-        if (loader) {
-            loader.style.display = 'none';
+<style>
+    /* ── Mobile Payment Modal ── */
+    #mobile-payment-modal .mp-box {
+        background: var(--surface);
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-lg);
+        max-width: 460px;
+        width: calc(100% - 2rem);
+        overflow: hidden;
+        animation: scaleIn .32s cubic-bezier(.4,0,.2,1);
+    }
+
+    @@keyframes scaleIn {
+        from {
+            opacity: 0;
+            transform: scale(.94) translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
         }
     }
 
-    function showDefaultIcon() {
-        const loader = document.getElementById('photoLoader');
-        const defaultIcon = document.getElementById('defaultIcon');
+    /* Header */
+    .mp-header {
+        background: linear-gradient(110deg, var(--navy-deep, #141e42) 0%, var(--navy, #1e2d5e) 60%, #2e45a0 100%);
+        padding: 1.25rem 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: relative;
+        overflow: hidden;
+    }
 
-        if (loader) {
-            loader.style.display = 'none';
+        .mp-header::before {
+            content: '';
+            position: absolute;
+            right: -40px;
+            top: -40px;
+            width: 180px;
+            height: 180px;
+            background: radial-gradient(circle, rgba(232,92,92,.15) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
         }
 
-        if (defaultIcon) {
-            defaultIcon.style.display = 'flex';
+    .mp-header-left {
+        display: flex;
+        align-items: center;
+        gap: .875rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .mp-header-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 11px;
+        background: rgba(255,255,255,.14);
+        border: 1px solid rgba(255,255,255,.18);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+        .mp-header-icon .material-icons {
+            color: #fff;
+            font-size: 22px;
+        }
+
+    .mp-header-title {
+        font-size: 1rem;
+        font-weight: 800;
+        color: #fff;
+        line-height: 1.15;
+    }
+
+    .mp-header-sub {
+        font-size: .72rem;
+        color: rgba(255,255,255,.65);
+        margin-top: 2px;
+    }
+
+    .mp-close-btn {
+        position: relative;
+        z-index: 1;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: rgba(255,255,255,.12);
+        border: 1px solid rgba(255,255,255,.18);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background .18s;
+        flex-shrink: 0;
+    }
+
+        .mp-close-btn:hover {
+            background: rgba(255,255,255,.22);
+        }
+
+        .mp-close-btn .material-icons {
+            color: #fff;
+            font-size: 18px;
+        }
+
+    /* Body */
+    .mp-body {
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.1rem;
+    }
+
+    /* Amount section */
+    .mp-amount-box {
+        background: var(--navy-lt, #eef2ff);
+        border: 1px solid var(--navy-mid, #c2d0ff);
+        border-radius: var(--radius-md, 10px);
+        padding: 1rem 1.1rem;
+    }
+
+    .mp-field-label {
+        display: flex;
+        align-items: center;
+        gap: .35rem;
+        font-size: .72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        color: var(--navy, #1e2d5e);
+        margin-bottom: .5rem;
+    }
+
+        .mp-field-label .material-icons {
+            font-size: 14px;
+            color: var(--coral, #e85c5c);
+        }
+
+    .mp-amount-input-wrap {
+        position: relative;
+    }
+
+    .mp-amount-prefix {
+        position: absolute;
+        left: .85rem;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: .95rem;
+        font-weight: 800;
+        color: var(--navy, #1e2d5e);
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .mp-input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: .65rem .85rem .65rem 2rem;
+        font-size: .95rem;
+        font-weight: 700;
+        font-family: inherit;
+        border: 1.5px solid var(--border, #e2e8f0);
+        border-radius: var(--radius-sm, 7px);
+        background: var(--surface, #fff);
+        color: var(--navy, #1e2d5e);
+        outline: none;
+        transition: border-color .18s, box-shadow .18s;
+    }
+
+        .mp-input:focus {
+            border-color: var(--coral, #e85c5c);
+            box-shadow: 0 0 0 3px rgba(232,92,92,.11);
+        }
+
+        .mp-input::placeholder {
+            color: var(--faint, #94a3b8);
+            font-weight: 400;
+        }
+
+    .mp-amount-hints {
+        display: flex;
+        justify-content: space-between;
+        font-size: .7rem;
+        color: var(--muted, #64748b);
+        margin-top: .45rem;
+    }
+
+    .mp-outstanding {
+        display: inline-flex;
+        align-items: center;
+        gap: .25rem;
+        font-weight: 700;
+        color: var(--coral-dk, #d43f3f);
+    }
+
+        .mp-outstanding .material-icons {
+            font-size: 12px;
+        }
+
+    /* Regular field */
+    .mp-field {
+        display: flex;
+        flex-direction: column;
+        gap: .45rem;
+    }
+
+    .mp-input.phone {
+        padding-left: .85rem;
+        font-size: .88rem;
+        font-weight: 600;
+        letter-spacing: .02em;
+    }
+
+    .mp-field-hint {
+        font-size: .7rem;
+        color: var(--faint, #94a3b8);
+        line-height: 1.4;
+    }
+
+    /* Transaction reference strip */
+    .mp-ref-strip {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: .65rem .9rem;
+        background: var(--bg, #f0f4f8);
+        border: 1px solid var(--border, #e2e8f0);
+        border-radius: var(--radius-sm, 7px);
+        font-size: .75rem;
+    }
+
+    .mp-ref-label {
+        color: var(--muted, #64748b);
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: .3rem;
+    }
+
+        .mp-ref-label .material-icons {
+            font-size: 13px;
+            color: var(--faint, #94a3b8);
+        }
+
+    .mp-ref-value {
+        font-family: 'Courier New', monospace;
+        font-weight: 700;
+        color: var(--navy, #1e2d5e);
+        font-size: .72rem;
+    }
+
+    /* Footer / submit */
+    .mp-footer {
+        padding: 0 1.5rem 1.5rem;
+    }
+
+    .mp-divider {
+        height: 1px;
+        background: var(--border, #e2e8f0);
+        margin-bottom: 1.1rem;
+    }
+
+    .mp-submit-btn {
+        width: 100%;
+        padding: .8rem 1rem;
+        background: linear-gradient(135deg, var(--coral, #e85c5c), var(--coral-dk, #d43f3f));
+        color: #fff;
+        border: none;
+        border-radius: var(--radius-md, 10px);
+        font-size: .88rem;
+        font-weight: 800;
+        font-family: inherit;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: .5rem;
+        box-shadow: 0 4px 14px rgba(232,92,92,.32);
+        transition: box-shadow .2s, opacity .2s, transform .15s;
+    }
+
+        .mp-submit-btn:hover {
+            box-shadow: 0 6px 20px rgba(232,92,92,.42);
+            transform: translateY(-1px);
+        }
+
+        .mp-submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .mp-submit-btn:disabled {
+            opacity: .55;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .mp-submit-btn .material-icons {
+            font-size: 18px;
+        }
+
+    /* Spinner inside button */
+    .mp-spinner {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        border: 2.5px solid rgba(255,255,255,.35);
+        border-top-color: #fff;
+        animation: mpSpin .7s linear infinite;
+        display: none;
+    }
+
+    @@keyframes mpSpin {
+        to {
+            transform: rotate(360deg);
         }
     }
-</script>
+
+    /* Overlay backdrop */
+    #mobile-payment-modal {
+        backdrop-filter: blur(3px);
+        background: rgba(30,45,94,.55) !important;
+    }
+</style>
 
 @section Scripts {
     <script>
+        /* ════════════════════════════════════════════
+           DATA BRIDGE
+        ════════════════════════════════════════════ */
         window.studentData = {
-            isRegistered: @Json.Serialize(Model.IsRegistered),
-            performanceData: @Json.Serialize(ViewData["PerformanceData"]),
-            canViewCompleteResults: @Json.Serialize(ViewData["CanViewCompleteResults"])
+            isRegistered:           @Json.Serialize(Model.IsRegistered),
+            performanceData:        @Json.Serialize(ViewData["PerformanceData"]),
+            canViewCompleteResults: @Json.Serialize(ViewData["CanViewCompleteResults"]),
+            studentId:              '@Model.StudentId_Number',
+            outstandingFees:        @Model.OutstandingFees,
+            currentYear:            @Model.StudentCurrentYear,
+            currentSemester:        @Model.CurrentSemester,
         };
+
+        /* ════════════════════════════════════════════
+           TODAY'S DATE BADGE
+        ════════════════════════════════════════════ */
+        /*document.getElementById('todayDate').textContent =
+            new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'short', year:'numeric' });*/
+
+        /* ════════════════════════════════════════════
+           SEMESTER PROGRESS  (mock — replace with server data)
+        ════════════════════════════════════════════ */
+        /*(function buildSemProgress() {
+            const totalWeeks  = 15;
+            const currentWeek = 8;   // TODO: derive from dates
+            const track       = document.getElementById('semWeekTrack');
+
+            for (let w = 1; w <= totalWeeks; w++) {
+                const el = document.createElement('div');
+                el.className = 'sem-week ' + (w < currentWeek ? 'done' : w === currentWeek ? 'current' : 'future');
+                el.title = `Week ${w}`;
+                track.appendChild(el);
+            }
+
+            document.getElementById('semCurrentWeek').textContent  = currentWeek;
+            document.getElementById('semWeeksLeft').textContent    = totalWeeks - currentWeek;
+            document.getElementById('semProgressPct').textContent  = Math.round((currentWeek / totalWeeks) * 100) + '% complete';
+            document.getElementById('semCoursesEnrolled').textContent = '5';
+            document.getElementById('semCreditHours').textContent     = '20';
+            document.getElementById('semAttendancePct').textContent   = '86%';
+        })();*/
+
+        /* ════════════════════════════════════════════
+           FEE PROGRESS BAR ANIMATION
+           Values already rendered server-side via ViewData["TotalBilled"] / ["TotalPaid"]
+        ════════════════════════════════════════════ */
+        (function animateFeeBar() {
+            const bar = document.getElementById('feePaidBar');
+            if (!bar) return;
+            const target = bar.dataset.target || '0';
+            setTimeout(() => { bar.style.width = target + '%'; }, 400);
+        })();
+
+        /* ════════════════════════════════════════════
+           GPA HISTORY MINI BARS  (from performanceData)
+        ════════════════════════════════════════════ */
+        (function buildGpaHistory() {
+            const perf = window.studentData.performanceData;
+            if (!perf || !perf.SemesterResults) return;
+
+            const barsEl   = document.getElementById('gpaHistoryBars');
+            const labelsEl = document.getElementById('gpaHistoryLabels');
+            if (!barsEl) return;
+
+            barsEl.innerHTML   = '';
+            labelsEl.innerHTML = '';
+
+            const semList = perf.SemesterResults.slice(-6);  // last 6 semesters
+            const maxGpa  = 4.0;
+
+            semList.forEach((sem, i) => {
+                const gpa    = sem.GPA || 0;
+                const pct    = (gpa / maxGpa) * 100;
+                const colour = gpa >= 3.5 ? '#22c55e' : gpa >= 2.5 ? '#1e2d5e' : '#f59e0b';
+
+                const wrapper = document.createElement('div');
+                wrapper.style.cssText = 'flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;';
+
+                const bg  = document.createElement('div');
+                bg.className = 'gpa-bar';
+                bg.style.height = '36px';
+                bg.title = `Sem ${i+1}: ${gpa.toFixed(2)}`;
+
+                const fill = document.createElement('div');
+                fill.className = 'gpa-bar-fill';
+                fill.style.cssText = `height:${pct}%;background:${colour};`;
+                bg.appendChild(fill);
+
+                const lbl = document.createElement('div');
+                lbl.className = 'gpa-bar-label';
+                lbl.textContent = sem.SemesterLabel || `S${i+1}`;
+
+                wrapper.appendChild(bg);
+                wrapper.appendChild(lbl);
+                barsEl.appendChild(wrapper);
+            });
+        })();
+
+        /* ════════════════════════════════════════════
+           NOTIFICATIONS  (mock — replace with AJAX)
+        ════════════════════════════════════════════ */
+        /*(function buildNotifications() {
+            const notifs = [
+                { type:'warn',  icon:'schedule',     title:'Fee Payment Reminder',       body:'Your semester fees are due by end of month.',           time:'2 hours ago',  unread:true  },
+                { type:'ok',    icon:'check_circle', title:'Registration Confirmed',     body:'Your course registration for Semester 2 is confirmed.', time:'Yesterday',   unread:true  },
+                { type:'info',  icon:'announcement', title:'Exam Timetable Released',    body:'Semester 2 exam timetable is now available.',           time:'2 days ago',  unread:false },
+                { type:'alert', icon:'warning',      title:'Attendance Warning',         body:'Your attendance in COMP301 is below 75%.',              time:'3 days ago',  unread:false },
+            ];
+
+            const feed  = document.getElementById('notifFeed');
+            const badge = document.getElementById('unreadCount');
+            let unread  = notifs.filter(n => n.unread).length;
+            badge.textContent = unread;
+
+            feed.innerHTML = notifs.map(n => `
+                <div class="notif-item ${n.unread ? 'unread' : ''}" onclick="this.classList.remove('unread')">
+                    <div class="notif-icon-wrap ni-${n.type}">
+                        <i class="material-icons">${n.icon}</i>
+                    </div>
+                    <div class="notif-text">
+                        <div class="notif-title">${n.title}</div>
+                        <div class="notif-body">${n.body}</div>
+                        <div class="notif-time">${n.time}</div>
+                    </div>
+                    ${n.unread ? '<div class="notif-unread-dot"></div>' : ''}
+                </div>
+            `).join('');
+        })();*/
+
+        function markAllRead() {
+            document.querySelectorAll('.notif-item.unread').forEach(el => el.classList.remove('unread'));
+            document.querySelectorAll('.notif-unread-dot').forEach(el => el.remove());
+            document.getElementById('unreadCount').textContent = '0';
+        }
+
+        const maxAmount = window.studentData.outstandingFees;
+
+        function showPaymentForm(modalId) {
+            document.getElementById(modalId).classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function hidePaymentForm(modalId) {
+            const cardBtn = document.getElementById('card-payment-btn');
+            const mobileBtn = document.getElementById('mobile-payment-btn');
+
+            // Don't allow closing if payment is being processed
+            /*if (cardBtn.disabled || mobileBtn.disabled) {
+                return;
+            }*/
+
+            document.getElementById(modalId).classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        document.querySelectorAll('#card-payment-modal, #mobile-payment-modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    const cardBtn = document.getElementById('card-payment-btn');
+                    const mobileBtn = document.getElementById('mobile-payment-btn');
+
+                    // Only allow closing if neither button is disabled (processing)
+                    /*if (!cardBtn.disabled && !mobileBtn.disabled) {
+                        hidePaymentForm(modal.id);
+                    }*/
+                }
+            });
+        });
     </script>
+
+    <script>
+        (function () {
+            const form   = document.getElementById('mobile-payment-form');
+            const btn    = document.getElementById('mobile-payment-btn');
+            const icon   = document.getElementById('mobile-submit-icon');
+            const spinner = document.getElementById('mobile-loading-spinner');
+            const txt    = document.getElementById('mobile-pay-button-text');
+
+            if (!form) return;
+
+            form.addEventListener('submit', function () {
+                btn.disabled            = true;
+                icon.style.display      = 'none';
+                spinner.style.display   = 'block';
+                txt.textContent         = 'Processing…';
+            });
+        })();
+    </script>
+
     <script src="~/js/student_dashboard.js"></script>
 }

@@ -1,3 +1,4 @@
+using SIS.Models.StudentApplication;
 using System;
 using System.ComponentModel.DataAnnotations;
 
@@ -47,6 +48,7 @@ namespace SIS.Models.Payments
         public string? TransactionType { get; set; }
         public int? StudentInvoiceId { get; set; }
         public virtual StudentInvoice StudentInvoice { get; set; }
+        public virtual Student Student{ get; set; }
 
         public string? PostedBy { get; set; }  // Username of admin who posted the manual payment
         public string? ProofOfPaymentPath { get; set; }  // Path to uploaded proof of payment file

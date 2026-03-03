@@ -159,11 +159,16 @@ namespace SIS.Controllers
                     .Include(s => s.AcademicYear)
                     .FirstOrDefaultAsync(s => s.Username == user.UserName);
 
-                decimal outstandindFees = StudentTools.GetStudentOutstandingBalance(student.Id);
+                decimal outstandingFees = StudentTools.GetStudentOutstandingBalance(student.Id);
+                decimal TotalBilled = StudentTools.GetStudentTotalFees(student.Id);
+                decimal TotalPaid = StudentTools.GetStudentTotalPaid(student.Id);
 
-                if (student.OutstandingFees != outstandindFees)
+                ViewData["TotalBilled"] = TotalBilled;
+                ViewData["TotalPaid"] = TotalPaid;
+
+                if (student.OutstandingFees != outstandingFees)
                 {
-                    student.OutstandingFees = outstandindFees;
+                    student.OutstandingFees = outstandingFees;
                     _context.Update(student);
                     await _context.SaveChangesAsync();
                 }
@@ -667,65 +672,6 @@ namespace SIS.Controllers
                 return RedirectToAction("Index");
             }
         }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         // Test method to send an email
         public async Task<IActionResult> SendTestEmail()

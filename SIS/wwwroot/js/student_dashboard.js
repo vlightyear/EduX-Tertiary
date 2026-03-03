@@ -3,21 +3,21 @@ const performanceData = window.studentData?.performanceData || null;
 const canViewCompleteResults = window.studentData?.canViewCompleteResults || false;
 
 if (!isRegistered) {
-    document.querySelector("#coursePerformanceChart").innerHTML = `
+    /*document.querySelector("#coursePerformanceChart").innerHTML = `
         <div class="flex items-center justify-center h-64">
             <div class="text-center">
                 <i class="material-icons text-5xl text-slate-400">folder_open</i>
                 <p class="mt-2 text-slate-500">Not registered for any courses</p>
             </div>
-        </div>`;
+        </div>`;*/
 } else if (!performanceData || !performanceData.courses || performanceData.courses.length === 0) {
-    document.querySelector("#coursePerformanceChart").innerHTML = `
+    /*document.querySelector("#coursePerformanceChart").innerHTML = `
         <div class="flex items-center justify-center h-64">
             <div class="text-center">
                 <i class="material-icons text-5xl text-slate-400">assessment</i>
                 <p class="mt-2 text-slate-500">No course performance data available</p>
             </div>
-        </div>`;
+        </div>`;*/
 } else {
     // Transform the real performance data for the chart
     function transformDataForChart(data) {
@@ -165,8 +165,8 @@ if (!isRegistered) {
         }
     };
 
-    var chart = new ApexCharts(document.querySelector("#coursePerformanceChart"), options);
-    chart.render();
+    /*var chart = new ApexCharts(document.querySelector("#coursePerformanceChart"), options);
+    chart.render();*/
 }
 
 // Timetable data - keep existing implementation
@@ -196,10 +196,10 @@ const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 
 const today = days[new Date().getDay()];
 
 // Get the timetable content element
-const timetableContent = document.querySelector('#timetableContent');
+//const timetableContent = document.querySelector('#timetableContent');
 
 // Check registration status and render appropriate content
-if (!isRegistered) {
+/*if (!isRegistered) {
     timetableContent.innerHTML = `
         <div class="flex items-center justify-center p-6 text-slate-500">
             <div class="text-center">
@@ -259,4 +259,4 @@ if (!isRegistered) {
         timetableHTML += '</div>';
         timetableContent.innerHTML = timetableHTML;
     }
-}
+}*/

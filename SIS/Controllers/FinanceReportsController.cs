@@ -63,29 +63,29 @@ namespace SIS.Controllers
             try
             {
                 // Build date filter query
-                var transactionQuery = _context.FinancialStatements
+                var transactionQuery = _context.OnlinePayments
                     .Include(fs => fs.Student)
-                    .ThenInclude(s => s.Programme)
+                        .ThenInclude(s => s.Programme)
                     .AsQueryable();
-
+                transactionQuery = transactionQuery.Where(fs => fs.Status == "Paid");
                 if (fromDate.HasValue)
-                    transactionQuery = transactionQuery.Where(fs => fs.PaymentDate >= fromDate.Value);
+                    transactionQuery = transactionQuery.Where(fs => fs.TransactionDate >= fromDate.Value);
                 if (toDate.HasValue)
-                    transactionQuery = transactionQuery.Where(fs => fs.PaymentDate <= toDate.Value);
+                    transactionQuery = transactionQuery.Where(fs => fs.TransactionDate <= toDate.Value);
 
                 // Get transactions data
                 var transactions = await transactionQuery
-                    .OrderByDescending(fs => fs.PaymentDate)
+                    .OrderByDescending(fs => fs.TransactionDate)
                     //.Take(50)
                     .Select(fs => new
                     {
                         StudentName = fs.Student.FullName ?? "Unknown",
                         StudentId = fs.Student.StudentId_Number,
                         Programme = fs.Student.Programme != null ? fs.Student.Programme.Name : "Unknown",
-                        Amount = fs.AmountPaid,
-                        PaymentDate = fs.PaymentDate,
+                        Amount = fs.Amount,
+                        PaymentDate = fs.TransactionDate,
                         PaymentMethod = fs.PaymentMethod ?? "Unknown",
-                        TransactionRef = fs.TransactionReference
+                        TransactionRef = fs.ReferenceNumber
                     })
                     .ToListAsync();
 
@@ -111,7 +111,7 @@ namespace SIS.Controllers
                     .ToListAsync();
 
                 // Calculate summary stats
-                var totalRevenue = await transactionQuery.SumAsync(fs => (decimal?)fs.AmountPaid) ?? 0;
+                var totalRevenue = await transactionQuery.SumAsync(fs => (decimal?)fs.Amount) ?? 0;
                 var totalOutstanding = await _context.Students.Where(s => s.OutstandingFees > 0).SumAsync(s => (decimal?)s.OutstandingFees) ?? 0;
                 var studentsWithOutstanding = await _context.Students.Where(s => s.OutstandingFees > 0).CountAsync();
                 var totalStudents = await _context.Students.CountAsync();
