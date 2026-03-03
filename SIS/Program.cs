@@ -348,7 +348,7 @@ using (var scope = app.Services.CreateScope())
     }
 
     // Add default admin user if it doesn't exist
-    var defaultAdminEmail = "admin@edumax.com";
+    var defaultAdminEmail = "admin@EduTech.com";
     var adminUser = await userManager.FindByEmailAsync(defaultAdminEmail);
 
     if (adminUser == null)

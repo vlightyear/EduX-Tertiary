@@ -3,94 +3,1146 @@
     ViewData["Title"] = "Student Lookup";
 }
 
-<div class="min-h-screen bg-slate-50 p-6">
+<style>
+    :root {
+        --bgs-coral: #e85c5c;
+        --bgs-coral-dark: #d43f3f;
+        --bgs-coral-light: #fff1f1;
+        --bgs-coral-mid: #ffc5c5;
+        --bgs-navy: #1e2d5e;
+        --bgs-navy-light: #eef2ff;
+        --bgs-navy-mid: #c2d0ff;
+        --bgs-bg: #f0f4f8;
+        --bgs-surface: #ffffff;
+        --bgs-border: #e2e8f0;
+        --bgs-text: #1e2d5e;
+        --bgs-text-muted: #64748b;
+        --bgs-text-light: #94a3b8;
+    }
+
+    /* Page */
+    .lookup-page {
+        background: var(--bgs-bg);
+        min-height: 100vh;
+        padding: 1.5rem;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+
+    /* Page Header */
+    .page-header {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    @@media (min-width: 768px) {
+        .page-header {
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+        }
+    }
+
+    .page-title-block {
+        display: flex;
+        align-items: center;
+        gap: 0.875rem;
+    }
+
+    .page-icon-wrap {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: var(--bgs-coral);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        box-shadow: 0 4px 12px rgba(232,92,92,0.3);
+    }
+
+        .page-icon-wrap .material-icons {
+            color: white;
+            font-size: 24px;
+        }
+
+    .page-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--bgs-navy);
+        margin: 0;
+        line-height: 1.2;
+    }
+
+    .page-subtitle {
+        font-size: 0.8rem;
+        color: var(--bgs-text-muted);
+        margin: 0;
+        margin-top: 2px;
+    }
+
+    .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .role-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.4rem 0.875rem;
+        background: var(--bgs-navy-light);
+        border: 1px solid var(--bgs-navy-mid);
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--bgs-navy);
+    }
+
+        .role-chip .material-icons {
+            font-size: 14px;
+            color: var(--bgs-coral);
+        }
+
+    .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.5rem 1.1rem;
+        background: var(--bgs-coral);
+        color: white;
+        font-size: 0.82rem;
+        font-weight: 600;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        text-decoration: none;
+        transition: background 0.18s, box-shadow 0.18s, transform 0.12s;
+        box-shadow: 0 2px 8px rgba(232,92,92,0.28);
+    }
+
+        .btn-primary:hover {
+            background: var(--bgs-coral-dark);
+            box-shadow: 0 4px 14px rgba(232,92,92,0.38);
+            transform: translateY(-1px);
+            color: white;
+            text-decoration: none;
+        }
+
+        .btn-primary .material-icons {
+            font-size: 16px;
+        }
+
+    /* Search Card */
+    .search-card {
+        background: var(--bgs-surface);
+        border-radius: 14px;
+        border: 1px solid var(--bgs-border);
+        box-shadow: 0 2px 8px rgba(30,45,94,0.06);
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+
+    .search-card-header {
+        padding: 1rem 1.25rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .search-card-header .material-icons {
+            color: var(--bgs-coral);
+            font-size: 20px;
+        }
+
+        .search-card-header h2 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--bgs-navy);
+            margin: 0;
+        }
+
+    .search-card-body {
+        padding: 1rem 1.25rem 1.25rem;
+    }
+
+    .search-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+        align-items: end;
+    }
+
+    @@media (min-width: 768px) {
+        .search-grid {
+            grid-template-columns: 1fr 220px 140px 52px;
+        }
+    }
+
+    .form-label {
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--bgs-navy);
+        margin-bottom: 0.4rem;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+    }
+
+    .search-input-wrap {
+        position: relative;
+    }
+
+    .search-input-icon {
+        position: absolute;
+        left: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--bgs-text-light);
+        font-size: 18px;
+        pointer-events: none;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.65rem 0.9rem 0.65rem 2.4rem;
+        font-size: 0.85rem;
+        border: 1.5px solid var(--bgs-border);
+        border-radius: 8px;
+        color: var(--bgs-text);
+        background: #fafbfc;
+        transition: border-color 0.18s, box-shadow 0.18s;
+        outline: none;
+        box-sizing: border-box;
+    }
+
+        .form-control:focus {
+            border-color: var(--bgs-coral);
+            box-shadow: 0 0 0 3px rgba(232,92,92,0.12);
+            background: white;
+        }
+
+    .form-select {
+        width: 100%;
+        padding: 0.65rem 0.9rem;
+        font-size: 0.85rem;
+        border: 1.5px solid var(--bgs-border);
+        border-radius: 8px;
+        color: var(--bgs-text);
+        background: #fafbfc;
+        transition: border-color 0.18s, box-shadow 0.18s;
+        outline: none;
+        cursor: pointer;
+        box-sizing: border-box;
+    }
+
+        .form-select:focus {
+            border-color: var(--bgs-coral);
+            box-shadow: 0 0 0 3px rgba(232,92,92,0.12);
+            background: white;
+        }
+
+    .btn-search {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem;
+        width: 100%;
+        padding: 0.65rem 1rem;
+        background: var(--bgs-coral);
+        color: white;
+        font-size: 0.82rem;
+        font-weight: 700;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        transition: background 0.18s, box-shadow 0.18s;
+        box-shadow: 0 2px 8px rgba(232,92,92,0.25);
+        white-space: nowrap;
+    }
+
+        .btn-search:hover {
+            background: var(--bgs-coral-dark);
+        }
+
+        .btn-search .material-icons {
+            font-size: 17px;
+        }
+
+    .btn-clear {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        padding: 0.65rem;
+        background: #f1f5f9;
+        color: var(--bgs-text-muted);
+        border-radius: 8px;
+        border: 1.5px solid var(--bgs-border);
+        cursor: pointer;
+        transition: background 0.18s, border-color 0.18s;
+    }
+
+        .btn-clear:hover {
+            background: #e2e8f0;
+            border-color: #cbd5e1;
+            color: var(--bgs-navy);
+        }
+
+        .btn-clear .material-icons {
+            font-size: 18px;
+        }
+
+    /* Results Layout */
+    .results-layout {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+    }
+
+    @@media (min-width: 1024px) {
+        .results-layout {
+            grid-template-columns: 340px 1fr;
+        }
+    }
+
+    /* Panel */
+    .panel {
+        background: var(--bgs-surface);
+        border-radius: 14px;
+        border: 1px solid var(--bgs-border);
+        box-shadow: 0 2px 8px rgba(30,45,94,0.06);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .panel-height {
+        height: calc(100vh - 320px);
+    }
+
+    .panel-header {
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--bgs-border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-shrink: 0;
+        background: linear-gradient(to right, #fafbff, var(--bgs-surface));
+    }
+
+    .panel-title {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--bgs-navy);
+    }
+
+    .results-badge {
+        font-size: 0.72rem;
+        font-weight: 600;
+        padding: 0.2rem 0.7rem;
+        background: var(--bgs-navy-light);
+        color: var(--bgs-navy);
+        border-radius: 999px;
+        border: 1px solid var(--bgs-navy-mid);
+    }
+
+    .panel-body {
+        flex: 1;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .panel-scroll {
+        height: 100%;
+        overflow-y: auto;
+        padding: 1rem;
+    }
+
+        .panel-scroll::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .panel-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .panel-scroll::-webkit-scrollbar-thumb {
+            background: var(--bgs-coral-mid);
+            border-radius: 4px;
+        }
+
+    /* Empty State */
+    .empty-state-wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        padding: 2rem 1.5rem;
+        text-align: center;
+    }
+
+    .empty-icon-wrap {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        background: var(--bgs-navy-light);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+    }
+
+        .empty-icon-wrap .material-icons {
+            font-size: 34px;
+            color: var(--bgs-navy-mid);
+        }
+
+    .empty-title {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--bgs-navy);
+        margin-bottom: 0.35rem;
+    }
+
+    .empty-sub {
+        font-size: 0.78rem;
+        color: var(--bgs-text-light);
+        max-width: 200px;
+        line-height: 1.5;
+    }
+
+    /* Loading */
+    .loading-state {
+        display: none;
+        height: 100%;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+    }
+
+    .loading-spinner-wrap {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: var(--bgs-text-muted);
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+
+    .spinner {
+        width: 24px;
+        height: 24px;
+        border: 2.5px solid var(--bgs-coral-mid);
+        border-top-color: var(--bgs-coral);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* Student Result Cards */
+    .student-card {
+        border: 1.5px solid var(--bgs-border);
+        border-radius: 10px;
+        padding: 0.875rem;
+        cursor: pointer;
+        transition: all 0.18s;
+        background: white;
+        margin-bottom: 0.65rem;
+    }
+
+        .student-card:last-child {
+            margin-bottom: 0;
+        }
+
+        .student-card:hover {
+            border-color: var(--bgs-coral-mid);
+            background: var(--bgs-coral-light);
+            box-shadow: 0 3px 12px rgba(232,92,92,0.12);
+            transform: translateX(2px);
+        }
+
+        .student-card.selected {
+            border-color: var(--bgs-coral);
+            background: var(--bgs-coral-light);
+            box-shadow: 0 3px 12px rgba(232,92,92,0.18);
+        }
+
+    .student-card-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+    }
+
+    .student-name {
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: var(--bgs-navy);
+    }
+
+    .status-pill {
+        font-size: 0.68rem;
+        font-weight: 600;
+        padding: 0.15rem 0.55rem;
+        border-radius: 999px;
+        margin-left: 0.5rem;
+        white-space: nowrap;
+    }
+
+    .student-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        font-size: 0.76rem;
+        color: var(--bgs-text-muted);
+        margin-bottom: 0.25rem;
+    }
+
+        .student-meta .material-icons {
+            font-size: 13px;
+            color: var(--bgs-coral);
+        }
+
+    .student-card-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 0.5rem;
+        padding-top: 0.5rem;
+        border-top: 1px solid var(--bgs-border);
+    }
+
+    .year-tag {
+        font-size: 0.72rem;
+        color: var(--bgs-text-light);
+        font-weight: 500;
+    }
+
+    .fee-pill {
+        font-size: 0.68rem;
+        font-weight: 600;
+        padding: 0.15rem 0.55rem;
+        border-radius: 999px;
+    }
+
+    .chevron-icon {
+        color: var(--bgs-coral);
+        font-size: 18px;
+        flex-shrink: 0;
+        opacity: 0.5;
+        transition: opacity 0.18s;
+    }
+
+    .student-card:hover .chevron-icon,
+    .student-card.selected .chevron-icon {
+        opacity: 1;
+    }
+
+    /* Details Panel */
+    .details-panel-header {
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--bgs-border);
+        flex-shrink: 0;
+        background: linear-gradient(to right, #fafbff, var(--bgs-surface));
+    }
+
+    .details-panel-title {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--bgs-navy);
+    }
+
+    /* Tabs */
+    .tabs-nav {
+        border-bottom: 1px solid var(--bgs-border);
+        display: flex;
+        padding: 0 1.25rem;
+        gap: 0.125rem;
+        flex-shrink: 0;
+        overflow-x: auto;
+    }
+
+        .tabs-nav::-webkit-scrollbar {
+            height: 0;
+        }
+
+    .tab-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.75rem 0.875rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--bgs-text-muted);
+        border: none;
+        border-bottom: 2.5px solid transparent;
+        background: none;
+        cursor: pointer;
+        transition: color 0.18s, border-color 0.18s;
+        white-space: nowrap;
+        margin-bottom: -1px;
+    }
+
+        .tab-button .material-icons {
+            font-size: 15px;
+        }
+
+        .tab-button:hover {
+            color: var(--bgs-navy);
+        }
+
+        .tab-button.active {
+            color: var(--bgs-coral);
+            border-bottom-color: var(--bgs-coral);
+        }
+
+    /* Admin actions bar */
+    .admin-actions-bar {
+        padding: 0.75rem 1.25rem;
+        border-bottom: 1px solid var(--bgs-border);
+        background: var(--bgs-navy-light);
+        flex-shrink: 0;
+    }
+
+    .btn-admin {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.45rem 1rem;
+        background: var(--bgs-navy);
+        color: white;
+        font-size: 0.8rem;
+        font-weight: 600;
+        border-radius: 7px;
+        border: none;
+        cursor: pointer;
+        transition: background 0.18s;
+    }
+
+        .btn-admin:hover {
+            background: #16224a;
+        }
+
+        .btn-admin .material-icons {
+            font-size: 16px;
+        }
+
+    /* Tab content area */
+    .tab-content-area {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1.25rem;
+        min-height: 0;
+    }
+
+        .tab-content-area::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .tab-content-area::-webkit-scrollbar-thumb {
+            background: var(--bgs-coral-mid);
+            border-radius: 4px;
+        }
+
+    /* Default no-student state */
+    .no-student-state {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+    }
+
+    /* ---- MODAL STYLES ---- */
+    .bgs-modal-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 50;
+        overflow-y: auto;
+        display: none;
+    }
+
+        .bgs-modal-overlay:not(.hidden) {
+            display: block;
+        }
+
+    .bgs-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(30,45,94,0.55);
+        backdrop-filter: blur(3px);
+    }
+
+    .bgs-modal-positioner {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 1.5rem;
+    }
+
+    .bgs-modal-box {
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 24px 48px rgba(30,45,94,0.22);
+        width: 100%;
+        max-width: 860px;
+        position: relative;
+        z-index: 10;
+    }
+
+    .bgs-modal-header {
+        background: linear-gradient(135deg, var(--bgs-coral) 0%, var(--bgs-coral-dark) 100%);
+        padding: 1.1rem 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .bgs-modal-header-title {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        color: white;
+        font-size: 1rem;
+        font-weight: 700;
+    }
+
+        .bgs-modal-header-title .material-icons {
+            font-size: 20px;
+        }
+
+    .bgs-modal-close {
+        background: rgba(255,255,255,0.15);
+        border: none;
+        border-radius: 6px;
+        color: white;
+        cursor: pointer;
+        padding: 0.3rem;
+        display: flex;
+        align-items: center;
+        transition: background 0.15s;
+    }
+
+        .bgs-modal-close:hover {
+            background: rgba(255,255,255,0.28);
+        }
+
+    .bgs-modal-body {
+        padding: 1.5rem;
+        max-height: 72vh;
+        overflow-y: auto;
+    }
+
+        .bgs-modal-body::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .bgs-modal-body::-webkit-scrollbar-thumb {
+            background: var(--bgs-coral-mid);
+            border-radius: 4px;
+        }
+
+    .form-section-title {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--bgs-navy);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        padding-bottom: 0.6rem;
+        border-bottom: 2px solid var(--bgs-coral-light);
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+        .form-section-title::before {
+            content: '';
+            width: 4px;
+            height: 14px;
+            background: var(--bgs-coral);
+            border-radius: 2px;
+        }
+
+    .modal-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    @@media (min-width: 640px) {
+        .modal-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    .modal-grid-full {
+        grid-column: 1 / -1;
+    }
+
+    .modal-field label {
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--bgs-navy);
+        margin-bottom: 0.35rem;
+    }
+
+    .modal-input {
+        width: 100%;
+        padding: 0.6rem 0.875rem;
+        font-size: 0.83rem;
+        border: 1.5px solid var(--bgs-border);
+        border-radius: 8px;
+        color: var(--bgs-text);
+        background: #fafbfc;
+        transition: border-color 0.18s, box-shadow 0.18s;
+        outline: none;
+        box-sizing: border-box;
+    }
+
+        .modal-input:focus {
+            border-color: var(--bgs-coral);
+            box-shadow: 0 0 0 3px rgba(232,92,92,0.1);
+            background: white;
+        }
+
+    .bgs-modal-footer {
+        background: #f8fafc;
+        padding: 1rem 1.5rem;
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.75rem;
+        border-top: 1px solid var(--bgs-border);
+    }
+
+    .btn-cancel {
+        padding: 0.55rem 1.1rem;
+        font-size: 0.82rem;
+        font-weight: 600;
+        border-radius: 8px;
+        border: 1.5px solid var(--bgs-border);
+        background: white;
+        color: var(--bgs-text-muted);
+        cursor: pointer;
+        transition: background 0.18s, border-color 0.18s;
+    }
+
+        .btn-cancel:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            color: var(--bgs-navy);
+        }
+
+    /* Toast */
+    .bgs-toast {
+        position: fixed;
+        bottom: 1.5rem;
+        right: 1.5rem;
+        min-width: 280px;
+        max-width: 420px;
+        border-radius: 12px;
+        padding: 1rem 1.25rem;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        z-index: 100;
+        display: none;
+    }
+
+        .bgs-toast.show {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .bgs-toast .material-icons {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+    /* Success created modal */
+    .created-modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(30,45,94,0.55);
+        backdrop-filter: blur(3px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 60;
+        padding: 1.5rem;
+    }
+
+    .created-modal-box {
+        background: white;
+        border-radius: 18px;
+        overflow: hidden;
+        max-width: 440px;
+        width: 100%;
+        box-shadow: 0 24px 48px rgba(30,45,94,0.25);
+    }
+
+    .created-modal-header {
+        background: linear-gradient(135deg, #22c55e, #16a34a);
+        padding: 1.25rem 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: white;
+    }
+
+        .created-modal-header .material-icons {
+            font-size: 28px;
+        }
+
+        .created-modal-header h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+    .created-modal-body {
+        padding: 1.5rem;
+    }
+
+    .cred-row {
+        background: #f8fafc;
+        border-radius: 10px;
+        padding: 0.875rem 1rem;
+        margin-bottom: 0.75rem;
+    }
+
+        .cred-row label {
+            display: block;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--bgs-text-muted);
+            margin-bottom: 0.25rem;
+        }
+
+    .cred-value {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--bgs-navy);
+    }
+
+    .cred-row.password-row {
+        background: #fffbeb;
+        border: 2px solid #fde68a;
+    }
+
+        .cred-row.password-row label {
+            color: #92400e;
+        }
+
+    .cred-value.mono {
+        font-family: 'Courier New', monospace;
+        color: #78350f;
+    }
+
+    .password-copy-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .btn-copy {
+        background: #fef3c7;
+        border: none;
+        border-radius: 6px;
+        padding: 0.35rem 0.5rem;
+        cursor: pointer;
+        color: #b45309;
+        transition: background 0.15s;
+        display: flex;
+        align-items: center;
+    }
+
+        .btn-copy:hover {
+            background: #fde68a;
+        }
+
+        .btn-copy .material-icons {
+            font-size: 17px;
+        }
+
+    .password-note {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.72rem;
+        color: #92400e;
+        margin-top: 0.5rem;
+    }
+
+        .password-note .material-icons {
+            font-size: 13px;
+        }
+
+    .created-modal-actions {
+        display: flex;
+        gap: 0.75rem;
+        margin-top: 1.25rem;
+    }
+
+    .btn-print {
+        flex: 1;
+        padding: 0.65rem;
+        background: #f1f5f9;
+        color: var(--bgs-navy);
+        font-size: 0.82rem;
+        font-weight: 600;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem;
+        transition: background 0.18s;
+    }
+
+        .btn-print:hover {
+            background: #e2e8f0;
+        }
+
+        .btn-print .material-icons {
+            font-size: 16px;
+        }
+
+    .btn-done {
+        flex: 1;
+        padding: 0.65rem;
+        background: #22c55e;
+        color: white;
+        font-size: 0.82rem;
+        font-weight: 600;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem;
+        transition: background 0.18s;
+    }
+
+        .btn-done:hover {
+            background: #16a34a;
+        }
+
+        .btn-done .material-icons {
+            font-size: 16px;
+        }
+
+    /* Tab loading spinner */
+    .tab-loading {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 3rem 1rem;
+        gap: 0.75rem;
+        color: var(--bgs-text-muted);
+        font-size: 0.84rem;
+    }
+</style>
+
+<div class="lookup-page">
     @Html.AntiForgeryToken()
 
-    <!-- Header Section -->
-    <div class="flex flex-col md:flex-row justify-between items-center mb-6">
-        <div class="flex items-center text-slate-800">
-            <i class="material-icons text-3xl mr-3 text-primary-600">people_alt</i>
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="page-title-block">
+            <div class="page-icon-wrap">
+                <i class="material-icons">people_alt</i>
+            </div>
             <div>
-                <h1 class="text-2xl font-bold">Student Lookup</h1>
-                <p class="text-sm text-slate-600">@Model.JurisdictionInfo</p>
+                <h1 class="page-title">Student Lookup</h1>
+                <p class="page-subtitle">@Model.JurisdictionInfo</p>
             </div>
         </div>
-        <div class="mt-4 md:mt-0 flex items-center space-x-4">
-            <div class="flex items-center bg-white rounded-lg px-4 py-2 shadow-sm border border-slate-200">
-                <i class="material-icons text-primary-600 mr-2">admin_panel_settings</i>
-                <span class="text-sm font-medium text-slate-700">Role: @Model.UserRole</span>
+
+        <div class="header-actions">
+            <div class="role-chip">
+                <i class="material-icons">admin_panel_settings</i>
+                @Model.UserRole
             </div>
+
             @if (User.IsInRole("Admin") || User.IsInRole("Registrar"))
             {
-                <!-- ADD STUDENT BUTTON -->
-                @* <button type="button" id="openAddStudentModal"
-                        class="inline-flex items-center px-4 py-2 bg-secondary-600 text-white text-sm font-medium rounded-lg hover:bg-secondary-700 focus:ring-4 focus:ring-secondary-300 transition-colors">
-                    <i class="material-icons mr-2 text-sm">person_add</i>
+                @* <button type="button" id="openAddStudentModal" class="btn-primary">
+                    <i class="material-icons">person_add</i>
                     Add Student
                 </button> *@
             }
-            <!-- STUDENTLIST BUTTON -->
-            <a href="@Url.Action("StudentLists", "StudentLookup")"
-               class="inline-flex items-center px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 transition-colors">
-                <i class="material-icons mr-2 text-sm">list_alt</i>
+
+            <a href="@Url.Action("StudentLists", "StudentLookup")" class="btn-primary">
+                <i class="material-icons">list_alt</i>
                 Student Lists
             </a>
         </div>
     </div>
 
-    <!-- Search Section -->
-    <div class="bg-white rounded-xl shadow-sm mb-6 border border-slate-200">
-        <div class="p-6">
-            <div class="flex items-center mb-4">
-                <i class="material-icons text-primary-600 mr-2">search</i>
-                <h2 class="text-lg font-semibold text-slate-800">Search Students</h2>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+    <!-- Search Card -->
+    <div class="search-card">
+        <div class="search-card-header">
+            <i class="material-icons">search</i>
+            <h2>Search Students</h2>
+        </div>
+        <div class="search-card-body">
+            <div class="search-grid">
                 <!-- Search Input -->
-                <div class="md:col-span-6">
-                    <label for="searchInput" class="block text-sm font-medium text-slate-700 mb-2">Search Term</label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                            <i class="material-icons text-slate-400 text-sm">search</i>
-                        </div>
+                <div>
+                    <label class="form-label" for="searchInput">Search Term</label>
+                    <div class="search-input-wrap">
+                        <i class="material-icons search-input-icon">search</i>
                         <input type="text"
                                id="searchInput"
-                               class="block w-full pl-10 pr-4 py-3 text-sm border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 transition-colors"
-                               placeholder="Enter student number, name, NRC/passport, or email..."
+                               class="form-control"
+                               placeholder="Student number, name, NRC/passport, or email…"
                                autocomplete="off">
                     </div>
                 </div>
 
-                <!-- Search Type -->
-                <div class="md:col-span-3">
-                    <label for="searchType" class="block text-sm font-medium text-slate-700 mb-2">Search By</label>
-                    <select id="searchType"
-                            class="block w-full py-3 px-4 text-sm border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 transition-colors">
+                <!-- Search By -->
+                <div>
+                    <label class="form-label" for="searchType">Search By</label>
+                    <select id="searchType" class="form-select">
                         <option value="">All Fields</option>
                         <option value="StudentNumber">Student Number</option>
                         <option value="Name">Full Name</option>
-                        <option value="NrcPassport">NRC/Passport</option>
+                        <option value="NrcPassport">NRC / Passport</option>
                         <option value="Email">Email Address</option>
                     </select>
                 </div>
 
                 <!-- Search Button -->
-                <div class="md:col-span-2">
-                    <button type="button"
-                            id="searchButton"
-                            class="w-full inline-flex items-center justify-center px-4 py-3 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 transition-colors">
-                        <i class="material-icons mr-2 text-sm">search</i>
+                <div>
+                    <label class="form-label">&nbsp;</label>
+                    <button type="button" id="searchButton" class="btn-search">
+                        <i class="material-icons">search</i>
                         Search
                     </button>
                 </div>
 
                 <!-- Clear Button -->
-                <div class="md:col-span-1">
-                    <button type="button"
-                            id="clearButton"
-                            class="w-full inline-flex items-center justify-center px-4 py-3 bg-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-300 focus:ring-4 focus:ring-slate-300 transition-colors">
-                        <i class="material-icons text-sm">clear</i>
+                <div>
+                    <label class="form-label">&nbsp;</label>
+                    <button type="button" id="clearButton" class="btn-clear" title="Clear search">
+                        <i class="material-icons">clear</i>
                     </button>
                 </div>
             </div>
@@ -98,181 +1150,169 @@
     </div>
 
     <!-- Results Layout -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="results-layout">
+
         <!-- Search Results Panel -->
-        <div class="lg:col-span-1">
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col" style="height: calc(100vh - 320px);">
-                <div class="p-4 border-b border-slate-200 flex-shrink-0">
-                    <div class="flex items-center justify-between">
-                        <h3 class="text-lg font-semibold text-slate-800">Search Results</h3>
-                        <span id="resultsCount" class="text-sm text-slate-600 bg-slate-100 px-2 py-1 rounded-full">0 results</span>
+        <div class="panel panel-height">
+            <div class="panel-header">
+                <span class="panel-title">Search Results</span>
+                <span id="resultsCount" class="results-badge">0 results</span>
+            </div>
+            <div class="panel-body">
+                <!-- Results -->
+                <div id="searchResults" class="panel-scroll">
+                    <div class="empty-state-wrap">
+                        <div class="empty-icon-wrap">
+                            <i class="material-icons">search</i>
+                        </div>
+                        <p class="empty-title">Start Your Search</p>
+                        <p class="empty-sub">Enter a search term to find students within your jurisdiction</p>
                     </div>
                 </div>
-
-                <!-- Scrollable Results Container -->
-                <div class="flex-1 overflow-hidden">
-                    <div id="searchResults" class="h-full overflow-y-auto p-4">
-                        <div class="text-center py-12">
-                            <i class="material-icons text-6xl text-slate-300 mb-4">search</i>
-                            <p class="text-slate-500 text-lg font-medium">Start Your Search</p>
-                            <p class="text-slate-400 text-sm mt-2">Enter a search term to find students within your jurisdiction</p>
-                        </div>
-                    </div>
-
-                    <!-- Loading State -->
-                    <div id="searchLoading" class="hidden h-full flex items-center justify-center p-4">
-                        <div class="inline-flex items-center">
-                            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
-                            <span class="ml-2 text-slate-600">Searching...</span>
-                        </div>
+                <!-- Loading -->
+                <div id="searchLoading" class="loading-state" style="display:none;">
+                    <div class="loading-spinner-wrap">
+                        <div class="spinner"></div>
+                        Searching…
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Student Details Panel -->
-        <div class="lg:col-span-2">
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col" style="height: calc(100vh - 320px);">
-                <div class="p-4 border-b border-slate-200 flex-shrink-0">
-                    <h3 class="text-lg font-semibold text-slate-800">Student Details</h3>
-                </div>
-                <!-- Default "No Student Selected" Message -->
-                <div id="studentDetails" class="flex-1 flex items-center justify-center p-4 overflow-y-auto">
-                    <div class="text-center">
-                        <i class="material-icons text-6xl text-slate-300 mb-4">person</i>
-                        <p class="text-slate-500 text-lg font-medium">No Student Selected</p>
-                        <p class="text-slate-400 text-sm mt-2">Select a student from the search results to view their details</p>
+        <!-- Details Panel -->
+        <div class="panel panel-height">
+            <div class="details-panel-header">
+                <span class="details-panel-title">Student Details</span>
+            </div>
+
+            <!-- Default no-student state -->
+            <div id="studentDetails" class="no-student-state">
+                <div style="text-align:center;">
+                    <div class="empty-icon-wrap" style="margin: 0 auto 1rem;">
+                        <i class="material-icons">person</i>
                     </div>
+                    <p class="empty-title">No Student Selected</p>
+                    <p class="empty-sub">Select a student from the results panel to view their details</p>
                 </div>
-                <!-- Student Detail Tabs -->
-                <div id="studentTabs" class="hidden flex flex-col flex-1 overflow-hidden">
-                    <div class="border-b border-slate-200 flex-shrink-0">
-                        <nav class="flex space-x-8 px-4" aria-label="Tabs">
-                            <button class="tab-button active py-2 px-1 border-b-2 border-primary-500 font-medium text-sm text-primary-600" data-tab="profile">
-                                <i class="material-icons text-sm mr-1">person</i>
-                                Profile
-                            </button>
-                            @if (User.IsInRole("Admin"))
-                            {
-                                <button class="tab-button py-2 px-1 border-b-2 border-transparent font-medium text-sm text-slate-500 hover:text-slate-700 hover:border-slate-300" data-tab="photo">
-                                    <i class="material-icons text-sm mr-1">photo_camera</i>
-                                    Photo
-                                </button>
-                                <button class="tab-button py-2 px-1 border-b-2 border-transparent font-medium text-sm text-slate-500 hover:text-slate-700 hover:border-slate-300" data-tab="idcard">
-                                    <i class="material-icons text-sm mr-1">badge</i>
-                                    ID Card
-                                </button>
-                            }
-                            <button class="tab-button py-2 px-1 border-b-2 border-transparent font-medium text-sm text-slate-500 hover:text-slate-700 hover:border-slate-300" data-tab="financials">
-                                <i class="material-icons text-sm mr-1">account_balance</i>
-                                Financials
-                            </button>
-                            <button class="tab-button py-2 px-1 border-b-2 border-transparent font-medium text-sm text-slate-500 hover:text-slate-700 hover:border-slate-300" data-tab="results">
-                                <i class="material-icons text-sm mr-1">assignment</i>
-                                Results
-                            </button>
-                        </nav>
-                    </div>
-                    <!-- Admin Actions -->
-                    <div id="adminActions" class="hidden border-b border-slate-200 p-4 bg-slate-50 flex-shrink-0">
-                        <button id="studentAdminButton"
-                                class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 transition-colors">
-                            <i class="material-icons mr-2 text-sm">admin_panel_settings</i>
-                            Student Administration
+            </div>
+
+            <!-- Tabbed view (hidden until student selected) -->
+            <div id="studentTabs" class="hidden" style="display:none; flex-direction:column; flex:1; overflow:hidden;">
+                <!-- Tab Nav -->
+                <nav class="tabs-nav" aria-label="Student detail tabs">
+                    <button class="tab-button active" data-tab="profile">
+                        <i class="material-icons">person</i>
+                        Profile
+                    </button>
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <button class="tab-button" data-tab="photo">
+                            <i class="material-icons">photo_camera</i>
+                            Photo
                         </button>
-                    </div>
-                    <!-- Tab Content -->
-                    <div id="tabContent" class="flex-1 overflow-y-auto p-4 min-h-0">
-                        <!-- Content will be loaded here via AJAX -->
-                    </div>
+                        <button class="tab-button" data-tab="idcard">
+                            <i class="material-icons">badge</i>
+                            ID Card
+                        </button>
+                    }
+                    <button class="tab-button" data-tab="financials">
+                        <i class="material-icons">account_balance</i>
+                        Financials
+                    </button>
+                    <button class="tab-button" data-tab="results">
+                        <i class="material-icons">assignment</i>
+                        Results
+                    </button>
+                </nav>
+
+                <!-- Admin Actions Bar -->
+                <div id="adminActions" class="hidden admin-actions-bar">
+                    <button id="studentAdminButton" class="btn-admin">
+                        <i class="material-icons">admin_panel_settings</i>
+                        Student Administration
+                    </button>
+                </div>
+
+                <!-- Tab Content -->
+                <div id="tabContent" class="tab-content-area">
+                    <!-- Loaded via AJAX -->
                 </div>
             </div>
         </div>
-    </div>
-</div>
 
-<!-- Add Student Modal -->
+    </div><!-- /results-layout -->
+</div><!-- /lookup-page -->
+<!-- ===== ADD STUDENT MODAL ===== -->
 <div id="addStudentModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
-    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-        <!-- Background overlay -->
-        <div class="fixed inset-0 transition-opacity bg-slate-500 bg-opacity-75" aria-hidden="true"></div>
+    <div class="flex items-center justify-center min-h-screen" style="padding:1.5rem;">
+        <div class="bgs-modal-backdrop" style="position:fixed;inset:0;background:rgba(30,45,94,0.55);backdrop-filter:blur(3px);" aria-hidden="true"></div>
 
-        <!-- Modal panel -->
-        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full relative z-10">
+        <div class="bgs-modal-box" style="position:relative;z-index:10;">
             <form id="addStudentForm">
                 @Html.AntiForgeryToken()
+
                 <!-- Modal Header -->
-                <div class="bg-primary-600 px-6 py-4">
-                    <div class="flex items-center justify-between">
-                        <h3 class="text-lg font-semibold text-white flex items-center">
-                            <i class="material-icons mr-2">person_add</i>
-                            Add Registered Student
-                        </h3>
-                        <button type="button" id="closeAddStudentModal" class="text-white hover:text-slate-200">
-                            <i class="material-icons">close</i>
-                        </button>
+                <div class="bgs-modal-header">
+                    <div class="bgs-modal-header-title">
+                        <i class="material-icons">person_add</i>
+                        Add Registered Student
                     </div>
+                    <button type="button" id="closeAddStudentModal" class="bgs-modal-close">
+                        <i class="material-icons">close</i>
+                    </button>
                 </div>
 
                 <!-- Modal Body -->
-                <div class="px-6 py-4 max-h-[70vh] overflow-y-auto">
+                <div class="bgs-modal-body">
+
                     <!-- Personal Information -->
-                    <div class="mb-6">
-                        <h4 class="text-md font-semibold text-slate-800 mb-3 border-b pb-2">Personal Information</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Full Name *</label>
-                                <input type="text" name="FullName" required
-                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" />
+                    <div style="margin-bottom:1.75rem;">
+                        <div class="form-section-title">Personal Information</div>
+                        <div class="modal-grid">
+                            <div class="modal-field">
+                                <label>Full Name *</label>
+                                <input type="text" name="FullName" required class="modal-input" />
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Email *</label>
-                                <input type="email" name="Email" required
-                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" />
+                            <div class="modal-field">
+                                <label>Email *</label>
+                                <input type="email" name="Email" required class="modal-input" />
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Student ID Number *</label>
-                                <input type="text" name="StudentId_Number" required
-                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" />
+                            <div class="modal-field">
+                                <label>Student ID Number *</label>
+                                <input type="text" name="StudentId_Number" required class="modal-input" />
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">NRC/Passport Number *</label>
-                                <input type="text" name="NrcOrPassportNumber" required
-                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" />
+                            <div class="modal-field">
+                                <label>NRC / Passport Number *</label>
+                                <input type="text" name="NrcOrPassportNumber" required class="modal-input" />
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Date of Birth (YYYY-MM-DD) *</label>
-                                <input type="date" name="DateOfBirth" required
-                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" />
+                            <div class="modal-field">
+                                <label>Date of Birth *</label>
+                                <input type="date" name="DateOfBirth" required class="modal-input" />
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Gender *</label>
-                                <select name="Gender" required
-                                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                            <div class="modal-field">
+                                <label>Gender *</label>
+                                <select name="Gender" required class="modal-input">
                                     <option value="">Select Gender</option>
                                     <option value="M">Male</option>
                                     <option value="F">Female</option>
                                 </select>
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Phone *</label>
-                                <input type="tel" name="Phone" required
-                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" />
+                            <div class="modal-field">
+                                <label>Phone *</label>
+                                <input type="tel" name="Phone" required class="modal-input" />
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Marital Status</label>
-                                <select name="MaritalStatus"
-                                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                            <div class="modal-field">
+                                <label>Marital Status</label>
+                                <select name="MaritalStatus" class="modal-input">
                                     <option value="Single">Single</option>
                                     <option value="Married">Married</option>
                                     <option value="Divorced">Divorced</option>
                                     <option value="Widowed">Widowed</option>
                                 </select>
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Nationality *</label>
-                                <select name="Nationality" required
-                                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                            <div class="modal-field">
+                                <label>Nationality *</label>
+                                <select name="Nationality" required class="modal-input">
                                     <option value="">Select Nationality</option>
                                     <option value="Afghan">Afghan</option>
                                     <option value="Albanian">Albanian</option>
@@ -382,10 +1422,9 @@
                                     <option value="Zimbabwean">Zimbabwean</option>
                                 </select>
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Religion</label>
-                                <select name="Religion"
-                                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                            <div class="modal-field">
+                                <label>Religion</label>
+                                <select name="Religion" class="modal-input">
                                     <option value="">Select Religion</option>
                                     <option value="Christianity">Christianity</option>
                                     <option value="Islam">Islam</option>
@@ -403,10 +1442,9 @@
                                     <option value="Prefer not to say">Prefer not to say</option>
                                 </select>
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Is Foreigner</label>
-                                <select name="IsForeigner"
-                                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                            <div class="modal-field">
+                                <label>Is Foreigner</label>
+                                <select name="IsForeigner" class="modal-input">
                                     <option value="0">No</option>
                                     <option value="1">Yes</option>
                                 </select>
@@ -415,48 +1453,42 @@
                     </div>
 
                     <!-- Academic Information -->
-                    <div class="mb-6">
-                        <h4 class="text-md font-semibold text-slate-800 mb-3 border-b pb-2">Academic Information</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">School *</label>
-                                <select name="SchoolId" required id="addStudentSchoolId"
-                                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                    <div style="margin-bottom:1.75rem;">
+                        <div class="form-section-title">Academic Information</div>
+                        <div class="modal-grid">
+                            <div class="modal-field">
+                                <label>School *</label>
+                                <select name="SchoolId" required id="addStudentSchoolId" class="modal-input">
                                     <option value="">Select School</option>
                                 </select>
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Programme *</label>
-                                <select name="ProgrammeId" required id="addStudentProgrammeId"
-                                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                            <div class="modal-field">
+                                <label>Programme *</label>
+                                <select name="ProgrammeId" required id="addStudentProgrammeId" class="modal-input">
                                     <option value="">Select Programme</option>
                                 </select>
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Programme Level *</label>
-                                <select name="ProgrammeLevelId" required
-                                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                            <div class="modal-field">
+                                <label>Programme Level *</label>
+                                <select name="ProgrammeLevelId" required class="modal-input">
                                     <option value="">Select Level</option>
                                 </select>
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Mode of Study *</label>
-                                <select name="ModeOfStudyId" required
-                                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                            <div class="modal-field">
+                                <label>Mode of Study *</label>
+                                <select name="ModeOfStudyId" required class="modal-input">
                                     <option value="">Select Mode</option>
                                 </select>
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Academic Year *</label>
-                                <select name="AcademicYearId" required
-                                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                            <div class="modal-field">
+                                <label>Academic Year *</label>
+                                <select name="AcademicYearId" required class="modal-input">
                                     <option value="">Select Academic Year</option>
                                 </select>
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Current Year *</label>
-                                <select name="StudentCurrentYear" required
-                                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                            <div class="modal-field">
+                                <label>Current Year *</label>
+                                <select name="StudentCurrentYear" required class="modal-input">
                                     <option value="">Select Year</option>
                                     <option value="1">1st Year</option>
                                     <option value="2">2nd Year</option>
@@ -466,10 +1498,9 @@
                                     <option value="6">6th Year</option>
                                 </select>
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Current Semester *</label>
-                                <select name="CurrentSemester" required
-                                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                            <div class="modal-field">
+                                <label>Current Semester *</label>
+                                <select name="CurrentSemester" required class="modal-input">
                                     <option value="">Select Semester</option>
                                     <option value="1">Semester 1</option>
                                     <option value="2">Semester 2</option>
@@ -479,50 +1510,43 @@
                     </div>
 
                     <!-- Address Information -->
-                    <div class="mb-6">
-                        <h4 class="text-md font-semibold text-slate-800 mb-3 border-b pb-2">Address Information</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Address Line 1 *</label>
-                                <input type="text" name="AddressLine1" required
-                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" />
+                    <div style="margin-bottom:1.75rem;">
+                        <div class="form-section-title">Address Information</div>
+                        <div class="modal-grid">
+                            <div class="modal-field modal-grid-full">
+                                <label>Address Line 1 *</label>
+                                <input type="text" name="AddressLine1" required class="modal-input" />
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">City *</label>
-                                <input type="text" name="City" required
-                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" />
+                            <div class="modal-field">
+                                <label>City *</label>
+                                <input type="text" name="City" required class="modal-input" />
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">State/Province *</label>
-                                <input type="text" name="State" required
-                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" />
+                            <div class="modal-field">
+                                <label>State / Province *</label>
+                                <input type="text" name="State" required class="modal-input" />
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Postal Code</label>
-                                <input type="text" name="PostalCode"
-                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" />
+                            <div class="modal-field">
+                                <label>Postal Code</label>
+                                <input type="text" name="PostalCode" class="modal-input" />
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Country *</label>
-                                <input type="text" name="Country" required
-                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" />
+                            <div class="modal-field">
+                                <label>Country *</label>
+                                <input type="text" name="Country" required class="modal-input" />
                             </div>
                         </div>
                     </div>
 
-                    <!-- Next of Kin Information -->
-                    <div class="mb-6">
-                        <h4 class="text-md font-semibold text-slate-800 mb-3 border-b pb-2">Next of Kin Information</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Next of Kin Name *</label>
-                                <input type="text" name="NextOfKinName" required
-                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" />
+                    <!-- Next of Kin -->
+                    <div>
+                        <div class="form-section-title">Next of Kin</div>
+                        <div class="modal-grid">
+                            <div class="modal-field">
+                                <label>Next of Kin Name *</label>
+                                <input type="text" name="NextOfKinName" required class="modal-input" />
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Relation *</label>
-                                <select name="NextOfKinRelation" required
-                                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                            <div class="modal-field">
+                                <label>Relation *</label>
+                                <select name="NextOfKinRelation" required class="modal-input">
                                     <option value="">Select Relation</option>
                                     <option value="Parent">Parent</option>
                                     <option value="Father">Father</option>
@@ -540,34 +1564,27 @@
                                     <option value="Other">Other</option>
                                 </select>
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Next of Kin Phone *</label>
-                                <input type="tel" name="NextOfKinPhone" required
-                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" />
+                            <div class="modal-field">
+                                <label>Next of Kin Phone *</label>
+                                <input type="tel" name="NextOfKinPhone" required class="modal-input" />
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Next of Kin Email</label>
-                                <input type="email" name="NextOfKinEmail"
-                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" />
+                            <div class="modal-field">
+                                <label>Next of Kin Email</label>
+                                <input type="email" name="NextOfKinEmail" class="modal-input" />
                             </div>
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-slate-700 mb-1">Next of Kin Address</label>
-                                <input type="text" name="NextOfKinAddress"
-                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" />
+                            <div class="modal-field modal-grid-full">
+                                <label>Next of Kin Address</label>
+                                <input type="text" name="NextOfKinAddress" class="modal-input" />
                             </div>
                         </div>
                     </div>
-                </div>
 
+                </div><!-- /bgs-modal-body -->
                 <!-- Modal Footer -->
-                <div class="bg-slate-50 px-6 py-4 flex justify-end space-x-3">
-                    <button type="button" id="cancelAddStudent"
-                            class="px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-100 transition-colors">
-                        Cancel
-                    </button>
-                    <button type="submit"
-                            class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
-                        <i class="material-icons text-sm mr-1">save</i>
+                <div class="bgs-modal-footer">
+                    <button type="button" id="cancelAddStudent" class="btn-cancel">Cancel</button>
+                    <button type="submit" class="btn-primary">
+                        <i class="material-icons" style="font-size:16px;">save</i>
                         Add Student
                     </button>
                 </div>
@@ -576,69 +1593,48 @@
     </div>
 </div>
 
-<!-- Success/Error Toast Notification -->
-<div id="toastNotification" class="hidden fixed bottom-4 right-4 p-4 rounded-lg shadow-lg max-w-sm z-50">
-    <div class="flex items-center">
-        <i id="toastIcon" class="material-icons mr-2"></i>
-        <p id="toastMessage"></p>
-    </div>
+<!-- ===== TOAST ===== -->
+<div id="toastNotification" class="bgs-toast" style="display:none;">
+    <i id="toastIcon" class="material-icons"></i>
+    <p id="toastMessage" style="margin:0;font-size:0.84rem;font-weight:500;"></p>
 </div>
 
-<!-- Student Created Success Modal -->
-<div id="studentCreatedModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all">
-        <!-- Header -->
-        <div class="bg-gradient-to-r from-green-500 to-green-600 px-6 py-4 rounded-t-2xl">
-            <div class="flex items-center text-white">
-                <i class="material-icons text-3xl mr-3">check_circle</i>
-                <h3 class="text-xl font-semibold">Student Created Successfully!</h3>
-            </div>
+<!-- ===== STUDENT CREATED SUCCESS MODAL ===== -->
+<div id="studentCreatedModal" class="hidden" style="position:fixed;inset:0;display:none;background:rgba(30,45,94,0.55);backdrop-filter:blur(3px);align-items:center;justify-content:center;z-index:60;padding:1.5rem;">
+    <div class="created-modal-box">
+        <div class="created-modal-header">
+            <i class="material-icons">check_circle</i>
+            <h3>Student Created Successfully!</h3>
         </div>
-
-        <!-- Content -->
-        <div class="p-6">
-            <div class="space-y-4">
-                <!-- Student Name -->
-                <div class="bg-slate-50 rounded-lg p-4">
-                    <label class="text-sm font-medium text-slate-600 block mb-1">Student Name</label>
-                    <p id="createdStudentName" class="text-lg font-semibold text-slate-900"></p>
-                </div>
-
-                <!-- Student Number -->
-                <div class="bg-slate-50 rounded-lg p-4">
-                    <label class="text-sm font-medium text-slate-600 block mb-1">Student Number</label>
-                    <p id="createdStudentNumber" class="text-lg font-semibold text-slate-900"></p>
-                </div>
-
-                <!-- Default Password -->
-                <div class="bg-amber-50 border-2 border-amber-200 rounded-lg p-4">
-                    <div class="flex items-start">
-                        <i class="material-icons text-amber-600 mr-2">vpn_key</i>
-                        <div class="flex-1">
-                            <label class="text-sm font-medium text-amber-800 block mb-1">Default Password</label>
-                            <div class="flex items-center justify-between">
-                                <p id="createdStudentPassword" class="text-lg font-bold text-amber-900 font-mono"></p>
-                                <button type="button" onclick="copyPassword()" class="ml-2 p-2 hover:bg-amber-100 rounded-lg transition-colors" title="Copy password">
-                                    <i class="material-icons text-amber-700">content_copy</i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <p class="text-xs text-amber-700 mt-2 flex items-center">
-                        <i class="material-icons text-xs mr-1">info</i>
-                        Please save this password and share it with the student
-                    </p>
-                </div>
+        <div class="created-modal-body">
+            <div class="cred-row">
+                <label>Student Name</label>
+                <div id="createdStudentName" class="cred-value"></div>
             </div>
-
-            <!-- Action Buttons -->
-            <div class="mt-6 flex gap-3">
-                <button type="button" onclick="printStudentCredentials()" class="flex-1 px-4 py-2.5 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors flex items-center justify-center">
-                    <i class="material-icons text-sm mr-1">print</i>
+            <div class="cred-row">
+                <label>Student Number</label>
+                <div id="createdStudentNumber" class="cred-value"></div>
+            </div>
+            <div class="cred-row password-row">
+                <label>Default Password</label>
+                <div class="password-copy-row">
+                    <div id="createdStudentPassword" class="cred-value mono"></div>
+                    <button type="button" onclick="copyPassword()" class="btn-copy" title="Copy password">
+                        <i class="material-icons">content_copy</i>
+                    </button>
+                </div>
+                <p class="password-note">
+                    <i class="material-icons">info</i>
+                    Please save and share this password with the student
+                </p>
+            </div>
+            <div class="created-modal-actions">
+                <button type="button" onclick="printStudentCredentials()" class="btn-print">
+                    <i class="material-icons">print</i>
                     Print
                 </button>
-                <button type="button" onclick="closeStudentCreatedModal()" class="flex-1 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center">
-                    <i class="material-icons text-sm mr-1">done</i>
+                <button type="button" onclick="closeStudentCreatedModal()" class="btn-done">
+                    <i class="material-icons">done</i>
                     Done
                 </button>
             </div>
@@ -775,7 +1771,6 @@
                     }
 
                     try {
-                        // Load Programmes
                         const progResponse = await fetch(`/StudentLookup/GetProgrammesForModal?schoolId=${schoolId}`);
                         const programmes = await progResponse.json();
                         if (progSelect) {
@@ -796,42 +1791,31 @@
             let isForeignerLocked = false;
 
             if (nationalityDropdown && isForeignerDropdown) {
-                // Prevent changes when locked
                 isForeignerDropdown.addEventListener('mousedown', function(e) {
-                    if (isForeignerLocked) {
-                        e.preventDefault();
-                        return false;
-                    }
+                    if (isForeignerLocked) { e.preventDefault(); return false; }
                 });
 
                 isForeignerDropdown.addEventListener('keydown', function(e) {
-                    if (isForeignerLocked) {
-                        e.preventDefault();
-                        return false;
-                    }
+                    if (isForeignerLocked) { e.preventDefault(); return false; }
                 });
 
                 nationalityDropdown.addEventListener('change', function() {
                     const selectedNationality = this.value;
                     console.log('Nationality selected:', selectedNationality);
 
-                    // If Zambian, set Is Foreigner to "No" (0), otherwise set to "Yes" (1)
                     if (selectedNationality === 'Zambian') {
-                        isForeignerDropdown.value = '0'; // No
-                        isForeignerDropdown.style.backgroundColor = '#f3f4f6'; // Gray background
+                        isForeignerDropdown.value = '0';
+                        isForeignerDropdown.style.backgroundColor = '#f3f4f6';
                         isForeignerDropdown.style.cursor = 'not-allowed';
                         isForeignerDropdown.style.opacity = '0.6';
                         isForeignerLocked = true;
-                        console.log('Set Is Foreigner to: No (Zambian) - field locked');
                     } else if (selectedNationality !== '') {
-                        isForeignerDropdown.value = '1'; // Yes
-                        isForeignerDropdown.style.backgroundColor = '#f3f4f6'; // Gray background
+                        isForeignerDropdown.value = '1';
+                        isForeignerDropdown.style.backgroundColor = '#f3f4f6';
                         isForeignerDropdown.style.cursor = 'not-allowed';
                         isForeignerDropdown.style.opacity = '0.6';
                         isForeignerLocked = true;
-                        console.log('Set Is Foreigner to: Yes (Not Zambian) - field locked');
                     } else {
-                        // If nationality is cleared, enable the field again
                         isForeignerDropdown.style.backgroundColor = '';
                         isForeignerDropdown.style.cursor = '';
                         isForeignerDropdown.style.opacity = '';
@@ -848,7 +1832,7 @@
                     const formData = new FormData(this);
                     const submitButton = this.querySelector('button[type="submit"]');
                     submitButton.disabled = true;
-                    submitButton.innerHTML = '<i class="material-icons text-sm mr-1 animate-spin">refresh</i> Saving...';
+                    submitButton.innerHTML = '<i class="material-icons" style="font-size:16px;animation:spin 0.8s linear infinite;">refresh</i> Saving...';
 
                     try {
                         const response = await fetch('/StudentLookup/AddStudent', {
@@ -859,39 +1843,25 @@
                         const result = await response.json();
                         console.log('=== Add student response ===');
                         console.log('Full result:', result);
-                        console.log('Success:', result.success);
-                        console.log('Message:', result.message);
 
                         if (result.success) {
-                            console.log('Student added successfully, showing modal');
                             closeAddStudentModal();
                             addStudentForm.reset();
 
-                            // Parse the response to extract student details
                             const studentName = formData.get('FullName');
                             const studentNumber = formData.get('StudentId_Number');
 
-                            console.log('Extracted from form - Name:', studentName, 'Number:', studentNumber);
-
-                            // Extract password from message (format: "Student X added successfully. Default login password: Y")
                             const passwordMatch = result.message.match(/Default login password: (.+)/);
                             const password = passwordMatch ? passwordMatch[1] : '';
 
-                            console.log('Password match:', passwordMatch);
-                            console.log('Extracted password:', password);
-
                             if (!password) {
-                                console.warn('Password not found in message, showing toast instead');
                                 showToast(result.message, 'success');
                                 setTimeout(() => window.location.reload(), 3000);
                                 return;
                             }
 
-                            // Show the success modal with credentials
-                            console.log('About to call showStudentCreatedModal');
                             showStudentCreatedModal(studentName, studentNumber, password);
                         } else {
-                            console.log('Failed to add student:', result.message);
                             showToast(result.message || 'Failed to add student', 'error');
                         }
                     } catch (error) {
@@ -899,24 +1869,18 @@
                         showToast('An error occurred while adding the student', 'error');
                     } finally {
                         submitButton.disabled = false;
-                        submitButton.innerHTML = '<i class="material-icons text-sm mr-1">save</i> Add Student';
+                        submitButton.innerHTML = '<i class="material-icons" style="font-size:16px;">save</i> Add Student';
                     }
                 });
             }
 
             // Add Student Modal Event Listeners
-            console.log('=== Setting up Add Student button event listener ===');
-
             if (openAddStudentModalBtn) {
-                console.log('Add Student button found, attaching click handler');
                 openAddStudentModalBtn.addEventListener('click', function(e) {
-                    console.log('=== Add Student button clicked ===');
                     e.preventDefault();
                     e.stopPropagation();
                     openAddStudentModal();
                 });
-            } else {
-                console.log('Add Student button not found - user may not have required role (Admin or Registrar)');
             }
 
             if (closeAddStudentModalBtn) {
@@ -939,20 +1903,13 @@
             const studentIdParam = urlParams.get('studentId');
 
             if (studentNumber || studentIdParam) {
-                console.log('Auto-loading student from URL:', studentNumber || studentIdParam);
-
                 if (studentIdParam) {
-                    // If a studentId is provided, directly load student details
                     selectStudent(parseInt(studentIdParam));
                 } else if (studentNumber) {
-                    // If a student number is provided, search for that student first
                     searchInput.value = studentNumber;
                     searchType.value = 'StudentNumber';
-
-                    // Perform search
                     performSearch();
 
-                    // Wait a moment for search results to load, then select automatically
                     const observer = new MutationObserver(() => {
                         const firstResult = document.querySelector('.student-result');
                         if (firstResult) {
@@ -974,11 +1931,9 @@
                     return;
                 }
 
-                // Show loading state
-                searchLoading.classList.remove('hidden');
-                searchResults.classList.add('hidden');
+                searchLoading.style.display = 'flex';
+                searchResults.style.display = 'none';
 
-                // Make AJAX request
                 fetch('/StudentLookup/SearchStudents', {
                     method: 'POST',
                     headers: {
@@ -989,8 +1944,8 @@
                 })
                 .then(response => response.json())
                 .then(data => {
-                    searchLoading.classList.add('hidden');
-                    searchResults.classList.remove('hidden');
+                    searchLoading.style.display = 'none';
+                    searchResults.style.display = 'block';
 
                     if (data.success) {
                         displaySearchResults(data.students);
@@ -1001,8 +1956,8 @@
                 })
                 .catch(error => {
                     console.error('Search error:', error);
-                    searchLoading.classList.add('hidden');
-                    searchResults.classList.remove('hidden');
+                    searchLoading.style.display = 'none';
+                    searchResults.style.display = 'block';
                     showToast('An error occurred while searching', 'error');
                     displaySearchResults([]);
                 });
@@ -1013,65 +1968,59 @@
 
                 if (students.length === 0) {
                     searchResults.innerHTML = `
-                        <div class="text-center py-8">
-                            <i class="material-icons text-4xl text-slate-300 mb-2">search_off</i>
-                            <p class="text-slate-500 font-medium">No students found</p>
-                            <p class="text-slate-400 text-sm mt-1">Try adjusting your search terms</p>
-                        </div>
-                    `;
+                        <div class="empty-state-wrap">
+                            <div class="empty-icon-wrap">
+                                <i class="material-icons">search_off</i>
+                            </div>
+                            <p class="empty-title">No students found</p>
+                            <p class="empty-sub">Try adjusting your search terms</p>
+                        </div>`;
                     return;
                 }
 
-                let resultsHtml = '<div class="space-y-3">';
+                let html = '';
                 students.forEach(student => {
                     const statusColor = getStatusColor(student.registrationStatus);
                     const feeStatus = student.outstandingFees > 0 ? 'Outstanding' : 'Cleared';
-                    const feeStatusColor = student.outstandingFees > 0 ? 'text-red-600 bg-red-50' : 'text-green-600 bg-green-50';
+                    const feeClass = student.outstandingFees > 0
+                        ? 'fee-pill' + ' ' + 'text-red-600 bg-red-50'
+                        : 'fee-pill' + ' ' + 'text-green-600 bg-green-50';
 
-                    resultsHtml += `
-                        <div class="border border-slate-200 rounded-lg p-4 hover:bg-slate-50 cursor-pointer transition-colors student-result"
-                             data-student-id="${student.id}">
-                            <div class="flex items-start justify-between">
-                                <div class="flex-1">
-                                    <div class="flex items-center mb-2">
-                                        <h4 class="font-semibold text-slate-800">${student.fullName}</h4>
-                                        <span class="ml-2 px-2 py-1 text-xs font-medium rounded-full ${statusColor}">
-                                            ${student.registrationStatus}
-                                        </span>
+                    html += `
+                        <div class="student-card student-result" data-student-id="${student.id}">
+                            <div class="student-card-top">
+                                <div style="flex:1;">
+                                    <div style="display:flex;align-items:center;flex-wrap:wrap;gap:0.35rem;margin-bottom:0.35rem;">
+                                        <span class="student-name">${student.fullName}</span>
+                                        <span class="status-pill ${statusColor}">${student.registrationStatus}</span>
                                     </div>
-                                    <p class="text-sm text-slate-600 mb-1">
-                                        <i class="material-icons text-xs mr-1">badge</i>
+                                    <div class="student-meta">
+                                        <i class="material-icons">badge</i>
                                         ${student.studentNumber}
-                                    </p>
-                                    <p class="text-sm text-slate-600 mb-1">
-                                        <i class="material-icons text-xs mr-1">school</i>
+                                    </div>
+                                    <div class="student-meta">
+                                        <i class="material-icons">school</i>
                                         ${student.programmeName}
-                                    </p>
-                                    <p class="text-sm text-slate-600 mb-2">
-                                        <i class="material-icons text-xs mr-1">business</i>
+                                    </div>
+                                    <div class="student-meta">
+                                        <i class="material-icons">business</i>
                                         ${student.schoolName}
-                                    </p>
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-xs text-slate-500">Year ${student.currentYear} • ${student.academicYear}</span>
-                                        <span class="text-xs font-medium px-2 py-1 rounded-full ${feeStatusColor}">
-                                            ${feeStatus}
-                                        </span>
                                     </div>
                                 </div>
-                                <i class="material-icons text-slate-400 ml-2">chevron_right</i>
+                                <i class="material-icons chevron-icon">chevron_right</i>
                             </div>
-                        </div>
-                    `;
+                            <div class="student-card-footer">
+                                <span class="year-tag">Year ${student.currentYear} &bull; ${student.academicYear}</span>
+                                <span class="${feeClass}">${feeStatus}</span>
+                            </div>
+                        </div>`;
                 });
-                resultsHtml += '</div>';
 
-                searchResults.innerHTML = resultsHtml;
+                searchResults.innerHTML = html;
 
-                // Attach click handlers
-                document.querySelectorAll('.student-result').forEach(element => {
-                    element.addEventListener('click', function() {
-                        const studentId = parseInt(this.dataset.studentId);
-                        selectStudent(studentId);
+                document.querySelectorAll('.student-result').forEach(el => {
+                    el.addEventListener('click', function() {
+                        selectStudent(parseInt(this.dataset.studentId));
                     });
                 });
             }
@@ -1080,130 +2029,79 @@
                 console.log('=== Student selected:', studentId, '===');
                 currentStudentId = studentId;
 
-                // Highlight selected student
                 document.querySelectorAll('.student-result').forEach(el => {
-                    el.classList.remove('bg-primary-50', 'border-primary-200');
+                    el.classList.remove('selected');
                 });
 
-                const selectedElement = document.querySelector(`[data-student-id="${studentId}"]`);
-                if (selectedElement) {
-                    selectedElement.classList.add('bg-primary-50', 'border-primary-200');
-                }
+                const selected = document.querySelector(`[data-student-id="${studentId}"]`);
+                if (selected) selected.classList.add('selected');
 
-                // Hide the default "No Student Selected" message and show tabs
-                studentDetails.classList.add('hidden');
-                studentTabs.classList.remove('hidden');
+                studentDetails.style.display = 'none';
+                studentTabs.style.display = 'flex';
 
-                // Show admin actions if user has appropriate role
                 showAdminActionsIfAuthorized();
-
-                // Load profile tab
                 loadStudentTab('profile');
             }
 
             function loadStudentTab(tabName) {
                 console.log('=== Loading tab:', tabName, 'for student:', currentStudentId, '===');
-
-                if (!currentStudentId) {
-                    console.log('No currentStudentId, returning early');
-                    return;
-                }
+                if (!currentStudentId) return;
 
                 currentTab = tabName;
 
-                // Update tab buttons
-                document.querySelectorAll('.tab-button').forEach(button => {
-                    button.classList.remove('active', 'border-primary-500', 'text-primary-600');
-                    button.classList.add('border-transparent', 'text-slate-500');
+                document.querySelectorAll('.tab-button').forEach(btn => {
+                    btn.classList.remove('active');
                 });
 
-                const activeTab = document.querySelector(`[data-tab="${tabName}"]`);
-                if (activeTab) {
-                    activeTab.classList.add('active', 'border-primary-500', 'text-primary-600');
-                    activeTab.classList.remove('border-transparent', 'text-slate-500');
-                }
+                const activeBtn = document.querySelector(`[data-tab="${tabName}"]`);
+                if (activeBtn) activeBtn.classList.add('active');
 
-                // Show loading state
                 tabContent.innerHTML = `
-                    <div class="text-center py-8">
-                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
-                        <p class="text-slate-600 mt-2">Loading ${tabName}...</p>
-                    </div>
-                `;
+                    <div class="tab-loading">
+                        <div class="spinner"></div>
+                        Loading ${tabName}…
+                    </div>`;
 
-                // Load content
                 const endpoints = {
-                    'profile': `/StudentLookup/GetStudentProfile/${currentStudentId}`,
-                    'photo': `/StudentLookup/GetStudentPhoto/${currentStudentId}`,
-                    'idcard': `/StudentLookup/GetStudentIDCard/${currentStudentId}`,
+                    'profile':    `/StudentLookup/GetStudentProfile/${currentStudentId}`,
+                    'photo':      `/StudentLookup/GetStudentPhoto/${currentStudentId}`,
+                    'idcard':     `/StudentLookup/GetStudentIDCard/${currentStudentId}`,
                     'financials': `/StudentLookup/GetStudentFinancials/${currentStudentId}`,
-                    'results': `/StudentResults/Results/${currentStudentId}`
+                    'results':    `/StudentResults/Results/${currentStudentId}`
                 };
 
-                const endpoint = endpoints[tabName];
-                console.log('Fetching from endpoint:', endpoint);
-
-                fetch(endpoint)
-                    .then(response => {
-                        console.log('Response received:', response.status, response.statusText);
-                        return response.text();
-                    })
+                fetch(endpoints[tabName])
+                    .then(r => r.text())
                     .then(html => {
-                        console.log('HTML content loaded, length:', html.length);
-
-                        // Create a temporary container to parse the HTML
                         const temp = document.createElement('div');
                         temp.innerHTML = html;
 
-                        // Extract scripts
                         const scripts = temp.querySelectorAll('script');
-                        console.log('Found scripts:', scripts.length);
-
-                        // Remove scripts from the HTML (we'll execute them separately)
-                        scripts.forEach(script => script.remove());
-
-                        // Insert the HTML without scripts
+                        scripts.forEach(s => s.remove());
                         tabContent.innerHTML = temp.innerHTML;
-                        console.log('Tab content updated');
 
-                        // Now execute each script
-                        scripts.forEach((oldScript, index) => {
-                            console.log(`Executing script ${index + 1}/${scripts.length}`);
+                        scripts.forEach((oldScript, i) => {
                             const newScript = document.createElement('script');
-
-                            // Copy attributes
-                            Array.from(oldScript.attributes).forEach(attr => {
-                                newScript.setAttribute(attr.name, attr.value);
-                            });
-
-                            // Copy script content
+                            Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
                             newScript.textContent = oldScript.textContent;
-
-                            // Append to document to execute
                             document.body.appendChild(newScript);
-
-                            // Remove after execution
-                            setTimeout(() => {
-                                document.body.removeChild(newScript);
-                            }, 100);
-
-                            console.log(`Script ${index + 1} executed`);
+                            setTimeout(() => document.body.removeChild(newScript), 100);
                         });
-
-                        console.log('All scripts executed successfully');
                     })
                     .catch(error => {
                         console.error('Error loading tab content:', error);
                         tabContent.innerHTML = `
-                            <div class="text-center py-8">
-                                <i class="material-icons text-4xl text-red-300 mb-2">error</i>
-                                <p class="text-slate-500">Error loading content</p>
-                                <p class="text-sm text-slate-400 mt-2">${error.message}</p>
-                                <button onclick="loadStudentTab('${tabName}')" class="mt-4 px-4 py-2 text-primary-600 hover:text-primary-700 border border-primary-600 rounded-lg">
+                            <div class="empty-state-wrap">
+                                <div class="empty-icon-wrap" style="background:#fff1f1;">
+                                    <i class="material-icons" style="color:#ffc5c5;">error</i>
+                                </div>
+                                <p class="empty-title">Error Loading Content</p>
+                                <p class="empty-sub">${error.message}</p>
+                                <button onclick="loadStudentTab('${tabName}')"
+                                        style="margin-top:1rem;padding:0.5rem 1.1rem;background:var(--bgs-coral);color:white;border:none;border-radius:8px;font-size:0.82rem;font-weight:600;cursor:pointer;">
                                     Try Again
                                 </button>
-                            </div>
-                        `;
+                            </div>`;
                     });
             }
 
@@ -1211,37 +2109,34 @@
                 searchInput.value = '';
                 searchType.value = '';
                 searchResults.innerHTML = `
-                    <div class="text-center py-12">
-                        <i class="material-icons text-6xl text-slate-300 mb-4">search</i>
-                        <p class="text-slate-500 text-lg font-medium">Start Your Search</p>
-                        <p class="text-slate-400 text-sm mt-2">Enter a search term to find students within your jurisdiction</p>
-                    </div>
-                `;
+                    <div class="empty-state-wrap">
+                        <div class="empty-icon-wrap">
+                            <i class="material-icons">search</i>
+                        </div>
+                        <p class="empty-title">Start Your Search</p>
+                        <p class="empty-sub">Enter a search term to find students within your jurisdiction</p>
+                    </div>`;
                 resultsCount.textContent = '0 results';
 
-                // Show default message and hide tabs
-                studentDetails.classList.remove('hidden');
-                studentTabs.classList.add('hidden');
+                studentDetails.style.display = '';
+                studentTabs.style.display = 'none';
 
-                // Hide admin actions
                 const adminActions = document.getElementById('adminActions');
-                if (adminActions) {
-                    adminActions.classList.add('hidden');
-                }
+                if (adminActions) adminActions.classList.add('hidden');
 
                 currentStudentId = null;
             }
 
             function getStatusColor(status) {
-                const statusColors = {
-                    'Registered': 'text-green-600 bg-green-50',
+                const map = {
+                    'Registered':   'text-green-600 bg-green-50',
                     'Unregistered': 'text-amber-600 bg-amber-50',
-                    'Pending': 'text-blue-600 bg-blue-50',
-                    'Suspended': 'text-red-600 bg-red-50',
-                    'Excluded': 'text-red-600 bg-red-50',
-                    'Withdrawn': 'text-slate-600 bg-slate-50'
+                    'Pending':      'text-blue-600 bg-blue-50',
+                    'Suspended':    'text-red-600 bg-red-50',
+                    'Excluded':     'text-red-600 bg-red-50',
+                    'Withdrawn':    'text-slate-600 bg-slate-50'
                 };
-                return statusColors[status] || 'text-slate-600 bg-slate-50';
+                return map[status] || 'text-slate-600 bg-slate-50';
             }
 
             function showToast(message, type = 'info') {
@@ -1252,72 +2147,60 @@
                 toastMessage.textContent = message;
 
                 const types = {
-                    'success': { class: 'bg-green-100 text-green-800', icon: 'check_circle' },
-                    'error': { class: 'bg-red-100 text-red-800', icon: 'error' },
-                    'warning': { class: 'bg-amber-100 text-amber-800', icon: 'warning' },
-                    'info': { class: 'bg-blue-100 text-blue-800', icon: 'info' }
+                    'success': { bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0', icon: 'check_circle' },
+                    'error':   { bg: '#fff1f1', color: '#d43f3f', border: '#ffc5c5', icon: 'error' },
+                    'warning': { bg: '#fffbeb', color: '#d97706', border: '#fde68a', icon: 'warning' },
+                    'info':    { bg: '#eef2ff', color: '#1e2d5e', border: '#c2d0ff', icon: 'info' }
                 };
 
-                const typeConfig = types[type] || types.info;
-                toast.className = `fixed bottom-4 right-4 p-4 rounded-lg shadow-lg max-w-md z-50 ${typeConfig.class}`;
-                toastIcon.textContent = typeConfig.icon;
+                const t = types[type] || types.info;
+                toast.style.background = t.bg;
+                toast.style.color = t.color;
+                toast.style.border = `1px solid ${t.border}`;
+                toastIcon.textContent = t.icon;
+                toastIcon.style.color = t.color;
 
-                toast.classList.remove('hidden');
+                toast.classList.add('show');
+                toast.style.display = 'flex';
 
-                // Show success messages longer (8 seconds) to allow time to read password
                 const displayTime = type === 'success' ? 8000 : 5000;
                 setTimeout(() => {
-                    toast.classList.add('hidden');
+                    toast.style.display = 'none';
+                    toast.classList.remove('show');
                 }, displayTime);
             }
 
             // Student Created Modal Functions
             function showStudentCreatedModal(studentName, studentNumber, password) {
-                console.log('=== showStudentCreatedModal called ===');
-                console.log('Student Name:', studentName);
-                console.log('Student Number:', studentNumber);
-                console.log('Password:', password);
-
                 const modal = document.getElementById('studentCreatedModal');
-                console.log('Modal element:', modal);
-
                 if (!modal) {
-                    console.error('Student created modal not found!');
-                    alert(`Student created successfully!\n\nName: ${studentName}\nNumber: ${studentNumber}\nPassword: ${password}`);
+                    alert(`Student created!\n\nName: ${studentName}\nNumber: ${studentNumber}\nPassword: ${password}`);
                     return;
                 }
 
-                const nameElement = document.getElementById('createdStudentName');
-                const numberElement = document.getElementById('createdStudentNumber');
-                const passwordElement = document.getElementById('createdStudentPassword');
-
-                if (nameElement) nameElement.textContent = studentName;
-                if (numberElement) numberElement.textContent = studentNumber;
-                if (passwordElement) passwordElement.textContent = password;
+                document.getElementById('createdStudentName').textContent = studentName;
+                document.getElementById('createdStudentNumber').textContent = studentNumber;
+                document.getElementById('createdStudentPassword').textContent = password;
 
                 modal.classList.remove('hidden');
-                console.log('Modal should now be visible');
+                modal.style.display = 'flex';
             }
 
             function closeStudentCreatedModal() {
                 const modal = document.getElementById('studentCreatedModal');
                 if (modal) {
                     modal.classList.add('hidden');
+                    modal.style.display = 'none';
                 }
-                // Reload the page to refresh the student list
                 window.location.reload();
             }
 
             function copyPassword() {
                 const passwordElement = document.getElementById('createdStudentPassword');
                 if (passwordElement) {
-                    const password = passwordElement.textContent;
-                    navigator.clipboard.writeText(password).then(() => {
-                        showToast('Password copied to clipboard!', 'success');
-                    }).catch(err => {
-                        console.error('Failed to copy password:', err);
-                        showToast('Failed to copy password', 'error');
-                    });
+                    navigator.clipboard.writeText(passwordElement.textContent)
+                        .then(() => showToast('Password copied to clipboard!', 'success'))
+                        .catch(() => showToast('Failed to copy password', 'error'));
                 }
             }
 
@@ -1333,53 +2216,16 @@
                     <head>
                         <title>Student Credentials</title>
                         <style>
-                            body {
-                                font-family: Arial, sans-serif;
-                                padding: 40px;
-                                max-width: 600px;
-                                margin: 0 auto;
-                            }
-                            .header {
-                                text-align: center;
-                                margin-bottom: 30px;
-                                border-bottom: 3px solid #10b981;
-                                padding-bottom: 20px;
-                            }
-                            .header h1 {
-                                color: #10b981;
-                                margin: 0;
-                            }
-                            .credential-box {
-                                background: #f8f9fa;
-                                padding: 20px;
-                                border-radius: 8px;
-                                margin: 15px 0;
-                                border-left: 4px solid #10b981;
-                            }
-                            .label {
-                                font-weight: bold;
-                                color: #666;
-                                font-size: 14px;
-                                margin-bottom: 5px;
-                            }
-                            .value {
-                                font-size: 18px;
-                                color: #000;
-                                font-weight: 600;
-                            }
-                            .password-box {
-                                background: #fff3cd;
-                                border-left-color: #ffc107;
-                            }
-                            .footer {
-                                margin-top: 40px;
-                                text-align: center;
-                                color: #666;
-                                font-size: 12px;
-                            }
-                            @@media print {
-                                body { padding: 20px; }
-                            }
+                            body { font-family: 'Segoe UI', Arial, sans-serif; padding: 40px; max-width: 600px; margin: 0 auto; }
+                            .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #e85c5c; padding-bottom: 20px; }
+                            .header h1 { color: #1e2d5e; margin: 0; font-size: 1.4rem; }
+                            .header p { color: #64748b; font-size: 0.85rem; margin: 6px 0 0; }
+                            .cred { background: #f8fafc; padding: 18px 20px; border-radius: 10px; margin: 14px 0; border-left: 4px solid #e85c5c; }
+                            .lbl { font-weight: 700; color: #64748b; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px; }
+                            .val { font-size: 1.1rem; color: #1e2d5e; font-weight: 700; }
+                            .pw { background: #fffbeb; border-left-color: #f59e0b; }
+                            .pw .val { font-family: 'Courier New', monospace; color: #78350f; }
+                            .footer { margin-top: 40px; text-align: center; color: #94a3b8; font-size: 0.75rem; }
                         <\/style>
                     <\/head>
                     <body>
@@ -1387,18 +2233,9 @@
                             <h1>Student Login Credentials</h1>
                             <p>Please keep this information secure</p>
                         </div>
-                        <div class="credential-box">
-                            <div class="label">Student Name</div>
-                            <div class="value">${studentName}</div>
-                        </div>
-                        <div class="credential-box">
-                            <div class="label">Student Number</div>
-                            <div class="value">${studentNumber}</div>
-                        </div>
-                        <div class="credential-box password-box">
-                            <div class="label">Default Password</div>
-                            <div class="value">${password}</div>
-                        </div>
+                        <div class="cred"><div class="lbl">Student Name</div><div class="val">${studentName}</div></div>
+                        <div class="cred"><div class="lbl">Student Number</div><div class="val">${studentNumber}</div></div>
+                        <div class="cred pw"><div class="lbl">Default Password</div><div class="val">${password}</div></div>
                         <div class="footer">
                             <p>Generated on ${new Date().toLocaleString()}</p>
                             <p>Please change your password after first login</p>
@@ -1408,9 +2245,7 @@
                 `);
                 printWindow.document.close();
                 printWindow.focus();
-                setTimeout(() => {
-                    printWindow.print();
-                }, 250);
+                setTimeout(() => printWindow.print(), 250);
             }
 
             // Make modal functions globally available
@@ -1420,29 +2255,19 @@
             window.printStudentCredentials = printStudentCredentials;
 
             // Event listeners
-            if (searchButton) {
-                searchButton.addEventListener('click', performSearch);
-            }
-
-            if (clearButton) {
-                clearButton.addEventListener('click', clearSearch);
-            }
-
+            if (searchButton) searchButton.addEventListener('click', performSearch);
+            if (clearButton) clearButton.addEventListener('click', clearSearch);
             if (searchInput) {
                 searchInput.addEventListener('keydown', function(e) {
-                    if (e.key === 'Enter') {
-                        performSearch();
-                    }
+                    if (e.key === 'Enter') performSearch();
                 });
             }
 
             // Tab click handlers
             document.addEventListener('click', function(e) {
-                if (e.target.classList.contains('tab-button') || e.target.closest('.tab-button')) {
-                    const tabButton = e.target.classList.contains('tab-button') ? e.target : e.target.closest('.tab-button');
-                    const tabName = tabButton.dataset.tab;
-                    console.log('Tab button clicked:', tabName);
-                    loadStudentTab(tabName);
+                const tabBtn = e.target.classList.contains('tab-button') ? e.target : e.target.closest('.tab-button');
+                if (tabBtn && tabBtn.dataset.tab) {
+                    loadStudentTab(tabBtn.dataset.tab);
                 }
             });
 
@@ -1450,7 +2275,6 @@
             window.loadStudentTab = loadStudentTab;
             window.showToast = showToast;
 
-            // Check user role and show admin actions
             function showAdminActionsIfAuthorized() {
                 const userRole = '@Model.UserRole';
                 const adminActions = document.getElementById('adminActions');
@@ -1459,7 +2283,6 @@
                 }
             }
 
-            // Handle student administration button click
             const adminButton = document.getElementById('studentAdminButton');
             if (adminButton) {
                 adminButton.addEventListener('click', function() {
@@ -1479,13 +2302,10 @@
             const modal = $('#studyPermitModal');
 
             function openModal() {
-                console.log("Opening study permit modal");
                 const modalElement = document.getElementById('studyPermitModal');
                 if (modalElement) {
                     modalElement.classList.remove('hidden');
                     modalElement.classList.add('flex');
-                } else {
-                    console.log('Study permit modal not found on this page (will be loaded in profile tab)');
                 }
             }
 
@@ -1507,14 +2327,9 @@
 
             window.reprintIframe = async function(studentId) {
                 const iframe = document.getElementById('idCardFrame');
-
                 try {
-                    const response = await fetch(`/StudentLookup/ReprintIdCard/${studentId}`, {
-                        method: 'POST'
-                    });
-
+                    const response = await fetch(`/StudentLookup/ReprintIdCard/${studentId}`, { method: 'POST' });
                     const result = await response.json();
-
                     if (result.success) {
                         if (iframe && iframe.contentWindow) {
                             iframe.contentWindow.focus();
@@ -1531,30 +2346,22 @@
 
             function loadPdf(url) {
                 const viewerBase = "/pdfjs/web/viewer.html";
-                const fullViewerUrl = `${viewerBase}?file=${url}`;
-                console.log('Loading PDF:', fullViewerUrl);
-
                 const pdfFrame = document.getElementById("pdfFrame");
-                if (pdfFrame) {
-                    pdfFrame.src = fullViewerUrl;
-                }
+                if (pdfFrame) pdfFrame.src = `${viewerBase}?file=${url}`;
             }
 
-            window.openPermitModal = function ()  {
+            window.openPermitModal = function() {
                 const mode = $(this).data('mode');
                 const permitId = $(this).data('permit-id');
                 const form = $('#studyPermitForm')[0];
-
-                if (form) {
-                    form.reset();
-                }
+                if (form) form.reset();
 
                 $('#PermitId').val('');
                 $('#studyPermitLabel').text(mode === 'add' ? 'Add Study Permit' : 'Update Study Permit');
                 $('#savePermitBtn').text(mode === 'add' ? 'Add Permit' : 'Update Permit');
 
                 if (mode === 'edit' && permitId) {
-                    $.get(`/StudyPermit/Get/${permitId}`, function (data) {
+                    $.get(`/StudyPermit/Get/${permitId}`, function(data) {
                         if (data) {
                             $('#PermitId').val(data.id);
                             $('#PermitNumber').val(data.permitNumber);
@@ -1568,29 +2375,25 @@
                 openModal();
             }
 
-            // Close modal buttons and backdrop click
             $('#closePermitModal, #cancelPermitBtn').on('click', window.closeModal);
-            $(document).on('click', function (e) {
+            $(document).on('click', function(e) {
                 if ($(e.target).is('#studyPermitModal')) window.closeModal();
             });
 
-            $(document).on('submit', '#studyPermitForm', function (e) {
+            $(document).on('submit', '#studyPermitForm', function(e) {
                 e.preventDefault();
                 const formData = new FormData(this);
-
                 $.ajax({
                     url: '/StudyPermit/Save',
                     type: 'POST',
                     data: formData,
                     processData: false,
                     contentType: false,
-                    success: function () {
+                    success: function() {
                         window.closeModal();
-                        if (typeof loadStudentTab === 'function') {
-                            loadStudentTab('profile');
-                        }
+                        if (typeof loadStudentTab === 'function') loadStudentTab('profile');
                     },
-                    error: function () {
+                    error: function() {
                         alert('Error saving study permit.');
                     }
                 });
