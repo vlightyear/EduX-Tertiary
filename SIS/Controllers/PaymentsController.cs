@@ -92,8 +92,8 @@ namespace SIS.Controllers
         }
 
         // Process credit card payment for student fees - UPDATED
-        [HttpPost]
-        /*public async Task<IActionResult> ProcessStudentCardPayment(StudentCardPaymentViewModel model)
+        /*[HttpPost]
+        public async Task<IActionResult> ProcessStudentCardPayment(StudentCardPaymentViewModel model)
         {
             if (!ModelState.IsValid)
             {
@@ -746,6 +746,36 @@ namespace SIS.Controllers
                 var phone = new string(model.PhoneNumber.Where(char.IsDigit).ToArray());
                 var narration = $"Student Fee Payment - {student.StudentId_Number}";
 
+                if (student == null)
+                {
+                    _logger.LogWarning("Payment rejected: Neither student nor applicant found with Reg: {Reg}", student.StudentId_Number);
+                    return BadRequest(new { Message = "Student/Applicant not found in our system." });
+                }
+
+                var names = (student.FullName ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                var payment = new OnlinePayments
+                {
+                    MerchantTransactionId = txnId,
+                    FullName = student.FullName,
+                    CustomerFirstName = names.Length > 0 ? names[0] : "",
+                    CustomerLastName = names.Length > 1 ? names[^1] : "",
+                    Msisdn = phone,
+                    Phone = phone,
+                    AccountNumber = student.StudentId_Number,
+                    Amount = model.Amount,
+                    CurrencyCode = "ZMW",
+                    PaymentMethod = "PayBoss Mobile",
+                    RequestPayload = JsonSerializer.Serialize(model),
+                    ResponsePayload = JsonSerializer.Serialize(new { Message = "Data Capture Complete" }),
+                    Status = "Pending",
+                    CreatedAt = DateTime.Now,
+                    CallbackPayload = JsonSerializer.Serialize(model),
+                    ReferenceNumber = txnId,
+                    StudentId = student.Id
+                };
+                _context.Add(payment);
+                await _context.SaveChangesAsync();
+
                 // Step 1 (token obtained automatically in service) + Step 2A
                 var result = await _payBoss.CollectMobileAsync(
                     phone: phone,
@@ -808,6 +838,36 @@ namespace SIS.Controllers
             // PayBoss will redirect back here after the card / 3DS flow
             var callbackUrl = Url.Action("PaymentCallback", "Payments",
                 new { txnId, studentId = student.StudentId_Number }, Request.Scheme)!;
+
+            if (student == null)
+            {
+                _logger.LogWarning("Payment rejected: Neither student nor applicant found with Reg: {Reg}", student.StudentId_Number);
+                return BadRequest(new { Message = "Student/Applicant not found in our system." });
+            }
+
+            var names = (student.FullName ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            var payment = new OnlinePayments
+            {
+                MerchantTransactionId = txnId,
+                FullName = student.FullName,
+                CustomerFirstName = names.Length > 0 ? names[0] : "",
+                CustomerLastName = names.Length > 1 ? names[^1] : "",
+                Msisdn = model.PhoneNumber,
+                Phone = model.PhoneNumber,
+                AccountNumber = student.StudentId_Number,
+                Amount = model.Amount,
+                CurrencyCode = "ZMW",
+                PaymentMethod = "PayBoss Card",
+                RequestPayload = JsonSerializer.Serialize(model),
+                ResponsePayload = JsonSerializer.Serialize(new { Message = "Data Capture Complete" }),
+                Status = "Pending",
+                CreatedAt = DateTime.Now,
+                CallbackPayload = JsonSerializer.Serialize(model),
+                ReferenceNumber = txnId,
+                StudentId = student.Id
+            };
+            _context.Add(payment);
+            await _context.SaveChangesAsync();
 
             try
             {
@@ -891,6 +951,24 @@ namespace SIS.Controllers
             try
             {
                 var status = await _payBoss.GetStatusAsync(txnId);
+
+                if(string.Equals(status.Status, "success", StringComparison.OrdinalIgnoreCase) || string.Equals(status.Status, "failed", StringComparison.OrdinalIgnoreCase))
+                {
+                    var payment = await _context.OnlinePayments.FirstOrDefaultAsync(p => string.Equals(p.ReferenceNumber, txnId, StringComparison.OrdinalIgnoreCase));
+
+                    if(payment != null)
+                    {
+                        if(string.Equals(status.Status, "success", StringComparison.OrdinalIgnoreCase))
+                        {
+                            payment.Status = "Paid";
+                        }
+                        else
+                        {
+                            payment.Status = "Failed"; 
+                        }
+                    }
+                }
+
                 return Json(new
                 {
                     status = status.Status,          // "success" | "failed" | "pending"
@@ -1595,7 +1673,8 @@ namespace SIS.Controllers
 
                 if (student == null) return NotFound("Student record not found.");
 
-                var paymentsQuery = _context.OnlinePayments.Where(op => op.StudentId == student.Id && op.Status == "Paid")
+               var paymentsQuery = _context.OnlinePayments
+                    .Where(op => op.StudentId == student.Id && op.Status == "Paid")
                     .Select(p => new UnifiedTransactionDto
                     {
                         Id = p.Id,
@@ -1604,22 +1683,36 @@ namespace SIS.Controllers
                         Credit = true,
                         Reference = p.ReferenceNumber,
                         AccountingSystemPostStatus = p.AccountingSystemPostStatus,
-                        CreatedAt = p.TransactionDate ?? p.CreatedAt
-                    });
+                        CreatedAt = p.TransactionDate ?? p.CreatedAt,
+                        Narration = null,
+                        InvoiceItems = null
+                    })
+                    .ToList();
 
-                var invoicesQuery = _context.StudentInvoices.Where(si => si.StudentId == student.Id)
-                    .Select(i => new UnifiedTransactionDto
-                    {
-                        Id = i.Id,
-                        StudentId = i.StudentId,
-                        Amount = i.TotalAmount,
-                        Credit = false,
-                        Reference = i.InvoiceReference,
-                        AccountingSystemPostStatus = i.AccountingSystemPostStatus,
-                        CreatedAt = i.CreatedDate
-                    });
+                var invoices = _context.StudentInvoices
+                    .Include(si => si.InvoiceItems)
+                    .Where(si => si.StudentId == student.Id)
+                    .ToList();
 
-                var unified = paymentsQuery.Union(invoicesQuery).OrderBy(x => x.CreatedAt).ToList();
+                var invoicesQuery = invoices.Select(i => new UnifiedTransactionDto
+                {
+                    Id = i.Id,
+                    StudentId = i.StudentId,
+                    Amount = i.TotalAmount,
+                    Credit = false,
+                    Reference = i.InvoiceReference,
+                    AccountingSystemPostStatus = i.AccountingSystemPostStatus,
+                    CreatedAt = i.CreatedDate,
+                    Narration = i.InvoiceItems.Any(item => item.FeeTypeName.ToLower().Contains("tuition"))
+                                                     ? "Tuition Fees"
+                                                     : i.InvoiceItems.Select(item => item.FeeTypeName).FirstOrDefault() ?? "Invoice",
+                    InvoiceItems = i.InvoiceItems.ToList()
+                }).ToList();
+
+                var unified = paymentsQuery
+                    .Concat(invoicesQuery)
+                    .OrderBy(x => x.CreatedAt)
+                    .ToList();
 
                 var viewModel = new PaymentHistoryViewModel
                 {
@@ -1639,8 +1732,6 @@ namespace SIS.Controllers
                 return RedirectToAction("Error", "Home");
             }
         }
-
-
 
         private async Task<AccountingApiResponse> GenerateInvoiceForStudentWithPaymentReconciliation(Student student, decimal totalPaidForAcademicYear)
         {

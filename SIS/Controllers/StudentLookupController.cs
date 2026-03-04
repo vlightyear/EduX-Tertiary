@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using SIS.Data;
 using SIS.Enums;
 using SIS.Models.Admin;
+using SIS.Models.Payments;
 using SIS.Models.Reports;
 using SIS.Models.StudentApplication;
 using SIS.Models.StudyPermits;
@@ -3623,6 +3624,8 @@ namespace SIS.Controllers
         public string? Reference { get; set; }
         public bool Credit { get; set; } = true;
         public string? AccountingSystemPostStatus { get; set; }
+        public string? Narration { get; set; }
+        public List<StudentInvoiceItem> InvoiceItems { get; set; }
         public DateTime CreatedAt { get; set; }
     }
 
