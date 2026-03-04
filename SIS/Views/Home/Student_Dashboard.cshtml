@@ -97,10 +97,6 @@
         color: var(--text);
     }
 
-    .sd-hidden {
-        display: none !important;
-    }
-
     /* ── Animations ── */
     @@keyframes fadeUp {
         from {
@@ -170,6 +166,11 @@
 
     .d6 {
         animation-delay: .36s;
+    }
+
+    /* ── Visibility helper ── */
+    .sd-hidden {
+        display: none !important;
     }
 
     /* ═══════════════════════════════════════════════
@@ -1573,7 +1574,7 @@
         }
 
     /* ── Responsive ── */
-    @@media(max - width:640px) {
+    @@media(max-width:640px) {
         .sd-page {
             padding: 1rem;
         }
@@ -1583,6 +1584,63 @@
         }
 
         .detail-item:nth-child(even) {
+            border-left: none;
+        }
+    }
+
+    /* ── Hero two-column layout ── */
+    .sd-hero-body {
+        display: flex;
+        flex-direction: row;
+        align-items: stretch;
+    }
+
+    .hero-left {
+        display: flex;
+        flex-direction: row;
+        align-items: flex-end;
+        gap: 1.75rem;
+        padding: 0 1.75rem 1.75rem;
+        flex: 1;
+        flex-wrap: wrap;
+    }
+
+    .hero-right {
+        border-left: 1px solid var(--border);
+        min-width: 480px;
+        max-width: 560px;
+        flex-shrink: 0;
+    }
+
+    .hero-detail-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        height: 100%;
+    }
+
+    @@media(max-width:1100px) {
+        .sd-hero-body {
+            flex-direction: column;
+        }
+
+        .hero-right {
+            border-left: none;
+            border-top: 1px solid var(--border);
+            min-width: 0;
+            max-width: 100%;
+        }
+
+        .hero-detail-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @@media(max-width:540px) {
+        .hero-detail-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .hero-right .detail-item:nth-child(even) {
             border-left: none;
         }
     }
@@ -1607,99 +1665,83 @@
         </div>
 
         <div class="sd-hero-body">
-            <!-- Photo -->
-            <div class="hero-photo-wrap">
-                <div class="hero-photo-ring">
-                    @if (!string.IsNullOrEmpty(Model.PassportPhotoPath))
-                    {
-                        <div class="hero-photo-loader" id="heroPhotoLoader">
-                            <div class="hero-photo-spinner"></div>
-                        </div>
-                        <img src="/uploads/student-photos/@($"{Model.StudentId_Number}.png")"
-                             onload="document.getElementById('heroPhotoLoader').style.display='none'"
-                             onerror="document.getElementById('heroPhotoLoader').innerHTML='<i class=\'material-icons\' style=\'font-size:40px;color:#94a3b8\'>person</i>'"
-                             style="width:100%;height:100%;object-fit:cover;">
-                    }
-                    else
-                    {
-                        <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;">
-                            <i class="material-icons" style="font-size:40px;color:var(--faint);">person</i>
-                        </div>
-                    }
-                </div>
-                <div class="hero-status-dot @(Model.IsRegistered ? "registered" : "pending")"></div>
-            </div>
 
-            <!-- Identity -->
-            <div class="hero-identity">
-                <h1 class="hero-name">@Model.FullName</h1>
-                <div class="hero-id-row">
-                    <span class="hero-id">@Model.StudentId_Number</span>
-                    @if (Model.IsRegistered)
-                    {
-                        <span class="hero-tag registered">
-                            <i class="material-icons">check_circle</i>
-                            Registered
-                        </span>
-                    }
-                    else
-                    {
-                        <span class="hero-tag pending">
-                            <i class="material-icons">pending</i>
-                            Pending Registration
-                        </span>
-                    }
-                </div>
-                <div class="hero-prog-row">
-                    <i class="material-icons">business</i>
-                    @Model.School.Name
-                    <span class="hero-prog-sep">·</span>
-                    <i class="material-icons">menu_book</i>
-                    @Model.Programme.Name
-                </div>
-            </div>
-
-            <!-- Quick stats -->
-            <div class="hero-stats">
-                <div class="hero-stat">
-                    <div class="hero-stat-val" style="color:@gpaColour">@gpa.ToString("F2")</div>
-                    <div class="hero-stat-label">CGPA</div>
-                </div>
-                <div class="hero-stat-divider"></div>
-                <div class="hero-stat">
-                    <div class="hero-stat-val @(Model.OutstandingFees > 0 ? "coral" : "green")">
-                        @(Model.OutstandingFees > 0 ? "K" + Model.OutstandingFees.ToString("N0") : "Clear")
+            <!-- ── Left: photo + identity + stats ── -->
+            <div class="hero-left">
+                <div class="hero-photo-wrap">
+                    <div class="hero-photo-ring">
+                        @if (!string.IsNullOrEmpty(Model.PassportPhotoPath))
+                        {
+                            <div class="hero-photo-loader" id="heroPhotoLoader">
+                                <div class="hero-photo-spinner"></div>
+                            </div>
+                            <img src="/uploads/student-photos/@($"{Model.StudentId_Number}.png")"
+                                 onload="document.getElementById('heroPhotoLoader').style.display='none'"
+                                 onerror="document.getElementById('heroPhotoLoader').innerHTML='<i class=\'material-icons\' style=\'font-size:40px;color:#94a3b8\'>person</i>'"
+                                 style="width:100%;height:100%;object-fit:cover;">
+                        }
+                        else
+                        {
+                            <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;">
+                                <i class="material-icons" style="font-size:40px;color:var(--faint);">person</i>
+                            </div>
+                        }
                     </div>
-                    <div class="hero-stat-label">Balance</div>
+                    <div class="hero-status-dot @(Model.IsRegistered ? "registered" : "pending")"></div>
                 </div>
-                <div class="hero-stat-divider"></div>
-                <div class="hero-stat">
-                    <div class="hero-stat-val">@Model.AcademicYear.YearName</div>
-                    <div class="hero-stat-label">Session</div>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- ══════════════════════════════
-         MAIN GRID
-    ══════════════════════════════ -->
-    <div class="sd-grid">
-
-        <!-- ──────────────────────────
-             LEFT COLUMN
-        ────────────────────────── -->
-        <div style="display:flex;flex-direction:column;gap:1.25rem;">
-
-            <!-- Student Details -->
-            <div class="sd-card fu d1">
-                <div class="sd-card-header">
-                    <div class="sd-card-title">
-                        <i class="material-icons">badge</i>
-                        Student Details
+                <!-- Identity -->
+                <div class="hero-identity">
+                    <h1 class="hero-name">@Model.FullName</h1>
+                    <div class="hero-id-row">
+                        <span class="hero-id">@Model.StudentId_Number</span>
+                        @if (Model.IsRegistered)
+                        {
+                            <span class="hero-tag registered">
+                                <i class="material-icons">check_circle</i>
+                                Registered
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="hero-tag pending">
+                                <i class="material-icons">pending</i>
+                                Pending Registration
+                            </span>
+                        }
+                    </div>
+                    <div class="hero-prog-row">
+                        <i class="material-icons">business</i>
+                        @Model.School.Name
+                        <span class="hero-prog-sep">·</span>
+                        <i class="material-icons">menu_book</i>
+                        @Model.Programme.Name
                     </div>
                 </div>
-                <div class="detail-grid">
+
+                <!-- Quick stats -->
+                <div class="hero-stats">
+                    <div class="hero-stat">
+                        <div class="hero-stat-val" style="color:@gpaColour">@gpa.ToString("F2")</div>
+                        <div class="hero-stat-label">CGPA</div>
+                    </div>
+                    <div class="hero-stat-divider"></div>
+                    <div class="hero-stat">
+                        <div class="hero-stat-val @(Model.OutstandingFees > 0 ? "coral" : "green")">
+                            @(Model.OutstandingFees > 0 ? "K" + Model.OutstandingFees.ToString("N0") : "Clear")
+                        </div>
+                        <div class="hero-stat-label">Balance</div>
+                    </div>
+                    <div class="hero-stat-divider"></div>
+                    <div class="hero-stat">
+                        <div class="hero-stat-val">@Model.AcademicYear.YearName</div>
+                        <div class="hero-stat-label">Session</div>
+                    </div>
+                </div>
+            </div><!-- /hero-left -->
+            <!-- ── Right: student details ── -->
+            <div class="hero-right">
+                <div class="hero-detail-grid">
 
                     <div class="detail-item">
                         <div class="detail-icon-wrap di-blue"><i class="material-icons">business</i></div>
@@ -1787,8 +1829,20 @@
                         </div>
                     </div>
 
-                </div>
-            </div>
+                </div><!-- /hero-detail-grid -->
+            </div><!-- /hero-right -->
+
+        </div><!-- /sd-hero-body -->
+    </div><!-- /sd-hero -->
+    <!-- ══════════════════════════════
+         MAIN GRID
+    ══════════════════════════════ -->
+    <div class="sd-grid">
+
+        <!-- ──────────────────────────
+             LEFT COLUMN
+        ────────────────────────── -->
+        <div style="display:flex;flex-direction:column;gap:1.25rem;">
 
             <!-- GPA Card -->
             <div class="sd-card fu d2 sd-hidden">
@@ -1992,7 +2046,7 @@
                 </div>
             </div>
 
-            <!-- Semester Progress -->
+            <!-- Semester Progress sd-hidden -->
             <div class="sd-card fu d3 sd-hidden">
                 <div class="sd-card-header">
                     <div class="sd-card-title">

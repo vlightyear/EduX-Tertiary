@@ -5,485 +5,913 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="min-h-screen bg-slate-50 p-6">
+@section Styles {
+    <style>
+        @@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap');
+
+        :root {
+            --coral: #e85c5c;
+            --coral-d: #c94040;
+            --navy: #1e2d5e;
+            --navy-l: #263570;
+            --ink: #1a1f2e;
+            --mist: #f5f7fa;
+            --border: #e8ecf2;
+            --text: #475569;
+        }
+
+        .profile-wrap {
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        /* ── Hero banner ─────────────────────────────── */
+        .hero-banner {
+            background: linear-gradient(135deg, var(--navy) 0%, #2e3f7a 60%, #3a2060 100%);
+            border-radius: 1.25rem;
+            padding: 2.5rem 2.5rem 5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+            .hero-banner::before {
+                content: '';
+                position: absolute;
+                top: -60px;
+                right: -60px;
+                width: 260px;
+                height: 260px;
+                background: rgba(232,92,92,.18);
+                border-radius: 50%;
+            }
+
+            .hero-banner::after {
+                content: '';
+                position: absolute;
+                bottom: -40px;
+                left: 40%;
+                width: 200px;
+                height: 200px;
+                background: rgba(255,255,255,.04);
+                border-radius: 50%;
+            }
+
+        .hero-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.9rem;
+            color: #fff;
+            line-height: 1.2;
+        }
+
+        .hero-sub {
+            color: rgba(255,255,255,.65);
+            font-size: .85rem;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            background: rgba(255,255,255,.12);
+            border: 1px solid rgba(255,255,255,.2);
+            color: rgba(255,255,255,.9);
+            font-size: .72rem;
+            font-weight: 600;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            padding: .3rem .7rem;
+            border-radius: 2rem;
+            backdrop-filter: blur(6px);
+        }
+
+        /* ── Avatar ──────────────────────────────────── */
+        .avatar-ring {
+            width: 88px;
+            height: 88px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--coral) 0%, #f4a4a4 100%);
+            padding: 3px;
+            box-shadow: 0 4px 20px rgba(232,92,92,.4);
+        }
+
+        .avatar-inner {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--navy), #2e3f7a);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        /* ── Floating card ───────────────────────────── */
+        .float-card {
+            background: #fff;
+            border-radius: 1.25rem;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 24px rgba(30,45,94,.07);
+            margin-top: -3.5rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .float-card-inner {
+            padding: 1.75rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .user-name {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.45rem;
+            color: var(--ink);
+            line-height: 1.2;
+        }
+
+        .user-meta {
+            font-size: .82rem;
+            color: var(--text);
+        }
+
+        /* ── Content cards ───────────────────────────── */
+        .info-card {
+            background: #fff;
+            border-radius: 1.1rem;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 12px rgba(30,45,94,.05);
+            overflow: hidden;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .card-title {
+            font-weight: 600;
+            font-size: .88rem;
+            color: var(--ink);
+            letter-spacing: .01em;
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+        }
+
+            .card-title i {
+                font-size: 1rem;
+                color: var(--coral);
+            }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        /* ── Field display ───────────────────────────── */
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: .3rem;
+        }
+
+        .field-label {
+            font-size: .72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .07em;
+            color: #94a3b8;
+        }
+
+        .field-value {
+            font-size: .9rem;
+            color: var(--ink);
+            background: var(--mist);
+            border: 1px solid var(--border);
+            border-radius: .6rem;
+            padding: .6rem .85rem;
+            font-weight: 500;
+        }
+
+            .field-value.empty {
+                color: #94a3b8;
+                font-style: italic;
+                font-weight: 400;
+            }
+
+        /* ── Status pills ────────────────────────────── */
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: .3rem;
+            font-size: .72rem;
+            font-weight: 600;
+            padding: .3rem .7rem;
+            border-radius: 2rem;
+        }
+
+            .pill i {
+                font-size: .8rem;
+            }
+
+        .pill-green {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .pill-red {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .pill-amber {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .pill-slate {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .pill-coral {
+            background: #fef2f2;
+            color: var(--coral-d);
+        }
+
+        /* ── Status row ─────────────────────────────── */
+        .status-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: .7rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+            .status-row:last-child {
+                border-bottom: none;
+            }
+
+        .status-label {
+            font-size: .84rem;
+            color: var(--text);
+        }
+
+        /* ── Security tile ───────────────────────────── */
+        .sec-tile {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 1rem 1.1rem;
+            background: var(--mist);
+            border: 1px solid var(--border);
+            border-radius: .8rem;
+        }
+
+        .sec-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: .6rem;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sec-tile-title {
+            font-size: .85rem;
+            font-weight: 600;
+            color: var(--ink);
+        }
+
+        .sec-tile-desc {
+            font-size: .78rem;
+            color: var(--text);
+            margin-top: .15rem;
+        }
+
+        /* ── Edit / action buttons ───────────────────── */
+        .btn-coral {
+            display: inline-flex;
+            align-items: center;
+            gap: .4rem;
+            background: var(--coral);
+            color: #fff;
+            font-size: .8rem;
+            font-weight: 600;
+            padding: .5rem 1rem;
+            border-radius: .6rem;
+            border: none;
+            cursor: pointer;
+            transition: background .15s, transform .1s;
+        }
+
+            .btn-coral:hover {
+                background: var(--coral-d);
+                transform: translateY(-1px);
+            }
+
+        .btn-ghost {
+            display: inline-flex;
+            align-items: center;
+            gap: .3rem;
+            color: var(--coral);
+            background: transparent;
+            font-size: .8rem;
+            font-weight: 600;
+            padding: .4rem .7rem;
+            border-radius: .5rem;
+            border: none;
+            cursor: pointer;
+            transition: background .15s;
+        }
+
+            .btn-ghost:hover {
+                background: #fef2f2;
+            }
+
+        /* ── Warning notice ──────────────────────────── */
+        .warn-notice {
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            border-radius: .7rem;
+            padding: .85rem 1rem;
+            margin-top: 1rem;
+        }
+
+            .warn-notice p {
+                font-size: .82rem;
+                color: #92400e;
+            }
+
+        /* ── MODAL ───────────────────────────────────── */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 9000;
+            background: rgba(15,20,40,.55);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .modal-box {
+            background: #fff;
+            border-radius: 1.25rem;
+            box-shadow: 0 24px 64px rgba(15,20,40,.25);
+            width: 100%;
+            max-width: 440px;
+            overflow: hidden;
+            animation: modal-in .2s ease;
+        }
+        @@keyframes modal-in {
+            from {
+                opacity: 0;
+                transform: translateY(16px) scale(.97);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            background: var(--mist);
+        }
+
+        .modal-head-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.15rem;
+            color: var(--ink);
+        }
+
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border-radius: .5rem;
+            border: none;
+            background: var(--border);
+            color: var(--text);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background .15s;
+        }
+
+            .modal-close:hover {
+                background: #dde3ed;
+            }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-foot {
+            display: flex;
+            justify-content: flex-end;
+            gap: .75rem;
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+            background: var(--mist);
+        }
+
+        /* ── Form fields in modal ────────────────────── */
+        .form-field {
+            display: flex;
+            flex-direction: column;
+            gap: .35rem;
+        }
+
+        .form-label {
+            font-size: .78rem;
+            font-weight: 600;
+            color: var(--ink);
+            letter-spacing: .01em;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: .6rem .85rem;
+            border: 1.5px solid var(--border);
+            border-radius: .65rem;
+            font-size: .875rem;
+            color: var(--ink);
+            font-family: 'DM Sans', sans-serif;
+            transition: border-color .15s, box-shadow .15s;
+            outline: none;
+        }
+
+            .form-input:focus {
+                border-color: var(--coral);
+                box-shadow: 0 0 0 3px rgba(232,92,92,.12);
+            }
+
+        /* ── Password strength ───────────────────────── */
+        .strength-track {
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            margin-top: .4rem;
+        }
+
+        .strength-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width .3s, background .3s;
+        }
+
+        /* ── Button variants ─────────────────────────── */
+        .btn-outline {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            background: transparent;
+            border: 1.5px solid var(--border);
+            color: var(--text);
+            font-size: .8rem;
+            font-weight: 600;
+            padding: .5rem 1rem;
+            border-radius: .6rem;
+            cursor: pointer;
+            transition: border-color .15s, color .15s;
+        }
+
+            .btn-outline:hover {
+                border-color: #cbd5e1;
+                color: var(--ink);
+            }
+
+        /* ── Spinner ─────────────────────────────────── */
+        @@keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .spin {
+            animation: spin .7s linear infinite;
+            display: inline-block;
+        }
+
+        /* ── Toast ───────────────────────────────────── */
+        #toastNotification {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            z-index: 9999;
+            min-width: 260px;
+            max-width: 340px;
+            border-radius: .85rem;
+            padding: .9rem 1.1rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,.15);
+            display: flex;
+            align-items: center;
+            gap: .65rem;
+            font-size: .85rem;
+            font-weight: 500;
+            animation: toast-in .25s ease;
+        }
+        @@keyframes toast-in {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+}
+
+<div class="profile-wrap p-4 md:p-6 max-w-5xl mx-auto">
     @Html.AntiForgeryToken()
 
-    <!-- Header Section -->
-    <div class="flex flex-col md:flex-row justify-between items-center h-24 mb-6">
-        <div class="flex items-center text-slate-800">
-            <i class="material-icons text-3xl mr-3">account_circle</i>
+    <!-- ── Hero banner ── -->
+    <div class="hero-banner mb-0">
+        <div class="flex items-center justify-between flex-wrap gap-4 relative z-10">
             <div>
-                <h1 class="text-2xl font-bold">My Profile</h1>
-                <p class="text-sm text-slate-600">Manage your account information and settings</p>
+                <p class="hero-sub mb-1">Account Overview</p>
+                <h1 class="hero-title">My Profile</h1>
             </div>
-        </div>
-        <div class="mt-4 md:mt-0">
-            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                <i class="material-icons text-sm mr-1">verified_user</i>
+            <span class="hero-badge">
+                <i class="material-icons" style="font-size:.85rem;">verified_user</i>
                 @Model.Role
             </span>
         </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Left Column - Profile Overview -->
-        <div class="lg:col-span-1 space-y-6">
-            <!-- Profile Card -->
-            <div class="bg-white rounded-xl shadow-sm p-6">
-                <div class="text-center">
-                    <!-- Profile Avatar -->
-                    <div class="mx-auto h-24 w-24 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold mb-4">
-                        @if (!string.IsNullOrEmpty(Model.PassportPhotoPath))
-                        {
-                            <img src="/uploads/student-photos/@($"{Model.StudentNumber}.png")"
-                                 alt="@Model.FullName"
-                                 class="w-full h-full object-cover"
-                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                            <div class="w-full h-full flex items-center justify-center text-white text-xl font-bold" style="display: none;">
-                                @if (!string.IsNullOrEmpty(Model.FullName))
-                                {
-                                    @Model.FullName.Split(' ').Select(n => n.FirstOrDefault()).Take(2).Aggregate("", (a, c) => a + c)
-                                }
-                                else
-                                {
-                                    <i class="material-icons text-2xl">person</i>
-                                }
-                            </div>
-                        }
-                        else
-                        {
-                            <i class="material-icons text-3xl">person</i>
-                        }
-                    </div>
-
-                    <h2 class="text-xl font-semibold text-slate-800 mb-1">@Model.FullName</h2>
-                    <p class="text-slate-600 mb-2">@Model.Email</p>
-                    <p class="text-sm text-slate-500">Member since @Model.CreatedAt.ToString("MMMM yyyy")</p>
-
-                    <button onclick="openEditProfileModal()"
-                            class="mt-4 inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                        <i class="material-icons text-sm mr-1">edit</i>
-                        Edit Profile
-                    </button>
+    <!-- ── Floating identity card ── -->
+    <div class="float-card mb-6">
+        <div class="float-card-inner">
+            <div class="avatar-ring">
+                <div class="avatar-inner">
+                    @if (!string.IsNullOrEmpty(Model.PassportPhotoPath))
+                    {
+                        <img src="/uploads/student-photos/@($"{Model.StudentNumber}.png")"
+                             alt="@Model.FullName"
+                             style="width:100%;height:100%;object-fit:cover;"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div style="width:100%;height:100%;display:none;align-items:center;justify-content:center;font-size:1.5rem;font-weight:700;">
+                            @if (!string.IsNullOrEmpty(Model.FullName))
+                            {
+                                @Model.FullName.Split(' ').Select(n => n.FirstOrDefault()).Take(2).Aggregate("", (a, c) => a + c)
+                            }
+                            else
+                            {
+                                <i class="material-icons" style="font-size:1.8rem;">person</i>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <i class="material-icons" style="font-size:2rem;">person</i>
+                    }
                 </div>
             </div>
 
-            <!-- Account Status Card -->
-            <div class="bg-white rounded-xl shadow-sm p-6">
-                <h3 class="text-lg font-semibold text-slate-800 mb-4">Account Status</h3>
-                <div class="space-y-3">
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm text-slate-600">Email Verified</span>
+            <div class="flex-1 min-w-0">
+                <p class="user-name">@Model.FullName</p>
+                <p class="user-meta">@Model.Email &nbsp;·&nbsp; Member since @Model.CreatedAt.ToString("MMMM yyyy")</p>
+            </div>
+
+            <button onclick="openEditProfileModal()" class="btn-coral">
+                <i class="material-icons" style="font-size:1rem;">edit</i>
+                Edit Profile
+            </button>
+        </div>
+    </div>
+
+    <!-- ── Main grid ── -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+        <!-- Left column -->
+        <div class="space-y-5">
+
+            <!-- Account Status -->
+            <div class="info-card">
+                <div class="card-header">
+                    <span class="card-title"><i class="material-icons">shield</i>Account Status</span>
+                </div>
+                <div class="card-body" style="padding-top:.5rem; padding-bottom:.5rem;">
+                    <div class="status-row">
+                        <span class="status-label">Email</span>
                         @if (Model.EmailConfirmed)
                         {
-                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                <i class="material-icons text-xs mr-1">check_circle</i>
-                                Verified
-                            </span>
+                            <span class="pill pill-green"><i class="material-icons">check_circle</i>Verified</span>
                         }
                         else
                         {
-                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                <i class="material-icons text-xs mr-1">cancel</i>
-                                Unverified
-                            </span>
+                            <span class="pill pill-red"><i class="material-icons">cancel</i>Unverified</span>
                         }
                     </div>
-
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm text-slate-600">Phone Verified</span>
+                    <div class="status-row">
+                        <span class="status-label">Phone</span>
                         @if (Model.PhoneNumberConfirmed)
                         {
-                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                <i class="material-icons text-xs mr-1">check_circle</i>
-                                Verified
-                            </span>
+                            <span class="pill pill-green"><i class="material-icons">check_circle</i>Verified</span>
                         }
                         else
                         {
-                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-                                <i class="material-icons text-xs mr-1">info</i>
-                                Not Set
-                            </span>
+                            <span class="pill pill-amber"><i class="material-icons">info</i>Not Set</span>
                         }
                     </div>
-
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm text-slate-600">Two-Factor Auth</span>
+                    <div class="status-row">
+                        <span class="status-label">Two-Factor</span>
                         @if (Model.TwoFactorEnabled)
                         {
-                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                <i class="material-icons text-xs mr-1">security</i>
-                                Enabled
-                            </span>
+                            <span class="pill pill-green"><i class="material-icons">security</i>Enabled</span>
                         }
                         else
                         {
-                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
-                                <i class="material-icons text-xs mr-1">security</i>
-                                Disabled
-                            </span>
+                            <span class="pill pill-slate"><i class="material-icons">security</i>Disabled</span>
+                        }
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">Account</span>
+                        @if (Model.LockoutEnd.HasValue && Model.LockoutEnd > DateTimeOffset.Now)
+                        {
+                            <span class="pill pill-red"><i class="material-icons">block</i>Locked</span>
+                        }
+                        else
+                        {
+                            <span class="pill pill-green"><i class="material-icons">check_circle</i>Active</span>
                         }
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Right Column - Account Details -->
-        <div class="lg:col-span-2 space-y-6">
-            <!-- Personal Information Card -->
-            <div class="bg-white rounded-xl shadow-sm">
-                <div class="px-6 py-4 border-b border-slate-200">
-                    <div class="flex items-center justify-between">
-                        <h3 class="text-lg font-semibold text-slate-800">Personal Information</h3>
-                        <button onclick="openEditProfileModal()"
-                                class="inline-flex items-center px-3 py-1 text-blue-600 hover:text-blue-800 transition-colors">
-                            <i class="material-icons text-sm mr-1">edit</i>
-                            Edit
-                        </button>
-                    </div>
+            <!-- Activity -->
+            <div class="info-card">
+                <div class="card-header">
+                    <span class="card-title"><i class="material-icons">history</i>Activity</span>
                 </div>
-                <div class="p-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
-                            <p class="text-slate-900 bg-slate-50 px-3 py-2 rounded-lg">@Model.FullName</p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Username</label>
-                            <p class="text-slate-900 bg-slate-50 px-3 py-2 rounded-lg">@Model.UserName</p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Email Address</label>
-                            <p class="text-slate-900 bg-slate-50 px-3 py-2 rounded-lg">@Model.Email</p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Phone Number</label>
-                            <p class="text-slate-900 bg-slate-50 px-3 py-2 rounded-lg">
-                                @if (!string.IsNullOrEmpty(Model.PhoneNumber))
-                                {
-                                    @Model.PhoneNumber
-                                }
-                                else
-                                {
-                                    <span class="text-slate-500 italic">Not provided</span>
-                                }
-                            </p>
-                        </div>
+                <div class="card-body">
+                    <div class="field-group mb-4">
+                        <span class="field-label">Account Created</span>
+                        <span class="field-value">@Model.CreatedAt.ToString("MMM dd, yyyy 'at' h:mm tt")</span>
                     </div>
-                </div>
-            </div>
-
-            <!-- Security Settings Card -->
-            <div class="bg-white rounded-xl shadow-sm">
-                <div class="px-6 py-4 border-b border-slate-200">
-                    <div class="flex items-center justify-between">
-                        <h3 class="text-lg font-semibold text-slate-800">Security Settings</h3>
-                        <button onclick="openChangePasswordModal()"
-                                class="inline-flex items-center px-3 py-1 text-blue-600 hover:text-blue-800 transition-colors">
-                            <i class="material-icons text-sm mr-1">lock</i>
-                            Change Password
-                        </button>
-                    </div>
-                </div>
-                <div class="p-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="flex items-start">
-                            <div class="flex-shrink-0">
-                                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                                    <i class="material-icons text-blue-600">lock</i>
-                                </div>
-                            </div>
-                            <div class="ml-3">
-                                <h4 class="text-sm font-medium text-slate-900">Password</h4>
-                                <p class="text-sm text-slate-500">Strong password protects your account</p>
-                                <button onclick="openChangePasswordModal()"
-                                        class="mt-2 text-sm text-blue-600 hover:text-blue-800">
-                                    Change password →
-                                </button>
-                            </div>
+                    @if (Model.LockoutEnd.HasValue && Model.LockoutEnd > DateTimeOffset.Now)
+                    {
+                        <div class="field-group">
+                            <span class="field-label">Locked Until</span>
+                            <span class="field-value">@Model.LockoutEnd.Value.ToString("MMM dd, yyyy")</span>
                         </div>
-
-                        <div class="flex items-start">
-                            <div class="flex-shrink-0">
-                                <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                                    <i class="material-icons text-green-600">security</i>
-                                </div>
-                            </div>
-                            <div class="ml-3">
-                                <h4 class="text-sm font-medium text-slate-900">Two-Factor Authentication</h4>
-                                <p class="text-sm text-slate-500">
-                                    @if (Model.TwoFactorEnabled)
-                                    {
-                                        <span class="text-green-600">Enabled - Extra security layer active</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-amber-600">Disabled - Consider enabling for better security</span>
-                                    }
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Account Activity Card -->
-            <div class="bg-white rounded-xl shadow-sm">
-                <div class="px-6 py-4 border-b border-slate-200">
-                    <h3 class="text-lg font-semibold text-slate-800">Account Activity</h3>
-                </div>
-                <div class="p-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Account Created</label>
-                            <p class="text-slate-900 bg-slate-50 px-3 py-2 rounded-lg">
-                                @Model.CreatedAt.ToString("MMMM dd, yyyy 'at' h:mm tt")
-                            </p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Account Status</label>
-                            <p class="bg-slate-50 px-3 py-2 rounded-lg">
-                                @if (Model.LockoutEnd.HasValue && Model.LockoutEnd > DateTimeOffset.Now)
-                                {
-                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                        <i class="material-icons text-xs mr-1">block</i>
-                                        Locked until @Model.LockoutEnd.Value.ToString("MMM dd, yyyy")
-                                    </span>
-                                }
-                                else
-                                {
-                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                        <i class="material-icons text-xs mr-1">check_circle</i>
-                                        Active
-                                    </span>
-                                }
-                            </p>
-                        </div>
-                    </div>
-
+                    }
                     @if (Model.AccessFailedCount > 0)
                     {
-                        <div class="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-200">
-                            <div class="flex items-center">
-                                <i class="material-icons text-amber-500 mr-2">warning</i>
-                                <p class="text-sm text-amber-800">
-                                    <strong>Security Notice:</strong> @Model.AccessFailedCount failed login attempt(s) detected.
-                                </p>
-                            </div>
+                        <div class="warn-notice">
+                            <i class="material-icons" style="color:#d97706;font-size:1.1rem;flex-shrink:0;">warning</i>
+                            <p><strong>@Model.AccessFailedCount</strong> failed login attempt(s) detected.</p>
                         </div>
                     }
                 </div>
             </div>
         </div>
-    </div>
-</div>
 
-<!-- Edit Profile Modal -->
-<div id="editProfileModal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
-    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
-        <div class="flex justify-between items-center mb-6">
-            <h3 class="text-lg font-semibold text-gray-900">Edit Profile</h3>
-            <button type="button" onclick="closeModal('editProfileModal')" class="text-gray-400 hover:text-gray-500">
-                <i class="material-icons">close</i>
-            </button>
-        </div>
+        <!-- Right column -->
+        <div class="lg:col-span-2 space-y-5">
 
-        <form id="editProfileForm" class="space-y-4">
-            <div>
-                <label for="editFullName" class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                <input type="text" id="editFullName" name="FullName" required
-                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
-            </div>
-
-            <div>
-                <label for="editEmail" class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                <input type="email" id="editEmail" name="Email" required
-                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
-            </div>
-
-            <div>
-                <label for="editPhoneNumber" class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                <input type="tel" id="editPhoneNumber" name="PhoneNumber"
-                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
-            </div>
-
-            <div class="flex justify-end gap-3 pt-4">
-                <button type="button" onclick="closeModal('editProfileModal')"
-                        class="px-4 py-2 bg-gray-200 text-secondary-800 rounded-lg hover:bg-gray-300 transition-colors">
-                    Cancel
-                </button>
-                <button type="submit"
-                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                    <span class="flex items-center">
-                        <i class="material-icons text-sm mr-1 hidden" id="editProfileLoader">refresh</i>
-                        Update Profile
-                    </span>
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Change Password Modal -->
-<div id="changePasswordModal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
-    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
-        <div class="flex justify-between items-center mb-6">
-            <h3 class="text-lg font-semibold text-gray-900">Change Password</h3>
-            <button type="button" onclick="closeModal('changePasswordModal')" class="text-gray-400 hover:text-gray-500">
-                <i class="material-icons">close</i>
-            </button>
-        </div>
-
-        <form id="changePasswordForm" class="space-y-4">
-            <div>
-                <label for="currentPassword" class="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
-                <input type="password" id="currentPassword" name="CurrentPassword" required
-                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
-            </div>
-
-            <div>
-                <label for="newPassword" class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
-                <input type="password" id="newPassword" name="NewPassword" required
-                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
-                <div class="mt-1">
-                    <div class="text-xs text-gray-500">Password strength: <span id="passwordStrength" class="font-medium">Weak</span></div>
-                    <div class="mt-1 h-1 bg-gray-200 rounded">
-                        <div id="passwordStrengthBar" class="h-full bg-red-400 rounded transition-all duration-300" style="width: 0%"></div>
+            <!-- Personal Information -->
+            <div class="info-card">
+                <div class="card-header">
+                    <span class="card-title"><i class="material-icons">person</i>Personal Information</span>
+                    <button onclick="openEditProfileModal()" class="btn-ghost">
+                        <i class="material-icons" style="font-size:.9rem;">edit</i> Edit
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="field-group">
+                            <span class="field-label">Full Name</span>
+                            <span class="field-value">@Model.FullName</span>
+                        </div>
+                        <div class="field-group">
+                            <span class="field-label">Username</span>
+                            <span class="field-value">@Model.UserName</span>
+                        </div>
+                        <div class="field-group">
+                            <span class="field-label">Email Address</span>
+                            <span class="field-value">@Model.Email</span>
+                        </div>
+                        <div class="field-group">
+                            <span class="field-label">Phone Number</span>
+                            @if (!string.IsNullOrEmpty(Model.PhoneNumber))
+                            {
+                                <span class="field-value">@Model.PhoneNumber</span>
+                            }
+                            else
+                            {
+                                <span class="field-value empty">Not provided</span>
+                            }
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div>
-                <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
-                <input type="password" id="confirmPassword" name="ConfirmPassword" required
-                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+            <!-- Security -->
+            <div class="info-card">
+                <div class="card-header">
+                    <span class="card-title"><i class="material-icons">lock</i>Security Settings</span>
+                    <button onclick="openChangePasswordModal()" class="btn-ghost">
+                        <i class="material-icons" style="font-size:.9rem;">lock_reset</i> Change Password
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div class="sec-tile">
+                            <div class="sec-icon" style="background:#fef2f2;">
+                                <i class="material-icons" style="color:var(--coral);font-size:1.1rem;">lock</i>
+                            </div>
+                            <div>
+                                <p class="sec-tile-title">Password</p>
+                                <p class="sec-tile-desc">Protect your account with a strong password</p>
+                                <button onclick="openChangePasswordModal()" class="btn-ghost" style="padding:.3rem 0; margin-top:.35rem;">
+                                    Change password →
+                                </button>
+                            </div>
+                        </div>
+                        <div class="sec-tile">
+                            <div class="sec-icon" style="background:#f0fdf4;">
+                                <i class="material-icons" style="color:#16a34a;font-size:1.1rem;">security</i>
+                            </div>
+                            <div>
+                                <p class="sec-tile-title">Two-Factor Auth</p>
+                                @if (Model.TwoFactorEnabled)
+                                {
+                                    <p class="sec-tile-desc" style="color:#16a34a;">Extra security layer active</p>
+                                }
+                                else
+                                {
+                                    <p class="sec-tile-desc" style="color:#d97706;">Consider enabling for better security</p>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="flex justify-end gap-3 pt-4">
-                <button type="button" onclick="closeModal('changePasswordModal')"
-                        class="px-4 py-2 bg-gray-200 text-secondary-800 rounded-lg hover:bg-gray-300 transition-colors">
-                    Cancel
-                </button>
-                <button type="submit"
-                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                    <span class="flex items-center">
-                        <i class="material-icons text-sm mr-1 hidden" id="changePasswordLoader">refresh</i>
-                        Change Password
-                    </span>
-                </button>
-            </div>
-        </form>
+        </div>
     </div>
 </div>
 
-<!-- Success/Error Toast Notification -->
-<div id="toastNotification" class="hidden fixed bottom-4 right-4 p-4 rounded-lg shadow-lg max-w-xs z-50">
-    <div class="flex items-center">
-        <i id="toastIcon" class="material-icons mr-2"></i>
-        <p id="toastMessage"></p>
+<!-- ────────────────────────────────────────────────────── -->
+<!-- Edit Profile Modal                                     -->
+<!-- ────────────────────────────────────────────────────── -->
+<div id="editProfileModal" class="modal-backdrop" style="display:none;">
+    <div class="modal-box">
+        <div class="modal-head">
+            <span class="modal-head-title">Edit Profile</span>
+            <button class="modal-close" onclick="closeModal('editProfileModal')">
+                <i class="material-icons" style="font-size:1.1rem;">close</i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="editProfileForm" class="space-y-4" onsubmit="return false;">
+                <div class="form-field">
+                    <label for="editFullName" class="form-label">Full Name</label>
+                    <input type="text" id="editFullName" name="FullName" required class="form-input" />
+                </div>
+                <div class="form-field">
+                    <label for="editEmail" class="form-label">Email Address</label>
+                    <input type="email" id="editEmail" name="Email" required class="form-input" />
+                </div>
+                <div class="form-field">
+                    <label for="editPhoneNumber" class="form-label">Phone Number</label>
+                    <input type="tel" id="editPhoneNumber" name="PhoneNumber" class="form-input" />
+                </div>
+            </form>
+        </div>
+        <div class="modal-foot">
+            <button class="btn-outline" onclick="closeModal('editProfileModal')">Cancel</button>
+            <button class="btn-coral" id="editProfileSubmit" onclick="submitEditProfile()">
+                <i class="material-icons" id="editProfileLoader" style="font-size:.95rem;display:none;">refresh</i>
+                Update Profile
+            </button>
+        </div>
     </div>
+</div>
+
+<!-- ────────────────────────────────────────────────────── -->
+<!-- Change Password Modal                                  -->
+<!-- ────────────────────────────────────────────────────── -->
+<div id="changePasswordModal" class="modal-backdrop" style="display:none;">
+    <div class="modal-box">
+        <div class="modal-head">
+            <span class="modal-head-title">Change Password</span>
+            <button class="modal-close" onclick="closeModal('changePasswordModal')">
+                <i class="material-icons" style="font-size:1.1rem;">close</i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="changePasswordForm" class="space-y-4" onsubmit="return false;">
+                <div class="form-field">
+                    <label for="currentPassword" class="form-label">Current Password</label>
+                    <input type="password" id="currentPassword" name="CurrentPassword" required class="form-input" />
+                </div>
+                <div class="form-field">
+                    <label for="newPassword" class="form-label">New Password</label>
+                    <input type="password" id="newPassword" name="NewPassword" required class="form-input" />
+                    <div style="margin-top:.3rem;">
+                        <div style="display:flex;justify-content:space-between;font-size:.72rem;color:#94a3b8;">
+                            <span>Strength</span>
+                            <span id="passwordStrength" style="font-weight:600;">—</span>
+                        </div>
+                        <div class="strength-track"><div id="passwordStrengthBar" class="strength-fill" style="width:0%;background:#e2e8f0;"></div></div>
+                    </div>
+                </div>
+                <div class="form-field">
+                    <label for="confirmPassword" class="form-label">Confirm New Password</label>
+                    <input type="password" id="confirmPassword" name="ConfirmPassword" required class="form-input" />
+                </div>
+            </form>
+        </div>
+        <div class="modal-foot">
+            <button class="btn-outline" onclick="closeModal('changePasswordModal')">Cancel</button>
+            <button class="btn-coral" id="changePasswordSubmit" onclick="submitChangePassword()">
+                <i class="material-icons" id="changePasswordLoader" style="font-size:.95rem;display:none;">refresh</i>
+                Change Password
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div id="toastNotification" style="display:none;">
+    <i id="toastIcon" class="material-icons"></i>
+    <span id="toastMessage"></span>
 </div>
 
 @section Scripts {
     <script>
-        // Global variables
         let currentUserData = {};
 
-        // Initialize page
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             loadUserProfile();
             initializePasswordStrengthChecker();
         });
 
-        // Load user profile data
         async function loadUserProfile() {
             try {
                 const response = await fetch('/Profile/GetProfile');
                 const result = await response.json();
-
-                if (result.success) {
-                    currentUserData = result.data;
-                } else {
-                    showToast(result.message || 'Error loading profile', 'error');
-                }
-            } catch (error) {
-                console.error('Error loading profile:', error);
-                showToast('Error loading profile data', 'error');
-            }
+                if (result.success) { currentUserData = result.data; }
+                else { showToast(result.message || 'Error loading profile', 'error'); }
+            } catch (e) { console.error(e); }
         }
 
-        // Open edit profile modal
         function openEditProfileModal() {
-            // Populate form with current data
-            document.getElementById('editFullName').value = currentUserData.fullName || '';
-            document.getElementById('editEmail').value = currentUserData.email || '';
+            document.getElementById('editFullName').value    = currentUserData.fullName    || '';
+            document.getElementById('editEmail').value       = currentUserData.email       || '';
             document.getElementById('editPhoneNumber').value = currentUserData.phoneNumber || '';
-
-            // Show modal
-            document.getElementById('editProfileModal').classList.remove('hidden');
+            document.getElementById('editProfileModal').style.display = 'flex';
             document.getElementById('editFullName').focus();
         }
 
-        // Open change password modal
         function openChangePasswordModal() {
-            // Clear form
             document.getElementById('changePasswordForm').reset();
-
-            // Show modal
-            document.getElementById('changePasswordModal').classList.remove('hidden');
+            document.getElementById('passwordStrengthBar').style.width = '0%';
+            document.getElementById('passwordStrength').textContent = '—';
+            document.getElementById('changePasswordModal').style.display = 'flex';
             document.getElementById('currentPassword').focus();
         }
 
-        // Close modal
-        function closeModal(modalId) {
-            document.getElementById(modalId).classList.add('hidden');
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
         }
 
-        // Show toast notification
-        function showToast(message, type = 'success') {
-            const toast = document.getElementById('toastNotification');
-            const toastMessage = document.getElementById('toastMessage');
-            const toastIcon = document.getElementById('toastIcon');
-
-            toastMessage.textContent = message;
-
-            if (type === 'error') {
-                toast.className = 'fixed bottom-4 right-4 p-4 rounded-lg shadow-lg max-w-xs z-50 bg-red-100 text-red-800 border border-red-200';
-                toastIcon.textContent = 'error';
-                toastIcon.className = 'material-icons mr-2 text-red-500';
-            } else {
-                toast.className = 'fixed bottom-4 right-4 p-4 rounded-lg shadow-lg max-w-xs z-50 bg-green-100 text-green-800 border border-green-200';
-                toastIcon.textContent = 'check_circle';
-                toastIcon.className = 'material-icons mr-2 text-green-500';
-            }
-
-            toast.classList.remove('hidden');
-
-            setTimeout(() => {
-                toast.classList.add('hidden');
-            }, 5000);
-        }
-
-        // Handle edit profile form submission
-        document.getElementById('editProfileForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-
+        async function submitEditProfile() {
             const loader = document.getElementById('editProfileLoader');
-            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const btn    = document.getElementById('editProfileSubmit');
+            loader.style.display = 'inline-block';
+            loader.classList.add('spin');
+            btn.disabled = true;
 
             try {
-                // Show loading state
-                loader.classList.remove('hidden');
-                loader.classList.add('animate-spin');
-                submitBtn.disabled = true;
-
                 const formData = {
-                    FullName: document.getElementById('editFullName').value.trim(),
-                    Email: document.getElementById('editEmail').value.trim(),
+                    FullName:    document.getElementById('editFullName').value.trim(),
+                    Email:       document.getElementById('editEmail').value.trim(),
                     PhoneNumber: document.getElementById('editPhoneNumber').value.trim()
                 };
-
                 const response = await fetch('/Profile/UpdateProfile', {
                     method: 'POST',
                     headers: {
@@ -492,64 +920,42 @@
                     },
                     body: JSON.stringify(formData)
                 });
-
                 const result = await response.json();
-
                 if (result.success) {
                     showToast('Profile updated successfully!', 'success');
                     closeModal('editProfileModal');
-
-                    // Reload page to show updated data
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1000);
+                    setTimeout(() => window.location.reload(), 1000);
                 } else {
                     showToast(result.message || 'Error updating profile', 'error');
                 }
-            } catch (error) {
-                console.error('Error updating profile:', error);
+            } catch (e) {
                 showToast('Error updating profile. Please try again.', 'error');
             } finally {
-                // Hide loading state
-                loader.classList.add('hidden');
-                loader.classList.remove('animate-spin');
-                submitBtn.disabled = false;
+                loader.style.display = 'none';
+                loader.classList.remove('spin');
+                btn.disabled = false;
             }
-        });
+        }
 
-        // Handle change password form submission
-        document.getElementById('changePasswordForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-
-            const newPassword = document.getElementById('newPassword').value;
+        async function submitChangePassword() {
+            const newPassword     = document.getElementById('newPassword').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
 
-            // Client-side validation
-            if (newPassword !== confirmPassword) {
-                showToast('New password and confirmation do not match', 'error');
-                return;
-            }
-
-            if (newPassword.length < 6) {
-                showToast('Password must be at least 6 characters long', 'error');
-                return;
-            }
+            if (newPassword !== confirmPassword) { showToast('Passwords do not match', 'error'); return; }
+            if (newPassword.length < 6)          { showToast('Password must be at least 6 characters', 'error'); return; }
 
             const loader = document.getElementById('changePasswordLoader');
-            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const btn    = document.getElementById('changePasswordSubmit');
+            loader.style.display = 'inline-block';
+            loader.classList.add('spin');
+            btn.disabled = true;
 
             try {
-                // Show loading state
-                loader.classList.remove('hidden');
-                loader.classList.add('animate-spin');
-                submitBtn.disabled = true;
-
                 const formData = {
                     CurrentPassword: document.getElementById('currentPassword').value,
-                    NewPassword: newPassword,
+                    NewPassword:     newPassword,
                     ConfirmPassword: confirmPassword
                 };
-
                 const response = await fetch('/Profile/ChangePassword', {
                     method: 'POST',
                     headers: {
@@ -558,84 +964,89 @@
                     },
                     body: JSON.stringify(formData)
                 });
-
                 const result = await response.json();
-
                 if (result.success) {
                     showToast('Password changed successfully!', 'success');
                     closeModal('changePasswordModal');
                 } else {
                     showToast(result.message || 'Error changing password', 'error');
                 }
-            } catch (error) {
-                console.error('Error changing password:', error);
+            } catch (e) {
                 showToast('Error changing password. Please try again.', 'error');
             } finally {
-                // Hide loading state
-                loader.classList.add('hidden');
-                loader.classList.remove('animate-spin');
-                submitBtn.disabled = false;
+                loader.style.display = 'none';
+                loader.classList.remove('spin');
+                btn.disabled = false;
             }
-        });
+        }
 
-        // Password strength checker
         function initializePasswordStrengthChecker() {
-            const newPasswordInput = document.getElementById('newPassword');
-            const strengthText = document.getElementById('passwordStrength');
-            const strengthBar = document.getElementById('passwordStrengthBar');
-
-            newPasswordInput.addEventListener('input', function() {
-                const password = this.value;
-                const strength = calculatePasswordStrength(password);
-
-                updatePasswordStrengthDisplay(strength, strengthText, strengthBar);
+            document.getElementById('newPassword').addEventListener('input', function () {
+                const s      = calculatePasswordStrength(this.value);
+                const levels = [
+                    { text: 'Very Weak', color: '#ef4444', w: '20%' },
+                    { text: 'Weak',      color: '#f97316', w: '40%' },
+                    { text: 'Fair',      color: '#eab308', w: '60%' },
+                    { text: 'Good',      color: '#3b82f6', w: '80%' },
+                    { text: 'Strong',    color: '#22c55e', w: '100%'}
+                ];
+                const l = levels[s] || levels[0];
+                document.getElementById('passwordStrength').textContent = l.text;
+                document.getElementById('passwordStrength').style.color = l.color;
+                const bar = document.getElementById('passwordStrengthBar');
+                bar.style.width      = l.w;
+                bar.style.background = l.color;
             });
         }
 
-        function calculatePasswordStrength(password) {
-            let score = 0;
-
-            if (password.length >= 8) score += 1;
-            if (password.length >= 12) score += 1;
-            if (/[a-z]/.test(password)) score += 1;
-            if (/[A-Z]/.test(password)) score += 1;
-            if (/[0-9]/.test(password)) score += 1;
-            if (/[^a-zA-Z0-9]/.test(password)) score += 1;
-
-            return Math.min(score, 4);
+        function calculatePasswordStrength(p) {
+            let s = 0;
+            if (p.length >= 8)              s++;
+            if (p.length >= 12)             s++;
+            if (/[a-z]/.test(p))            s++;
+            if (/[A-Z]/.test(p))            s++;
+            if (/[0-9]/.test(p))            s++;
+            if (/[^a-zA-Z0-9]/.test(p))     s++;
+            return Math.min(Math.floor(s * 4 / 6), 4);
         }
 
-        function updatePasswordStrengthDisplay(strength, textElement, barElement) {
-            const strengths = [
-                { text: 'Very Weak', color: 'bg-red-400', width: '20%' },
-                { text: 'Weak', color: 'bg-red-400', width: '40%' },
-                { text: 'Fair', color: 'bg-yellow-400', width: '60%' },
-                { text: 'Good', color: 'bg-blue-400', width: '80%' },
-                { text: 'Strong', color: 'bg-green-400', width: '100%' }
-            ];
-
-            const currentStrength = strengths[strength] || strengths[0];
-
-            textElement.textContent = currentStrength.text;
-            barElement.className = `h-full rounded transition-all duration-300 ${currentStrength.color}`;
-            barElement.style.width = currentStrength.width;
+        function showToast(message, type) {
+            const toast = document.getElementById('toastNotification');
+            const icon  = document.getElementById('toastIcon');
+            const msg   = document.getElementById('toastMessage');
+            msg.textContent = message;
+            if (type === 'error') {
+                toast.style.cssText = 'display:flex;background:#fee2e2;color:#991b1b;border:1px solid #fecaca;';
+                icon.textContent = 'error'; icon.style.color = '#ef4444';
+            } else {
+                toast.style.cssText = 'display:flex;background:#dcfce7;color:#166534;border:1px solid #bbf7d0;';
+                icon.textContent = 'check_circle'; icon.style.color = '#16a34a';
+            }
+            // Re-add fixed positioning after inline style override
+            toast.style.position   = 'fixed';
+            toast.style.bottom     = '1.5rem';
+            toast.style.right      = '1.5rem';
+            toast.style.zIndex     = '9999';
+            toast.style.minWidth   = '260px';
+            toast.style.maxWidth   = '340px';
+            toast.style.borderRadius = '.85rem';
+            toast.style.padding    = '.9rem 1.1rem';
+            toast.style.boxShadow  = '0 8px 32px rgba(0,0,0,.15)';
+            toast.style.alignItems = 'center';
+            toast.style.gap        = '.65rem';
+            toast.style.fontSize   = '.85rem';
+            toast.style.fontWeight = '500';
+            setTimeout(() => { toast.style.display = 'none'; }, 5000);
         }
 
-        // Close modals when clicking outside
-        window.addEventListener('click', function(e) {
-            const editModal = document.getElementById('editProfileModal');
-            const passwordModal = document.getElementById('changePasswordModal');
-
-            if (e.target === editModal) {
-                closeModal('editProfileModal');
-            }
-            if (e.target === passwordModal) {
-                closeModal('changePasswordModal');
-            }
+        // Close modals on backdrop click
+        ['editProfileModal', 'changePasswordModal'].forEach(id => {
+            document.getElementById(id).addEventListener('click', function (e) {
+                if (e.target === this) closeModal(id);
+            });
         });
 
-        // Close modals with Escape key
-        document.addEventListener('keydown', function(e) {
+        document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') {
                 closeModal('editProfileModal');
                 closeModal('changePasswordModal');
