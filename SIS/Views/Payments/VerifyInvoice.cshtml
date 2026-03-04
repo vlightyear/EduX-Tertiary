@@ -1,0 +1,476 @@
+﻿@model SIS.Controllers.UnifiedTransactionDto
+
+@{
+    ViewData["Title"] = "Verify Invoice";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Invoice Verification — @Model.Reference</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'DM Sans', Arial, sans-serif;
+            background: #f0f4f8;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 2.5rem 1rem 3rem;
+            color: #1e293b;
+        }
+
+        .verify-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: .5rem;
+            background: #dcfce7;
+            border: 1.5px solid #86efac;
+            color: #166534;
+            font-size: .78rem;
+            font-weight: 700;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            padding: .4rem 1rem;
+            border-radius: 2rem;
+            margin-bottom: 1.25rem;
+        }
+
+            .verify-badge .material-icons {
+                font-size: 1rem;
+            }
+
+        .card {
+            background: #fff;
+            border-radius: 1.1rem;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 24px rgba(30,45,94,.08);
+            width: 100%;
+            max-width: 640px;
+            overflow: hidden;
+        }
+
+        /* ── Invoice header ── */
+        .inv-head {
+            background: linear-gradient(135deg, #1e2d5e 0%, #2e3f7a 100%);
+            padding: 1.75rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .inv-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.75rem;
+            color: #fff;
+            letter-spacing: -.02em;
+        }
+
+        .inv-head-sub {
+            font-size: .78rem;
+            color: rgba(255,255,255,.5);
+            margin-top: .2rem;
+        }
+
+        .inv-head-meta {
+            text-align: right;
+        }
+
+        .inv-head-label {
+            font-size: .65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .07em;
+            color: rgba(255,255,255,.5);
+            margin-bottom: .15rem;
+        }
+
+        .inv-head-value {
+            font-size: .88rem;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: .65rem;
+        }
+
+            .inv-head-value:last-child {
+                margin-bottom: 0;
+            }
+
+        /* ── Info grid ── */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1px;
+            background: #e2e8f0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .info-cell {
+            background: #fff;
+            padding: 1rem 1.5rem;
+        }
+
+        .info-label {
+            font-size: .65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .07em;
+            color: #94a3b8;
+            margin-bottom: .3rem;
+        }
+
+        .info-value {
+            font-size: .9rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+            .info-value.mono {
+                font-family: monospace;
+                font-size: .82rem;
+                word-break: break-all;
+            }
+
+            .info-value.small {
+                font-size: .8rem;
+                font-weight: 400;
+                color: #475569;
+            }
+
+        /* ── Status pill ── */
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: .3rem;
+            font-size: .72rem;
+            font-weight: 700;
+            padding: .25rem .65rem;
+            border-radius: 2rem;
+        }
+
+            .status-pill .material-icons {
+                font-size: .85rem;
+            }
+
+        .pill-green {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .pill-amber {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .pill-red {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .pill-slate {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        /* ── Transaction type badge ── */
+        .type-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: .3rem;
+            font-size: .72rem;
+            font-weight: 700;
+            padding: .25rem .65rem;
+            border-radius: 2rem;
+        }
+
+            .type-pill .material-icons {
+                font-size: .85rem;
+            }
+
+        .type-credit {
+            background: #f0fdf4;
+            color: #166534;
+        }
+
+        .type-debit {
+            background: #fef2f2;
+            color: #991b1b;
+        }
+
+        /* ── Items ── */
+        .items-wrap {
+            padding: 1.5rem;
+        }
+
+        .items-title {
+            font-size: .72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .07em;
+            color: #94a3b8;
+            margin-bottom: .75rem;
+        }
+
+        table.items {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .84rem;
+        }
+
+            table.items thead tr {
+                background: #1e2d5e;
+            }
+
+            table.items thead th {
+                padding: .55rem .875rem;
+                text-align: left;
+                color: #fff;
+                font-size: .7rem;
+                text-transform: uppercase;
+                letter-spacing: .05em;
+                font-weight: 700;
+            }
+
+                table.items thead th:last-child {
+                    text-align: right;
+                }
+
+            table.items tbody tr {
+                border-bottom: 1px solid #e2e8f0;
+            }
+
+                table.items tbody tr:last-child {
+                    border-bottom: none;
+                }
+
+                table.items tbody tr:hover {
+                    background: #f8fafc;
+                }
+
+            table.items tbody td {
+                padding: .65rem .875rem;
+                color: #1e293b;
+            }
+
+                table.items tbody td:last-child {
+                    text-align: right;
+                    font-weight: 700;
+                }
+
+                table.items tbody td.muted {
+                    color: #64748b;
+                }
+
+        /* ── Total ── */
+        .total-row {
+            display: flex;
+            justify-content: flex-end;
+            padding: 1rem 1.5rem;
+            border-top: 2px solid #e2e8f0;
+            background: #fafbff;
+        }
+
+        .total-pill {
+            background: #1e2d5e;
+            color: #fff;
+            border-radius: .6rem;
+            padding: .65rem 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .total-pill-label {
+            font-size: .72rem;
+            font-weight: 600;
+            opacity: .75;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+        }
+
+        .total-pill-amount {
+            font-size: 1.1rem;
+            font-weight: 900;
+        }
+
+        /* ── Accounting post status ── */
+        .post-status-row {
+            padding: .75rem 1.5rem;
+            border-top: 1px solid #e2e8f0;
+            background: #fafbff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: .78rem;
+        }
+
+        .post-status-label {
+            color: #94a3b8;
+            font-weight: 600;
+        }
+
+        /* ── Footer ── */
+        .inv-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            background: #fafbff;
+        }
+
+        .inv-footer-note {
+            font-size: .72rem;
+            color: #94a3b8;
+            line-height: 1.55;
+        }
+
+        .page-footer {
+            margin-top: 1.5rem;
+            font-size: .75rem;
+            color: #94a3b8;
+            text-align: center;
+        }
+
+        @@media (max-width: 540px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .inv-head {
+                flex-direction: column;
+            }
+
+            .inv-head-meta {
+                text-align: left;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <span class="verify-badge">
+        <i class="material-icons">verified</i>
+        Verified Invoice
+    </span>
+
+    <div class="card">
+
+        <!-- Header -->
+        <div class="inv-head">
+            <div>
+                <p class="inv-title">INVOICE</p>
+            </div>
+            <div class="inv-head-meta">
+                <p class="inv-head-label">Issued</p>
+                <p class="inv-head-value">@Model.CreatedAt.ToString("MMM dd, yyyy 'at' HH:mm")</p>
+                <p class="inv-head-label">Reference Number</p>
+                <p class="inv-head-value">#@Model.Reference</p>
+            </div>
+        </div>
+
+        <!-- Info grid -->
+        <div class="info-grid">
+            <div class="info-cell">
+                <p class="info-label">Billed To</p>
+                <p class="info-value">@(Model.StudentName ?? "—")</p>
+                @if (Model.StudentId.HasValue)
+                {
+                    <p class="info-value small">Student ID: @Model.StudentNumber</p>
+                }
+            </div>
+            <div class="info-cell">
+                <p class="info-label">Reference</p>
+                <p class="info-value mono">@(Model.Reference ?? "—")</p>
+            </div>
+            <div class="info-cell">
+                <p class="info-label">Narration</p>
+                <p class="info-value">@(Model.Narration ?? "—")</p>
+            </div>
+            <div class="info-cell">
+                <p class="info-label">Type</p>
+                @if (Model.Credit)
+                {
+                    <span class="type-pill type-credit">
+                        <i class="material-icons">arrow_downward</i>Amount
+                    </span>
+                }
+                else
+                {
+                    <span class="type-pill type-debit">
+                        <i class="material-icons">arrow_upward</i>Debit
+                    </span>
+                }
+            </div>
+        </div>
+
+        <!-- Line items (only shown when present) -->
+        @if (Model.InvoiceItems != null && Model.InvoiceItems.Any())
+        {
+            <div class="items-wrap">
+                <p class="items-title">Fee Breakdown</p>
+                <table class="items">
+                    <thead>
+                        <tr>
+                            <th>Fee Type</th>
+                            <th>Description</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.InvoiceItems)
+                        {
+                            <tr>
+                                <td>@item.FeeTypeName</td>
+                                <td class="muted">@(item.Description ?? "—")</td>
+                                <td>K @item.Amount.ToString("N2")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        <!-- Total -->
+        @if (Model.Amount.HasValue)
+        {
+            <div class="total-row">
+                <div class="total-pill">
+                    <span class="total-pill-label">Total Amount</span>
+                    <span class="total-pill-amount">K @Model.Amount.Value.ToString("N2")</span>
+                </div>
+            </div>
+        }
+
+        <!-- Footer -->
+        <div class="inv-footer">
+            <p class="inv-footer-note">
+                This invoice was retrieved from the EduTech.<br>
+                Verified on @DateTime.Now.ToString("MMM dd, yyyy 'at' HH:mm").
+            </p>
+            <i class="material-icons" style="color:#22c55e;font-size:1.5rem;">verified_user</i>
+        </div>
+
+    </div>
+
+    <p class="page-footer">
+        &copy; @DateTime.Now.Year EduTech &nbsp;·&nbsp; Student Information System
+    </p>
+
+</body>
+</html>

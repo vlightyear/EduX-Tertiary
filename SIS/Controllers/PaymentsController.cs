@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PdfSharpCore.Drawing;
@@ -1732,6 +1733,40 @@ namespace SIS.Controllers
                 _logger.LogError(ex, "Error retrieving payment history");
                 return RedirectToAction("Error", "Home");
             }
+        }
+
+        [AllowAnonymous]
+        public async Task<IActionResult> VerifyInvoice(string @ref)
+        {
+            if (string.IsNullOrWhiteSpace(@ref))
+                return View("InvoiceNotFound");
+
+            var transaction = await _context.StudentInvoices
+                .Include(t => t.InvoiceItems)
+                .Include(t => t.Student)
+                .Where(t => t.InvoiceReference == @ref)
+                .Select(t => new UnifiedTransactionDto {
+                    Id = t.Id,
+                    StudentId = t.Student.Id,
+                    StudentNumber = t.Student.StudentId_Number,
+                    StudentName = t.Student.FullName,
+                    Amount = t.TotalAmount,
+                    Status = t.Status.ToString(),
+                    Reference = t.InvoiceReference,
+                    Credit = false,
+                    AccountingSystemPostStatus = t.AccountingSystemPostStatus,
+                    Narration = t.InvoiceItems.Any(item => item.FeeTypeName.ToLower().Contains("tuition"))
+                                                     ? "Tuition Fees"
+                                                     : t.InvoiceItems.Select(item => item.FeeTypeName).FirstOrDefault() ?? "Invoice",
+                    InvoiceItems = t.InvoiceItems,
+                    CreatedAt = t.CreatedDate
+                })
+                .FirstOrDefaultAsync();
+
+            if (transaction == null)
+                return View("InvoiceNotFound");
+
+            return View(transaction);
         }
 
         private async Task<AccountingApiResponse> GenerateInvoiceForStudentWithPaymentReconciliation(Student student, decimal totalPaidForAcademicYear)
