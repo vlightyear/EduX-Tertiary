@@ -744,7 +744,7 @@ namespace SIS.Controllers
             {
                 // Strip non-digits from phone number
                 var phone = new string(model.PhoneNumber.Where(char.IsDigit).ToArray());
-                var narration = $"Student Fee Payment - {student.StudentId_Number}";
+                var narration = $"Payment {student.StudentId_Number}";
 
                 if (student == null)
                 {
@@ -952,13 +952,13 @@ namespace SIS.Controllers
             {
                 var status = await _payBoss.GetStatusAsync(txnId);
 
-                if(string.Equals(status.Status, "success", StringComparison.OrdinalIgnoreCase) || string.Equals(status.Status, "failed", StringComparison.OrdinalIgnoreCase))
+                if(string.Equals(status.Status, "successful", StringComparison.OrdinalIgnoreCase) || string.Equals(status.Status, "success", StringComparison.OrdinalIgnoreCase) || string.Equals(status.Status, "failed", StringComparison.OrdinalIgnoreCase))
                 {
-                    var payment = await _context.OnlinePayments.FirstOrDefaultAsync(p => string.Equals(p.ReferenceNumber, txnId, StringComparison.OrdinalIgnoreCase));
+                    var payment = await _context.OnlinePayments.FirstOrDefaultAsync(p => p.ReferenceNumber == txnId);
 
                     if(payment != null)
                     {
-                        if(string.Equals(status.Status, "success", StringComparison.OrdinalIgnoreCase))
+                        if(string.Equals(status.Status, "successful", StringComparison.OrdinalIgnoreCase) || string.Equals(status.Status, "success", StringComparison.OrdinalIgnoreCase))
                         {
                             payment.Status = "Paid";
                         }
@@ -966,6 +966,7 @@ namespace SIS.Controllers
                         {
                             payment.Status = "Failed"; 
                         }
+                        await _context.SaveChangesAsync();
                     }
                 }
 
@@ -1684,7 +1685,7 @@ namespace SIS.Controllers
                         Reference = p.ReferenceNumber,
                         AccountingSystemPostStatus = p.AccountingSystemPostStatus,
                         CreatedAt = p.TransactionDate ?? p.CreatedAt,
-                        Narration = null,
+                        Narration = "Payment",
                         InvoiceItems = null
                     })
                     .ToList();

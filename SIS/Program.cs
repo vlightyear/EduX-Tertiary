@@ -140,6 +140,7 @@ builder.Services.AddScoped<IWorkflowValidationService, WorkflowValidationService
 builder.Services.AddScoped<IPaymentAllocationService, PaymentAllocationService>();
 
 builder.Services.AddSingleton<IBackgroundEmailService, BackgroundEmailService>();
+builder.Services.AddHostedService<SIS.BackgroundServices.PaymentStatusPollingService>();
 builder.Services.AddHostedService<BackgroundEmailService>(provider =>
     (BackgroundEmailService)provider.GetRequiredService<IBackgroundEmailService>());
 

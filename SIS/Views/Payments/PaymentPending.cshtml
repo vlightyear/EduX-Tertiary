@@ -319,10 +319,11 @@
         var STUDENT_ID     = '@Html.Raw(studentId)';
         var POLL_URL       = '@Html.Raw(Url.Action("CheckPaymentStatus", "Payments"))';
         var CALLBACK_URL   = '@Html.Raw(Url.Action("PaymentCallback", "Payments"))';
+        var HOME_URL       = '@Html.Raw(Url.Action("Student_Dashboard", "Home"))';
 
         var POLL_MS        = 5000;
         var MAX_POLLS      = 36;   // 3 minutes
-        var MAX_ERR_STREAK = 4;    // tolerate 4 consecutive network/server errors before giving up
+        var MAX_ERR_STREAK = 36;    // tolerate 4 consecutive network/server errors before giving up
 
         var pollCount  = 0;
         var errStreak  = 0;
@@ -418,9 +419,11 @@
                 // Normalise casing so PayBoss response variations don't matter
                 var status = (data.status || '').toLowerCase().trim();
 
-                if (status === 'success') {
+                if (status === 'success' || status === 'successful') {
                     errStreak = 0;
                     setSuccess();
+                    window.location.href = HOME_URL;
+                    return;
 
                 } else if (status === 'failed') {
                     // PayBoss explicitly reports payment failure
