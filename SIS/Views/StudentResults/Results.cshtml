@@ -1,61 +1,618 @@
 ﻿@model SIS.Models.Admin.StudentResultsViewModel
 
 @{
-    // Get the student ID - you may need to add this to your ViewModel if not present
-    var studentId = ViewBag.StudentId ?? 0; // Or Model.StudentId if it exists in your ViewModel
+    var studentId = ViewBag.StudentId ?? 0;
 }
 
-<div class="p-4">
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap');
+
+    :root {
+        --coral: #e85c5c;
+        --coral-d: #c94040;
+        --navy: #1e2d5e;
+        --navy-l: #2e3f7a;
+        --mist: #f5f7fa;
+        --border: #e8ecf2;
+        --ink: #1a1f2e;
+        --text: #475569;
+        --green: #16a34a;
+        --greenl: #dcfce7;
+    }
+
+    .sr-wrap {
+        font-family: 'DM Sans',sans-serif;
+        padding: 1.25rem;
+    }
+
+    @@keyframes sr-spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* ── Fee alert ─────────────────────── */
+    .fee-alert {
+        display: flex;
+        align-items: flex-start;
+        gap: .75rem;
+        background: #fffbeb;
+        border: 1.5px solid #fde68a;
+        border-left: 4px solid #d97706;
+        border-radius: .65rem;
+        padding: .85rem 1rem;
+        margin-bottom: 1.25rem;
+    }
+
+        .fee-alert > i {
+            font-size: 1rem;
+            color: #d97706;
+            flex-shrink: 0;
+            margin-top: .1rem;
+        }
+
+    .fee-alert-body {
+        flex: 1;
+        font-size: .8rem;
+        color: #92400e;
+        line-height: 1.65;
+    }
+
+        .fee-alert-body strong {
+            font-weight: 700;
+        }
+
+    .fee-alert-close {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: #a16207;
+        padding: .1rem;
+        line-height: 1;
+    }
+
+        .fee-alert-close i {
+            font-size: .95rem;
+        }
+
+    /* ── Page header ───────────────────── */
+    .sr-page-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: .75rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .sr-page-head-left {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+    }
+
+        .sr-page-head-left > i {
+            font-size: 1.3rem;
+            color: var(--coral);
+        }
+
+    .sr-page-title {
+        font-family: 'DM Serif Display',serif;
+        font-size: 1.55rem;
+        color: var(--ink);
+    }
+
+    .gpa-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: .5rem;
+        font-size: .78rem;
+        color: var(--text);
+    }
+
+    .gpa-val {
+        font-family: 'DM Serif Display',serif;
+        font-size: 1.15rem;
+        color: var(--ink);
+        background: var(--mist);
+        border: 1.5px solid var(--border);
+        padding: .2rem .8rem;
+        border-radius: .55rem;
+    }
+
+        .gpa-val.dim {
+            color: #94a3b8;
+        }
+
+    /* ── Year filter ───────────────────── */
+    .yr-filter-row {
+        margin-bottom: 1.25rem;
+    }
+
+    .yr-filter-lbl {
+        display: block;
+        font-size: .7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        color: #94a3b8;
+        margin-bottom: .4rem;
+    }
+
+    .yr-filter-sel {
+        padding: .5rem .85rem;
+        border: 1.5px solid var(--border);
+        border-radius: .55rem;
+        font-family: 'DM Sans',sans-serif;
+        font-size: .82rem;
+        color: var(--ink);
+        background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%2394a3b8' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E") no-repeat right .65rem center;
+        -webkit-appearance: none;
+        padding-right: 2.1rem;
+        cursor: pointer;
+        transition: border-color .15s;
+    }
+
+        .yr-filter-sel:focus {
+            outline: none;
+            border-color: var(--coral);
+            box-shadow: 0 0 0 3px rgba(232,92,92,.15);
+        }
+
+    /* ── Stat cards ────────────────────── */
+    .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill,minmax(190px,1fr));
+        gap: .75rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .stat-card {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: .85rem;
+        padding: .9rem 1.05rem;
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        box-shadow: 0 2px 8px rgba(30,45,94,.04);
+        transition: transform .15s;
+    }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+
+    .stat-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: .55rem;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .stat-icon i {
+            font-size: 1.05rem;
+        }
+
+    .stat-lbl {
+        font-size: .67rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        color: #94a3b8;
+        margin-bottom: .15rem;
+    }
+
+    .stat-val {
+        font-family: 'DM Serif Display',serif;
+        font-size: 1.2rem;
+        color: var(--ink);
+        line-height: 1.1;
+    }
+
+        .stat-val .dim {
+            color: #94a3b8;
+            font-size: .88rem;
+            font-family: 'DM Sans',sans-serif;
+            font-weight: 400;
+        }
+
+    /* ── Year section card ─────────────── */
+    .year-section {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 1rem;
+        box-shadow: 0 2px 12px rgba(30,45,94,.06);
+        margin-bottom: 1.25rem;
+        overflow: hidden;
+    }
+
+    .year-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: .65rem;
+        padding: 1rem 1.35rem;
+        border-bottom: 1.5px solid var(--border);
+        background: linear-gradient(135deg,var(--mist) 0%,#fff 100%);
+    }
+
+    .year-head-title {
+        font-family: 'DM Serif Display',serif;
+        font-size: 1.1rem;
+        color: var(--ink);
+        margin-bottom: .2rem;
+    }
+
+    .year-meta {
+        display: flex;
+        gap: .85rem;
+        font-size: .74rem;
+        color: var(--text);
+        flex-wrap: wrap;
+    }
+
+        .year-meta strong {
+            font-weight: 700;
+            color: var(--ink);
+        }
+
+    /* ── Semester block ────────────────── */
+    .semester-block {
+        border-left: 3px solid var(--border);
+        margin: 1rem 1.35rem;
+        padding: .85rem 1rem;
+        border-radius: 0 .55rem .55rem 0;
+        transition: border-color .15s;
+    }
+
+        .semester-block:last-child {
+            margin-bottom: 1rem;
+        }
+
+        .semester-block:hover {
+            border-left-color: var(--coral);
+        }
+
+    .sem-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: .5rem;
+        margin-bottom: .65rem;
+    }
+
+    .sem-title {
+        font-size: .9rem;
+        font-weight: 700;
+        color: var(--navy);
+        display: flex;
+        align-items: center;
+        gap: .3rem;
+        margin-bottom: .2rem;
+    }
+
+        .sem-title i {
+            font-size: .9rem;
+        }
+
+    .sem-meta {
+        display: flex;
+        gap: .75rem;
+        font-size: .72rem;
+        color: var(--text);
+        flex-wrap: wrap;
+    }
+
+        .sem-meta strong {
+            font-weight: 700;
+            color: var(--ink);
+        }
+
+    /* ── Standing callouts ─────────────── */
+    .sc {
+        display: flex;
+        align-items: flex-start;
+        gap: .65rem;
+        border-radius: .6rem;
+        padding: .65rem .9rem;
+        margin-bottom: .75rem;
+        font-size: .77rem;
+        line-height: 1.6;
+    }
+
+        .sc > i {
+            font-size: .9rem;
+            flex-shrink: 0;
+            margin-top: .1rem;
+        }
+
+        .sc strong {
+            font-weight: 700;
+        }
+
+        .sc p {
+            margin: .15rem 0 0;
+        }
+
+    .sc-green {
+        background: var(--greenl);
+        border: 1.5px solid #86efac;
+        color: #166534;
+    }
+
+        .sc-green > i {
+            color: var(--green);
+        }
+
+    .sc-yellow {
+        background: #fffbeb;
+        border: 1.5px solid #fde68a;
+        color: #92400e;
+    }
+
+        .sc-yellow > i {
+            color: #d97706;
+        }
+
+    .sc-red {
+        background: #fef2f2;
+        border: 1.5px solid #fecaca;
+        color: #991b1b;
+    }
+
+        .sc-red > i {
+            color: var(--coral);
+        }
+
+    .sc-orange {
+        background: #fff7ed;
+        border: 1.5px solid #fed7aa;
+        color: #9a3412;
+    }
+
+        .sc-orange > i {
+            color: #ea580c;
+        }
+
+    .sc-blue {
+        background: #eff6ff;
+        border: 1.5px solid #bfdbfe;
+        color: #1e40af;
+    }
+
+        .sc-blue > i {
+            color: #2563eb;
+        }
+
+    .sc-gray {
+        background: var(--mist);
+        border: 1.5px solid var(--border);
+        color: var(--text);
+    }
+
+        .sc-gray > i {
+            color: #94a3b8;
+        }
+
+    /* ── Results table ─────────────────── */
+    .rt {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: .78rem;
+    }
+
+        .rt thead tr {
+            background: var(--mist);
+        }
+
+        .rt th {
+            padding: .55rem .9rem;
+            text-align: left;
+            font-size: .65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            color: #94a3b8;
+            border-bottom: 1.5px solid var(--border);
+        }
+
+            .rt th.c {
+                text-align: center;
+            }
+
+        .rt td {
+            padding: .6rem .9rem;
+            border-bottom: 1px solid var(--border);
+            color: var(--text);
+            vertical-align: middle;
+        }
+
+            .rt td.c {
+                text-align: center;
+            }
+
+        .rt tbody tr:hover {
+            background: var(--mist);
+        }
+
+        .rt tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .rt .cc {
+            font-weight: 700;
+            color: var(--ink);
+            font-size: .8rem;
+        }
+
+    /* grade / remark pills */
+    .gp {
+        display: inline-flex;
+        align-items: center;
+        gap: .2rem;
+        font-size: .68rem;
+        font-weight: 700;
+        padding: .22rem .55rem;
+        border-radius: 2rem;
+    }
+
+        .gp i {
+            font-size: .72rem;
+        }
+
+    .gp-pass {
+        background: var(--greenl);
+        color: #166534;
+    }
+
+    .gp-fail {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .gp-pending {
+        background: var(--mist);
+        color: var(--text);
+        border: 1px solid var(--border);
+    }
+
+    .gp-locked {
+        background: #fffbeb;
+        color: #a16207;
+    }
+
+    .gp-dim {
+        color: #94a3b8;
+        font-size: .78rem;
+    }
+
+    /* ── Empty state ───────────────────── */
+    .empty-state {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 1rem;
+        padding: 3rem 2rem;
+        text-align: center;
+        box-shadow: 0 2px 12px rgba(30,45,94,.04);
+    }
+
+        .empty-state > i {
+            font-size: 3rem;
+            color: #cbd5e1;
+        }
+
+        .empty-state h3 {
+            font-family: 'DM Serif Display',serif;
+            font-size: 1.1rem;
+            color: var(--ink);
+            margin: .75rem 0 .35rem;
+        }
+
+        .empty-state p {
+            font-size: .8rem;
+            color: var(--text);
+            line-height: 1.65;
+        }
+
+    /* ── Loading overlay ───────────────── */
+    .sr-loader {
+        position: fixed;
+        inset: 0;
+        background: rgba(15,20,40,.55);
+        backdrop-filter: blur(4px);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .sr-loader-box {
+        background: #fff;
+        border-radius: 1rem;
+        padding: 1.35rem 1.85rem;
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        box-shadow: 0 20px 40px rgba(15,20,40,.2);
+    }
+
+    .sr-spin {
+        animation: sr-spin 1s linear infinite;
+        font-size: 1.5rem;
+        color: var(--coral);
+    }
+
+    .sr-loader-txt {
+        font-size: .85rem;
+        font-weight: 700;
+        color: var(--ink);
+    }
+
+    @@media (max-width:540px) {
+        .stat-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .rt {
+            font-size: .72rem;
+        }
+
+            .rt th, .rt td {
+                padding: .5rem .6rem;
+            }
+    }
+</style>
+
+<div class="sr-wrap">
+
+    <!-- ── Fee alert ── -->
     @if (Model.OutstandingFees > 0)
     {
-        <div class="flex items-center p-4 mb-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-lg" role="alert">
-            <i class="material-icons text-yellow-600 mr-2">warning</i>
-            <div class="flex-1">
-                <strong class="font-medium text-yellow-700">Fee Clearance Required:</strong>
-                <span class="text-yellow-700"> You have outstanding fees of ZMW @Model.OutstandingFees.ToString("N2"). Clear your fees to view complete results and download transcripts.</span>
-            </div>
-            <button type="button" class="text-yellow-600 hover:text-yellow-700" data-bs-dismiss="alert" aria-label="Close">
+        <div class="fee-alert" role="alert">
+            <i class="material-icons">warning</i>
+            <p class="fee-alert-body">
+                <strong>Fee Clearance Required — </strong>
+                You have outstanding fees of ZMW @Model.OutstandingFees.ToString("N2").
+                Clear your fees to view complete results and download transcripts.
+            </p>
+            <button type="button" class="fee-alert-close" data-bs-dismiss="alert" aria-label="Close">
                 <i class="material-icons">close</i>
             </button>
         </div>
     }
 
-    <!-- Header with Download Button -->
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold text-secondary-800 flex items-center">
-            <i class="material-icons mr-2">school</i>
-            Academic Results
-        </h1>
-        <div class="flex items-center gap-3">
-            <span class="text-secondary-600 mr-2">Overall GPA:</span>
-            <span class="px-3 py-1 bg-gray-100 text-secondary-800 rounded-lg border font-medium">
-                @if (Model.CanViewCompleteResults && Model.AcademicYears.Any(y => y.HasCompleteResults()))
-                {
-                    @Model.OverallGPA.ToString("F2")
-                }
-                else
-                {
-                    <span class="text-gray-500">--</span>
-                }
-            </span>
-            @if (Model.CanViewCompleteResults && Model.AcademicYears.Any())
+    <!-- ── Header ── -->
+    <div class="sr-page-head">
+        <div class="sr-page-head-left">
+            <i class="material-icons">school</i>
+            <h1 class="sr-page-title">Results</h1>
+        </div>
+        <div class="gpa-badge">
+            <span>Overall GPA</span>
+            @if (Model.CanViewCompleteResults && Model.AcademicYears.Any(y => y.HasCompleteResults()))
             {
-                @* <button onclick="downloadFullTranscript(@studentId)"
-                        class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                    <i class="material-icons mr-2 text-sm">download</i>
-                    Download Full Transcript
-                </button> *@
+                <span class="gpa-val">@Model.OverallGPA.ToString("F2")</span>
+            }
+            else
+            {
+                <span class="gpa-val dim">--</span>
             }
         </div>
     </div>
 
-    <!-- Academic Year Selector (if multiple years) -->
+    <!-- ── Year filter ── -->
     @if (Model.AcademicYears.Count > 1)
     {
-        <div class="mb-6">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Select Academic Year:</label>
-            <select id="yearFilter" onchange="filterByYear()" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                <option value="all">All Years</option>
+        <div class="yr-filter-row">
+            <label class="yr-filter-lbl">Filter by Session</label>
+            <select id="yearFilter" onchange="filterByYear()" class="yr-filter-sel">
+                <option value="all">All Sessions</option>
                 @foreach (var year in Model.AcademicYears.OrderByDescending(y => y.YearId))
                 {
                     <option value="@year.YearId">@year.YearValue</option>
@@ -64,106 +621,80 @@
         </div>
     }
 
-    <!-- Info Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <!-- Courses Card -->
-        <div class="bg-white rounded-lg shadow-sm hover:-translate-y-1 transition-transform duration-200">
-            <div class="p-4">
-                <div class="flex items-center">
-                    <div class="p-3 bg-gray-100 rounded-lg mr-3">
-                        <i class="material-icons text-blue-600">library_books</i>
-                    </div>
-                    <div>
-                        <p class="text-gray-500 text-sm">Total Courses Passed</p>
-                        <h5 class="text-lg font-semibold">
-                            @if (Model.CanViewCompleteResults && Model.AcademicYears.Any(y => y.HasCompleteResults()))
-                            {
-                                var totalPassed = Model.AcademicYears.Sum(y => y.GetPassedCourses());
-                                var totalCourses = Model.AcademicYears.Sum(y => y.GetTotalCourses());
-                                @totalPassed
-                                <span class="text-gray-400">/</span>
-                                @totalCourses
-                            }
-                            else
-                            {
-                                <span class="text-gray-400">-- / @Model.AcademicYears.SelectMany(y => y.Semesters).SelectMany(s => s.Courses).Count()</span>
-                            }
-                        </h5>
-                    </div>
-                </div>
+    <!-- ── Stat cards ── -->
+    <div class="stat-grid">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#eff6ff;">
+                <i class="material-icons" style="color:var(--navy);">library_books</i>
+            </div>
+            <div>
+                <p class="stat-lbl">Courses Passed</p>
+                <p class="stat-val">
+                    @if (Model.CanViewCompleteResults && Model.AcademicYears.Any(y => y.HasCompleteResults()))
+                    {
+                        var totalPassed = Model.AcademicYears.Sum(y => y.GetPassedCourses());
+                        var totalCourses = Model.AcademicYears.Sum(y => y.GetTotalCourses());
+                        @totalPassed
+                    
+                        <span class="dim"> / @totalCourses</span>
+                    }
+                    else
+                    {
+                        <span class="dim">-- / @Model.AcademicYears.SelectMany(y => y.Semesters).SelectMany(s => s.Courses).Count()</span>
+                    }
+                </p>
             </div>
         </div>
 
-        <!-- Credits Card -->
-        <div class="bg-white rounded-lg shadow-sm hover:-translate-y-1 transition-transform duration-200">
-            <div class="p-4">
-                <div class="flex items-center">
-                    <div class="p-3 bg-gray-100 rounded-lg mr-3">
-                        <i class="material-icons text-green-600">credit_card</i>
-                    </div>
-                    <div>
-                        <p class="text-gray-500 text-sm">Credits (Earned/Attempted)</p>
-                        <h5 class="text-lg font-semibold">
-                            @if (Model.CanViewCompleteResults && Model.AcademicYears.Any(y => y.HasCompleteResults()))
-                            {
-                                @Model.TotalCreditsEarned
-                                <span class="text-gray-400">/</span>
-                                @Model.TotalCreditsAttempted
-                            }
-                            else
-                            {
-                                <span class="text-gray-400">-- / --</span>
-                            }
-                        </h5>
-                    </div>
-                </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:var(--greenl);">
+                <i class="material-icons" style="color:var(--green);">credit_card</i>
+            </div>
+            <div>
+                <p class="stat-lbl">Credits (Earned / Attempted)</p>
+                <p class="stat-val">
+                    @if (Model.CanViewCompleteResults && Model.AcademicYears.Any(y => y.HasCompleteResults()))
+                    {
+                        @Model.TotalCreditsEarned
+                    
+                        <span class="dim"> / @Model.TotalCreditsAttempted</span>
+                    }
+                    else
+                    {
+                        <span class="dim">-- / --</span>
+                    }
+                </p>
             </div>
         </div>
 
-        <!-- Academic Years Card -->
-        <div class="bg-white rounded-lg shadow-sm hover:-translate-y-1 transition-transform duration-200">
-            <div class="p-4">
-                <div class="flex items-center">
-                    <div class="p-3 bg-gray-100 rounded-lg mr-3">
-                        <i class="material-icons text-purple-600">calendar_today</i>
-                    </div>
-                    <div>
-                        <p class="text-gray-500 text-sm">Academic Years</p>
-                        <h5 class="text-lg font-semibold">
-                            @Model.AcademicYears.Count Year@(Model.AcademicYears.Count != 1 ? "s" : "")
-                        </h5>
-                    </div>
-                </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#f5f3ff;">
+                <i class="material-icons" style="color:#7c3aed;">calendar_today</i>
+            </div>
+            <div>
+                <p class="stat-lbl">Sessions</p>
+                <p class="stat-val">@Model.AcademicYears.Count<span class="dim"> Year@(Model.AcademicYears.Count != 1 ? "s" : "")</span></p>
             </div>
         </div>
     </div>
 
-    <!-- Results by Academic Year -->
+    <!-- ── Results by Academic Year ── -->
     @if (Model?.AcademicYears?.Any() == true)
     {
         @foreach (var year in Model.AcademicYears.OrderByDescending(y => y.YearId))
         {
-            <div class="year-section bg-white rounded-lg shadow-sm mb-6 p-6" data-year-id="@year.YearId">
-                <!-- Year Header -->
-                <div class="flex justify-between items-center mb-4 pb-4 border-b">
+            <div class="year-section" data-year-id="@year.YearId">
+
+                <!-- Year header -->
+                <div class="year-head">
                     <div>
-                        <h2 class="text-xl font-bold text-secondary-800">Academic Year: @year.YearValue</h2>
+                        <p class="year-head-title">Session: @year.YearValue</p>
                         @if (Model.CanViewCompleteResults && year.HasCompleteResults())
                         {
-                            <div class="flex gap-4 mt-2 text-sm text-secondary-600">
+                            <div class="year-meta">
                                 <span>Year GPA: <strong>@year.GPA.ToString("F2")</strong></span>
                                 <span>Credits: <strong>@year.CreditsEarned / @year.CreditsAttempted</strong></span>
                             </div>
-                        }
-                    </div>
-                    <div class="flex gap-2">
-                        @if (Model.CanViewCompleteResults)
-                        {
-                            @* <button onclick="downloadYearTranscript(@studentId, @year.YearId)"
-                                    class="inline-flex items-center px-3 py-1 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                                <i class="material-icons text-sm mr-1">download</i>
-                                Year Transcript
-                            </button> *@
                         }
                     </div>
                 </div>
@@ -171,141 +702,99 @@
                 <!-- Semesters -->
                 @foreach (var semester in year.Semesters)
                 {
-                    <div class="semester-section mb-6 border-l-4 border-blue-300 pl-4">
-                        <!-- Semester Header -->
-                        <div class="flex justify-between items-center mb-3">
+                    <div class="semester-block">
+
+                        <!-- Semester header -->
+                        <div class="sem-head">
                             <div>
-                                <h3 class="text-lg font-semibold text-secondary-800 flex items-center">
-                                    <i class="material-icons text-sm mr-2">event</i>
+                                <p class="sem-title">
+                                    <i class="material-icons">event</i>
                                     Semester @semester.SemesterId
-                                </h3>
+                                </p>
                                 @if (Model.CanViewCompleteResults && semester.Courses.All(c => c.IsPublished))
                                 {
-                                    <div class="flex gap-4 mt-1 text-sm text-secondary-600">
+                                    <div class="sem-meta">
                                         <span>GPA: <strong>@semester.GPA.ToString("F2")</strong></span>
                                         <span>Credits: <strong>@semester.CreditsEarned / @semester.CreditsAttempted</strong></span>
-                                        <span>Failed: <strong class="@(semester.FailedCourses > 0 ? "text-red-600" : "text-green-600")">@semester.FailedCourses</strong></span>
+                                        <span>Failed: <strong style="color:@(semester.FailedCourses > 0 ? "var(--coral)" : "var(--green)");">@semester.FailedCourses</strong></span>
                                         @if (!string.IsNullOrEmpty(semester.AcademicStanding))
                                         {
-                                            <span>
-                                                Comment: <strong class="@GetStandingColorClass(semester.AcademicStanding)">
-                                                    @semester.AcademicStanding
-                                                    @{
-                                                        var semesterFailedCodes = string.Join(", ", semester.Courses
-                                                        .Where(c => !c.IsPassed)
-                                                        .Select(c => c.CourseCode));
-                                                    }
-                                                    @if (!string.IsNullOrEmpty(semesterFailedCodes))
-                                                    {
-                                                        <span>(@semesterFailedCodes)</span>
-                                                    }
-                                                </strong>
-                                            </span>
+                                            var failedCodes = string.Join(", ", semester.Courses.Where(c => !c.IsPassed).Select(c => c.CourseCode));
+                                            <span>Comment: <strong style="color:@GetStandingCssColor(semester.AcademicStanding);">@semester.AcademicStanding@(!string.IsNullOrEmpty(failedCodes) ? $" ({failedCodes})" : "")</strong></span>
                                         }
                                     </div>
-                                }
-                            </div>
-                            <div class="flex gap-2">
-                                @if (Model.CanViewCompleteResults && semester.Courses.All(c => c.IsPublished))
-                                {
-                                    @* <button onclick="downloadSemesterTranscript(@studentId, @year.YearId, @semester.SemesterId)"
-                                            class="inline-flex items-center px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
-                                        <i class="material-icons text-sm mr-1">download</i>
-                                        Semester PDF
-                                    </button> *@
                                 }
                             </div>
                         </div>
 
-                        <!-- Semester Comment/Standing Alert -->
+                        <!-- Standing callout -->
                         @if (Model.CanViewCompleteResults && !string.IsNullOrEmpty(semester.AcademicStanding))
                         {
-                            <div class="mb-3 p-3 @GetStandingBackgroundClass(semester.AcademicStanding) border @GetStandingBorderClass(semester.AcademicStanding) rounded-lg">
-                                <div class="flex items-start">
-                                    <i class="material-icons @GetStandingTextClass(semester.AcademicStanding) text-sm mr-2 mt-0.5">@GetStandingIcon(semester.AcademicStanding)</i>
-                                    <div class="text-sm @GetStandingTextClass(semester.AcademicStanding)">
-                                        <strong>Semester @semester.SemesterId Comment:</strong> @GetActionMessage(semester.AcademicStanding)
-                                        @if (semester.AcademicStanding == "ProceedWithRepeat")
-                                        {
-                                            <p class="mt-1">Failed courses: @string.Join(", ", semester.Courses.Where(c => !c.IsPassed).Select(c => c.CourseCode))</p>
-                                        }
-                                    </div>
+                            <div class="sc @GetStandingCalloutClass(semester.AcademicStanding)">
+                                <i class="material-icons">@GetStandingIcon(semester.AcademicStanding)</i>
+                                <div>
+                                    <strong>Semester @semester.SemesterId Comment:</strong> @GetActionMessage(semester.AcademicStanding)
+                                    @if (semester.AcademicStanding == "ProceedWithRepeat")
+                                    {
+                                        <p>Failed courses: @string.Join(", ", semester.Courses.Where(c => !c.IsPassed).Select(c => c.CourseCode))</p>
+                                    }
                                 </div>
                             </div>
                         }
 
-                        <!-- Semester Courses Table -->
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-sm text-secondary-600">
-                                <thead class="bg-gray-50">
+                        <!-- Courses table -->
+                        <div style="overflow-x:auto;">
+                            <table class="rt">
+                                <thead>
                                     <tr>
-                                        <th class="px-6 py-3 text-left">Course Code</th>
-                                        <th class="px-6 py-3 text-left">Course Name</th>
-                                        <th class="px-6 py-3 text-center">Credits</th>
+                                        <th>Course Code</th>
+                                        <th>Course Name</th>
+                                        <th class="c">Credits</th>
                                         @if (Model.CanViewCompleteResults)
                                         {
-                                            <th class="px-6 py-3 text-center">Grade</th>
+                                            <th class="c">Grade</th>
                                         }
-                                        <th class="px-6 py-3 text-center">Comment</th>
+                                        <th class="c">Comment</th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-gray-200">
+                                <tbody>
                                     @foreach (var course in semester.Courses)
                                     {
-                                        <tr class="hover:bg-gray-50 transition-colors">
-                                            <td class="px-6 py-3 font-medium">@course.CourseCode</td>
-                                            <td class="px-6 py-3">@course.CourseName</td>
-                                            <td class="px-6 py-3 text-center">@course.Credits</td>
+                                        <tr>
+                                            <td class="cc">@course.CourseCode</td>
+                                            <td>@course.CourseName</td>
+                                            <td class="c">@course.Credits</td>
                                             @if (Model.CanViewCompleteResults)
                                             {
-                                                <td class="px-6 py-3 text-center">
+                                                <td class="c">
                                                     @if (course.CanViewComplete && !string.IsNullOrEmpty(course.Grade))
                                                     {
-                                                        <span class="px-3 py-1 rounded-full text-xs font-semibold
-                                                                                                            @(course.IsPassed ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800")">
-                                                            @course.Grade
-                                                        </span>
+                                                        <span class="gp @(course.IsPassed ? "gp-pass" : "gp-fail")">@course.Grade</span>
                                                     }
                                                     else
                                                     {
-                                                        <span class="text-gray-400">--</span>
+                                                        <span class="gp-dim">--</span>
                                                     }
                                                 </td>
                                             }
-                                            <td class="px-6 py-3 text-center">
+                                            <td class="c">
                                                 @if (course.IsPublished)
                                                 {
                                                     @if (course.CanViewComplete)
                                                     {
-                                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold
-                                                                                                            @(course.IsPassed ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800")">
-                                                            <i class="material-icons text-xs mr-1">
-                                                                @(course.IsPassed ? "check_circle" : "cancel")
-                                                            </i>
-                                                            @if (course.Grade == "NE")
-                                                            {
-                                                                <span>DEF</span>
-                                                            }
-                                                            else
-                                                            {
-                                                                <span>@course.Remark</span>
-                                                            }
+                                                        <span class="gp @(course.IsPassed ? "gp-pass" : "gp-fail")">
+                                                            <i class="material-icons">@(course.IsPassed ? "check_circle" : "cancel")</i>
+                                                            @(course.Grade == "NE" ? "DEF" : course.Remark)
                                                         </span>
                                                     }
                                                     else
                                                     {
-                                                        <span class="inline-flex items-center px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold">
-                                                            <i class="material-icons text-xs mr-1">lock</i>
-                                                            Clear Fees
-                                                        </span>
+                                                        <span class="gp gp-locked"><i class="material-icons">lock</i> Clear Fees</span>
                                                     }
                                                 }
                                                 else
                                                 {
-                                                    <span class="inline-flex items-center px-3 py-1 bg-gray-100 text-secondary-600 rounded-full text-xs font-semibold">
-                                                        <i class="material-icons text-xs mr-1">schedule</i>
-                                                        NE
-                                                    </span>
+                                                    <span class="gp gp-pending"><i class="material-icons">schedule</i> NE</span>
                                                 }
                                             </td>
                                         </tr>
@@ -313,30 +802,31 @@
                                 </tbody>
                             </table>
                         </div>
+
                     </div>
                 }
+
             </div>
         }
     }
     else
     {
-        <div class="bg-white rounded-lg shadow-sm p-8 text-center">
-            <i class="material-icons text-gray-300" style="font-size: 48px;">assignment</i>
-            <h3 class="text-lg font-semibold text-gray-700 mt-4">No Results Available</h3>
-            <p class="text-gray-500 mt-2">
-                You don't have any published results yet.
+        <div class="empty-state">
+            <i class="material-icons">assignment</i>
+            <h3>No Results Available</h3>
+            <p>
                 @if (Model.OutstandingFees > 0)
                 {
-                    <strong>Clear your outstanding fees of ZMW @Model.OutstandingFees.ToString("N2")</strong>
-                    <span>to view your results when published.</span>
+                    <text>Clear your outstanding fees of <strong>ZMW @Model.OutstandingFees.ToString("N2")</strong> to view your results when published.</text>
                 }
                 else
                 {
-                    <span>Results will appear here once they are published.</span>
+                    <text>You don't have any published results yet. Results will appear here once they are published.</text>
                 }
             </p>
         </div>
     }
+
 </div>
 
 @functions {
@@ -349,8 +839,34 @@
         "ProceedOnProbation" => "Proceed with academic probation",
         "Exclude" => "Academic exclusion notice",
         "Withdraw" => "Withdrawal recommended",
-        "DEF" => "Deferred - Exam pending",
+        "DEF" => "Deferred — Exam pending",
         _ => standing
+    };
+
+    private string GetStandingCalloutClass(string standing) => standing switch
+    {
+        "Proceed" => "sc-green",
+        "ProceedWithRepeat" => "sc-yellow",
+        "RepeatYear" => "sc-red",
+        "RepeatSemester" => "sc-red",
+        "ProceedOnProbation" => "sc-orange",
+        "Exclude" => "sc-red",
+        "Withdraw" => "sc-red",
+        "DEF" => "sc-blue",
+        _ => "sc-gray"
+    };
+
+    private string GetStandingCssColor(string standing) => standing switch
+    {
+        "Proceed" => "#16a34a",
+        "ProceedWithRepeat" => "#d97706",
+        "RepeatYear" => "#e85c5c",
+        "RepeatSemester" => "#e85c5c",
+        "ProceedOnProbation" => "#ea580c",
+        "Exclude" => "#991b1b",
+        "Withdraw" => "#991b1b",
+        "DEF" => "#2563eb",
+        _ => "#475569"
     };
 
     private string GetStandingColorClass(string standing) => standing switch
@@ -364,45 +880,6 @@
         "Withdraw" => "text-red-700",
         "DEF" => "text-blue-600",
         _ => "text-secondary-600"
-    };
-
-    private string GetStandingBackgroundClass(string standing) => standing switch
-    {
-        "Proceed" => "bg-green-50",
-        "ProceedWithRepeat" => "bg-yellow-50",
-        "RepeatYear" => "bg-red-50",
-        "RepeatSemester" => "bg-red-50",
-        "ProceedOnProbation" => "bg-orange-50",
-        "Exclude" => "bg-red-50",
-        "Withdraw" => "bg-red-50",
-        "DEF" => "bg-blue-50",
-        _ => "bg-gray-50"
-    };
-
-    private string GetStandingBorderClass(string standing) => standing switch
-    {
-        "Proceed" => "border-green-200",
-        "ProceedWithRepeat" => "border-yellow-200",
-        "RepeatYear" => "border-red-200",
-        "RepeatSemester" => "border-red-200",
-        "ProceedOnProbation" => "border-orange-200",
-        "Exclude" => "border-red-300",
-        "Withdraw" => "border-red-300",
-        "DEF" => "border-blue-200",
-        _ => "border-gray-200"
-    };
-
-    private string GetStandingTextClass(string standing) => standing switch
-    {
-        "Proceed" => "text-green-800",
-        "ProceedWithRepeat" => "text-yellow-800",
-        "RepeatYear" => "text-red-800",
-        "RepeatSemester" => "text-red-800",
-        "ProceedOnProbation" => "text-orange-800",
-        "Exclude" => "text-red-900",
-        "Withdraw" => "text-red-900",
-        "DEF" => "text-blue-800",
-        _ => "text-secondary-800"
     };
 
     private string GetStandingIcon(string standing) => standing switch
@@ -420,138 +897,59 @@
 }
 
 <script>
-    // Filter by academic year
     function filterByYear() {
-        const selectedYear = document.getElementById('yearFilter').value;
-        const yearSections = document.querySelectorAll('.year-section');
-
-        yearSections.forEach(section => {
-            if (selectedYear === 'all') {
-                section.style.display = 'block';
-            } else {
-                const yearId = section.getAttribute('data-year-id');
-                section.style.display = yearId === selectedYear ? 'block' : 'none';
-            }
+        const selected = document.getElementById('yearFilter').value;
+        document.querySelectorAll('.year-section').forEach(s => {
+            s.style.display = (selected === 'all' || s.getAttribute('data-year-id') === selected) ? 'block' : 'none';
         });
     }
 
-    // Download semester transcript
-    async function downloadSemesterTranscript(studentId, academicYearId, semester) {
-        try {
-            showLoadingMessage('Generating semester transcript...');
-
-            const response = await fetch(`/StudentResults/DownloadSemesterTranscript?studentId=${studentId}&academicYearId=${academicYearId}&semester=${semester}`, {
-                method: 'GET'
-            });
-
-            if (response.ok) {
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `Semester_${semester}_Transcript_AY${academicYearId}.pdf`;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-                hideLoadingMessage();
-            } else {
-                hideLoadingMessage();
-                const errorText = await response.text();
-                console.error('Error response:', errorText);
-                alert('Failed to generate transcript. Please try again.');
-            }
-        } catch (error) {
-            console.error('Error downloading transcript:', error);
-            hideLoadingMessage();
-            alert('An error occurred while downloading the transcript.');
-        }
-    }
-
-    // Download year transcript
-    async function downloadYearTranscript(studentId, academicYearId) {
-        try {
-            showLoadingMessage('Generating year transcript...');
-
-            const response = await fetch(`/StudentResults/DownloadYearTranscript?studentId=${studentId}&academicYearId=${academicYearId}`, {
-                method: 'GET'
-            });
-
-            if (response.ok) {
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `Year_Transcript_AY${academicYearId}.pdf`;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-                hideLoadingMessage();
-            } else {
-                hideLoadingMessage();
-                const errorText = await response.text();
-                console.error('Error response:', errorText);
-                alert('Failed to generate transcript. Please try again.');
-            }
-        } catch (error) {
-            console.error('Error downloading transcript:', error);
-            hideLoadingMessage();
-            alert('An error occurred while downloading the transcript.');
-        }
-    }
-
-    // Download full transcript
-    async function downloadFullTranscript(studentId) {
-        try {
-            showLoadingMessage('Generating full transcript...');
-
-            const response = await fetch(`/StudentResults/DownloadFullTranscript?studentId=${studentId}`, {
-                method: 'GET'
-            });
-
-            if (response.ok) {
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'Full_Academic_Transcript.pdf';
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-                hideLoadingMessage();
-            } else {
-                hideLoadingMessage();
-                const errorText = await response.text();
-                console.error('Error response:', errorText);
-                alert('Failed to generate transcript. Please try again.');
-            }
-        } catch (error) {
-            console.error('Error downloading transcript:', error);
-            hideLoadingMessage();
-            alert('An error occurred while downloading the transcript.');
-        }
-    }
-
-    // Loading message helpers
     function showLoadingMessage(message) {
-        const loadingDiv = document.createElement('div');
-        loadingDiv.id = 'loadingMessage';
-        loadingDiv.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-        loadingDiv.innerHTML = `
-            <div class="bg-white rounded-lg p-6 flex items-center gap-3">
-                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                <span class="text-gray-700 font-medium">${message}</span>
-            </div>
-        `;
-        document.body.appendChild(loadingDiv);
+        const div = document.createElement('div');
+        div.id = 'srLoader';
+        div.className = 'sr-loader';
+        div.innerHTML = `<div class="sr-loader-box"><i class="material-icons sr-spin">refresh</i><span class="sr-loader-txt">${message}</span></div>`;
+        document.body.appendChild(div);
     }
 
     function hideLoadingMessage() {
-        const loadingDiv = document.getElementById('loadingMessage');
-        if (loadingDiv) {
-            loadingDiv.remove();
-        }
+        document.getElementById('srLoader')?.remove();
+    }
+
+    async function _downloadTranscript(url, filename) {
+        try {
+            showLoadingMessage('Generating transcript…');
+            const res = await fetch(url);
+            if (res.ok) {
+                const blob = await res.blob();
+                const a = document.createElement('a');
+                a.href = window.URL.createObjectURL(blob);
+                a.download = filename;
+                document.body.appendChild(a); a.click();
+                window.URL.revokeObjectURL(a.href); document.body.removeChild(a);
+            } else {
+                alert('Failed to generate transcript. Please try again.');
+            }
+        } catch { alert('An error occurred while downloading the transcript.'); }
+        finally { hideLoadingMessage(); }
+    }
+
+    function downloadSemesterTranscript(studentId, academicYearId, semester) {
+        _downloadTranscript(
+            `/StudentResults/DownloadSemesterTranscript?studentId=${studentId}&academicYearId=${academicYearId}&semester=${semester}`,
+            `Semester_${semester}_Transcript_AY${academicYearId}.pdf`
+        );
+    }
+    function downloadYearTranscript(studentId, academicYearId) {
+        _downloadTranscript(
+            `/StudentResults/DownloadYearTranscript?studentId=${studentId}&academicYearId=${academicYearId}`,
+            `Year_Transcript_AY${academicYearId}.pdf`
+        );
+    }
+    function downloadFullTranscript(studentId) {
+        _downloadTranscript(
+            `/StudentResults/DownloadFullTranscript?studentId=${studentId}`,
+            'Full_Academic_Transcript.pdf'
+        );
     }
 </script>

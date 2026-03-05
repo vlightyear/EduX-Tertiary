@@ -6,7 +6,6 @@
     var isReservationExpired = ViewBag.IsReservationExpired as bool? ?? false;
     var studentBalance = ViewBag.StudentBalance as decimal? ?? 0;
 
-    // Calculate fee based on payment type
     var period = application?.Period;
     decimal accommodationFee = 0;
     string feeDisplay = "";
@@ -26,1493 +25,1328 @@
     }
 
     var hasSufficientBalance = studentBalance >= accommodationFee;
-
     ViewData["Title"] = "Application Status";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<!-- SweetAlert2 CSS -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
-<style>
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-    }
+@section Styles {
+    <style>
+        @@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap');
 
-    .application-status-container {
-        min-height: calc(100vh - 80px);
-        padding: 1rem;
-    }
-
-    /* Header Section */
-    .status-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1rem;
-    }
-
-    .status-header-left {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-    }
-
-        .status-header-left i {
-            font-size: 2rem;
-            color: #16697a;
+        :root {
+            --coral: #e85c5c;
+            --coral-d: #c94040;
+            --navy: #1e2d5e;
+            --navy-l: #2e3f7a;
+            --mist: #f5f7fa;
+            --border: #e8ecf2;
+            --ink: #1a1f2e;
+            --text: #475569;
+            --green: #16a34a;
+            --green-l: #dcfce7;
         }
 
-    .status-header-title h1 {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #1e293b;
-        margin: 0;
-    }
-
-    .status-header-title p {
-        font-size: 0.875rem;
-        color: #64748b;
-        margin: 0;
-    }
-
-    /* Main Layout */
-    .status-content {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 1rem;
-    }
-
-    /* Desktop: Two columns */
-    @@media (min-width: 1024px) {
-        .status-content {
-            grid-template-columns: 2fr 1fr;
+        .as-wrap {
+            font-family: 'DM Sans',sans-serif;
         }
 
-        .application-status-container {
-            height: calc(100vh - 80px);
+        /* ── Hero ──────────────────────────── */
+        .as-hero {
+            background: linear-gradient(135deg,var(--navy) 0%,var(--navy-l) 55%,#3a2060 100%);
+            border-radius: 1.25rem;
+            padding: 1.75rem 2rem 4rem;
+            position: relative;
             overflow: hidden;
         }
 
-        .left-panel,
-        .right-panel {
-            overflow-y: auto;
-            max-height: calc(100vh - 180px);
-            padding-right: 0.5rem;
-        }
-    }
+            .as-hero::before {
+                content: '';
+                position: absolute;
+                top: -50px;
+                right: -50px;
+                width: 200px;
+                height: 200px;
+                background: rgba(232,92,92,.15);
+                border-radius: 50%;
+                pointer-events: none;
+            }
 
-    /* Mobile: Single column, everything stacks */
-    @@media (max-width: 1023px) {
-        .status-content {
+            .as-hero::after {
+                content: '';
+                position: absolute;
+                bottom: -60px;
+                left: 25%;
+                width: 280px;
+                height: 280px;
+                background: rgba(255,255,255,.03);
+                border-radius: 50%;
+                pointer-events: none;
+            }
+
+        .hero-inner {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .hero-eyebrow {
+            font-size: .72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .1em;
+            color: rgba(255,255,255,.5);
+            margin-bottom: .35rem;
+        }
+
+        .hero-title {
+            font-family: 'DM Serif Display',serif;
+            font-size: 1.85rem;
+            color: #fff;
+            line-height: 1.2;
+            margin-bottom: .3rem;
+        }
+
+        .hero-sub {
+            font-size: .82rem;
+            color: rgba(255,255,255,.55);
+        }
+
+        /* hero status pill */
+        .hero-status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: .4rem;
+            padding: .45rem .9rem;
+            border-radius: 2rem;
+            font-size: .75rem;
+            font-weight: 700;
+            align-self: flex-start;
+        }
+
+            .hero-status-pill i {
+                font-size: .85rem;
+            }
+
+            .hero-status-pill.pending {
+                background: rgba(245,158,11,.2);
+                color: #fde68a;
+                border: 1px solid rgba(245,158,11,.35);
+            }
+
+            .hero-status-pill.expired {
+                background: rgba(232,92,92,.2);
+                color: #fca5a5;
+                border: 1px solid rgba(232,92,92,.35);
+            }
+
+        /* ── Main two-col layout ───────────── */
+        .as-cols {
+            margin-top: -2.25rem;
+            position: relative;
+            z-index: 2;
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 1.25rem;
+            align-items: start;
+        }
+
+        .as-left, .as-right {
             display: flex;
             flex-direction: column;
+            gap: 1.25rem;
         }
 
-        .left-panel,
-        .right-panel {
-            width: 100%;
-        }
-    }
-
-    .left-panel,
-    .right-panel {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-    }
-
-    .card {
-        background: white;
-        border-radius: 0.5rem;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-
-    .card-header {
-        padding: 1rem;
-        border-bottom: 1px solid #e2e8f0;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-        .card-header i {
-            font-size: 1.25rem;
-            color: #16697a;
+        /* ── Cards ─────────────────────────── */
+        .aa-card {
+            background: #fff;
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 12px rgba(30,45,94,.06);
+            overflow: hidden;
         }
 
-        .card-header h3 {
-            font-size: 1.125rem;
-            font-weight: 600;
-            color: #1e293b;
-            margin: 0;
-        }
-
-    .card-body {
-        padding: 1rem;
-    }
-
-    /* Status Banner */
-    .status-banner {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        border: 2px solid;
-    }
-
-        .status-banner.pending {
-            background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%);
-            border-color: #f59e0b;
-        }
-
-        .status-banner.expired {
-            background: linear-gradient(135deg, #fee2e2 0%, #fca5a5 100%);
-            border-color: #ef4444;
-        }
-
-        .status-banner i {
-            font-size: 2.5rem;
-        }
-
-        .status-banner.pending i {
-            color: #f59e0b;
-        }
-
-        .status-banner.expired i {
-            color: #ef4444;
-        }
-
-    .status-banner-content h2 {
-        font-size: 1.25rem;
-        font-weight: 700;
-        margin: 0 0 0.25rem 0;
-    }
-
-    .status-banner.pending h2 {
-        color: #92400e;
-    }
-
-    .status-banner.expired h2 {
-        color: #991b1b;
-    }
-
-    .status-banner-content p {
-        font-size: 0.875rem;
-        margin: 0;
-    }
-
-    .status-banner.pending p {
-        color: #78350f;
-    }
-
-    .status-banner.expired p {
-        color: #7f1d1d;
-    }
-
-    /* Payment Type Badge */
-    .payment-type-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 4px 10px;
-        border-radius: 12px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        text-transform: uppercase;
-    }
-
-        .payment-type-badge.semester {
-            background: #e3f2fd;
-            color: #1565c0;
-        }
-
-        .payment-type-badge.year {
-            background: #e8f5e9;
-            color: #2e7d32;
-        }
-
-        .payment-type-badge.perday {
-            background: #fff3e0;
-            color: #e65100;
-        }
-
-        .payment-type-badge.fixed {
-            background: #f3e5f5;
-            color: #7b1fa2;
-        }
-
-    /* Fee Summary Card */
-    .fee-summary-card {
-        background: linear-gradient(135deg, #fef9e7 0%, #fdebd0 100%);
-        border: 2px solid #f9e79f;
-        border-radius: 0.5rem;
-        padding: 1rem;
-        margin-bottom: 1rem;
-    }
-
-        .fee-summary-card h4 {
-            color: #9a7b0a;
-            font-size: 0.875rem;
-            margin-bottom: 0.75rem;
+        .aa-card-head {
+            padding: .9rem 1.25rem;
+            border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: .5rem;
         }
 
-        .fee-summary-card .fee-amount {
-            font-size: 2rem;
-            font-weight: 800;
-            color: #7d6608;
-            margin-bottom: 0.25rem;
-        }
-
-        .fee-summary-card .fee-breakdown {
-            font-size: 0.875rem;
-            color: #9a7b0a;
-        }
-
-        .fee-summary-card .fee-details {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 0.75rem;
-            margin-top: 0.75rem;
-            padding-top: 0.75rem;
-            border-top: 1px solid #f9e79f;
-        }
-
-        .fee-summary-card .fee-detail-item {
-            text-align: center;
-        }
-
-            .fee-summary-card .fee-detail-item .label {
-                font-size: 0.625rem;
-                color: #9a7b0a;
-                text-transform: uppercase;
-                font-weight: 600;
+            .aa-card-head i {
+                font-size: 1rem;
+                color: var(--coral);
             }
 
-            .fee-summary-card .fee-detail-item .value {
-                font-size: 0.875rem;
-                color: #7d6608;
-                font-weight: 700;
-            }
+        .aa-card-title {
+            font-family: 'DM Serif Display',serif;
+            font-size: .95rem;
+            color: var(--ink);
+        }
 
-    /* Countdown Timer */
-    .countdown-timer {
-        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-        border: 2px solid #fbbf24;
-        border-radius: 0.5rem;
-        padding: 1rem;
-        text-align: center;
-    }
+        .aa-card-body {
+            padding: 1.25rem;
+        }
 
-        .countdown-timer h4 {
-            color: #92400e;
-            font-size: 1rem;
-            margin-bottom: 0.75rem;
-            font-weight: 600;
+        /* ── Expired state ─────────────────── */
+        .expired-banner {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            background: #fef2f2;
+            border: 1.5px solid #fecaca;
+            border-radius: .85rem;
+            padding: 1.25rem 1.35rem;
+        }
+
+        .expired-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            background: #fee2e2;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 0.5rem;
         }
 
-    .countdown-display {
-        display: flex;
-        justify-content: center;
-        gap: 1rem;
-        margin-bottom: 0.75rem;
-        flex-wrap: wrap;
-    }
+            .expired-icon i {
+                font-size: 1.3rem;
+                color: var(--coral);
+            }
 
-    .countdown-item {
-        background: white;
-        padding: 0.75rem;
-        border-radius: 0.5rem;
-        min-width: 80px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-
-    .countdown-value {
-        font-size: 1.875rem;
-        font-weight: 800;
-        color: #f59e0b;
-        display: block;
-        line-height: 1;
-    }
-
-    .countdown-label {
-        font-size: 0.75rem;
-        color: #78350f;
-        text-transform: uppercase;
-        font-weight: 600;
-        margin-top: 0.25rem;
-    }
-
-    .countdown-message {
-        color: #78350f;
-        font-size: 0.75rem;
-    }
-
-    /* Detail Grid */
-    .detail-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 0.75rem;
-    }
-
-    .detail-item {
-        background: #f8fafc;
-        padding: 0.75rem;
-        border-radius: 0.375rem;
-        border: 1px solid #e2e8f0;
-    }
-
-    .detail-label {
-        font-size: 0.75rem;
-        color: #64748b;
-        font-weight: 600;
-        text-transform: uppercase;
-        margin-bottom: 0.25rem;
-        letter-spacing: 0.025em;
-    }
-
-    .detail-value {
-        font-size: 1rem;
-        color: #16697a;
-        font-weight: 700;
-    }
-
-        .detail-value.highlight {
-            color: #10b981;
+        .expired-title {
+            font-family: 'DM Serif Display',serif;
+            font-size: 1.1rem;
+            color: #991b1b;
+            margin-bottom: .3rem;
         }
 
-    /* Balance Display */
-    .balance-display {
-        text-align: center;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        border: 2px solid;
-    }
-
-        .balance-display.sufficient {
-            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-            border-color: #86efac;
+        .expired-text {
+            font-size: .8rem;
+            color: #7f1d1d;
+            line-height: 1.6;
         }
 
-        .balance-display.insufficient {
-            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-            border-color: #fca5a5;
-        }
-
-    .balance-label {
-        font-size: 0.75rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        margin-bottom: 0.5rem;
-    }
-
-    .balance-display.sufficient .balance-label {
-        color: #064e3b;
-    }
-
-    .balance-display.insufficient .balance-label {
-        color: #7f1d1d;
-    }
-
-    .balance-amount {
-        font-size: 2rem;
-        font-weight: 800;
-        margin-bottom: 0.5rem;
-    }
-
-    .balance-display.sufficient .balance-amount {
-        color: #10b981;
-    }
-
-    .balance-display.insufficient .balance-amount {
-        color: #ef4444;
-    }
-
-    .balance-status {
-        font-size: 0.875rem;
-        font-weight: 600;
-    }
-
-    .balance-display.sufficient .balance-status {
-        color: #065f46;
-    }
-
-    .balance-display.insufficient .balance-status {
-        color: #991b1b;
-    }
-
-    /* Fee Comparison */
-    .fee-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-        gap: 0.75rem;
-        margin-bottom: 1rem;
-    }
-
-    .fee-item {
-        background: #f8fafc;
-        padding: 0.75rem;
-        border-radius: 0.375rem;
-        border: 1px solid #e2e8f0;
-        text-align: center;
-    }
-
-    .fee-item-label {
-        font-size: 0.75rem;
-        color: #64748b;
-        font-weight: 600;
-        text-transform: uppercase;
-        margin-bottom: 0.5rem;
-    }
-
-    .fee-item-value {
-        font-size: 1.25rem;
-        font-weight: 800;
-        color: #16697a;
-    }
-
-    /* Payment Methods */
-    .payment-method {
-        background: #f8fafc;
-        border: 2px solid #e2e8f0;
-        border-radius: 0.5rem;
-        padding: 1rem;
-        margin-bottom: 0.75rem;
-        transition: all 0.2s ease;
-    }
-
-        .payment-method:hover:not(.disabled) {
-            border-color: #10b981;
-            box-shadow: 0 4px 6px rgba(16, 185, 129, 0.1);
-        }
-
-        .payment-method.disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .payment-method h4 {
-            color: #1e293b;
-            font-size: 1rem;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
+        /* ── Status banner (pending) ───────── */
+        .status-banner {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: .85rem;
+            padding: .9rem 1.1rem;
+            border-radius: .75rem;
         }
 
-            .payment-method h4 i {
-                font-size: 1.25rem;
-                color: #10b981;
+            .status-banner.pending {
+                background: #fffbeb;
+                border: 1.5px solid #fde68a;
             }
 
-        .payment-method.disabled h4 i {
-            color: #94a3b8;
-        }
-
-        .payment-method p {
-            color: #64748b;
-            font-size: 0.875rem;
-            line-height: 1.5;
-            margin-bottom: 0.75rem;
-        }
-
-        /* Pay Later Method */
-        .payment-method.pay-later {
-            border-color: #e2e8f0;
-        }
-
-            .payment-method.pay-later:hover {
-                border-color: #f59e0b;
-                box-shadow: 0 4px 6px rgba(245, 158, 11, 0.1);
-            }
-
-            .payment-method.pay-later h4 i {
-                color: #f59e0b;
-            }
-
-    /* Instructions */
-    .instructions-box {
-        background: #dbeafe;
-        border: 2px solid #93c5fd;
-        border-radius: 0.5rem;
-        padding: 1rem;
-    }
-
-        .instructions-box i {
-            font-size: 1.5rem;
-            color: #2563eb;
-            margin-bottom: 0.5rem;
-        }
-
-        .instructions-box h4 {
-            color: #1e40af;
-            font-size: 1rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        .instructions-box p {
-            color: #1e40af;
-            font-size: 0.875rem;
-            line-height: 1.5;
-            margin: 0;
-        }
-
-        .instructions-box strong {
-            color: #1e3a8a;
-        }
-
-    /* Alert Box */
-    .alert-box {
-        padding: 1rem;
-        border-radius: 0.5rem;
-        display: flex;
-        align-items: flex-start;
-        gap: 0.75rem;
-        border: 2px solid;
-    }
-
-        .alert-box i {
-            font-size: 1.5rem;
+        .status-banner-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
             flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .alert-box p {
-            font-size: 0.875rem;
-            line-height: 1.5;
-            margin: 0;
+        .status-banner.pending .status-banner-icon {
+            background: #fef3c7;
         }
 
-    .alert-warning {
-        background: #fff7ed;
-        border-color: #fed7aa;
-    }
+            .status-banner.pending .status-banner-icon i {
+                color: #d97706;
+                font-size: 1.1rem;
+            }
 
-        .alert-warning i {
-            color: #d97706;
-        }
-
-        .alert-warning p {
+        .status-banner-title {
+            font-size: .88rem;
+            font-weight: 700;
             color: #92400e;
         }
 
-    .alert-danger {
-        background: #fee2e2;
-        border-color: #fca5a5;
-    }
-
-        .alert-danger i {
-            color: #dc2626;
+        .status-banner-sub {
+            font-size: .75rem;
+            color: #a16207;
+            margin-top: .1rem;
         }
 
-        .alert-danger p {
-            color: #991b1b;
-            font-weight: 600;
+        /* ── Fee summary ───────────────────── */
+        .fee-hero {
+            background: linear-gradient(135deg,#fffbeb,#fef3c7);
+            border: 1.5px solid #fde68a;
+            border-radius: .85rem;
+            padding: 1.1rem 1.25rem;
         }
 
-    /* Buttons */
-    .btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        padding: 0.75rem 1.5rem;
-        border-radius: 0.5rem;
-        font-size: 0.875rem;
-        font-weight: 600;
-        text-decoration: none;
-        transition: all 0.2s ease;
-        border: none;
-        cursor: pointer;
-        width: 100%;
-    }
-
-        .btn i {
-            font-size: 1.125rem;
+        .fee-hero-lbl {
+            font-size: .68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: #a16207;
+            margin-bottom: .25rem;
         }
 
-    .btn-success {
-        background: #10b981;
-        color: white;
-    }
-
-        .btn-success:hover:not(:disabled) {
-            background: #059669;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);
+        .fee-hero-amount {
+            font-family: 'DM Serif Display',serif;
+            font-size: 2.2rem;
+            color: #92400e;
+            line-height: 1;
+            margin-bottom: .2rem;
         }
 
-    .btn-warning {
-        background: #f59e0b;
-        color: white;
-    }
-
-        .btn-warning:hover:not(:disabled) {
-            background: #d97706;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 6px rgba(245, 158, 11, 0.3);
+        .fee-hero-break {
+            font-size: .75rem;
+            color: #a16207;
+            margin-bottom: .85rem;
         }
 
-    .btn-primary {
-        background: #16697a;
-        color: white;
-    }
-
-        .btn-primary:hover {
-            background: #0d4b56;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 6px rgba(22, 105, 122, 0.3);
+        .fee-cells {
+            display: grid;
+            grid-template-columns: repeat(3,1fr);
+            gap: .5rem;
         }
 
-    .btn-secondary {
-        background: #e2e8f0;
-        color: #475569;
-    }
-
-        .btn-secondary:hover {
-            background: #cbd5e1;
-        }
-
-    .btn:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-    }
-
-        .btn:disabled:hover {
-            transform: none;
-            box-shadow: none;
-        }
-
-    .action-buttons {
-        display: flex;
-        gap: 0.75rem;
-        margin-top: 1rem;
-    }
-
-    /* Loading Overlay */
-    .loading-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        display: none;
-        justify-content: center;
-        align-items: center;
-        z-index: 10000;
-    }
-
-        .loading-overlay.show {
-            display: flex;
-        }
-
-    .loading-spinner {
-        background: white;
-        padding: 2rem;
-        border-radius: 0.5rem;
-        text-align: center;
-    }
-
-    .spinner {
-        border: 4px solid #e2e8f0;
-        border-top: 4px solid #16697a;
-        border-radius: 50%;
-        width: 40px;
-        height: 40px;
-        animation: spin 1s linear infinite;
-        margin: 0 auto 1rem;
-    }
-
-    @@keyframes spin {
-        0% {
-            transform: rotate(0deg);
-        }
-
-        100% {
-            transform: rotate(360deg);
-        }
-    }
-
-    .loading-spinner p {
-        color: #16697a;
-        font-size: 0.875rem;
-        font-weight: 600;
-        margin: 0;
-    }
-
-    /* Scrollbar Styling - Desktop only */
-    @@media (min-width: 1024px) {
-        .left-panel::-webkit-scrollbar, .right-panel::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .left-panel::-webkit-scrollbar-track,
-        .right-panel::-webkit-scrollbar-track {
-            background: #f1f5f9;
-            border-radius: 3px;
-        }
-
-        .left-panel::-webkit-scrollbar-thumb,
-        .right-panel::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 3px;
-        }
-
-            .left-panel::-webkit-scrollbar-thumb:hover,
-            .right-panel::-webkit-scrollbar-thumb:hover {
-                background: #94a3b8;
-            }
-    }
-
-    /* Mobile Specific Adjustments */
-    @@media (max-width: 768px) {
-        .application-status-container {
-            padding: 0.75rem;
-        }
-
-        .status-header-left i {
-            font-size: 1.5rem;
-        }
-
-        .status-header-title h1 {
-            font-size: 1.25rem;
-        }
-
-        .status-header-title p {
-            font-size: 0.75rem;
-        }
-
-        .status-banner {
-            flex-direction: column;
+        .fee-cell {
+            background: rgba(255,255,255,.7);
+            border: 1px solid #fde68a;
+            border-radius: .5rem;
+            padding: .5rem .6rem;
             text-align: center;
-            padding: 0.875rem;
         }
 
-            .status-banner i {
-                font-size: 2rem;
+        .fee-cell-lbl {
+            font-size: .62rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            color: #a16207;
+            margin-bottom: .15rem;
+        }
+
+        .fee-cell-val {
+            font-size: .88rem;
+            font-weight: 800;
+            color: #92400e;
+        }
+
+        /* ── Countdown ─────────────────────── */
+        .countdown-card {
+            background: #fff;
+            border-radius: 1rem;
+            border: 1.5px solid #fde68a;
+            box-shadow: 0 2px 12px rgba(245,158,11,.1);
+            overflow: hidden;
+        }
+
+        .countdown-head {
+            padding: .8rem 1.1rem;
+            border-bottom: 1px solid #fde68a;
+            display: flex;
+            align-items: center;
+            gap: .45rem;
+            background: linear-gradient(135deg,#fffbeb,#fef3c7);
+        }
+
+            .countdown-head i {
+                font-size: .95rem;
+                color: #d97706;
             }
 
-        .status-banner-content h2 {
-            font-size: 1.125rem;
-        }
+            .countdown-head span {
+                font-family: 'DM Serif Display',serif;
+                font-size: .9rem;
+                color: #92400e;
+            }
 
-        .countdown-item {
-            min-width: 70px;
-            padding: 0.625rem;
-        }
-
-        .countdown-value {
-            font-size: 1.5rem;
-        }
-
-        .countdown-label {
-            font-size: 0.625rem;
-        }
-
-        .balance-amount {
-            font-size: 1.5rem;
-        }
-
-        .detail-grid,
-        .fee-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-
-        .action-buttons {
-            flex-direction: column;
-        }
-
-        .card-header {
-            padding: 0.875rem;
-        }
-
-        .card-body {
-            padding: 0.875rem;
-        }
-
-        .fee-summary-card .fee-details {
-            grid-template-columns: repeat(3, 1fr);
-        }
-    }
-
-    /* Very Small Mobile */
-    @@media (max-width: 480px) {
-        .detail-grid {
-            grid-template-columns: 1fr;
+        .countdown-body {
+            padding: 1rem 1.1rem;
         }
 
         .countdown-display {
-            gap: 0.5rem;
+            display: flex;
+            justify-content: center;
+            gap: .65rem;
+            margin-bottom: .75rem;
         }
 
         .countdown-item {
-            min-width: 60px;
-            padding: 0.5rem;
+            background: var(--mist);
+            border: 1.5px solid var(--border);
+            border-radius: .6rem;
+            padding: .6rem .5rem;
+            min-width: 72px;
+            text-align: center;
         }
 
-        .countdown-value {
-            font-size: 1.25rem;
+        .countdown-val {
+            font-family: 'DM Serif Display',serif;
+            font-size: 1.75rem;
+            color: #d97706;
+            display: block;
+            line-height: 1;
         }
 
-        .fee-summary-card .fee-details {
-            grid-template-columns: 1fr 1fr 1fr;
+        .countdown-lbl {
+            font-size: .62rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #a16207;
+            margin-top: .2rem;
         }
-    }
-</style>
 
-<div class="application-status-container">
-    <!-- Header Section -->
-    <div class="status-header">
-        <div class="status-header-left">
-            <i class="material-icons">assignment</i>
-            <div class="status-header-title">
-                <h1>Application Status</h1>
-                <p>Track your accommodation application and complete payment</p>
+        .countdown-deadline {
+            font-size: .72rem;
+            color: #a16207;
+            text-align: center;
+        }
+
+            .countdown-deadline strong {
+                color: #92400e;
+            }
+
+        /* ── Detail grids ──────────────────── */
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill,minmax(150px,1fr));
+            gap: .5rem;
+        }
+
+        .detail-cell {
+            background: var(--mist);
+            border: 1px solid var(--border);
+            border-radius: .55rem;
+            padding: .6rem .75rem;
+        }
+
+        .detail-lbl {
+            font-size: .65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            color: #94a3b8;
+            margin-bottom: .15rem;
+        }
+
+        .detail-val {
+            font-size: .84rem;
+            font-weight: 700;
+            color: var(--ink);
+        }
+
+            .detail-val.teal {
+                color: #0d9488;
+            }
+
+            .detail-val.amber {
+                color: #d97706;
+            }
+
+        /* payment type badge */
+        .pay-badge {
+            display: inline-flex;
+            align-items: center;
+            font-size: .68rem;
+            font-weight: 700;
+            padding: .2rem .55rem;
+            border-radius: 2rem;
+        }
+
+            .pay-badge.semester {
+                background: #dbeafe;
+                color: #1d4ed8;
+            }
+
+            .pay-badge.year {
+                background: var(--green-l);
+                color: #166534;
+            }
+
+            .pay-badge.perday {
+                background: #ffedd5;
+                color: #9a3412;
+            }
+
+            .pay-badge.fixed {
+                background: #f3e8ff;
+                color: #7c3aed;
+            }
+
+        /* ── Alert callouts ────────────────── */
+        .callout {
+            display: flex;
+            align-items: flex-start;
+            gap: .7rem;
+            border-radius: .65rem;
+            padding: .85rem 1rem;
+        }
+
+            .callout i {
+                font-size: 1rem;
+                flex-shrink: 0;
+                margin-top: .05rem;
+            }
+
+        .callout-text {
+            font-size: .78rem;
+            line-height: 1.65;
+        }
+
+            .callout-text strong {
+                font-weight: 700;
+            }
+
+        .callout-warning {
+            background: #fffbeb;
+            border: 1.5px solid #fde68a;
+            color: #92400e;
+        }
+
+            .callout-warning i {
+                color: #d97706;
+            }
+
+        .callout-danger {
+            background: #fef2f2;
+            border: 1.5px solid #fecaca;
+            color: #991b1b;
+        }
+
+            .callout-danger i {
+                color: var(--coral);
+            }
+
+        .callout-blue {
+            background: #eff6ff;
+            border: 1.5px solid #bfdbfe;
+            color: #1e40af;
+        }
+
+            .callout-blue i {
+                color: #2563eb;
+            }
+
+        /* ── Right panel ───────────────────── */
+
+        /* balance display */
+        .balance-box {
+            border-radius: .75rem;
+            padding: 1rem 1.1rem;
+            text-align: center;
+            border: 1.5px solid;
+        }
+
+            .balance-box.ok {
+                background: #f0fdf4;
+                border-color: #86efac;
+            }
+
+            .balance-box.low {
+                background: #fef2f2;
+                border-color: #fecaca;
+            }
+
+        .balance-lbl {
+            font-size: .68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            margin-bottom: .4rem;
+        }
+
+        .balance-box.ok .balance-lbl {
+            color: #166534;
+        }
+
+        .balance-box.low .balance-lbl {
+            color: #991b1b;
+        }
+
+        .balance-amount {
+            font-family: 'DM Serif Display',serif;
+            font-size: 2rem;
+            margin-bottom: .35rem;
+        }
+
+        .balance-box.ok .balance-amount {
+            color: var(--green);
+        }
+
+        .balance-box.low .balance-amount {
+            color: var(--coral);
+        }
+
+        .balance-status {
+            display: inline-flex;
+            align-items: center;
+            gap: .25rem;
+            font-size: .75rem;
+            font-weight: 700;
+            padding: .2rem .55rem;
+            border-radius: 2rem;
+        }
+
+        .balance-box.ok .balance-status {
+            background: var(--green-l);
+            color: #166534;
+        }
+
+        .balance-box.low .balance-status {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .balance-status i {
+            font-size: .8rem;
+        }
+
+        /* fee comparison mini grid */
+        .fee-compare {
+            display: grid;
+            grid-template-columns: repeat(auto-fill,minmax(110px,1fr));
+            gap: .5rem;
+        }
+
+        .fee-compare-cell {
+            background: var(--mist);
+            border: 1px solid var(--border);
+            border-radius: .55rem;
+            padding: .6rem .75rem;
+            text-align: center;
+        }
+
+        .fee-compare-lbl {
+            font-size: .65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            color: #94a3b8;
+            margin-bottom: .2rem;
+        }
+
+        .fee-compare-val {
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--ink);
+        }
+
+        /* payment method tiles */
+        .pay-method {
+            background: var(--mist);
+            border: 1.5px solid var(--border);
+            border-radius: .75rem;
+            padding: .9rem 1rem;
+            transition: border-color .15s,box-shadow .15s;
+        }
+
+            .pay-method:not(.disabled):hover {
+                border-color: var(--coral);
+                box-shadow: 0 4px 16px rgba(232,92,92,.1);
+            }
+
+            .pay-method.disabled {
+                opacity: .55;
+                pointer-events: none;
+            }
+
+        .pay-method-head {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            margin-bottom: .45rem;
+        }
+
+        .pay-method-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: .4rem;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .pay-method-icon i {
+                font-size: .95rem;
+            }
+
+        .pay-method-title {
+            font-size: .85rem;
+            font-weight: 700;
+            color: var(--ink);
+        }
+
+        .pay-method-desc {
+            font-size: .75rem;
+            color: var(--text);
+            line-height: 1.55;
+            margin-bottom: .75rem;
+        }
+
+        /* action buttons */
+        .btn-pay-balance {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: .4rem;
+            background: var(--green);
+            color: #fff;
+            border: none;
+            border-radius: .6rem;
+            font-size: .82rem;
+            font-weight: 700;
+            font-family: inherit;
+            padding: .6rem;
+            cursor: pointer;
+            transition: background .15s;
+            box-shadow: 0 4px 12px rgba(22,163,74,.25);
+        }
+
+            .btn-pay-balance:hover {
+                background: #15803d;
+            }
+
+            .btn-pay-balance i {
+                font-size: .9rem;
+            }
+
+        .btn-pay-momo {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: .4rem;
+            background: #d97706;
+            color: #fff;
+            border: none;
+            border-radius: .6rem;
+            font-size: .82rem;
+            font-weight: 700;
+            font-family: inherit;
+            padding: .6rem;
+            cursor: pointer;
+            transition: background .15s;
+            box-shadow: 0 4px 12px rgba(217,119,6,.25);
+        }
+
+            .btn-pay-momo:hover {
+                background: #b45309;
+            }
+
+            .btn-pay-momo i {
+                font-size: .9rem;
+            }
+
+        .btn-disabled {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: .4rem;
+            background: #e2e8f0;
+            color: #94a3b8;
+            border: none;
+            border-radius: .6rem;
+            font-size: .82rem;
+            font-weight: 700;
+            font-family: inherit;
+            padding: .6rem;
+            cursor: not-allowed;
+            opacity: .7;
+        }
+
+            .btn-disabled i {
+                font-size: .9rem;
+            }
+
+        .btn-secondary-row {
+            display: flex;
+            gap: .65rem;
+        }
+
+        .btn-refresh-sm {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: .35rem;
+            background: var(--navy);
+            color: #fff;
+            border: none;
+            border-radius: .6rem;
+            font-size: .78rem;
+            font-weight: 700;
+            font-family: inherit;
+            padding: .55rem;
+            cursor: pointer;
+            transition: background .15s;
+        }
+
+            .btn-refresh-sm:hover {
+                background: var(--navy-l);
+            }
+
+            .btn-refresh-sm i {
+                font-size: .85rem;
+            }
+
+        .btn-home-sm {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: .35rem;
+            background: var(--mist);
+            color: var(--text);
+            text-decoration: none;
+            border: 1.5px solid var(--border);
+            border-radius: .6rem;
+            font-size: .78rem;
+            font-weight: 700;
+            font-family: inherit;
+            padding: .55rem;
+            cursor: pointer;
+            transition: background .15s;
+        }
+
+            .btn-home-sm:hover {
+                background: #e2e8f0;
+                color: var(--ink);
+            }
+
+            .btn-home-sm i {
+                font-size: .85rem;
+            }
+
+        /* expired action row */
+        .btn-new-app {
+            display: inline-flex;
+            align-items: center;
+            gap: .4rem;
+            background: var(--coral);
+            color: #fff;
+            border: none;
+            border-radius: .65rem;
+            font-size: .82rem;
+            font-weight: 700;
+            font-family: inherit;
+            padding: .65rem 1.25rem;
+            cursor: pointer;
+            transition: background .15s;
+            text-decoration: none;
+            box-shadow: 0 4px 12px rgba(232,92,92,.25);
+        }
+
+            .btn-new-app:hover {
+                background: var(--coral-d);
+                color: #fff;
+            }
+
+        /* ── Loading overlay ───────────────── */
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15,20,40,.55);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+            .loading-overlay.show {
+                display: flex;
+            }
+
+        .loading-box {
+            background: #fff;
+            border-radius: 1rem;
+            padding: 1.75rem 2.25rem;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(15,20,40,.2);
+        }
+
+        .spin {
+            animation: spin 1s linear infinite;
+            font-size: 2rem;
+            color: var(--coral);
+            display: block;
+            margin: 0 auto .65rem;
+        }
+        @@keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-box h3 {
+            font-family: 'DM Serif Display',serif;
+            font-size: 1rem;
+            color: var(--ink);
+        }
+
+        @@media (max-width:960px) {
+            .as-cols {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @@media (max-width:540px) {
+            .detail-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .fee-cells {
+                grid-template-columns: 1fr 1fr 1fr;
+            }
+
+            .countdown-item {
+                min-width: 62px;
+            }
+
+            .countdown-val {
+                font-size: 1.4rem;
+            }
+        }
+    </style>
+}
+
+<!-- Loading overlay -->
+<div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-box">
+        <i class="material-icons spin">refresh</i>
+        <h3>Processing…</h3>
+    </div>
+</div>
+
+<div class="as-wrap p-4 md:p-6">
+
+    <!-- Hero -->
+    <div class="as-hero mb-6">
+        <div class="hero-inner">
+            <div>
+                <p class="hero-eyebrow">Student Accommodation</p>
+                <h1 class="hero-title">Application Status</h1>
+                <p class="hero-sub">Track your application and complete payment to secure your bed space</p>
             </div>
+            @if (isReservationExpired)
+            {
+                <span class="hero-status-pill expired"><i class="material-icons">error</i> Expired</span>
+            }
+            else
+            {
+                <span class="hero-status-pill pending"><i class="material-icons">hourglass_empty</i> Payment Pending</span>
+            }
         </div>
     </div>
 
+    <!-- ── Expired state ── -->
     @if (isReservationExpired)
     {
-        <!-- Expired Status View -->
-        <div class="card">
-            <div class="card-body">
-                <div class="status-banner expired">
-                    <i class="material-icons">error</i>
-                    <div class="status-banner-content">
-                        <h2>Reservation Expired</h2>
-                        <p>Your bed reservation has expired and the bed space has been released</p>
-                    </div>
-                </div>
+        <div style="max-width:680px; margin:0 auto; display:flex; flex-direction:column; gap:1.25rem;">
 
-                <div class="alert-box alert-danger" style="margin-top: 1rem;">
-                    <i class="material-icons">warning</i>
-                    <p>
-                        <strong>Your application expired on @reservationExpiryTime?.ToString("MMMM dd, yyyy 'at' hh:mm tt").</strong><br />
-                        Payment was not received within the @config?.ReservationHoursValidity hour deadline, so your selected bed space has been released back to available inventory.
-                        You may submit a new application if the accommodation period is still open.
-                    </p>
+            <div class="expired-banner">
+                <div class="expired-icon"><i class="material-icons">block</i></div>
+                <div>
+                    <p class="expired-title">Reservation Expired</p>
+                    <p class="expired-text">Your bed reservation expired on <strong>@reservationExpiryTime?.ToString("MMMM dd, yyyy 'at' hh:mm tt")</strong>. Payment was not received within the @config?.ReservationHoursValidity-hour deadline, so the bed space has been released back to inventory.</p>
                 </div>
+            </div>
 
-                <div class="action-buttons">
-                    <a href="@Url.Action("Index", "StudentAccommodationApplication")" class="btn btn-primary">
-                        <i class="material-icons">refresh</i>
-                        Submit New Application
-                    </a>
-                    <a href="/" class="btn btn-secondary">
-                        <i class="material-icons">home</i>
-                        Return to Dashboard
-                    </a>
-                </div>
+            <div class="callout callout-danger">
+                <i class="material-icons">warning</i>
+                <p class="callout-text">You may submit a new application if the accommodation period is still open. Your previous selection is no longer reserved.</p>
+            </div>
+
+            <div style="display:flex; gap:.65rem; flex-wrap:wrap;">
+                <a href="@Url.Action("Index", "StudentAccommodationApplication")" class="btn-new-app">
+                    <i class="material-icons" style="font-size:.9rem;">add_circle</i> Submit New Application
+                </a>
+                <a href="/" class="btn-home-sm" style="flex:0 0 auto;padding:.65rem 1rem;">
+                    <i class="material-icons" style="font-size:.9rem;">home</i> Dashboard
+                </a>
             </div>
         </div>
     }
     else
     {
-        <!-- Main Status Content -->
-        <div class="status-content">
-            <!-- Left Panel -->
-            <div class="left-panel">
-                <!-- Status Banner -->
+        <!-- ── Active pending state — two columns ── -->
+        <div class="as-cols">
+
+            <!-- Left panel -->
+            <div class="as-left">
+
+                <!-- Status banner -->
                 <div class="status-banner pending">
-                    <i class="material-icons">hourglass_empty</i>
-                    <div class="status-banner-content">
-                        <h2>Application Pending</h2>
-                        <p>Your application is awaiting payment to complete the allocation</p>
+                    <div class="status-banner-icon"><i class="material-icons">hourglass_empty</i></div>
+                    <div>
+                        <p class="status-banner-title">Application Pending Payment</p>
+                        <p class="status-banner-sub">Complete payment before the deadline to secure your bed space</p>
                     </div>
                 </div>
 
-                <!-- Fee Summary Card -->
+                <!-- Fee summary -->
                 @if (period != null && accommodationFee > 0)
                 {
-                    <div class="fee-summary-card">
-                        <h4>
-                            <i class="material-icons">receipt_long</i>
-                            Accommodation Fee Summary
-                        </h4>
-                        <div class="fee-amount">K @accommodationFee.ToString("N2")</div>
-                        <div class="fee-breakdown">@feeDisplay</div>
+                    <div class="fee-hero">
+                        <p class="fee-hero-lbl">Accommodation Fee</p>
+                        <p class="fee-hero-amount">K @accommodationFee.ToString("N2")</p>
+                        <p class="fee-hero-break">@feeDisplay</p>
                         @if (period.TypeOfPayment == "PerDay")
                         {
-                            <div class="fee-details">
-                                <div class="fee-detail-item">
-                                    <div class="label">Rate/Day</div>
-                                    <div class="value">K @period.TypeOfPaymentAmount.ToString("N2")</div>
-                                </div>
-                                <div class="fee-detail-item">
-                                    <div class="label">Days</div>
-                                    <div class="value">@(application?.NumberOfDays ?? 1)</div>
-                                </div>
-                                <div class="fee-detail-item">
-                                    <div class="label">Total</div>
-                                    <div class="value">K @accommodationFee.ToString("N2")</div>
-                                </div>
+                            <div class="fee-cells">
+                                <div class="fee-cell"><p class="fee-cell-lbl">Rate/Day</p><p class="fee-cell-val">K @period.TypeOfPaymentAmount.ToString("N2")</p></div>
+                                <div class="fee-cell"><p class="fee-cell-lbl">Days</p><p class="fee-cell-val">@(application?.NumberOfDays ?? 1)</p></div>
+                                <div class="fee-cell"><p class="fee-cell-lbl">Total</p><p class="fee-cell-val">K @accommodationFee.ToString("N2")</p></div>
                             </div>
                         }
                     </div>
                 }
 
-                <!-- Countdown Timer -->
+                <!-- Countdown timer -->
                 @if (reservationExpiryTime.HasValue)
                 {
-                    <div class="countdown-timer">
-                        <h4>
+                    <div class="countdown-card">
+                        <div class="countdown-head">
                             <i class="material-icons">timer</i>
-                            Time Remaining to Complete Payment
-                        </h4>
-                        <div class="countdown-display">
-                            <div class="countdown-item">
-                                <span class="countdown-value" id="hoursLeft">--</span>
-                                <span class="countdown-label">Hours</span>
-                            </div>
-                            <div class="countdown-item">
-                                <span class="countdown-value" id="minutesLeft">--</span>
-                                <span class="countdown-label">Minutes</span>
-                            </div>
-                            <div class="countdown-item">
-                                <span class="countdown-value" id="secondsLeft">--</span>
-                                <span class="countdown-label">Seconds</span>
-                            </div>
+                            <span>Time Remaining to Complete Payment</span>
                         </div>
-                        <p class="countdown-message">
-                            <strong>Deadline:</strong> @reservationExpiryTime?.ToString("MMMM dd, yyyy 'at' hh:mm tt")
-                        </p>
+                        <div class="countdown-body">
+                            <div class="countdown-display">
+                                <div class="countdown-item"><span class="countdown-val" id="hoursLeft">--</span><p class="countdown-lbl">Hours</p></div>
+                                <div class="countdown-item"><span class="countdown-val" id="minutesLeft">--</span><p class="countdown-lbl">Minutes</p></div>
+                                <div class="countdown-item"><span class="countdown-val" id="secondsLeft">--</span><p class="countdown-lbl">Seconds</p></div>
+                            </div>
+                            <p class="countdown-deadline"><strong>Deadline:</strong> @reservationExpiryTime?.ToString("MMMM dd, yyyy 'at' hh:mm tt")</p>
+                        </div>
                     </div>
                 }
 
-                <!-- Application Details -->
-                <div class="card">
-                    <div class="card-header">
+                <!-- Application details -->
+                <div class="aa-card">
+                    <div class="aa-card-head">
                         <i class="material-icons">info</i>
-                        <h3>Application Details</h3>
+                        <h3 class="aa-card-title">Application Details</h3>
                     </div>
-                    <div class="card-body">
+                    <div class="aa-card-body">
                         <div class="detail-grid">
-                            <div class="detail-item">
-                                <div class="detail-label">Application ID</div>
-                                <div class="detail-value">#@application?.ApplicationId</div>
+                            <div class="detail-cell"><p class="detail-lbl">Application ID</p><p class="detail-val">#@application?.ApplicationId</p></div>
+                            <div class="detail-cell"><p class="detail-lbl">Date</p><p class="detail-val">@application?.ApplicationDate.ToString("MMM dd, yyyy")</p></div>
+                            <div class="detail-cell">
+                                <p class="detail-lbl">Status</p>
+                                <p class="detail-val amber">@application?.Status</p>
                             </div>
-                            <div class="detail-item">
-                                <div class="detail-label">Application Date</div>
-                                <div class="detail-value">@application?.ApplicationDate.ToString("MMM dd, yyyy")</div>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-label">Status</div>
-                                <div class="detail-value" style="color: #f59e0b;">@application?.Status</div>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-label">Period Type</div>
-                                <div class="detail-value">@period?.Type</div>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-label">Payment Type</div>
-                                <div class="detail-value">
-                                    <span class="payment-type-badge @period?.TypeOfPayment?.ToLower()">
-                                        @period?.TypeOfPayment
-                                    </span>
-                                </div>
+                            <div class="detail-cell"><p class="detail-lbl">Period Type</p><p class="detail-val">@period?.Type</p></div>
+                            <div class="detail-cell">
+                                <p class="detail-lbl">Payment Type</p>
+                                <span class="pay-badge @period?.TypeOfPayment?.ToLower()">@period?.TypeOfPayment</span>
                             </div>
                             @if (period?.TypeOfPayment == "PerDay" && application?.NumberOfDays.HasValue == true)
                             {
-                                <div class="detail-item">
-                                    <div class="detail-label">Number of Days</div>
-                                    <div class="detail-value">@application.NumberOfDays days</div>
-                                </div>
+                                <div class="detail-cell"><p class="detail-lbl">Days</p><p class="detail-val">@application.NumberOfDays days</p></div>
                             }
                         </div>
                     </div>
                 </div>
 
-                <!-- Reserved Bed Space -->
+                <!-- Reserved bed space -->
                 @if (application?.BedSpace != null)
                 {
-                    <div class="card">
-                        <div class="card-header">
+                    <div class="aa-card">
+                        <div class="aa-card-head">
                             <i class="material-icons">bed</i>
-                            <h3>Reserved Bed Space</h3>
+                            <h3 class="aa-card-title">Reserved Bed Space</h3>
                         </div>
-                        <div class="card-body">
+                        <div class="aa-card-body">
                             <div class="detail-grid">
-                                <div class="detail-item">
-                                    <div class="detail-label">Campus</div>
-                                    <div class="detail-value highlight">@application.BedSpace.Room.Hostel.Campus.CampusName</div>
-                                </div>
-                                <div class="detail-item">
-                                    <div class="detail-label">Hostel</div>
-                                    <div class="detail-value highlight">@application.BedSpace.Room.Hostel.HostelName</div>
-                                </div>
-                                <div class="detail-item">
-                                    <div class="detail-label">Room</div>
-                                    <div class="detail-value">@application.BedSpace.Room.RoomNumber</div>
-                                </div>
-                                <div class="detail-item">
-                                    <div class="detail-label">Bed</div>
-                                    <div class="detail-value">@application.BedSpace.BedIdentifier</div>
-                                </div>
-                                <div class="detail-item">
-                                    <div class="detail-label">Room Type</div>
-                                    <div class="detail-value">@application.BedSpace.Room.RoomType</div>
-                                </div>
-                                <div class="detail-item">
-                                    <div class="detail-label">Floor</div>
-                                    <div class="detail-value">Floor @application.BedSpace.Room.Floor</div>
-                                </div>
+                                <div class="detail-cell"><p class="detail-lbl">Campus</p><p class="detail-val teal">@application.BedSpace.Room.Hostel.Campus.CampusName</p></div>
+                                <div class="detail-cell"><p class="detail-lbl">Hostel</p><p class="detail-val teal">@application.BedSpace.Room.Hostel.HostelName</p></div>
+                                <div class="detail-cell"><p class="detail-lbl">Room</p><p class="detail-val">@application.BedSpace.Room.RoomNumber</p></div>
+                                <div class="detail-cell"><p class="detail-lbl">Bed</p><p class="detail-val">@application.BedSpace.BedIdentifier</p></div>
+                                <div class="detail-cell"><p class="detail-lbl">Room Type</p><p class="detail-val">@application.BedSpace.Room.RoomType</p></div>
+                                <div class="detail-cell"><p class="detail-lbl">Floor</p><p class="detail-val">Floor @application.BedSpace.Room.Floor</p></div>
                             </div>
                         </div>
                     </div>
                 }
 
-                <!-- Warning Alert -->
-                <div class="alert-box alert-warning">
+                <!-- Deadline warning -->
+                <div class="callout callout-warning">
                     <i class="material-icons">schedule</i>
-                    <p>
-                        <strong>Important:</strong> Your bed reservation will expire on <strong>@reservationExpiryTime?.ToString("MMMM dd, yyyy 'at' hh:mm tt")</strong>.
-                        Complete your payment before this deadline to secure your accommodation.
+                    <p class="callout-text">
+                        <strong>Important:</strong> Your reservation expires on <strong>@reservationExpiryTime?.ToString("MMMM dd, yyyy 'at' hh:mm tt")</strong>.
+                        Failure to pay before this deadline will release your bed space back to the pool.
                     </p>
                 </div>
+
             </div>
 
-            <!-- Right Panel - Payment Options -->
-            <div class="right-panel">
-                <!-- Payment Options Card -->
-                <div class="card">
-                    <div class="card-header">
-                        <i class="material-icons">payment</i>
-                        <h3>Payment Options</h3>
+            <!-- Right panel — payment -->
+            <div class="as-right">
+
+                <div class="aa-card">
+                    <div class="aa-card-head">
+                        <i class="material-icons">payments</i>
+                        <h3 class="aa-card-title">Payment</h3>
                     </div>
-                    <div class="card-body">
-                        <!-- Balance Display -->
-                        <div class="balance-display @(hasSufficientBalance ? "sufficient" : "insufficient")">
-                            <div class="balance-label">Your Available Balance</div>
-                            <div class="balance-amount">K @studentBalance.ToString("N2")</div>
-                            <div class="balance-status">
-                                @if (hasSufficientBalance)
-                                {
-                                    <i class="material-icons" style="vertical-align: middle; font-size: 1rem;">check_circle</i>
-                                    <span>Sufficient Balance</span>
-                                }
-                                else
-                                {
-                                    <i class="material-icons" style="vertical-align: middle; font-size: 1rem;">error</i>
-                                    <span>Insufficient Balance</span>
-                                }
-                            </div>
+                    <div class="aa-card-body" style="display:flex;flex-direction:column;gap:1rem;">
+
+                        <!-- Balance display -->
+                        <div class="balance-box @(hasSufficientBalance ? "ok" : "low")">
+                            <p class="balance-lbl">Your Available Balance</p>
+                            <p class="balance-amount">K @studentBalance.ToString("N2")</p>
+                            <span class="balance-status">
+                                <i class="material-icons">@(hasSufficientBalance ? "check_circle" : "error")</i>
+                                @(hasSufficientBalance ? "Sufficient" : "Insufficient")
+                            </span>
                         </div>
 
-                        <!-- Fee Comparison -->
-                        <div class="fee-grid">
-                            <div class="fee-item">
-                                <div class="fee-item-label">Fee Required</div>
-                                <div class="fee-item-value">K @accommodationFee.ToString("N2")</div>
+                        <!-- Fee comparison -->
+                        <div class="fee-compare">
+                            <div class="fee-compare-cell">
+                                <p class="fee-compare-lbl">Fee Required</p>
+                                <p class="fee-compare-val">K @accommodationFee.ToString("N2")</p>
                             </div>
-                            <div class="fee-item">
-                                <div class="fee-item-label">Your Balance</div>
-                                <div class="fee-item-value" style="color: @(hasSufficientBalance ? "#10b981" : "#ef4444")">
-                                    K @studentBalance.ToString("N2")
-                                </div>
+                            <div class="fee-compare-cell">
+                                <p class="fee-compare-lbl">Your Balance</p>
+                                <p class="fee-compare-val" style="color:@(hasSufficientBalance ? "var(--green)" : "var(--coral)");">K @studentBalance.ToString("N2")</p>
                             </div>
                             @if (!hasSufficientBalance)
                             {
-                                <div class="fee-item" style="border-color: #fca5a5;">
-                                    <div class="fee-item-label">Shortfall</div>
-                                    <div class="fee-item-value" style="color: #ef4444;">
-                                        K @((accommodationFee - studentBalance).ToString("N2"))
-                                    </div>
+                                <div class="fee-compare-cell" style="border-color:#fecaca;">
+                                    <p class="fee-compare-lbl">Shortfall</p>
+                                    <p class="fee-compare-val" style="color:var(--coral);">K @((accommodationFee - studentBalance).ToString("N2"))</p>
                                 </div>
                             }
                         </div>
 
-                        <!-- Pay from Balance Method -->
-                        <div class="payment-method @(hasSufficientBalance ? "" : "disabled")">
-                            <h4>
-                                <i class="material-icons">account_balance_wallet</i>
-                                Pay from Balance
-                            </h4>
-                            <p>
-                                @if (hasSufficientBalance)
-                                {
-                                    <span>Use your existing student account balance to complete the payment immediately.</span>
-                                }
-                                else
-                                {
-                                    <span>Insufficient balance. Please make a payment to your student account first.</span>
-                                }
+                        <!-- Pay from balance -->
+                        <div class="pay-method @(hasSufficientBalance ? "" : "disabled")">
+                            <div class="pay-method-head">
+                                <div class="pay-method-icon" style="background:var(--green-l);">
+                                    <i class="material-icons" style="color:var(--green);">account_balance_wallet</i>
+                                </div>
+                                <span class="pay-method-title">Pay from Balance</span>
+                            </div>
+                            <p class="pay-method-desc">
+                                @(hasSufficientBalance
+                                                            ? "Use your existing student account balance to complete payment immediately."
+                                                            : "Insufficient balance. Top up your student account first to use this option.")
                             </p>
                             @if (hasSufficientBalance)
                             {
-                                <button type="button" class="btn btn-success" onclick="payFromBalance()">
-                                    <i class="material-icons">check_circle</i>
-                                    Pay K @accommodationFee.ToString("N2") Now
+                                <button type="button" onclick="payFromBalance()" class="btn-pay-balance">
+                                    <i class="material-icons">check_circle</i> Pay K @accommodationFee.ToString("N2") Now
                                 </button>
                             }
                             else
                             {
-                                <button type="button" class="btn btn-secondary" disabled>
-                                    <i class="material-icons">block</i>
-                                    Insufficient Balance
+                                <button type="button" class="btn-disabled" disabled>
+                                    <i class="material-icons">block</i> Insufficient Balance
                                 </button>
                             }
                         </div>
 
-                        <!-- Pay Later Method -->
-                        @* <div class="payment-method pay-later"> *@
-                        @*     <h4> *@
-                        @*         <i class="material-icons">schedule</i> *@
-                        @*         Get Bedspace and Pay Later *@
-                        @*     </h4> *@
-                        @*     <p> *@
-                        @*         Secure your bed space now and pay later. The accommodation fee will be added to your outstanding fees. *@
-                        @*     </p> *@
-                        @*     <button type="button" class="btn btn-warning" onclick="getBedspaceAndPayLater()"> *@
-                        @*         <i class="material-icons">bed</i> *@
-                        @*         Get Bedspace Now, Pay Later *@
-                        @*     </button> *@
-                        @* </div> *@
+                        <!-- Pay with Momo/Card -->
+                        <div class="pay-method">
+                            <div class="pay-method-head">
+                                <div class="pay-method-icon" style="background:#ffedd5;">
+                                    <i class="material-icons" style="color:#d97706;">smartphone</i>
+                                </div>
+                                <span class="pay-method-title">Pay with Momo / Card</span>
+                            </div>
+                            <p class="pay-method-desc">Secure your bed space with a mobile money or card payment.</p>
+                            <button type="button" onclick="showPaymentModal()" class="btn-pay-momo">
+                                <i class="material-icons">bed</i> Pay for Bed Space
+                            </button>
+                        </div>
+
+                        <!-- Instructions -->
+                        <div class="callout callout-blue">
+                            <i class="material-icons">info</i>
+                            <p class="callout-text">
+                                Pay <strong>K @accommodationFee.ToString("N2")</strong> on the student payment page to complete this application.
+                                @if (period?.TypeOfPayment == "PerDay")
+                                {
+                                    <text><br><strong>Breakdown:</strong> @feeDisplay</text>
+                                }
+                            </p>
+                        </div>
+
+                        <!-- Refresh / home -->
+                        <div class="btn-secondary-row">
+                            <button type="button" class="btn-refresh-sm" onclick="location.reload()">
+                                <i class="material-icons">refresh</i> Refresh
+                            </button>
+                            <a href="/" class="btn-home-sm">
+                                <i class="material-icons">home</i> Dashboard
+                            </a>
+                        </div>
+
                     </div>
                 </div>
 
-                <!-- Payment Instructions -->
-                <div class="instructions-box">
-                    <i class="material-icons">info</i>
-                    <h4>Payment Instructions</h4>
-                    <p>
-                        Ensure to pay the amount of <strong>K @accommodationFee.ToString("N2")</strong> accommodation fee from the system on the student payment page to complete this application.
-                        @if (period?.TypeOfPayment == "PerDay")
-                        {
-                            <br />
-
-                            <br />
-                            <strong>Fee breakdown:</strong> @feeDisplay
-                        }
-                    </p>
-                </div>
-
-                <!-- Action Buttons -->
-                <div class="action-buttons">
-                    <button type="button" class="btn btn-primary" onclick="location.reload()">
-                        <i class="material-icons">refresh</i>
-                        Refresh Status
-                    </button>
-                    <a href="/" class="btn btn-secondary">
-                        <i class="material-icons">home</i>
-                        Dashboard
-                    </a>
-                </div>
             </div>
         </div>
     }
-</div>
 
-<!-- Loading Overlay -->
-<div id="loadingOverlay" class="loading-overlay">
-    <div class="loading-spinner">
-        <div class="spinner"></div>
-        <p>Processing...</p>
-    </div>
 </div>
 
 @section Scripts {
-    <!-- SweetAlert2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
     <script>
-        const applicationId = @(application?.ApplicationId ?? 0);
-        const reservationExpiryTime = new Date('@reservationExpiryTime?.ToString("yyyy-MM-ddTHH:mm:ss")');
-        const accommodationFee = @accommodationFee;
-        const isExpired = @isReservationExpired.ToString().ToLower();
-        const feeBreakdown = '@feeDisplay';
-        const paymentType = '@(period?.TypeOfPayment ?? "")';
+        const applicationId       = @(application?.ApplicationId ?? 0);
+        const reservationExpiry   = new Date('@reservationExpiryTime?.ToString("yyyy-MM-ddTHH:mm:ss")');
+        const accommodationFee    = @accommodationFee;
+        const isExpired           = @isReservationExpired.ToString().ToLower();
+        const feeBreakdown        = '@feeDisplay';
+        const paymentType         = '@(period?.TypeOfPayment ?? "")';
 
-        // Countdown Timer
+        /* ── Countdown ── */
         function updateCountdown() {
-            if (isExpired) {
+            if (isExpired) return;
+            const diff = reservationExpiry - new Date();
+            if (diff <= 0) {
+                ['hoursLeft','minutesLeft','secondsLeft'].forEach(id => document.getElementById(id).textContent = '00');
+                Swal.fire({ icon:'error', title:'Reservation Expired', text:'Your reservation has expired. The page will reload.', confirmButtonColor:'var(--navy)', allowOutsideClick:false })
+                    .then(() => location.reload());
                 return;
             }
+            const h = Math.floor(diff / 3600000);
+            const m = Math.floor((diff % 3600000) / 60000);
+            const s = Math.floor((diff % 60000) / 1000);
+            document.getElementById('hoursLeft').textContent   = String(h).padStart(2,'0');
+            document.getElementById('minutesLeft').textContent = String(m).padStart(2,'0');
+            document.getElementById('secondsLeft').textContent = String(s).padStart(2,'0');
 
-            const now = new Date();
-            const timeLeft = reservationExpiryTime - now;
-
-            if (timeLeft <= 0) {
-                document.getElementById('hoursLeft').textContent = '00';
-                document.getElementById('minutesLeft').textContent = '00';
-                document.getElementById('secondsLeft').textContent = '00';
-
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Reservation Expired',
-                    text: 'Your bed reservation has expired. The page will reload to show updated status.',
-                    confirmButtonColor: '#16697a',
-                    allowOutsideClick: false
-                }).then(() => {
-                    location.reload();
-                });
-
-                return;
-            }
-
-            const hours = Math.floor(timeLeft / (1000 * 60 * 60));
-            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
-
-            document.getElementById('hoursLeft').textContent = hours.toString().padStart(2, '0');
-            document.getElementById('minutesLeft').textContent = minutes.toString().padStart(2, '0');
-            document.getElementById('secondsLeft').textContent = seconds.toString().padStart(2, '0');
-
-            // Warning at 1 hour remaining
-            if (hours === 0 && minutes === 59 && seconds === 59) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'One Hour Remaining',
-                    text: 'You have less than one hour to complete your payment before your reservation expires.',
-                    confirmButtonColor: '#16697a',
-                    timer: 5000,
-                    timerProgressBar: true
-                });
-            }
-
-            // Final warning at 10 minutes
-            if (hours === 0 && minutes === 9 && seconds === 59) {
-                Swal.fire({
-                    icon: 'error',
-                    title: '10 Minutes Remaining!',
-                    text: 'Urgent: Only 10 minutes left before your reservation expires. Please complete payment immediately.',
-                    confirmButtonColor: '#16697a',
-                    timer: 8000,
-                    timerProgressBar: true
-                });
-            }
+            if (h === 0 && m === 59 && s === 59)
+                Swal.fire({ icon:'warning', title:'1 Hour Remaining', text:'Less than one hour left to complete payment.', confirmButtonColor:'var(--navy)', timer:5000, timerProgressBar:true });
+            if (h === 0 && m === 9  && s === 59)
+                Swal.fire({ icon:'error', title:'10 Minutes Left!', text:'Only 10 minutes to complete payment before your reservation expires.', confirmButtonColor:'var(--navy)', timer:8000, timerProgressBar:true });
         }
 
-        // Start countdown if not expired
-        if (!isExpired) {
-            updateCountdown();
-            setInterval(updateCountdown, 1000);
-        }
+        if (!isExpired) { updateCountdown(); setInterval(updateCountdown, 1000); }
 
-        // Pay from Balance function
+        /* ── Pay from balance ── */
         async function payFromBalance() {
-            let feeBreakdownHtml = '';
-            if (paymentType === 'PerDay') {
-                feeBreakdownHtml = `<p style="font-size: 0.75rem; color: #64748b; margin-top: 0.5rem;"><strong>Fee breakdown:</strong> ${feeBreakdown}</p>`;
-            }
+            const breakdownHtml = paymentType === 'PerDay'
+                ? `<p style="font-size:.75rem;color:#64748b;margin-top:.4rem;"><strong>Breakdown:</strong> ${feeBreakdown}</p>` : '';
 
             const result = await Swal.fire({
-                title: 'Confirm Payment from Balance',
+                title: 'Confirm Balance Payment',
                 html: `
-                    <div style="text-align: left; padding: 1rem;">
-                        <p style="font-size: 0.875rem; margin-bottom: 1rem; color: #64748b;">
-                            You are about to pay the accommodation fee from your student account balance.
-                        </p>
-                        <div style="background: #f0fdf4; padding: 1rem; border-radius: 0.5rem; border: 2px solid #86efac; margin-bottom: 1rem; text-align: center;">
-                            <div style="font-size: 0.75rem; color: #065f46; margin-bottom: 0.25rem; font-weight: 600;">PAYMENT AMOUNT</div>
-                            <div style="font-size: 2rem; font-weight: 800; color: #10b981;">K ${accommodationFee.toFixed(2)}</div>
-                            ${feeBreakdownHtml}
+                    <div style="text-align:left;padding:0 .25rem;">
+                        <p style="font-size:.82rem;color:#475569;margin-bottom:.85rem;">You are about to pay the accommodation fee from your student account balance.</p>
+                        <div style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1.5px solid #86efac;border-radius:.75rem;padding:1rem;text-align:center;margin-bottom:.85rem;">
+                            <p style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#166534;margin-bottom:.25rem;">Payment Amount</p>
+                            <p style="font-family:'DM Serif Display',serif;font-size:2rem;color:#16a34a;margin:0;">K ${accommodationFee.toFixed(2)}</p>
+                            ${breakdownHtml}
                         </div>
-                        <p style="color: #64748b; font-size: 0.75rem; margin: 0;">
-                            Upon successful payment, your bed space will be allocated immediately and you will receive confirmation.
-                        </p>
-                    </div>
-                `,
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#10b981',
-                cancelButtonColor: '#94a3b8',
-                confirmButtonText: 'Yes, Proceed with Payment',
-                cancelButtonText: 'Cancel',
-                width: '500px'
+                        <p style="font-size:.75rem;color:#64748b;margin:0;">Upon successful payment, your bed space will be allocated immediately.</p>
+                    </div>`,
+                icon: 'question', showCancelButton: true,
+                confirmButtonColor:'#16a34a', cancelButtonColor:'#94a3b8',
+                confirmButtonText:'Proceed with Payment', cancelButtonText:'Cancel', width:'480px'
             });
 
-            if (!result.isConfirmed) {
-                return;
-            }
-
+            if (!result.isConfirmed) return;
             document.getElementById('loadingOverlay').classList.add('show');
 
             try {
-                const formData = new FormData();
-                formData.append('applicationId', applicationId);
-                formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
+                const fd = new FormData();
+                fd.append('applicationId', applicationId);
+                fd.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
 
-                const response = await fetch('@Url.Action("PayFromBalance", "StudentAccommodationApplication")', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const data = await response.json();
-
+                const res  = await fetch('@Url.Action("PayFromBalance", "StudentAccommodationApplication")', { method:'POST', body:fd });
+                const data = await res.json();
                 document.getElementById('loadingOverlay').classList.remove('show');
 
                 if (data.success) {
                     await Swal.fire({
-                        icon: 'success',
-                        title: 'Payment Successful!',
-                        html: `
-                            <div style="text-align: center; padding: 1rem;">
-                                <p style="font-size: 0.875rem; margin-bottom: 1rem; color: #64748b;">${data.message}</p>
-                                <div style="background: #d1fae5; padding: 1rem; border-radius: 0.5rem; border: 2px solid #6ee7b7;">
-                                    <p style="color: #065f46; font-size: 0.875rem; margin: 0; font-weight: 600;">
-                                        ✅ Your bed space has been allocated!<br />
-                                        You will be redirected to view your accommodation details.
-                                    </p>
-                                </div>
+                        icon:'success', title:'Payment Successful!',
+                        html:`<div style="text-align:center;padding:.5rem 0;">
+                            <p style="font-size:.82rem;color:#64748b;margin-bottom:.75rem;">${data.message}</p>
+                            <div style="background:#dcfce7;border:1.5px solid #86efac;border-radius:.65rem;padding:.85rem;">
+                                <p style="color:#166534;font-size:.82rem;font-weight:700;margin:0;">✅ Your bed space has been allocated!</p>
                             </div>
-                        `,
-                        confirmButtonColor: '#10b981',
-                        confirmButtonText: 'View My Allocation',
-                        allowOutsideClick: false,
-                        allowEscapeKey: false,
-                        width: '500px'
+                        </div>`,
+                        confirmButtonColor:'#16a34a', confirmButtonText:'View My Allocation',
+                        allowOutsideClick:false, allowEscapeKey:false, width:'460px'
                     });
-
                     window.location.href = '@Url.Action("CurrentAllocation", "StudentAccommodationApplication")';
                 } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Payment Failed',
-                        text: data.message,
-                        confirmButtonColor: '#16697a'
-                    });
+                    Swal.fire({ icon:'error', title:'Payment Failed', text:data.message, confirmButtonColor:'var(--navy)' });
                 }
-            } catch (error) {
+            } catch {
                 document.getElementById('loadingOverlay').classList.remove('show');
-                console.error('Error processing payment:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Failed to process payment. Please try again or contact support.',
-                    confirmButtonColor: '#16697a'
-                });
+                Swal.fire({ icon:'error', title:'Error', text:'Failed to process payment. Please try again.', confirmButtonColor:'var(--navy)' });
             }
         }
 
-        // Get Bedspace and Pay Later function
+        /* ── Pay Later (bed now) ── */
         async function getBedspaceAndPayLater() {
-            let feeBreakdownHtml = '';
-            if (paymentType === 'PerDay') {
-                feeBreakdownHtml = `<p style="font-size: 0.75rem; color: #78350f; margin-top: 0.5rem;"><strong>Fee breakdown:</strong> ${feeBreakdown}</p>`;
-            }
+            const breakdownHtml = paymentType === 'PerDay'
+                ? `<p style="font-size:.72rem;color:#78350f;margin-top:.4rem;"><strong>Breakdown:</strong> ${feeBreakdown}</p>` : '';
 
             const result = await Swal.fire({
-                title: 'Confirm Bed Allocation with Payment Later',
-                html: `
-                    <div style="text-align: left; padding: 1rem;">
-                        <div style="background: #fff7ed; padding: 1rem; border-radius: 0.5rem; border: 2px solid #fed7aa; margin-bottom: 1rem;">
-                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                                <i class="material-icons" style="color: #d97706;">warning</i>
-                                <strong style="color: #92400e;">Important Notice</strong>
-                            </div>
-                            <p style="font-size: 0.875rem; margin: 0; color: #78350f; line-height: 1.5;">
-                                <strong>This action cannot be reversed.</strong><br />
-                                The accommodation fee of <strong style="color: #d97706;">K ${accommodationFee.toFixed(2)}</strong> will be added to your total outstanding fees.
-                                ${feeBreakdownHtml}
-                            </p>
-                        </div>
-                        <div style="background: #fee2e2; padding: 1rem; border-radius: 0.5rem; border: 2px solid #fca5a5; margin-bottom: 1rem;">
-                            <p style="font-size: 0.875rem; margin: 0; color: #991b1b; line-height: 1.5;">
-                                ⚠️ <strong>Outstanding Fees Impact:</strong><br />
-                                You will be required to pay this fee along with your other fees before:
-                            </p>
-                            <ul style="margin: 0.5rem 0 0 1.5rem; color: #991b1b; font-size: 0.875rem;">
-                                <li>Sitting for examinations</li>
-                                <li>Receiving academic transcripts</li>
-                                <li>Graduation eligibility</li>
-                            </ul>
-                        </div>
-                        <p style="color: #64748b; font-size: 0.75rem; margin: 0;">
-                            By confirming, you acknowledge that you understand and accept the payment terms.
-                        </p>
+                title:'Confirm Allocation, Pay Later',
+                html:`<div style="text-align:left;padding:0 .25rem;">
+                    <div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:.65rem;padding:.85rem 1rem;margin-bottom:.75rem;">
+                        <p style="font-size:.72rem;font-weight:700;color:#92400e;margin-bottom:.35rem;">⚠️ Important Notice</p>
+                        <p style="font-size:.78rem;color:#78350f;line-height:1.6;margin:0;"><strong>K ${accommodationFee.toFixed(2)}</strong> will be added to your outstanding fees and must be paid before examinations, transcripts, and graduation.${breakdownHtml}</p>
                     </div>
-                `,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#f59e0b',
-                cancelButtonColor: '#94a3b8',
-                confirmButtonText: 'Yes, Get Bedspace Now',
-                cancelButtonText: 'Cancel',
-                width: '550px'
+                    <p style="font-size:.72rem;color:#64748b;margin:0;">By confirming you accept these payment terms.</p>
+                </div>`,
+                icon:'warning', showCancelButton:true,
+                confirmButtonColor:'#d97706', cancelButtonColor:'#94a3b8',
+                confirmButtonText:'Allocate Now', cancelButtonText:'Cancel', width:'460px'
             });
 
-            if (!result.isConfirmed) {
-                return;
-            }
-
+            if (!result.isConfirmed) return;
             document.getElementById('loadingOverlay').classList.add('show');
 
             try {
-                const formData = new FormData();
-                formData.append('applicationId', applicationId);
-                formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
-
-                const response = await fetch('@Url.Action("GetBedspaceAndPayLater", "StudentAccommodationApplication")', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const data = await response.json();
-
+                const fd = new FormData();
+                fd.append('applicationId', applicationId);
+                fd.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
+                const res  = await fetch('@Url.Action("GetBedspaceAndPayLater", "StudentAccommodationApplication")', { method:'POST', body:fd });
+                const data = await res.json();
                 document.getElementById('loadingOverlay').classList.remove('show');
 
                 if (data.success) {
                     await Swal.fire({
-                        icon: 'success',
-                        title: 'Bed Space Allocated!',
-                        html: `
-                            <div style="text-align: center; padding: 1rem;">
-                                <p style="font-size: 0.875rem; margin-bottom: 1rem; color: #64748b;">${data.message}</p>
-                                <div style="background: #d1fae5; padding: 1rem; border-radius: 0.5rem; border: 2px solid #6ee7b7; margin-bottom: 1rem;">
-                                    <p style="color: #065f46; font-size: 0.875rem; margin: 0; font-weight: 600;">
-                                        ✅ Your bed space has been allocated!
-                                    </p>
-                                </div>
-                                <div style="background: #fff7ed; padding: 1rem; border-radius: 0.5rem; border: 2px solid #fed7aa;">
-                                    <p style="color: #92400e; font-size: 0.75rem; margin: 0;">
-                                        📋 <strong>Payment Reminder:</strong><br />
-                                        K ${accommodationFee.toFixed(2)} has been added to your outstanding fees.<br />
-                                        Please pay this amount before examination period.
-                                    </p>
-                                </div>
+                        icon:'success', title:'Bed Space Allocated!',
+                        html:`<div style="text-align:center;padding:.5rem 0;">
+                            <p style="font-size:.82rem;color:#64748b;margin-bottom:.75rem;">${data.message}</p>
+                            <div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:.65rem;padding:.75rem;">
+                                <p style="font-size:.75rem;color:#92400e;font-weight:700;margin:0;">K ${accommodationFee.toFixed(2)} added to outstanding fees. Pay before examination period.</p>
                             </div>
-                        `,
-                        confirmButtonColor: '#10b981',
-                        confirmButtonText: 'View My Allocation',
-                        allowOutsideClick: false,
-                        allowEscapeKey: false,
-                        width: '500px'
+                        </div>`,
+                        confirmButtonColor:'#16a34a', confirmButtonText:'View My Allocation',
+                        allowOutsideClick:false, allowEscapeKey:false, width:'460px'
                     });
-
                     window.location.href = '@Url.Action("CurrentAllocation", "StudentAccommodationApplication")';
                 } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Allocation Failed',
-                        text: data.message,
-                        confirmButtonColor: '#16697a'
-                    });
+                    Swal.fire({ icon:'error', title:'Allocation Failed', text:data.message, confirmButtonColor:'var(--navy)' });
                 }
-            } catch (error) {
+            } catch {
                 document.getElementById('loadingOverlay').classList.remove('show');
-                console.error('Error processing allocation:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Failed to process allocation. Please try again or contact support.',
-                    confirmButtonColor: '#16697a'
-                });
+                Swal.fire({ icon:'error', title:'Error', text:'Failed to process. Please try again.', confirmButtonColor:'var(--navy)' });
             }
         }
     </script>
 
     @Html.AntiForgeryToken()
 }
+
+@await Html.PartialAsync("~/Views/Home/_PaymentModal.cshtml")

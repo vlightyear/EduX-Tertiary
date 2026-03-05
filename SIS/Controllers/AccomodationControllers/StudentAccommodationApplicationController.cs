@@ -242,6 +242,13 @@ namespace SIS.Controllers.AccomodationControllers
             ViewBag.AccommodationFee = accommodationFee;
             ViewBag.HasSufficientBalance = hasSufficientBalance;
 
+            decimal TotalBilled = StudentTools.GetStudentTotalFees(student.Id);
+            decimal TotalPaid = StudentTools.GetStudentTotalPaid(student.Id);
+
+            ViewData["TotalBilled"] = TotalBilled;
+            ViewData["TotalPaid"] = TotalPaid;
+            ViewData["TransactionReference"] = "ACCOM_" + applicationId + "_" + student.Id;
+
             return View("~/Views/Accommodation/StudentApplication/PendingApplication.cshtml");
         }
 

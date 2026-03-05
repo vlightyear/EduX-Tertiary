@@ -3,506 +3,1040 @@
     ViewData["Title"] = "Register Courses";
 }
 
-<style>
-    @@keyframes spin {
-        from {
-            transform: rotate(0deg);
+@section Styles {
+    <style>
+        @@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap');
+
+        :root {
+            --coral: #e85c5c;
+            --coral-d: #c94040;
+            --navy: #1e2d5e;
+            --navy-l: #2e3f7a;
+            --mist: #f5f7fa;
+            --border: #e8ecf2;
+            --ink: #1a1f2e;
+            --text: #475569;
+            --green: #16a34a;
+            --greenl: #dcfce7;
         }
 
-        to {
-            transform: rotate(360deg);
-        }
-    }
-
-    @@keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: scale(0.9);
+        body, .cr-wrap * {
+            font-family: 'DM Sans',sans-serif;
         }
 
-        to {
-            opacity: 1;
-            transform: scale(1);
-        }
-    }
-
-    .animate-spin {
-        animation: spin 1s linear infinite;
-    }
-
-    .animate-fade-in {
-        animation: fadeIn 0.3s ease-out;
-    }
-
-    .transition-all {
-        transition: all 0.3s ease;
-    }
-
-    #submitRegistrationBtn {
-        min-width: 180px;
-        transition: all 0.3s ease;
-    }
-
-        #submitRegistrationBtn:disabled {
-            background-color: #6b7280;
-            cursor: not-allowed;
+        /* ── Animations ────────────────────── */
+        @@keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
         }
 
-            #submitRegistrationBtn:disabled:hover {
-                background-color: #6b7280;
+        @@keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(.9);
             }
 
-    .carryover-course-alt {
-        background: linear-gradient(135deg, #fefbf3 0%, #fef3c7 30%, #fde68a 100%);
-        border: 2px solid #d4b96b;
-        position: relative;
-        box-shadow: 0 2px 4px rgba(212, 185, 107, 0.15);
-    }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
 
-        .carryover-course-alt::before {
-            content: '';
-            position: absolute;
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+
+        .animate-fade-in {
+            animation: fadeIn .3s ease-out;
+        }
+
+        /* ── Hero ──────────────────────────── */
+        .cr-hero {
+            background: linear-gradient(135deg,var(--navy) 0%,var(--navy-l) 55%,#3a2060 100%);
+            padding: 1.5rem 1.5rem 3.25rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+            .cr-hero::before {
+                content: '';
+                position: absolute;
+                top: -40px;
+                right: -40px;
+                width: 180px;
+                height: 180px;
+                background: rgba(232,92,92,.15);
+                border-radius: 50%;
+                pointer-events: none;
+            }
+
+            .cr-hero::after {
+                content: '';
+                position: absolute;
+                bottom: -50px;
+                left: 20%;
+                width: 240px;
+                height: 240px;
+                background: rgba(255,255,255,.03);
+                border-radius: 50%;
+                pointer-events: none;
+            }
+
+        .cr-hero-inner {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            gap: .85rem;
+        }
+
+        .cr-hero-eyebrow {
+            font-size: .7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .1em;
+            color: rgba(255,255,255,.5);
+            margin-bottom: .3rem;
+        }
+
+        .cr-hero-title {
+            font-family: 'DM Serif Display',serif;
+            font-size: 1.7rem;
+            color: #fff;
+            line-height: 1.2;
+            margin-bottom: .25rem;
+        }
+
+        .cr-hero-sub {
+            font-size: .82rem;
+            color: rgba(255,255,255,.6);
+        }
+
+        /* hero action row */
+        .cr-hero-actions {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: .55rem;
+            align-self: flex-start;
+        }
+
+        /* status pills in hero */
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: .3rem;
+            padding: .4rem .85rem;
+            border-radius: 2rem;
+            font-size: .75rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+            .status-pill i {
+                font-size: .8rem;
+            }
+
+        .pill-registered {
+            background: rgba(22,163,74,.2);
+            color: #bbf7d0;
+            border: 1px solid rgba(22,163,74,.35);
+        }
+
+        .pill-pending {
+            background: rgba(245,158,11,.2);
+            color: #fde68a;
+            border: 1px solid rgba(245,158,11,.35);
+        }
+
+        .pill-threshold {
+            background: rgba(245,158,11,.2);
+            color: #fde68a;
+            border: 1px solid rgba(245,158,11,.35);
+        }
+
+        /* hero buttons */
+        .btn-hero-submit {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            background: var(--coral);
+            color: #fff;
+            border: none;
+            font-size: .82rem;
+            font-weight: 700;
+            font-family: inherit;
+            padding: .55rem 1.1rem;
+            border-radius: .6rem;
+            cursor: pointer;
+            transition: background .15s;
+            box-shadow: 0 4px 14px rgba(232,92,92,.3);
+            min-width: 160px;
+            justify-content: center;
+        }
+
+            .btn-hero-submit:hover:not(:disabled) {
+                background: var(--coral-d);
+            }
+
+            .btn-hero-submit:disabled {
+                background: #94a3b8;
+                cursor: not-allowed;
+                box-shadow: none;
+            }
+
+            .btn-hero-submit i {
+                font-size: .85rem;
+            }
+
+        .btn-hero-classpass {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            background: transparent;
+            color: #bbf7d0;
+            border: 1.5px solid rgba(22,163,74,.5);
+            font-size: .78rem;
+            font-weight: 700;
+            font-family: inherit;
+            padding: .5rem .9rem;
+            border-radius: .6rem;
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+            .btn-hero-classpass:hover {
+                background: rgba(22,163,74,.15);
+                color: #fff;
+            }
+
+            .btn-hero-classpass i {
+                font-size: .8rem;
+            }
+
+        .btn-hero-pay {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            background: rgba(255,255,255,.12);
+            color: #fff;
+            border: 1.5px solid rgba(255,255,255,.2);
+            font-size: .78rem;
+            font-weight: 700;
+            font-family: inherit;
+            padding: .5rem .9rem;
+            border-radius: .6rem;
+            cursor: pointer;
+            transition: all .15s;
+            text-decoration: none;
+        }
+
+            .btn-hero-pay:hover {
+                background: rgba(255,255,255,.2);
+                color: #fff;
+            }
+
+            .btn-hero-pay i {
+                font-size: .8rem;
+            }
+
+        .btn-hero-docket {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            background: transparent;
+            color: #fca5a5;
+            border: 1.5px solid rgba(232,92,92,.4);
+            font-size: .78rem;
+            font-weight: 700;
+            font-family: inherit;
+            padding: .5rem .9rem;
+            border-radius: .6rem;
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+            .btn-hero-docket:hover {
+                background: rgba(232,92,92,.15);
+                color: #fff;
+            }
+
+            .btn-hero-docket i {
+                font-size: .8rem;
+            }
+
+        /* ── Floating strip (callouts) ─────── */
+        .cr-strip {
+            margin: -2rem 1rem 0;
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            gap: .65rem;
+        }
+
+        /* ── Callouts ──────────────────────── */
+        .callout {
+            display: flex;
+            align-items: flex-start;
+            gap: .7rem;
+            border-radius: .65rem;
+            padding: .8rem 1rem;
+        }
+
+            .callout i {
+                font-size: 1rem;
+                flex-shrink: 0;
+                margin-top: .05rem;
+            }
+
+        .callout-text {
+            font-size: .78rem;
+            line-height: 1.65;
+        }
+
+            .callout-text strong {
+                font-weight: 700;
+            }
+
+        .callout-blue {
+            background: #eff6ff;
+            border: 1.5px solid #bfdbfe;
+            color: #1e40af;
+        }
+
+            .callout-blue i {
+                color: #2563eb;
+            }
+
+        .callout-purple {
+            background: #f5f3ff;
+            border: 1.5px solid #ddd6fe;
+            color: #5b21b6;
+        }
+
+            .callout-purple i {
+                color: #7c3aed;
+            }
+
+        .callout-amber {
+            background: #fffbeb;
+            border: 1.5px solid #fde68a;
+            color: #92400e;
+        }
+
+            .callout-amber i {
+                color: #d97706;
+            }
+
+        /* ── Section headers ───────────────── */
+        .section-head {
+            position: sticky;
             top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, #f59e0b, #d97706);
-            border-radius: 6px 6px 0 0;
+            z-index: 5;
+            background: rgba(255,255,255,.97);
+            backdrop-filter: blur(8px);
+            border-bottom: 1.5px solid var(--border);
+            padding: .75rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: .5rem;
         }
 
-    .carryover-badge-alt {
-        background: linear-gradient(135deg, #92400e, #78350f);
-        color: white;
-        font-size: 0.75rem;
-        padding: 0.25rem 0.5rem;
-        border-radius: 0.375rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-    }
-
-    .carryover-icon-alt {
-        position: absolute;
-        top: 0.5rem;
-        right: 0.5rem;
-        background: linear-gradient(135deg, #b45309, #92400e);
-        color: white;
-        border-radius: 50%;
-        width: 1.5rem;
-        height: 1.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.75rem;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-
-    /* Mobile-specific improvements */
-    @@media (max-width: 768px) {
-        .mobile-card {
-            margin-bottom: 1rem;
-            border-radius: 0.75rem;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        .section-head-left {
+            display: flex;
+            align-items: center;
+            gap: .55rem;
         }
 
-        .mobile-checkbox {
-            width: 1.25rem;
-            height: 1.25rem;
-            margin-top: 0;
+        .section-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: .4rem;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .mobile-course-grid {
-            grid-template-columns: 1fr;
-            gap: 1rem;
+            .section-icon i {
+                font-size: .9rem;
+            }
+
+        .section-title {
+            font-family: 'DM Serif Display',serif;
+            font-size: .95rem;
+            color: var(--ink);
         }
 
-        .mobile-header {
+        .section-sub {
+            font-size: .72rem;
+            color: var(--text);
+            margin-left: .25rem;
+        }
+
+        /* counter badges */
+        .counter-min {
+            font-size: .68rem;
+            font-weight: 700;
+            padding: .2rem .5rem;
+            border-radius: 2rem;
+            background: #eff6ff;
+            color: #1d4ed8;
+        }
+
+        #electiveCounter {
+            font-size: .68rem;
+            font-weight: 700;
+            padding: .2rem .5rem;
+            border-radius: 2rem;
+            background: #f1f5f9;
+            color: #475569;
+            transition: all .2s;
+        }
+
+        /* ── Course cards ──────────────────── */
+        .course-card {
+            background: #fff;
+            border: 1.5px solid var(--border);
+            border-radius: .85rem;
+            padding: .9rem 1rem;
+            position: relative;
+            cursor: pointer;
+            transition: border-color .15s, box-shadow .15s, transform .1s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+            .course-card:active {
+                transform: scale(.98);
+            }
+
+            .course-card:hover {
+                border-color: #cbd5e1;
+                box-shadow: 0 4px 16px rgba(30,45,94,.06);
+            }
+
+            /* mandatory — navy left bar */
+            .course-card.mandatory {
+                border-left: 3px solid var(--navy);
+                background: var(--mist);
+                cursor: default;
+            }
+            /* carryover — amber left bar */
+            .course-card.carryover {
+                border-left: 3px solid #d97706;
+                background: #fffbeb;
+                cursor: default;
+            }
+            /* selected elective — coral */
+            .course-card.selected {
+                border-color: var(--coral);
+                background: linear-gradient(135deg,#fff5f5,#fff0f0);
+                box-shadow: 0 4px 16px rgba(232,92,92,.1);
+            }
+            /* disabled */
+            .course-card.disabled {
+                opacity: .55;
+                cursor: not-allowed;
+                pointer-events: none;
+            }
+
+        /* status dot */
+        .status-dot {
+            position: absolute;
+            top: .7rem;
+            right: .75rem;
+            width: .6rem;
+            height: .6rem;
+            border-radius: 50%;
+        }
+
+            .status-dot.required {
+                background: var(--navy);
+            }
+
+            .status-dot.carryover {
+                background: #d97706;
+            }
+
+            .status-dot.selected {
+                background: var(--coral);
+            }
+
+            .status-dot.unselected {
+                background: #cbd5e1;
+            }
+
+        /* card inner */
+        .card-touch {
+            display: flex;
+            align-items: center;
+            min-height: 44px;
+            gap: .65rem;
+        }
+
+        .card-course-code {
+            font-size: .72rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: .2rem;
+        }
+
+        .card-course-name {
+            font-size: .85rem;
+            font-weight: 700;
+            color: var(--ink);
+            margin-bottom: .15rem;
+            line-height: 1.35;
+        }
+
+        .card-course-desc {
+            font-size: .75rem;
+            color: var(--text);
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .badge-carryover {
+            display: inline-flex;
+            font-size: .62rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: .15rem .4rem;
+            border-radius: .3rem;
+            background: #d97706;
+            color: #fff;
+            margin-left: .35rem;
+        }
+
+        .badge-mandatory {
+            display: inline-flex;
+            font-size: .62rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: .15rem .4rem;
+            border-radius: .3rem;
+            background: var(--navy);
+            color: #fff;
+            margin-left: .35rem;
+        }
+
+        .carryover-reason {
+            margin-top: .5rem;
+            padding: .4rem .6rem;
+            background: rgba(217,119,6,.08);
+            border-radius: .4rem;
+            font-size: .72rem;
+            color: #92400e;
+        }
+
+        /* checkbox styling */
+        .course-checkbox {
+            width: 1.1rem;
+            height: 1.1rem;
+            flex-shrink: 0;
+            accent-color: var(--coral);
+            cursor: pointer;
+        }
+
+        /* ── Empty state ───────────────────── */
+        .empty-state {
+            background: var(--mist);
+            border: 1.5px solid var(--border);
+            border-radius: .75rem;
+            padding: 1.25rem;
+            text-align: center;
+        }
+
+            .empty-state p {
+                font-size: .8rem;
+                color: var(--text);
+            }
+
+        /* ── Mobile header ─────────────────── */
+        .mobile-header-bar {
             position: sticky;
             top: 0;
             z-index: 10;
-            background: rgba(248, 250, 252, 0.95);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid #e2e8f0;
+            background: rgba(255,255,255,.97);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--border);
+            padding: .75rem 1rem;
         }
 
+        /* ── Mobile floating action ────────── */
         .mobile-floating-action {
             position: fixed;
             bottom: 1rem;
             left: 1rem;
             right: 1rem;
             z-index: 20;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 10px 25px rgba(30,45,94,.2);
         }
 
-        .mobile-section-header {
-            position: sticky;
-            top: 4rem;
-            z-index: 5;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            margin: 0 -1.5rem;
-            padding: 0.75rem 1.5rem;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .mobile-touch-target {
-            min-height: 44px;
+        .btn-mobile-submit {
+            width: 100%;
             display: flex;
             align-items: center;
+            justify-content: center;
+            gap: .5rem;
+            background: var(--coral);
+            color: #fff;
+            border: none;
+            border-radius: .75rem;
+            font-size: .9rem;
+            font-weight: 700;
+            font-family: inherit;
+            padding: .8rem;
+            cursor: pointer;
+            transition: background .15s;
+            box-shadow: 0 4px 16px rgba(232,92,92,.35);
         }
 
-        .mobile-course-content {
-            padding-bottom: 6rem;
-        }
-    }
+            .btn-mobile-submit:hover:not(:disabled) {
+                background: var(--coral-d);
+            }
 
-    /* Enhanced touch targets for mobile */
-    .course-card {
-        cursor: pointer;
-        transition: all 0.2s ease;
-        -webkit-tap-highlight-color: transparent;
-    }
+            .btn-mobile-submit:disabled {
+                background: #94a3b8;
+                cursor: not-allowed;
+                box-shadow: none;
+            }
 
-        .course-card:active {
-            transform: scale(0.98);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
+            .btn-mobile-submit i {
+                font-size: 1rem;
+            }
 
-        /* Better visual feedback */
-        .course-card.selected {
-            border-color: #3b82f6;
-            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-        }
-
-        .course-card.disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-    /* Improved status indicators */
-    .status-indicator {
-        position: absolute;
-        top: 0.5rem;
-        right: 0.5rem;
-        width: 0.75rem;
-        height: 0.75rem;
-        border-radius: 50%;
-    }
-
-        .status-indicator.selected {
-            background: #10b981;
-        }
-
-        .status-indicator.required {
-            background: #3b82f6;
-        }
-
-        .status-indicator.carryover {
-            background: #f59e0b;
-        }
-
-    /* Swipe gesture hint */
-    @@media (max-width: 768px) {
-        .swipe-hint {
-            display: block;
-            text-align: center;
-            color: #64748b;
-            font-size: 0.875rem;
-            padding: 0.5rem;
-            margin-bottom: 1rem;
-            background: #f8fafc;
-            border-radius: 0.5rem;
-            border: 1px dashed #cbd5e1;
-        }
-    }
-
-    @@media (min-width: 769px) {
+        /* swipe hint */
         .swipe-hint {
             display: none;
-        }
-    }
-
-    /* Add these styles to your existing <style> section */
-    #examDocketModal .bg-white {
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    }
-
-    .exam-docket-card {
-        transition: all 0.3s ease;
-    }
-
-        .exam-docket-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            color: var(--text);
+            font-size: .78rem;
+            padding: .5rem .75rem;
+            background: var(--mist);
+            border-radius: .5rem;
+            border: 1px dashed var(--border);
+            margin: .75rem 1rem;
         }
 
-        @@media (max-width: 640px) {
-        #examDocketModal .max-w-2xl
+        /* ── Exam docket modal ─────────────── */
+        .docket-modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15,20,40,.55);
+            backdrop-filter: blur(4px);
+            z-index: 50;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
 
-    {
-        max-width: 95vw;
-        margin: 1rem;
-    }
+            .docket-modal-backdrop.show {
+                display: flex;
+            }
 
-    }
-</style>
+        .docket-modal {
+            background: #fff;
+            border-radius: 1.25rem;
+            overflow: hidden;
+            width: 100%;
+            max-width: 640px;
+            margin: 1rem;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 50px rgba(15,20,40,.25);
+        }
 
-<div class="min-h-screen bg-slate-50">
-    <!-- Mobile-optimized Header -->
-    <div class="mobile-header bg-slate-50 p-4 sm:p-6">
-        <div class="flex flex-col space-y-3 sm:flex-row sm:justify-between sm:items-center sm:space-y-0">
-            <div class="flex items-center text-slate-800">
-                <i class="material-icons text-2xl sm:text-3xl mr-2">assignment</i>
-                <div>
-                    <h1 class="text-xl sm:text-2xl font-bold leading-tight">
-                        @(ViewBag.RegistrationStatus == SIS.Enums.Status.Registered ? "Registered Courses" : "Register Courses")
-                    </h1>
-                    @if (ViewBag.IsSemesterBased)
-                    {
-                        <p class="text-sm sm:text-base text-slate-600">Semester @ViewBag.Semester</p>
-                    }
-                </div>
+        .docket-modal-head {
+            background: linear-gradient(135deg,var(--navy),var(--navy-l));
+            padding: 1.1rem 1.35rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .docket-modal-title {
+            font-family: 'DM Serif Display',serif;
+            font-size: 1rem;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+        }
+
+            .docket-modal-title i {
+                font-size: 1rem;
+                color: #fca5a5;
+            }
+
+        .btn-docket-close {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: rgba(255,255,255,.1);
+            border: 1px solid rgba(255,255,255,.2);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+            .btn-docket-close:hover {
+                background: rgba(255,255,255,.2);
+            }
+
+            .btn-docket-close i {
+                font-size: .9rem;
+            }
+
+        .docket-modal-body {
+            padding: 1.25rem;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        /* exam card inside modal */
+        .exam-card {
+            border: 1.5px solid var(--border);
+            border-radius: .75rem;
+            padding: 1rem;
+            transition: box-shadow .15s;
+            margin-bottom: .75rem;
+        }
+
+            .exam-card:hover {
+                box-shadow: 0 4px 16px rgba(30,45,94,.08);
+            }
+
+        /* ── Custom alert modal ────────────── */
+        .alert-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15,20,40,.55);
+            backdrop-filter: blur(4px);
+            z-index: 60;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+            .alert-overlay.show {
+                display: flex;
+            }
+
+        .alert-box-modal {
+            background: #fff;
+            border-radius: 1rem;
+            padding: 1.75rem;
+            max-width: 380px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(15,20,40,.2);
+            animation: fadeIn .25s ease-out;
+        }
+
+        .alert-icon-ring {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            margin: 0 auto .85rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .alert-icon-ring i {
+                font-size: 1.4rem;
+                color: #fff;
+            }
+
+        #alertTitle {
+            font-family: 'DM Serif Display',serif;
+            font-size: 1.05rem;
+            color: var(--ink);
+            margin-bottom: .4rem;
+        }
+
+        #alertMessage {
+            font-size: .8rem;
+            color: var(--text);
+            line-height: 1.6;
+            margin-bottom: 1.25rem;
+        }
+
+        .btn-alert-ok {
+            width: 100%;
+            padding: .65rem;
+            border-radius: .65rem;
+            background: var(--navy);
+            color: #fff;
+            border: none;
+            font-size: .82rem;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            transition: background .15s;
+        }
+
+            .btn-alert-ok:hover {
+                background: var(--navy-l);
+            }
+
+        /* ── Loading overlay ───────────────── */
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15,20,40,.55);
+            backdrop-filter: blur(4px);
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .loading-overlay.show {
+                display: flex;
+            }
+
+        .loading-box {
+            background: #fff;
+            border-radius: 1rem;
+            padding: 1.75rem 2.25rem;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(15,20,40,.2);
+        }
+
+        .loading-spin {
+            animation: spin 1s linear infinite;
+            font-size: 2rem;
+            color: var(--coral);
+            display: block;
+            margin: 0 auto .6rem;
+        }
+
+        .loading-box h3 {
+            font-family: 'DM Serif Display',serif;
+            font-size: 1rem;
+            color: var(--ink);
+        }
+
+        /* mobile-only content padding */
+        .mobile-course-content {
+            padding-bottom: 5rem;
+        }
+
+        @@media (min-width: 640px) {
+            .mobile-course-content {
+                padding-bottom: 1.5rem;
+            }
+
+            .swipe-hint {
+                display: none !important;
+            }
+
+            .mobile-floating-action {
+                display: none !important;
+            }
+        }
+
+        @@media (max-width: 639px) {
+            .swipe-hint {
+                display: block;
+            }
+
+            .cr-hero-actions {
+                display: none;
+            }
+
+            .cr-mobile-actions {
+                display: flex;
+                flex-direction: column;
+                gap: .5rem;
+                padding: .75rem 1rem;
+                background: #fff;
+                border-bottom: 1px solid var(--border);
+            }
+        }
+
+        @@media (min-width: 640px) {
+            .cr-mobile-actions {
+                display: none;
+            }
+        }
+    </style>
+}
+
+<div class="cr-wrap">
+
+    <!-- ── Hero ── -->
+    <div class="cr-hero">
+        <div class="cr-hero-inner">
+            <div>
+                <p class="cr-hero-eyebrow">Academic Registration</p>
+                <h1 class="cr-hero-title">
+                    @(ViewBag.RegistrationStatus == SIS.Enums.Status.Registered ? "Registered Courses" : "Register Courses")
+                </h1>
+                @if (ViewBag.IsSemesterBased)
+                {
+                    <p class="cr-hero-sub">Semester @ViewBag.Semester</p>
+                }
             </div>
 
-            <!-- Desktop action buttons -->
-            <div class="hidden sm:block">
+            <!-- Desktop action cluster -->
+            <div class="cr-hero-actions">
                 @if (ViewBag.RegistrationStatus != SIS.Enums.Status.Registered &&
-                ViewBag.RegistrationStatus != SIS.Enums.Status.Pending && ViewBag.CanRegister)
+                                ViewBag.RegistrationStatus != SIS.Enums.Status.Pending && ViewBag.CanRegister)
                 {
-                    <button type="button"
-                            id="submitRegistrationBtn"
-                            class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-green-600"
-                            onclick="submitCourseRegistration()">
-                        <i id="submitIcon" class="material-icons text-sm mr-1">check_circle</i>
-                        <svg id="loadingSpinner" class="animate-spin h-4 w-4 mr-1 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <button type="button" id="submitRegistrationBtn" class="btn-hero-submit" onclick="submitCourseRegistration()">
+                        <i id="submitIcon" class="material-icons">check_circle</i>
+                        <svg id="loadingSpinner" class="animate-spin hidden" style="width:1rem;height:1rem;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
                         <span id="submitText">Submit Registration</span>
                     </button>
                 }
-                else
-                {
-                    @if (ViewBag.RegistrationStatus == SIS.Enums.Status.Pending)
-                    {
-                        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-                            <span class="inline-flex items-center px-3 py-1.5 rounded-lg bg-amber-100 text-amber-800 text-sm">
-                                <i class="material-icons text-sm mr-1">hourglass_empty</i>
-                                <span>Registration Pending</span>
-                                @if (ViewBag.IsSemesterBased)
-                                {
-                                    <span class="ml-1">(Sem @ViewBag.Semester)</span>
-                                }
-                            </span>
-                            <a asp-controller="Payments" asp-action="StudentFinance"
-                               class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                                <i class="material-icons text-sm mr-1">payment</i>
-                                <span>Pay Now</span>
-                            </a>
-                        </div>
-                    }
-                    else if (ViewBag.RegistrationStatus == SIS.Enums.Status.Registered)
-                    {
-                        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-                            <span class="inline-flex items-center px-3 py-1.5 rounded-lg bg-green-100 text-green-800 text-sm">
-                                <i class="material-icons text-sm mr-1">check_circle</i>
-                                <span>Registration Complete</span>
-                                @if (ViewBag.IsSemesterBased)
-                                {
-                                    <span class="ml-1">(Sem @ViewBag.Semester)</span>
-                                }
-                            </span>
-                            <div class="flex gap-2">
-                                <button onclick="generateClassPass()"
-                                        class="inline-flex items-center px-3 py-2 border-2 border-green-700 text-green-700 rounded-lg hover:bg-green-700 hover:text-white transition-colors text-sm">
-                                    <i class="material-icons text-sm mr-1">school</i>
-                                    <span>Class Pass</span>
-                                </button>
-                                <a asp-controller="Payments" asp-action="StudentFinance"
-                                   class="inline-flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm">
-                                    <i class="material-icons text-sm mr-1">payment</i>
-                                    <span>Pay</span>
-                                </a>
-                            </div>
-
-                            <!-- Exam Docket Section -->
-                            <div id="examDocketSection" class="hidden">
-                                <div class="flex gap-2">
-                                    <button id="examDocketBtn" onclick="checkExamDockets()"
-                                            class="inline-flex items-center px-3 py-2 border-2 border-red-600 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-colors text-sm">
-                                        <i class="material-icons text-sm mr-1">assignment</i>
-                                        <span>Exam Docket</span>
-                                    </button>
-                                </div>
-                            </div>
-
-                            </div>
-                        }
-                        else if (!ViewBag.CanRegister)
-                        {
-                            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-                                <span class="inline-flex items-center px-3 py-1.5 rounded-lg bg-amber-100 text-amber-800 text-sm">
-                                    <i class="material-icons text-sm mr-1">hourglass_empty</i>
-                                    <span>Registration Threshold Not Reached</span>
-                                    @if (ViewBag.IsSemesterBased)
-                                    {
-                                        <span class="ml-1">(Sem @ViewBag.Semester)</span>
-                                    }
-                                </span>
-                                <a asp-controller="Payments" asp-action="StudentFinance"
-                                   class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                                    <i class="material-icons text-sm mr-1">payment</i>
-                                    <span>Pay Now</span>
-                                </a>
-                            </div>
-                        }
-                    }
-            </div>
-        </div>
-
-        <!-- Mobile status indicators -->
-        <div class="sm:hidden mt-3">
-                @if (ViewBag.RegistrationStatus != SIS.Enums.Status.Registered &&
-            ViewBag.RegistrationStatus != SIS.Enums.Status.Pending)
-                {
-                <button type="button"
-                        id="submitRegistrationBtnMobile"
-                        class="w-full inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-green-600"
-                        onclick="submitCourseRegistration()">
-                    <i id="submitIconMobile" class="material-icons text-sm mr-1">check_circle</i>
-                    <svg id="loadingSpinnerMobile" class="animate-spin h-4 w-4 mr-1 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <span id="submitTextMobile">Submit Registration</span>
-                </button>
-                }
                 else if (ViewBag.RegistrationStatus == SIS.Enums.Status.Pending)
                 {
-                <div class="flex flex-col gap-2">
-                    <span class="inline-flex items-center justify-center px-3 py-1.5 rounded-lg bg-amber-100 text-amber-800 text-sm">
-                        <i class="material-icons text-sm mr-1">hourglass_empty</i>
-                        <span>Registration Pending</span>
-                            @if (ViewBag.IsSemesterBased)
-                            {
-                            <span class="ml-1">(Sem @ViewBag.Semester)</span>
-                            }
-                    </span>
-                    <a asp-controller="Payments" asp-action="StudentFinance"
-                       class="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm">
-                        <i class="material-icons text-sm mr-1">payment</i>
-                        <span>Pay Now</span>
-                    </a>
-                </div>
+                    <span class="status-pill pill-pending"><i class="material-icons">hourglass_empty</i> Pending@(ViewBag.IsSemesterBased ? $" · Sem {ViewBag.Semester}" : "")</span>
+                    <a asp-controller="Payments" asp-action="StudentFinance" class="btn-hero-pay"><i class="material-icons">payment</i> Pay Now</a>
                 }
                 else if (ViewBag.RegistrationStatus == SIS.Enums.Status.Registered)
                 {
-                <div class="flex flex-col gap-2">
-                    <span class="inline-flex items-center justify-center px-3 py-1.5 rounded-lg bg-green-100 text-green-800 text-sm">
-                        <i class="material-icons text-sm mr-1">check_circle</i>
-                        <span>Registration Complete</span>
-                            @if (ViewBag.IsSemesterBased)
-                            {
-                            <span class="ml-1">(Sem @ViewBag.Semester)</span>
-                            }
-                    </span>
-                    <div class="flex gap-2">
-                        <button onclick="generateClassPass()"
-                                class="flex-1 inline-flex items-center justify-center px-3 py-2 border-2 border-green-700 text-green-700 rounded-lg hover:bg-green-700 hover:text-white transition-colors text-sm">
-                            <i class="material-icons text-sm mr-1">school</i>
-                            <span>Class Pass</span>
-                        </button>
-                        <a asp-controller="Payments" asp-action="StudentFinance"
-                           class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm">
-                            <i class="material-icons text-sm mr-1">payment</i>
-                            <span>Pay</span>
-                        </a>
+                    <span class="status-pill pill-registered"><i class="material-icons">check_circle</i> Registered@(ViewBag.IsSemesterBased ? $" · Sem {ViewBag.Semester}" : "")</span>
+                    <button onclick="generateClassPass()" class="btn-hero-classpass"><i class="material-icons">school</i> Class Pass</button>
+                    <a asp-controller="Payments" asp-action="StudentFinance" class="btn-hero-pay"><i class="material-icons">payment</i> Pay</a>
+                    <div id="examDocketSection" class="hidden">
+                        <button id="examDocketBtn" onclick="checkExamDockets()" class="btn-hero-docket"><i class="material-icons">assignment</i> Exam Docket</button>
                     </div>
-
-                    <!-- Exam Docket Section for Mobile -->
-                    <div id="examDocketSectionMobile" class="hidden">
-                        <button id="examDocketBtnMobile" onclick="checkExamDockets()"
-                                class="w-full inline-flex items-center justify-center px-3 py-2 border-2 border-red-600 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-colors text-sm">
-                            <i class="material-icons text-sm mr-1">assignment</i>
-                            <span>Exam Docket</span>
-                        </button>
-                    </div>
-                </div>
                 }
+                else if (!ViewBag.CanRegister)
+                {
+                    <span class="status-pill pill-threshold"><i class="material-icons">hourglass_empty</i> Threshold Not Reached</span>
+                    <a asp-controller="Payments" asp-action="StudentFinance" class="btn-hero-pay"><i class="material-icons">payment</i> Pay Now</a>
+                }
+            </div>
         </div>
     </div>
 
-    <!-- Course Requirements Summary -->
-    @if (ViewBag.TotalRequiredCourses > 0 && ViewBag.RegistrationStatus != SIS.Enums.Status.Registered)
+    <!-- ── Mobile action bar ── -->
+    <div class="cr-mobile-actions">
+        @if (ViewBag.RegistrationStatus != SIS.Enums.Status.Registered &&
+                ViewBag.RegistrationStatus != SIS.Enums.Status.Pending && ViewBag.CanRegister)
+        {
+            <button type="button" id="submitRegistrationBtnMobile" class="btn-mobile-submit" onclick="submitCourseRegistration()">
+                <i id="submitIconMobile" class="material-icons">check_circle</i>
+                <svg id="loadingSpinnerMobile" class="animate-spin hidden" style="width:1.1rem;height:1.1rem;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span id="submitTextMobile">Submit Registration</span>
+            </button>
+        }
+        else if (ViewBag.RegistrationStatus == SIS.Enums.Status.Pending)
+        {
+            <span class="status-pill pill-pending" style="justify-content:center;"><i class="material-icons">hourglass_empty</i> Registration Pending@(ViewBag.IsSemesterBased ? $" (Sem {ViewBag.Semester})" : "")</span>
+            <a asp-controller="Payments" asp-action="StudentFinance" style="display:flex;align-items:center;justify-content:center;gap:.35rem;background:var(--navy);color:#fff;border-radius:.65rem;padding:.6rem;font-size:.82rem;font-weight:700;text-decoration:none;">
+                <i class="material-icons" style="font-size:.85rem;">payment</i> Pay Now
+            </a>
+        }
+        else if (ViewBag.RegistrationStatus == SIS.Enums.Status.Registered)
+        {
+            <span class="status-pill pill-registered" style="justify-content:center;"><i class="material-icons">check_circle</i> Registration Complete@(ViewBag.IsSemesterBased ? $" (Sem {ViewBag.Semester})" : "")</span>
+            <div style="display:flex;gap:.5rem;">
+                <button onclick="generateClassPass()" class="btn-hero-classpass" style="flex:1;justify-content:center;background:#f0fdf4;color:var(--green);border-color:var(--green);">
+                    <i class="material-icons">school</i> Class Pass
+                </button>
+                <a asp-controller="Payments" asp-action="StudentFinance" style="flex:1;display:flex;align-items:center;justify-content:center;gap:.35rem;background:var(--navy);color:#fff;border-radius:.65rem;padding:.6rem;font-size:.78rem;font-weight:700;text-decoration:none;">
+                    <i class="material-icons" style="font-size:.8rem;">payment</i> Pay
+                </a>
+            </div>
+            <div id="examDocketSectionMobile" class="hidden">
+                <button id="examDocketBtnMobile" onclick="checkExamDockets()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:.35rem;background:#fef2f2;color:var(--coral);border:1.5px solid rgba(232,92,92,.35);border-radius:.65rem;padding:.6rem;font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit;">
+                    <i class="material-icons" style="font-size:.8rem;">assignment</i> Exam Docket
+                </button>
+            </div>
+        }
+        else if (!ViewBag.CanRegister)
+        {
+            <span class="status-pill pill-threshold" style="justify-content:center;"><i class="material-icons">hourglass_empty</i> Threshold Not Reached</span>
+            <a asp-controller="Payments" asp-action="StudentFinance" style="display:flex;align-items:center;justify-content:center;gap:.35rem;background:var(--navy);color:#fff;border-radius:.65rem;padding:.6rem;font-size:.82rem;font-weight:700;text-decoration:none;">
+                <i class="material-icons" style="font-size:.85rem;">payment</i> Pay Now
+            </a>
+        }
+    </div>
+
+    <!-- ── Info callouts (float over hero) ── -->
+    @if ((ViewBag.TotalRequiredCourses > 0 && ViewBag.RegistrationStatus != SIS.Enums.Status.Registered) ||
+        (ViewBag.IsSemesterBased && ViewBag.RegistrationStatus != SIS.Enums.Status.Registered))
     {
-        <div class="mx-4 sm:mx-6 mb-4">
-            <div class="bg-blue-50 border border-blue-100 rounded-lg p-3 sm:p-4">
-                <div class="flex items-start">
-                    <i class="material-icons text-blue-600 mr-2 mt-0.5 text-lg sm:text-xl">info</i>
-                    <div class="flex-1">
-                        <h3 class="font-semibold text-slate-800 text-sm sm:text-base">Course Requirements</h3>
-                        <div class="text-xs sm:text-sm text-slate-600 mt-1">
-                            @if (ViewBag.IsSemesterBased)
-                            {
-                                <p>Your programme requires <span class="font-medium">@ViewBag.TotalRequiredCourses</span> courses for Semester @ViewBag.Semester.</p>
-                            }
-                            else
-                            {
-                                <p>Your programme requires <span class="font-medium">@ViewBag.TotalRequiredCourses</span> courses this year.</p>
-                            }
+        <div class="cr-strip">
+            @if (ViewBag.TotalRequiredCourses > 0 && ViewBag.RegistrationStatus != SIS.Enums.Status.Registered)
+            {
+                <div class="callout callout-blue">
+                    <i class="material-icons">info</i>
+                    <div class="callout-text">
+                        <strong>Course Requirements — </strong>
+                        @if (ViewBag.IsSemesterBased)
+                        {
+                            <text>Your programme requires <strong>@ViewBag.TotalRequiredCourses</strong> courses for Semester @ViewBag.Semester.</text>
+                        }
+                        else
+                        {
 
-                            @if (Model.Any(c => c.IsCarryover))
-                            {
-                                var carryoverCount = Model.Count(c => c.IsCarryover);
-                                <p class="mt-1 text-amber-700 font-medium">
-                                    <i class="material-icons text-sm align-middle">warning</i>
-                                    @carryoverCount carryover course@(carryoverCount != 1 ? "s" : "") must be retaken.
-                                </p>
-                            }
-
-                            <p class="mt-1">You must select at least <span class="font-medium text-blue-700">@ViewBag.MinimumElectives</span> elective course@(ViewBag.MinimumElectives != 1 ? "s" : "").</p>
-                        </div>
+                            <text>Your programme requires <strong>@ViewBag.TotalRequiredCourses</strong> courses this year.</text>
+                        }
+                        @if (Model.Any(c => c.IsCarryover))
+                        {
+                            var cc = Model.Count(c => c.IsCarryover);
+                            <text> <strong style="color:#d97706;">@cc carryover course@(cc != 1 ? "s" : "") must be retaken.</strong></text>
+                        }
+                        <text> You must select at least <strong>@ViewBag.MinimumElectives</strong> elective course@(ViewBag.MinimumElectives != 1 ? "s" : "").</text>
                     </div>
                 </div>
-            </div>
+            }
+            @if (ViewBag.IsSemesterBased && ViewBag.RegistrationStatus != SIS.Enums.Status.Registered)
+            {
+                <div class="callout callout-purple">
+                    <i class="material-icons">calendar_today</i>
+                    <div class="callout-text">
+                        <strong>Semester-Based Registration — </strong>
+                        You are registering for <strong>Semester @ViewBag.Semester</strong> courses only. You will need to register again when the next semester opens.
+                    </div>
+                </div>
+            }
         </div>
     }
 
-    <!-- Semester-based registration notice -->
-    @if (ViewBag.IsSemesterBased && ViewBag.RegistrationStatus != SIS.Enums.Status.Registered)
-    {
-        <div class="mx-4 sm:mx-6 mb-4">
-            <div class="bg-purple-50 border border-purple-100 rounded-lg p-3 sm:p-4">
-                <div class="flex items-start">
-                    <i class="material-icons text-purple-600 mr-2 mt-0.5 text-lg sm:text-xl">calendar_today</i>
-                    <div>
-                        <h3 class="font-semibold text-slate-800 text-sm sm:text-base">Semester-Based Registration</h3>
-                        <p class="text-xs sm:text-sm text-slate-600 mt-1">
-                            You are registering for <span class="font-medium text-purple-700">Semester @ViewBag.Semester</span> courses only.
-                            You will need to register again for the next semester when registration opens.
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    }
+    <!-- ── Swipe hint (mobile) ── -->
+    <div class="swipe-hint">
+        <i class="material-icons" style="font-size:.85rem;vertical-align:middle;margin-right:.25rem;">touch_app</i>
+        Tap course cards to select / deselect
+    </div>
 
-    <!-- Main Content -->
-    <div class="mobile-course-content">
+    <!-- ── Main content ── -->
+    <div class="mobile-course-content" style="padding:1rem 0 1rem;">
+
         @if (!Model.Any())
         {
-            <div class="mx-4 sm:mx-6">
-                <div class="bg-white rounded-xl shadow-sm p-6">
-                    <div class="flex items-center gap-2 p-4 bg-amber-50 text-amber-800 rounded-lg">
-                        <i class="material-icons">warning</i>
-                        <p class="text-sm sm:text-base">
-                            No courses available for registration at this time
-                            @if (ViewBag.IsSemesterBased)
-                            {
-                                <span> for Semester @ViewBag.Semester</span>
-                            }.
-                        </p>
-                    </div>
+            <div style="padding:0 1rem;">
+                <div class="callout callout-amber" style="margin-top:.5rem;">
+                    <i class="material-icons">warning</i>
+                    <p class="callout-text">
+                        No courses available for registration at this time@(ViewBag.IsSemesterBased ? $" for Semester {ViewBag.Semester}" : "").
+                    </p>
                 </div>
             </div>
         }
@@ -511,71 +1045,43 @@
             <form id="courseRegistrationForm">
                 @Html.AntiForgeryToken()
 
-                <!-- Swipe hint for mobile -->
-                <div class="swipe-hint mx-4">
-                    <i class="material-icons text-sm align-middle mr-1">touch_app</i>
-                    Tap course cards to select/deselect
-                </div>
-
-                <!-- Carryover Courses Section -->
+                <!-- Carryover section -->
                 @if (Model.Any(c => c.IsCarryover))
                 {
-                    <div class="mb-6 sm:mb-8">
-                        <div class="mobile-section-header">
-                            <div class="flex items-center">
-                                <i class="material-icons mr-2 text-slate-600 text-lg sm:text-xl">refresh</i>
-                                <h2 class="text-lg sm:text-xl font-semibold text-slate-800">
-                                    Carryover Courses
-                                    @if (ViewBag.IsSemesterBased)
-                                    {
-                                        <span class="text-sm font-normal text-slate-600 block sm:inline">(Semester @ViewBag.Semester)</span>
-                                    }
-                                </h2>
-                                <span class="ml-2 px-2 py-1 text-xs font-medium bg-slate-100 text-slate-700 rounded-full">
-                                    Required
-                                </span>
-                            </div>
-                        </div>
-
-                        <div class="mx-4 sm:mx-6 mb-4">
-                            <div class="bg-slate-50 border border-slate-200 rounded-lg p-3">
-                                <div class="flex items-start">
-                                    <i class="material-icons text-slate-600 mr-2 mt-0.5 text-sm">info</i>
-                                    <div class="text-xs sm:text-sm text-slate-700">
-                                        <p class="font-medium">These are courses you must retake from previous academic periods.</p>
-                                        <p class="mt-1">They are automatically included and do not count towards your elective limits.</p>
-                                    </div>
+                    <div style="margin-bottom:1.5rem;">
+                        <div class="section-head">
+                            <div class="section-head-left">
+                                <div class="section-icon" style="background:#fffbeb;">
+                                    <i class="material-icons" style="color:#d97706;">refresh</i>
                                 </div>
+                                <span class="section-title">Carryover Courses</span>
+                                @if (ViewBag.IsSemesterBased)
+                                {
+                                    <span class="section-sub">(Semester @ViewBag.Semester)</span>
+                                }
                             </div>
+                            <span style="font-size:.68rem;font-weight:700;padding:.2rem .55rem;border-radius:2rem;background:#fffbeb;color:#d97706;border:1px solid #fde68a;">Required</span>
                         </div>
 
-                        <div class="mx-4 sm:mx-6">
-                            <div class="mobile-course-grid grid sm:grid-cols-2 gap-4">
+                        <div style="padding:.75rem 1rem .25rem;">
+                            <div class="callout callout-amber" style="margin-bottom:.75rem;">
+                                <i class="material-icons">info</i>
+                                <p class="callout-text">These courses from previous periods are automatically included and do not count towards your elective limits.</p>
+                            </div>
+                            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:.65rem;">
                                 @foreach (var course in Model.Where(c => c.IsCarryover))
                                 {
-                                    <div class="course-card mobile-card bg-slate-50 border-2 border-slate-300 rounded-lg p-4 relative border-l-4 border-l-indigo-500 shadow-sm hover:shadow-md transition-all">
-                                        <div class="status-indicator carryover"></div>
-
-                                        <div class="mobile-touch-target">
-                                            <input class="mobile-checkbox h-5 w-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 carryover-checkbox mr-3"
-                                                   type="checkbox"
-                                                   value="@course.Id"
-                                                   checked
-                                                   disabled>
-                                            <div class="flex-1">
-                                                <div class="flex items-center gap-2 mb-1">
-                                                    <p class="text-sm font-medium text-slate-600">@course.CourseCode</p>
-                                                    <span class="px-2 py-0.5 text-xs font-medium bg-indigo-100 text-indigo-700 rounded-full">
-                                                        CARRYOVER
-                                                    </span>
-                                                </div>
-                                                <h3 class="font-semibold text-slate-800 mb-1 text-sm sm:text-base">@course.CourseName</h3>
-                                                <p class="text-xs sm:text-sm text-slate-600 line-clamp-2">@course.CourseDescription</p>
+                                    <div class="course-card carryover">
+                                        <span class="status-dot carryover"></span>
+                                        <div class="card-touch">
+                                            <input class="course-checkbox carryover-checkbox" type="checkbox" value="@course.Id" checked disabled>
+                                            <div style="flex:1;">
+                                                <p class="card-course-code">@course.CourseCode <span class="badge-carryover">Carryover</span></p>
+                                                <h3 class="card-course-name">@course.CourseName</h3>
+                                                <p class="card-course-desc">@course.CourseDescription</p>
                                                 @if (!string.IsNullOrEmpty(course.CarryoverReason))
                                                 {
-                                                    <div class="mt-2 p-2 bg-slate-100 rounded text-xs text-slate-700">
-                                                        <span class="font-medium">Reason:</span> @course.CarryoverReason
-                                                    </div>
+                                                    <p class="carryover-reason"><strong>Reason:</strong> @course.CarryoverReason</p>
                                                 }
                                             </div>
                                         </div>
@@ -586,117 +1092,35 @@
                     </div>
                 }
 
-                <!-- Mandatory Courses Section -->
-                <div class="mb-6 sm:mb-8">
-                    <div class="mobile-section-header">
-                        <div class="flex items-center">
-                            <i class="material-icons mr-2 text-blue-600 text-lg sm:text-xl">star</i>
-                            <h2 class="text-lg sm:text-xl font-semibold text-slate-800">
-                                Mandatory Courses
-                                @if (ViewBag.IsSemesterBased)
-                                {
-                                    <span class="text-sm font-normal text-slate-600 block sm:inline">(Semester @ViewBag.Semester)</span>
-                                }
-                            </h2>
-                        </div>
-                    </div>
-
-                    <div class="mx-4 sm:mx-6">
-                        @if (Model.Any(c => c.IsMandatory && !c.IsCarryover))
-                        {
-                            <div class="mobile-course-grid grid sm:grid-cols-2 gap-4">
-                                @foreach (var course in Model.Where(c => c.IsMandatory && !c.IsCarryover))
-                                {
-                                    <div class="course-card mobile-card bg-slate-50 rounded-lg p-4 border border-slate-200">
-                                        <div class="status-indicator required"></div>
-
-                                        <div class="mobile-touch-target">
-                                            <input class="mobile-checkbox h-5 w-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 mandatory-checkbox mr-3"
-                                                   type="checkbox"
-                                                   value="@course.Id"
-                                                   checked
-                                                   disabled>
-                                            <div class="flex-1">
-                                                <p class="text-sm font-medium text-slate-600 mb-1">@course.CourseCode</p>
-                                                <h3 class="font-semibold text-slate-800 mb-1 text-sm sm:text-base">@course.CourseName</h3>
-                                                <p class="text-xs sm:text-sm text-slate-600 line-clamp-2">@course.CourseDescription</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                }
+                <!-- Mandatory section -->
+                <div style="margin-bottom:1.5rem;">
+                    <div class="section-head">
+                        <div class="section-head-left">
+                            <div class="section-icon" style="background:#eff6ff;">
+                                <i class="material-icons" style="color:var(--navy);">star</i>
                             </div>
-                        }
-                        else
-                        {
-                            <div class="bg-slate-50 rounded-lg p-4 border border-slate-200">
-                                <p class="text-slate-600 text-center text-sm">
-                                    No mandatory courses for this
-                                    @if (ViewBag.IsSemesterBased)
-                                    {
-                                        <span>semester</span>
-                                    }
-                                    else
-                                    {
-                                        <span>year</span>
-                                    }.
-                                </p>
-                            </div>
-                        }
-                    </div>
-                </div>
-
-                <!-- Elective Courses Section -->
-                <div class="pb-20 sm:pb-8">
-                    <div class="mobile-section-header">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center">
-                                <i class="material-icons mr-2 text-green-600 text-lg sm:text-xl">library_books</i>
-                                <h2 class="text-lg sm:text-xl font-semibold text-slate-800">
-                                    Elective Courses
-                                    @if (ViewBag.IsSemesterBased)
-                                    {
-                                        <span class="text-sm font-normal text-slate-600 block sm:inline">(Semester @ViewBag.Semester)</span>
-                                    }
-                                </h2>
-                            </div>
-                            @if (ViewBag.RegistrationStatus != SIS.Enums.Status.Pending &&
-                           ViewBag.RegistrationStatus != SIS.Enums.Status.Registered)
+                            <span class="section-title">Mandatory Courses</span>
+                            @if (ViewBag.IsSemesterBased)
                             {
-                                <div class="flex flex-col sm:flex-row gap-1 sm:gap-2">
-                                    <span class="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded">
-                                        Min: @ViewBag.MinimumElectives
-                                    </span>
-                                    <span id="electiveCounter" class="px-2 py-1 text-xs font-medium bg-slate-100 text-slate-800 rounded">
-                                        0 selected
-                                    </span>
-                                </div>
+                                <span class="section-sub">(Semester @ViewBag.Semester)</span>
                             }
                         </div>
                     </div>
 
-                    <div class="mx-4 sm:mx-6">
-                        @if (Model.Any(c => !c.IsMandatory && !c.IsCarryover))
+                    <div style="padding:.75rem 1rem .25rem;">
+                        @if (Model.Any(c => c.IsMandatory && !c.IsCarryover))
                         {
-                            <div class="mobile-course-grid grid sm:grid-cols-2 gap-4">
-                                @foreach (var course in Model.Where(c => !c.IsMandatory && !c.IsCarryover))
+                            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:.65rem;">
+                                @foreach (var course in Model.Where(c => c.IsMandatory && !c.IsCarryover))
                                 {
-                                    <div class="course-card mobile-card border border-blue-100 rounded-lg p-4 hover:border-blue-200 transition-all @(course.IsSelected ? "selected" : "")"
-                                         onclick="toggleCourseSelection(this, @course.Id)"
-                                         data-course-id="@course.Id">
-                                        <div class="status-indicator @(course.IsSelected ? "selected" : "")"></div>
-
-                                        <div class="mobile-touch-target">
-                                            <input class="mobile-checkbox h-5 w-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 elective-checkbox mr-3"
-                                                   type="checkbox"
-                                                   name="elective"
-                                                   value="@course.Id"
-                                            @(course.IsSelected ? "checked" : "")
-                                            @(ViewBag.RegistrationStatus == SIS.Enums.Status.Pending ||
-                                                ViewBag.RegistrationStatus == SIS.Enums.Status.Registered ? "disabled" : "")>
-                                            <div class="flex-1">
-                                                <p class="text-sm font-medium text-slate-600 mb-1">@course.CourseCode</p>
-                                                <h3 class="font-semibold text-slate-800 mb-1 text-sm sm:text-base">@course.CourseName</h3>
-                                                <p class="text-xs sm:text-sm text-slate-600 line-clamp-2">@course.CourseDescription</p>
+                                    <div class="course-card mandatory">
+                                        <span class="status-dot required"></span>
+                                        <div class="card-touch">
+                                            <input class="course-checkbox mandatory-checkbox" type="checkbox" value="@course.Id" checked disabled>
+                                            <div style="flex:1;">
+                                                <p class="card-course-code">@course.CourseCode <span class="badge-mandatory">Mandatory</span></p>
+                                                <h3 class="card-course-name">@course.CourseName</h3>
+                                                <p class="card-course-desc">@course.CourseDescription</p>
                                             </div>
                                         </div>
                                     </div>
@@ -705,1057 +1129,545 @@
                         }
                         else
                         {
-                            <div class="bg-slate-50 rounded-lg p-4 border border-slate-200">
-                                <p class="text-slate-600 text-center text-sm">
-                                    No elective courses available for this
-                                    @if (ViewBag.IsSemesterBased)
-                                    {
-                                        <span>semester</span>
-                                    }
-                                    else
-                                    {
-                                        <span>year</span>
-                                    }.
-                                </p>
-                            </div>
+                            <div class="empty-state"><p>No mandatory courses for this @(ViewBag.IsSemesterBased ? "semester" : "year").</p></div>
                         }
                     </div>
                 </div>
+
+                <!-- Elective section -->
+                <div style="padding-bottom:1rem;">
+                    <div class="section-head">
+                        <div class="section-head-left">
+                            <div class="section-icon" style="background:var(--greenl);">
+                                <i class="material-icons" style="color:var(--green);">library_books</i>
+                            </div>
+                            <span class="section-title">Elective Courses</span>
+                            @if (ViewBag.IsSemesterBased)
+                            {
+                                <span class="section-sub">(Semester @ViewBag.Semester)</span>
+                            }
+                        </div>
+                        @if (ViewBag.RegistrationStatus != SIS.Enums.Status.Pending &&
+                                            ViewBag.RegistrationStatus != SIS.Enums.Status.Registered)
+                        {
+                            <div style="display:flex;gap:.4rem;align-items:center;">
+                                <span class="counter-min">Min: @ViewBag.MinimumElectives</span>
+                                <span id="electiveCounter">0 selected</span>
+                            </div>
+                        }
+                    </div>
+
+                    <div style="padding:.75rem 1rem .25rem;">
+                        @if (Model.Any(c => !c.IsMandatory && !c.IsCarryover))
+                        {
+                            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:.65rem;">
+                                @foreach (var course in Model.Where(c => !c.IsMandatory && !c.IsCarryover))
+                                {
+                                    <div class="course-card @(course.IsSelected ? "selected" : "")"
+                                         onclick="toggleCourseSelection(this, @course.Id)"
+                                         data-course-id="@course.Id">
+                                        <span class="status-dot @(course.IsSelected ? "selected" : "unselected")"></span>
+                                        <div class="card-touch">
+                                            <input class="course-checkbox elective-checkbox" type="checkbox" name="elective" value="@course.Id"
+                                                   @(course.IsSelected ? "checked" : "")
+                                                   @(ViewBag.RegistrationStatus == SIS.Enums.Status.Pending || ViewBag.RegistrationStatus == SIS.Enums.Status.Registered ? "disabled" : "")>
+                                            <div style="flex:1;">
+                                                <p class="card-course-code">@course.CourseCode</p>
+                                                <h3 class="card-course-name">@course.CourseName</h3>
+                                                <p class="card-course-desc">@course.CourseDescription</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="empty-state"><p>No elective courses available for this @(ViewBag.IsSemesterBased ? "semester" : "year").</p></div>
+                        }
+                    </div>
+                </div>
+
             </form>
         }
     </div>
 
-    <!-- Mobile Floating Action Button -->
+    <!-- Mobile floating submit -->
     @if (ViewBag.RegistrationStatus != SIS.Enums.Status.Registered &&
-    ViewBag.RegistrationStatus != SIS.Enums.Status.Pending)
+        ViewBag.RegistrationStatus != SIS.Enums.Status.Pending && ViewBag.CanRegister)
     {
-        <div class="mobile-floating-action sm:hidden">
-            <button type="button"
-                    id="mobileSubmitBtn"
-                    class="w-full inline-flex items-center justify-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-green-600 text-base font-medium"
-                    onclick="submitCourseRegistration()">
-                <i id="mobileSubmitIcon" class="material-icons mr-2">check_circle</i>
-                <svg id="mobileLoadingSpinner" class="animate-spin h-5 w-5 mr-2 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <div class="mobile-floating-action" style="display:none;" id="mobileFloatingBar">
+            <button type="button" id="mobileSubmitBtn" class="btn-mobile-submit" onclick="submitCourseRegistration()">
+                <i id="mobileSubmitIcon" class="material-icons">check_circle</i>
+                <svg id="mobileLoadingSpinner" class="animate-spin hidden" style="width:1.1rem;height:1.1rem;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
                 <span id="mobileSubmitText">Submit Registration</span>
             </button>
         </div>
+        <script>
+            if (window.innerWidth < 640) document.getElementById('mobileFloatingBar').style.display = 'block';
+            window.addEventListener('resize', () => {
+                const bar = document.getElementById('mobileFloatingBar');
+                if (bar) bar.style.display = window.innerWidth < 640 ? 'block' : 'none';
+            });
+        </script>
     }
+
 </div>
 
-<!-- Exam Docket Modal -->
-<div id="examDocketModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-    <div class="bg-white rounded-xl p-6 max-w-2xl mx-4 max-h-[80vh] overflow-y-auto">
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="text-xl font-semibold text-slate-800 flex items-center">
-                <i class="material-icons text-red-600 mr-2">assignment</i>
-                Available Exam Dockets
-            </h3>
-            <button onclick="closeExamDocketModal()" class="text-slate-400 hover:text-slate-600">
-                <i class="material-icons">close</i>
-            </button>
+<!-- ── Exam Docket Modal ── -->
+<div id="examDocketModal" class="docket-modal-backdrop">
+    <div class="docket-modal">
+        <div class="docket-modal-head">
+            <span class="docket-modal-title"><i class="material-icons">assignment</i> Available Exam Dockets</span>
+            <button class="btn-docket-close" onclick="closeExamDocketModal()"><i class="material-icons">close</i></button>
         </div>
-
-        <div id="examDocketContent">
-            <!-- Content will be loaded dynamically -->
-        </div>
+        <div class="docket-modal-body" id="examDocketContent"></div>
     </div>
 </div>
 
-<!-- Enhanced Custom Alert Container for Mobile -->
-<div id="customAlert" class="fixed inset-0 flex items-center justify-center z-50 hidden p-4">
-    <!-- Backdrop -->
-    <div class="absolute inset-0 bg-black bg-opacity-50"></div>
-
-    <!-- Alert Content -->
-    <div class="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full mx-4 relative z-10">
-        <div id="alertIcon" class="mx-auto flex items-center justify-center w-12 h-12 rounded-full mb-4"></div>
-        <h3 id="alertTitle" class="text-lg font-semibold text-center mb-2"></h3>
-        <p id="alertMessage" class="text-slate-600 text-center mb-6 text-sm"></p>
-        <button onclick="closeCustomAlert()" class="w-full bg-slate-800 text-white rounded-lg py-3 px-4 hover:bg-slate-700 transition-colors font-medium">
-            OK
-        </button>
+<!-- ── Custom Alert ── -->
+<div id="customAlert" class="alert-overlay">
+    <div class="alert-box-modal">
+        <div id="alertIcon" class="alert-icon-ring"></div>
+        <h3 id="alertTitle"></h3>
+        <p id="alertMessage"></p>
+        <button class="btn-alert-ok" onclick="closeCustomAlert()">OK</button>
     </div>
 </div>
 
 @if (ViewBag.RegistrationStatus != SIS.Enums.Status.Registered &&
-ViewBag.RegistrationStatus != SIS.Enums.Status.Pending)
+     ViewBag.RegistrationStatus != SIS.Enums.Status.Pending)
 {
     <script>
-        // Move updateElectiveCounter to global scope
         function updateElectiveCounter() {
             const selectedElectives = document.querySelectorAll('.elective-checkbox:checked');
-            const mandatoryCourses = document.querySelectorAll('.mandatory-checkbox:checked');
-            const carryoverCourses = document.querySelectorAll('.carryover-checkbox:checked');
-            const counterElement = document.getElementById('electiveCounter');
+            const mandatoryCourses  = document.querySelectorAll('.mandatory-checkbox:checked');
+            const carryoverCourses  = document.querySelectorAll('.carryover-checkbox:checked');
+            const counterElement    = document.getElementById('electiveCounter');
+            if (!counterElement) return;
 
-            // Early return if counter element doesn't exist
-            if (!counterElement) {
-                return;
-            }
-
-            const selectedCount = selectedElectives.length;
+            const selectedCount  = selectedElectives.length;
             const carryoverCount = carryoverCourses.length;
-            const totalSelected = selectedCount + mandatoryCourses.length + carryoverCount;
-            const minimumElectives = @ViewBag.MinimumElectives;
+            const totalSelected  = selectedCount + mandatoryCourses.length + carryoverCount;
+            const minimumElectives    = @ViewBag.MinimumElectives;
             const totalRequiredCourses = @ViewBag.TotalRequiredCourses;
 
-            // Update counter text
-            const counterText = carryoverCount > 0 ?
-                `${selectedCount} selected (+${carryoverCount} carryover)` :
-                `${selectedCount} selected`;
-
+            const counterText = carryoverCount > 0
+                ? `${selectedCount} selected (+${carryoverCount} carryover)`
+                : `${selectedCount} selected`;
             counterElement.textContent = counterText;
 
-            // Update counter color based on requirements
             if (selectedCount >= minimumElectives) {
                 if (totalRequiredCourses > 0 && totalSelected > totalRequiredCourses) {
-                    counterElement.className = 'px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded';
-                    counterElement.textContent = carryoverCount > 0 ?
-                        `${selectedCount} selected (+${carryoverCount} carryover) - max exceeded` :
-                        `${selectedCount} selected - max exceeded`;
+                    counterElement.style.cssText = 'font-size:.68rem;font-weight:700;padding:.2rem .5rem;border-radius:2rem;background:#fee2e2;color:#991b1b;';
+                    counterElement.textContent = (carryoverCount > 0
+                        ? `${selectedCount} selected (+${carryoverCount} carryover) — max exceeded`
+                        : `${selectedCount} selected — max exceeded`);
                 } else {
-                    counterElement.className = 'px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded';
+                    counterElement.style.cssText = 'font-size:.68rem;font-weight:700;padding:.2rem .5rem;border-radius:2rem;background:var(--greenl);color:#166534;';
                 }
             } else {
-                counterElement.className = 'px-2 py-1 text-xs font-medium bg-amber-100 text-amber-800 rounded';
+                counterElement.style.cssText = 'font-size:.68rem;font-weight:700;padding:.2rem .5rem;border-radius:2rem;background:#fffbeb;color:#92400e;';
             }
 
-            // Disable additional checkboxes if maximum is reached
             if (totalRequiredCourses > 0) {
-                const unselectedElectives = document.querySelectorAll('.elective-checkbox:not(:checked)');
-
+                const unselected = document.querySelectorAll('.elective-checkbox:not(:checked)');
                 if (totalSelected >= totalRequiredCourses) {
-                    // Disable all unchecked electives if maximum is reached
-                    unselectedElectives.forEach(checkbox => {
-                        checkbox.disabled = true;
-                        // Add a visual indication that checkbox is disabled due to maximum limit
-                        const courseCard = checkbox.closest('.course-card');
-                        if (courseCard) {
-                            courseCard.classList.add('disabled');
-                        }
+                    unselected.forEach(cb => {
+                        cb.disabled = true;
+                        cb.closest('.course-card')?.classList.add('disabled');
                     });
                 } else {
-                    // Re-enable all electives if below maximum
-                    unselectedElectives.forEach(checkbox => {
-                        checkbox.disabled = false;
-                        const courseCard = checkbox.closest('.course-card');
-                        if (courseCard) {
-                            courseCard.classList.remove('disabled');
-                        }
+                    unselected.forEach(cb => {
+                        cb.disabled = false;
+                        cb.closest('.course-card')?.classList.remove('disabled');
                     });
                 }
             }
         }
 
-        // Enhanced mobile course selection
         function toggleCourseSelection(cardElement, courseId) {
             const checkbox = cardElement.querySelector('.elective-checkbox');
-
-            // Don't toggle if disabled
             if (checkbox.disabled) return;
-
-            // Toggle checkbox
             checkbox.checked = !checkbox.checked;
-
-            // Update visual state
+            const dot = cardElement.querySelector('.status-dot');
             if (checkbox.checked) {
                 cardElement.classList.add('selected');
-                const statusIndicator = cardElement.querySelector('.status-indicator');
-                if (statusIndicator) {
-                    statusIndicator.classList.add('selected');
-                }
+                dot?.classList.replace('unselected','selected');
             } else {
                 cardElement.classList.remove('selected');
-                const statusIndicator = cardElement.querySelector('.status-indicator');
-                if (statusIndicator) {
-                    statusIndicator.classList.remove('selected');
-                }
+                dot?.classList.replace('selected','unselected');
             }
-
-            // Update counter - this will now work since updateElectiveCounter is global
             updateElectiveCounter();
-
-            // Provide haptic feedback on mobile
-            if (navigator.vibrate) {
-                navigator.vibrate(50);
-            }
+            if (navigator.vibrate) navigator.vibrate(50);
         }
 
-        // Helper functions for custom alerts
         function showCustomAlert(type, title, message) {
-            const alert = document.getElementById('customAlert');
-            const alertIcon = document.getElementById('alertIcon');
-            const alertTitle = document.getElementById('alertTitle');
-            const alertMessage = document.getElementById('alertMessage');
-
-            // Set icon and colors based on type
-            let iconHtml = '';
-            switch(type) {
-                case 'error':
-                    iconHtml = '<i class="material-icons text-white text-2xl">error</i>';
-                    alertIcon.className = 'mx-auto flex items-center justify-center w-12 h-12 rounded-full mb-4 bg-red-500';
-                    break;
-                case 'success':
-                    iconHtml = '<i class="material-icons text-white text-2xl">check_circle</i>';
-                    alertIcon.className = 'mx-auto flex items-center justify-center w-12 h-12 rounded-full mb-4 bg-green-500';
-                    break;
-                case 'warning':
-                    iconHtml = '<i class="material-icons text-white text-2xl">warning</i>';
-                    alertIcon.className = 'mx-auto flex items-center justify-center w-12 h-12 rounded-full mb-4 bg-amber-500';
-                    break;
-            }
-
-            alertIcon.innerHTML = iconHtml;
-            alertTitle.textContent = title;
-            alertMessage.textContent = message;
-
-            // Show alert with animation
-            alert.classList.remove('hidden');
-            alert.classList.add('animate-fade-in');
+            const alertEl = document.getElementById('customAlert');
+            const icon    = document.getElementById('alertIcon');
+            document.getElementById('alertTitle').textContent   = title;
+            document.getElementById('alertMessage').textContent = message;
+            const map = {
+                error:   { bg:'var(--coral)',  ico:'error' },
+                success: { bg:'var(--green)',  ico:'check_circle' },
+                warning: { bg:'#d97706',       ico:'warning' }
+            };
+            const cfg = map[type] || map.error;
+            icon.style.background = cfg.bg;
+            icon.innerHTML = `<i class="material-icons" style="font-size:1.4rem;color:#fff;">${cfg.ico}</i>`;
+            alertEl.classList.add('show');
         }
 
         function closeCustomAlert() {
-            const alert = document.getElementById('customAlert');
-            alert.classList.add('hidden');
-
-            // If there's a pending redirect, execute it
+            document.getElementById('customAlert').classList.remove('show');
             if (window.pendingRedirect) {
-                if (window.pendingRedirect === 'reload') {
-                    window.location.reload();
-                } else {
-                    window.location.href = window.pendingRedirect;
-                }
+                if (window.pendingRedirect === 'reload') window.location.reload();
+                else window.location.href = window.pendingRedirect;
             }
         }
 
         function submitCourseRegistration() {
-            // Get button elements (both desktop and mobile)
-            const submitBtn = document.getElementById('submitRegistrationBtn');
-            const submitIcon = document.getElementById('submitIcon');
-            const loadingSpinner = document.getElementById('loadingSpinner');
-            const submitText = document.getElementById('submitText');
+            const submitBtn    = document.getElementById('submitRegistrationBtn');
+            const submitIcon   = document.getElementById('submitIcon');
+            const loadingSpin  = document.getElementById('loadingSpinner');
+            const submitText   = document.getElementById('submitText');
+            const mobileBtn    = document.getElementById('mobileSubmitBtn');
+            const mobileIcon   = document.getElementById('mobileSubmitIcon');
+            const mobileSpin   = document.getElementById('mobileLoadingSpinner');
+            const mobileText   = document.getElementById('mobileSubmitText');
 
-            const mobileSubmitBtn = document.getElementById('mobileSubmitBtn');
-            const mobileSubmitIcon = document.getElementById('mobileSubmitIcon');
-            const mobileLoadingSpinner = document.getElementById('mobileLoadingSpinner');
-            const mobileSubmitText = document.getElementById('mobileSubmitText');
+            if ((submitBtn?.disabled) || (mobileBtn?.disabled)) return;
 
-            // Check if already submitting
-            if ((submitBtn && submitBtn.disabled) || (mobileSubmitBtn && mobileSubmitBtn.disabled)) {
-                return;
+            function setLoading(on) {
+                [{ btn:submitBtn, ico:submitIcon, spin:loadingSpin, txt:submitText },
+                 { btn:mobileBtn, ico:mobileIcon, spin:mobileSpin,  txt:mobileText }].forEach(({btn,ico,spin,txt}) => {
+                    if (!btn) return;
+                    btn.disabled = on;
+                    ico?.classList.toggle('hidden', on);
+                    spin?.classList.toggle('hidden', !on);
+                    if (txt) txt.textContent = on ? 'Registering...' : 'Submit Registration';
+                });
             }
 
-            // Set loading state
-            function setLoadingState(isLoading) {
-                if (isLoading) {
-                    // Desktop button
-                    if (submitBtn) {
-                        submitBtn.disabled = true;
-                        submitIcon.classList.add('hidden');
-                        loadingSpinner.classList.remove('hidden');
-                        submitText.textContent = 'Registering...';
-                        submitBtn.classList.add('cursor-not-allowed');
-                    }
-
-                    // Mobile button
-                    if (mobileSubmitBtn) {
-                        mobileSubmitBtn.disabled = true;
-                        mobileSubmitIcon.classList.add('hidden');
-                        mobileLoadingSpinner.classList.remove('hidden');
-                        mobileSubmitText.textContent = 'Registering...';
-                        mobileSubmitBtn.classList.add('cursor-not-allowed');
-                    }
-                } else {
-                    // Desktop button
-                    if (submitBtn) {
-                        submitBtn.disabled = false;
-                        submitIcon.classList.remove('hidden');
-                        loadingSpinner.classList.add('hidden');
-                        submitText.textContent = 'Submit Registration';
-                        submitBtn.classList.remove('cursor-not-allowed');
-                    }
-
-                    // Mobile button
-                    if (mobileSubmitBtn) {
-                        mobileSubmitBtn.disabled = false;
-                        mobileSubmitIcon.classList.remove('hidden');
-                        mobileLoadingSpinner.classList.add('hidden');
-                        mobileSubmitText.textContent = 'Submit Registration';
-                        mobileSubmitBtn.classList.remove('cursor-not-allowed');
-                    }
-                }
-            }
-
-            // Reset button to original state
-            function resetButtonState() {
-                setLoadingState(false);
-
-                if (submitBtn) {
-                    submitBtn.classList.remove('bg-green-500');
-                    submitBtn.classList.add('bg-green-600', 'hover:bg-green-700');
-                    submitIcon.textContent = 'check_circle';
-                }
-
-                if (mobileSubmitBtn) {
-                    mobileSubmitBtn.classList.remove('bg-green-500');
-                    mobileSubmitBtn.classList.add('bg-green-600', 'hover:bg-green-700');
-                    mobileSubmitIcon.textContent = 'check_circle';
-                }
+            function resetButtons() {
+                setLoading(false);
+                if (submitIcon) submitIcon.textContent = 'check_circle';
+                if (mobileIcon) mobileIcon.textContent = 'check_circle';
             }
 
             const selectedElectives = document.querySelectorAll('input[name="elective"]:checked');
-            const mandatoryCourses = document.querySelectorAll('.mandatory-checkbox:checked');
-            const carryoverCourses = document.querySelectorAll('.carryover-checkbox:checked');
-
-            const minimumElectives = @ViewBag.MinimumElectives;
+            const mandatoryCourses  = document.querySelectorAll('.mandatory-checkbox:checked');
+            const carryoverCourses  = document.querySelectorAll('.carryover-checkbox:checked');
+            const minimumElectives     = @ViewBag.MinimumElectives;
             const totalRequiredCourses = @ViewBag.TotalRequiredCourses;
             const carryoverCount = carryoverCourses.length;
-
-            // Calculate totals (carryover courses don't count against elective limits)
-            const totalSelected = selectedElectives.length + mandatoryCourses.length + carryoverCount;
+            const totalSelected  = selectedElectives.length + mandatoryCourses.length + carryoverCount;
             const isSemesterBased = @(ViewBag.IsSemesterBased ? "true" : "false");
             const currentSemester = @ViewBag.Semester;
 
-            // Validate minimum elective selection
             if (selectedElectives.length < minimumElectives) {
-                const periodText = isSemesterBased ? `for Semester ${currentSemester}` : 'for this year';
-                showCustomAlert('warning', 'Selection Required',
-                    `Please select at least ${minimumElectives} elective course${minimumElectives !== 1 ? 's' : ''} ${periodText}.`);
+                const pt = isSemesterBased ? `for Semester ${currentSemester}` : 'for this year';
+                showCustomAlert('warning','Selection Required',`Please select at least ${minimumElectives} elective course${minimumElectives!==1?'s':''} ${pt}.`);
                 return;
             }
-
-            // Validate maximum course selection
             if (totalRequiredCourses > 0 && totalSelected > totalRequiredCourses) {
-                const periodText = isSemesterBased ? `for Semester ${currentSemester}` : 'for this year';
-                showCustomAlert('warning', 'Too Many Courses',
-                    `You can only select a maximum of ${totalRequiredCourses} courses ${periodText}. You have selected ${totalSelected}.`);
+                const pt = isSemesterBased ? `for Semester ${currentSemester}` : 'for this year';
+                showCustomAlert('warning','Too Many Courses',`You can only select a maximum of ${totalRequiredCourses} courses ${pt}. You have selected ${totalSelected}.`);
                 return;
             }
 
-            // Set loading state
-            setLoadingState(true);
+            setLoading(true);
 
-            // Get all courses including carryover courses
-            const carryoverCourseData = Array.from(carryoverCourses).map(cb => ({
-                id: parseInt(cb.value),
-                isSelected: true,
-                isMandatory: true,
-                isCarryover: true
-            }));
+            const courses = [
+                ...Array.from(carryoverCourses).map(cb => ({id:parseInt(cb.value),isSelected:true,isMandatory:true,isCarryover:true})),
+                ...Array.from(mandatoryCourses).map(cb  => ({id:parseInt(cb.value),isSelected:true,isMandatory:true,isCarryover:false})),
+                ...Array.from(document.querySelectorAll('input[name="elective"]')).map(cb => ({id:parseInt(cb.value),isSelected:cb.checked,isMandatory:false,isCarryover:false}))
+            ];
 
-            const mandatoryCourseData = Array.from(mandatoryCourses).map(cb => ({
-                id: parseInt(cb.value),
-                isSelected: true,
-                isMandatory: true,
-                isCarryover: false
-            }));
-
-            const electiveCourseData = Array.from(document.querySelectorAll('input[name="elective"]')).map(cb => ({
-                id: parseInt(cb.value),
-                isSelected: cb.checked,
-                isMandatory: false,
-                isCarryover: false
-            }));
-
-            // Combine all courses
-            const selectedCourses = [...carryoverCourseData, ...mandatoryCourseData, ...electiveCourseData];
-
-            // Submit the form using fetch
             fetch('/CourseRegistration/SubmitRegistration', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
-                },
-                body: JSON.stringify(selectedCourses)
+                method:'POST',
+                headers:{ 'Content-Type':'application/json', 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value },
+                body: JSON.stringify(courses)
             })
-            .then(response => response.json())
+            .then(r => r.json())
             .then(data => {
                 if (data.success) {
-                    // Change button to success state temporarily
-                    setLoadingState(false);
-
-                    if (submitBtn) {
-                        submitIcon.className = 'material-icons text-sm mr-1';
-                        submitIcon.textContent = 'check_circle';
-                        submitText.textContent = 'Registration Successful!';
-                        submitBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
-                        submitBtn.classList.add('bg-green-500');
-                        submitBtn.disabled = true;
-                    }
-
-                    if (mobileSubmitBtn) {
-                        mobileSubmitIcon.className = 'material-icons mr-2';
-                        mobileSubmitIcon.textContent = 'check_circle';
-                        mobileSubmitText.textContent = 'Registration Successful!';
-                        mobileSubmitBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
-                        mobileSubmitBtn.classList.add('bg-green-500');
-                        mobileSubmitBtn.disabled = true;
-                    }
-
-                    // Set up redirect
+                    setLoading(false);
+                    [submitBtn,mobileBtn].forEach(b => { if(b) { b.disabled=true; b.style.background='var(--green)'; } });
+                    if (submitText)  submitText.textContent  = 'Registration Successful!';
+                    if (mobileText)  mobileText.textContent  = 'Registration Successful!';
                     window.pendingRedirect = data.redirect || 'reload';
-
-                    // Determine alert type based on whether there's a warning
-                    const alertType = data.warning ? 'warning' : 'success';
-                    const alertTitle = data.warning ? 'Registration Complete with Warning' : 'Success!';
-
-                    // Show success/warning state for 1 second before showing alert
-                    setTimeout(() => {
-                        showCustomAlert(alertType, alertTitle, data.message);
-                    }, 1000);
+                    setTimeout(() => showCustomAlert(data.warning?'warning':'success', data.warning?'Registration Complete with Warning':'Success!', data.message), 1000);
                 } else {
-                    resetButtonState();
-                    showCustomAlert('error', 'Registration Failed', data.message || 'Registration failed. Please try again.');
+                    resetButtons();
+                    showCustomAlert('error','Registration Failed', data.message||'Registration failed. Please try again.');
                 }
             })
-            .catch(error => {
-                console.error('Error:', error);
-                resetButtonState();
-                showCustomAlert('error', 'Error', 'An error occurred while submitting the registration.');
-            });
+            .catch(() => { resetButtons(); showCustomAlert('error','Error','An error occurred while submitting the registration.'); });
         }
 
-
-
-
-
-        // DOM Content Loaded event
         document.addEventListener('DOMContentLoaded', function() {
-            const electiveCheckboxes = document.querySelectorAll('.elective-checkbox');
-            const counterElement = document.getElementById('electiveCounter');
-
-            if (electiveCheckboxes.length && counterElement) {
-                // Initial count
+            const electiveCBs = document.querySelectorAll('.elective-checkbox');
+            const counter = document.getElementById('electiveCounter');
+            if (electiveCBs.length && counter) {
                 updateElectiveCounter();
-
-                // Add event listeners to all checkboxes
-                electiveCheckboxes.forEach(checkbox => {
-                    checkbox.addEventListener('change', updateElectiveCounter);
-                });
+                electiveCBs.forEach(cb => cb.addEventListener('change', updateElectiveCounter));
             }
-
-            // Initialize selected state for course cards
-            electiveCheckboxes.forEach(checkbox => {
-                const card = checkbox.closest('.course-card');
-                if (checkbox.checked && card) {
+            electiveCBs.forEach(cb => {
+                const card = cb.closest('.course-card');
+                if (cb.checked && card) {
                     card.classList.add('selected');
-                    const statusIndicator = card.querySelector('.status-indicator');
-                    if (statusIndicator) {
-                        statusIndicator.classList.add('selected');
+                    card.querySelector('.status-dot')?.classList.replace('unselected','selected');
+                }
+            });
+            document.addEventListener('keydown', e => {
+                if (e.key==='Enter') {
+                    const ae = document.activeElement;
+                    const sb = document.getElementById('submitRegistrationBtn');
+                    const mb = document.getElementById('mobileSubmitBtn');
+                    if ((ae.type==='checkbox'||ae.id==='submitRegistrationBtn'||ae.id==='mobileSubmitBtn') && !(sb?.disabled||mb?.disabled)) {
+                        e.preventDefault(); submitCourseRegistration();
                     }
                 }
             });
-
-            // Add keyboard accessibility
-            document.addEventListener('keydown', function(event) {
-                if (event.key === 'Enter') {
-                    const activeElement = document.activeElement;
-                    const submitBtn = document.getElementById('submitRegistrationBtn');
-                    const mobileSubmitBtn = document.getElementById('mobileSubmitBtn');
-
-                    // Only trigger if focused on a checkbox or the submit button, and button is not disabled
-                    if ((activeElement.type === 'checkbox' ||
-                         activeElement.id === 'submitRegistrationBtn' ||
-                         activeElement.id === 'mobileSubmitBtn') &&
-                        !((submitBtn && submitBtn.disabled) || (mobileSubmitBtn && mobileSubmitBtn.disabled))) {
-                        event.preventDefault();
-                        submitCourseRegistration();
-                    }
-                }
-            });
-
-            // Handle pending status - auto-select all elective courses
             const isPending = @(ViewBag.RegistrationStatus == SIS.Enums.Status.Pending ? "true" : "false");
-
-            if (isPending === true) {
-                const checkboxes = document.querySelectorAll('input[name="elective"]');
-
-                checkboxes.forEach(checkbox => {
-                    // Enable the disabled checkboxes first
-                    if (checkbox.hasAttribute("disabled")) {
-                        checkbox.removeAttribute("disabled");
-                    }
-                    // Then check them
-                    checkbox.checked = true;
-                    // Re-add the disabled attribute
-                    checkbox.setAttribute("disabled", "");
-
-                    // Update visual state for mobile
-                    const card = checkbox.closest('.course-card');
-                    if (card) {
-                        card.classList.add('selected');
-                        const statusIndicator = card.querySelector('.status-indicator');
-                        if (statusIndicator) {
-                            statusIndicator.classList.add('selected');
-                        }
-                    }
+            if (isPending) {
+                document.querySelectorAll('input[name="elective"]').forEach(cb => {
+                    cb.removeAttribute('disabled'); cb.checked = true; cb.setAttribute('disabled','');
+                    const card = cb.closest('.course-card');
+                    if (card) { card.classList.add('selected'); card.querySelector('.status-dot')?.classList.replace('unselected','selected'); }
                 });
-
-                console.log('Elective courses have been selected because status is pending.');
-
-                // Update counter after setting pending status
                 updateElectiveCounter();
             }
         });
-        console.log('Done');
     </script>
 }
 
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        // Handle pending status - auto-select all elective courses
+    document.addEventListener('DOMContentLoaded', function() {
         const isPending = @(ViewBag.RegistrationStatus == SIS.Enums.Status.Pending ? "true" : "false");
-
-        if (isPending === true) {
-            const checkboxes = document.querySelectorAll('input[name="elective"]');
-
-            checkboxes.forEach(checkbox => {
-                // Enable the disabled checkboxes first
-                if (checkbox.hasAttribute("disabled")) {
-                    checkbox.removeAttribute("disabled");
-                }
-                // Then check them
-                checkbox.checked = true;
-                // Re-add the disabled attribute
-                checkbox.setAttribute("disabled", "");
-
-                // Update visual state for mobile
-                const card = checkbox.closest('.course-card');
-                if (card) {
-                    card.classList.add('selected');
-                    card.querySelector('.status-indicator').classList.add('selected');
-                }
+        if (isPending) {
+            document.querySelectorAll('input[name="elective"]').forEach(cb => {
+                cb.removeAttribute('disabled'); cb.checked = true; cb.setAttribute('disabled','');
+                const card = cb.closest('.course-card');
+                if (card) { card.classList.add('selected'); card.querySelector('.status-dot')?.classList.replace('unselected','selected'); }
             });
-
-            console.log('Elective courses have been selected because status is pending.');
         }
+        if ('@ViewBag.RegistrationStatus' === 'Registered') checkExamDocketsOnLoad();
     });
 </script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
-      function generateClassPass() {
-    window.jsPDF = window.jspdf.jsPDF;
-    const doc = new jsPDF({
-        orientation: 'landscape',
-        unit: 'mm',
-        format: 'a4'
-    });
+    function generateClassPass() {
+        window.jsPDF = window.jspdf.jsPDF;
+        const doc  = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+        const width  = doc.internal.pageSize.getWidth();
+        const height = doc.internal.pageSize.getHeight();
 
-    const width = doc.internal.pageSize.getWidth();
-    const height = doc.internal.pageSize.getHeight();
+        doc.setFillColor(255,255,255); doc.rect(0,0,width,height,'F');
+        doc.setFillColor(248,250,252);
+        for (let x=10;x<width;x+=25) for (let y=10;y<height;y+=25) doc.circle(x,y,0.2,'F');
 
-    // Clean background
-    doc.setFillColor(255, 255, 255);
-    doc.rect(0, 0, width, height, 'F');
+        // Header — navy
+        doc.setFillColor(30,45,94); doc.rect(0,0,width,22,'F');
+        doc.setFillColor(255,255,255); doc.circle(15,11,7,'F');
+        doc.setFillColor(232,92,92);   doc.circle(15,11,5,'F');
+        doc.setTextColor(255,255,255); doc.setFontSize(9); doc.setFont('helvetica','bold');
+        doc.text('SIS',15,13,{align:'center'});
 
-    // Subtle security dots
-    doc.setFillColor(248, 250, 252);
-    for (let x = 10; x < width; x += 25) {
-        for (let y = 10; y < height; y += 25) {
-            doc.circle(x, y, 0.2, 'F');
-        }
+        const isSemesterBased = @(ViewBag.IsSemesterBased ? "true" : "false");
+        const currentSemester = @ViewBag.Semester;
+        doc.setTextColor(255,255,255); doc.setFontSize(16); doc.setFont('helvetica','bold');
+        doc.text(isSemesterBased?`CLASS PASS - SEMESTER ${currentSemester}`:'CLASS PASS', width/2, 14, {align:'center'});
+        doc.setFontSize(9); doc.setTextColor(203,213,225);
+        const yr=new Date().getFullYear(); doc.text(`${yr}/${yr+1}`,width-15,14,{align:'right'});
+
+        const studentY = 32;
+        const studentName   = '@ViewBag.StudentName'  || 'Student Name';
+        const studentNumber = '@ViewBag.StudentNumber'|| 'Student Number';
+        const programme     = '@ViewBag.Programme'    || 'Programme Name';
+
+        doc.setFillColor(255,255,255); doc.setDrawColor(203,213,225); doc.setLineWidth(0.3);
+        doc.roundedRect(15,studentY,width-30,30,2,2,'FD');
+        doc.setFillColor(248,250,252); doc.roundedRect(20,studentY+5,18,20,1,1,'FD');
+        doc.setFillColor(156,163,175); doc.circle(29,studentY+12,2.5,'F'); doc.rect(26,studentY+16,6,6,'F');
+
+        doc.setTextColor(31,41,55); doc.setFontSize(10);
+        doc.setFont('helvetica','bold'); doc.text('Name:',42,studentY+10); doc.setFont('helvetica','normal'); doc.text(studentName,60,studentY+10);
+        doc.setFont('helvetica','bold'); doc.text('ID:',42,studentY+17);   doc.setFont('helvetica','normal'); doc.text(studentNumber,60,studentY+17);
+        doc.setFont('helvetica','bold'); doc.text('Programme:',42,studentY+24); doc.setFont('helvetica','normal'); doc.text(programme,75,studentY+24);
+
+        doc.setFillColor(22,163,74); doc.roundedRect(width-65,studentY+8,45,8,1,1,'F');
+        doc.setTextColor(255,255,255); doc.setFontSize(8); doc.setFont('helvetica','bold');
+        doc.text('REGISTERED',width-42.5,studentY+13,{align:'center'});
+
+        const coursesY = studentY+40;
+        doc.setFillColor(248,250,252); doc.rect(15,coursesY,width-30,10,'FD');
+        doc.setTextColor(31,41,55); doc.setFontSize(11); doc.setFont('helvetica','bold');
+        doc.text(isSemesterBased?`REGISTERED COURSES - SEMESTER ${currentSemester}`:'REGISTERED COURSES',20,coursesY+7);
+
+        const getCourseData=(selector,type)=>Array.from(document.querySelectorAll(selector)).map(cb=>{
+            const d=cb.closest('.course-card,[class*="course-card"],div');
+            if(!d)return null;
+            const code=d.querySelector('.card-course-code,p.card-course-code,p');
+            const name=d.querySelector('h3');
+            if(!code||!name)return null;
+            return {code:code.textContent.trim(),name:name.textContent.trim(),type,credits:'3'};
+        }).filter(c=>c&&c.code&&c.name);
+
+        const allCourses=[
+            ...getCourseData('.carryover-checkbox:checked','Carryover'),
+            ...getCourseData('.mandatory-checkbox:checked','Mandatory'),
+            ...getCourseData('input[name="elective"]:checked','Elective')
+        ];
+
+        doc.setFontSize(8); doc.setTextColor(107,114,128);
+        doc.text(`Total: ${allCourses.length}`,width-20,coursesY+7,{align:'right'});
+
+        let tableY=coursesY+18;
+        doc.setFillColor(249,250,251); doc.rect(15,tableY-5,width-30,5,'FD');
+        doc.setTextColor(55,65,81); doc.setFontSize(8); doc.setFont('helvetica','bold');
+        doc.text('#',20,tableY-1); doc.text('CODE',30,tableY-1); doc.text('COURSE NAME',60,tableY-1);
+        doc.text('TYPE',width-65,tableY-1); doc.text('CREDITS',width-35,tableY-1);
+
+        allCourses.forEach((course,i)=>{
+            if(i%2===0){doc.setFillColor(254,254,255);doc.rect(15,tableY,width-30,8,'F');}
+            doc.setTextColor(55,65,81); doc.setFontSize(8); doc.setFont('helvetica','normal');
+            doc.text(String(i+1),20,tableY+5);
+            doc.setFont('helvetica','bold'); doc.text(course.code,30,tableY+5);
+            doc.setFont('helvetica','normal');
+            const nm=course.name.length>35?course.name.substring(0,35)+'...':course.name;
+            doc.text(nm,60,tableY+5);
+            const tColor={Carryover:[217,119,6],Mandatory:[30,45,94],Elective:[22,163,74]}[course.type]||[107,114,128];
+            doc.setFillColor(...tColor); doc.roundedRect(width-70,tableY+1,18,6,1,1,'F');
+            doc.setTextColor(255,255,255); doc.setFontSize(6); doc.setFont('helvetica','bold');
+            doc.text(course.type.toUpperCase(),width-61,tableY+5,{align:'center'});
+            doc.setTextColor(55,65,81); doc.setFontSize(8); doc.setFont('helvetica','normal');
+            doc.text(course.credits,width-35,tableY+5);
+            tableY+=8;
+        });
+
+        const footerY=height-35;
+        doc.setDrawColor(203,213,225); doc.setLineWidth(0.3); doc.line(15,footerY,width-15,footerY);
+        const now=new Date();
+        const ts=now.toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+        doc.setTextColor(107,114,128); doc.setFontSize(7); doc.setFont('helvetica','normal');
+        doc.text(`Generated: ${ts}`,20,footerY+6);
+        doc.text('This document is digitally generated and valid without signature',20,footerY+12);
+
+        const codes=allCourses.map(c=>c.code);
+        const semInfo=isSemesterBased?`|SEM:${currentSemester}`:'';
+        const qrData=`SIS_PASS|COURSES:${codes.join(',')}${semInfo}|DATE:${now.getTime()}`;
+        doc.setFillColor(255,255,255); doc.setDrawColor(203,213,225);
+        doc.roundedRect(width-35,footerY+5,25,25,1,1,'FD');
+        doc.addImage(`https://api.qrserver.com/v1/create-qr-code/?size=120x120&format=png&margin=0&data=${encodeURIComponent(qrData)}`,'PNG',width-33,footerY+7,21,21);
+        doc.setFontSize(6); doc.text('Verify',width-22.5,footerY+31,{align:'center'});
+
+        const tf=new Date().toISOString().split('T')[0];
+        doc.save(isSemesterBased?`ClassPass_Sem${currentSemester}_${tf}.pdf`:`ClassPass_${tf}.pdf`);
     }
 
-    // Clean header
-    doc.setFillColor(51, 65, 85);
-    doc.rect(0, 0, width, 22, 'F');
-
-    // Logo
-    doc.setFillColor(255, 255, 255);
-    doc.circle(15, 11, 7, 'F');
-    doc.setFillColor(59, 130, 246);
-    doc.circle(15, 11, 5, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
-    doc.text('SIS', 15, 13, { align: 'center' });
-
-    // Title
-    const isSemesterBased = @(ViewBag.IsSemesterBased ? "true" : "false");
-    const currentSemester = @ViewBag.Semester;
-    
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    
-    if (isSemesterBased) {
-        doc.text(`CLASS PASS - SEMESTER ${currentSemester}`, width/2, 14, { align: 'center' });
-    } else {
-        doc.text('CLASS PASS', width/2, 14, { align: 'center' });
-    }
-
-    // Year
-    const currentYear = new Date().getFullYear();
-    doc.setFontSize(9);
-    doc.setTextColor(203, 213, 225);
-    doc.text(`${currentYear}/${currentYear + 1}`, width - 15, 14, { align: 'right' });
-
-    // Student section
-    const studentY = 32;
-    
-    // Get student data - you should replace these with actual ViewBag data
-    const studentName = '@ViewBag.StudentName' || 'Student Name';
-    const studentNumber = '@ViewBag.StudentNumber' || 'Student Number'; // Use StudentNumber instead of StudentId
-    const programme = '@ViewBag.Programme' || 'Programme Name';
-
-    // Student card
-    doc.setFillColor(255, 255, 255);
-    doc.setDrawColor(203, 213, 225);
-    doc.setLineWidth(0.3);
-    doc.roundedRect(15, studentY, width - 30, 30, 2, 2, 'FD');
-
-    // Photo placeholder
-    doc.setFillColor(248, 250, 252);
-    doc.roundedRect(20, studentY + 5, 18, 20, 1, 1, 'FD');
-    doc.setFillColor(156, 163, 175);
-    doc.circle(29, studentY + 12, 2.5, 'F');
-    doc.rect(26, studentY + 16, 6, 6, 'F');
-
-    // Student info
-    doc.setTextColor(31, 41, 55);
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Name:', 42, studentY + 10);
-    doc.setFont('helvetica', 'normal');
-    doc.text(studentName, 60, studentY + 10);
-
-    doc.setFont('helvetica', 'bold');
-    doc.text('ID:', 42, studentY + 17);
-    doc.setFont('helvetica', 'normal');
-    doc.text(studentNumber, 60, studentY + 17);
-
-    doc.setFont('helvetica', 'bold');
-    doc.text('Programme:', 42, studentY + 24);
-    doc.setFont('helvetica', 'normal');
-    doc.text(programme, 75, studentY + 24);
-
-    // Status
-    doc.setFillColor(34, 197, 94);
-    doc.roundedRect(width - 65, studentY + 8, 45, 8, 1, 1, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'bold');
-    doc.text('REGISTERED', width - 42.5, studentY + 13, { align: 'center' });
-
-    // Courses section
-    const coursesY = studentY + 40;
-    
-    doc.setFillColor(248, 250, 252);
-    doc.rect(15, coursesY, width - 30, 10, 'FD');
-    
-    doc.setTextColor(31, 41, 55);
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'bold');
-    const coursesTitle = isSemesterBased ? 
-        `REGISTERED COURSES - SEMESTER ${currentSemester}` : 
-        'REGISTERED COURSES';
-    doc.text(coursesTitle, 20, coursesY + 7);
-
-    // Get courses
-    const getCourseData = (selector, type) => {
-        return Array.from(document.querySelectorAll(selector))
-            .map(cb => {
-                const courseDiv = cb.closest('.course-card, .bg-slate-50, .border, div');
-                if (!courseDiv) return null;
-                
-                const codeElement = courseDiv.querySelector('p.text-sm, p[class*="text-sm"], p');
-                const nameElement = courseDiv.querySelector('h3');
-                
-                if (!codeElement || !nameElement) return null;
-                
-                return {
-                    code: codeElement.textContent.trim(),
-                    name: nameElement.textContent.trim(),
-                    type: type,
-                    credits: '3'
-                };
-            })
-            .filter(course => course && course.code && course.name);
-    };
-
-    const carryoverCourses = getCourseData('.carryover-checkbox:checked', 'Carryover');
-    const mandatoryCourses = getCourseData('.mandatory-checkbox:checked', 'Mandatory');  
-    const electiveCourses = getCourseData('input[name="elective"]:checked', 'Elective');
-    
-    const allCourses = [...carryoverCourses, ...mandatoryCourses, ...electiveCourses];
-
-    // Course count
-    doc.setFontSize(8);
-    doc.setTextColor(107, 114, 128);
-    doc.text(`Total: ${allCourses.length}`, width - 20, coursesY + 7, { align: 'right' });
-
-    // Table headers
-    let tableY = coursesY + 18;
-    doc.setFillColor(249, 250, 251);
-    doc.rect(15, tableY - 5, width - 30, 5, 'FD');
-    
-    doc.setTextColor(55, 65, 81);
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'bold');
-    doc.text('#', 20, tableY - 1);
-    doc.text('CODE', 30, tableY - 1);
-    doc.text('COURSE NAME', 60, tableY - 1);
-    doc.text('TYPE', width - 65, tableY - 1);
-    doc.text('CREDITS', width - 35, tableY - 1);
-
-    // Course rows
-    allCourses.forEach((course, index) => {
-        if (index % 2 === 0) {
-            doc.setFillColor(254, 254, 255);
-            doc.rect(15, tableY, width - 30, 8, 'F');
-        }
-
-        doc.setTextColor(55, 65, 81);
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'normal');
-        doc.text((index + 1).toString(), 20, tableY + 5);
-        
-        doc.setFont('helvetica', 'bold');
-        doc.text(course.code, 30, tableY + 5);
-        
-        doc.setFont('helvetica', 'normal');
-        const maxNameLength = 35;
-        const courseName = course.name.length > maxNameLength ? 
-            course.name.substring(0, maxNameLength) + '...' : course.name;
-        doc.text(courseName, 60, tableY + 5);
-
-        // Type badge
-        let typeColor;
-        switch(course.type) {
-            case 'Carryover': typeColor = [239, 68, 68]; break;
-            case 'Mandatory': typeColor = [59, 130, 246]; break;
-            case 'Elective': typeColor = [34, 197, 94]; break;
-            default: typeColor = [107, 114, 128];
-        }
-        
-        doc.setFillColor(...typeColor);
-        doc.roundedRect(width - 70, tableY + 1, 18, 6, 1, 1, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(6);
-        doc.setFont('helvetica', 'bold');
-        doc.text(course.type.toUpperCase(), width - 61, tableY + 5, { align: 'center' });
-
-        doc.setTextColor(55, 65, 81);
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'normal');
-        doc.text(course.credits, width - 35, tableY + 5);
-
-        tableY += 8;
-    });
-
-    // Footer
-    const footerY = height - 35;
-    doc.setDrawColor(203, 213, 225);
-    doc.setLineWidth(0.3);
-    doc.line(15, footerY, width - 15, footerY);
-
-    // Timestamp
-    const now = new Date();
-    const timestamp = now.toLocaleString('en-GB', {
-        day: '2-digit',
-        month: 'short', 
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-
-    doc.setTextColor(107, 114, 128);
-    doc.setFontSize(7);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Generated: ${timestamp}`, 20, footerY + 6);
-    doc.text('This document is digitally generated and valid without signature', 20, footerY + 12);
-
-    // QR Code
-    const allCourseCodes = allCourses.map(c => c.code);
-    const semesterInfo = isSemesterBased ? `|SEM:${currentSemester}` : '';
-    const qrData = `SIS_PASS|COURSES:${allCourseCodes.join(',')}${semesterInfo}|DATE:${now.getTime()}`;
-    
-    doc.setFillColor(255, 255, 255);
-    doc.setDrawColor(203, 213, 225);
-    doc.roundedRect(width - 35, footerY + 5, 25, 25, 1, 1, 'FD');
-    
-    const qrImage = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&format=png&margin=0&data=${encodeURIComponent(qrData)}`;
-    doc.addImage(qrImage, 'PNG', width - 33, footerY + 7, 21, 21);
-
-    doc.setFontSize(6);
-    doc.text('Verify', width - 22.5, footerY + 31, { align: 'center' });
-
-    // Save
-    const timestamp_file = new Date().toISOString().split('T')[0];
-    const fileName = isSemesterBased ? 
-        `ClassPass_Sem${currentSemester}_${timestamp_file}.pdf` : 
-        `ClassPass_${timestamp_file}.pdf`;
-    
-    doc.save(fileName);
-}
-
-
-    // Add these functions for exam docket functionality
-
-    // Check for available exam dockets on page load
-    document.addEventListener('DOMContentLoaded', function() {
-        // Existing code...
-
-        // Check for exam dockets if registered
-        const registrationStatus = '@ViewBag.RegistrationStatus';
-        if (registrationStatus === 'Registered') {
-            checkExamDocketsOnLoad();
-        }
-    });
-
-        function checkExamDocketsOnLoad() {
+    function checkExamDocketsOnLoad() {
         fetch('/CourseRegistration/GetExamDocketStatus')
-            .then(response => response.json())
-            .then(data => {
-                if (data.success && data.exams && data.exams.length > 0) {
-                    // Show exam docket section for BOTH desktop and mobile
-                    document.getElementById('examDocketSection').classList.remove('hidden');
-                    document.getElementById('examDocketSectionMobile').classList.remove('hidden');
-
-                    // Add notification badge if exams are available
-                    const examBtn = document.getElementById('examDocketBtn');
-                    const examBtnMobile = document.getElementById('examDocketBtnMobile');
-
-                    if (data.exams.some(e => e.isEligible)) {
-                        const badgeHTML = `
-                            <i class="material-icons text-sm mr-1">assignment</i>
-                            <span>Exam Docket</span>
-                            <span class="ml-1 px-1.5 py-0.5 bg-red-600 text-white text-xs rounded-full">${data.exams.filter(e => e.isEligible).length}</span>
-                        `;
-                        examBtn.innerHTML = badgeHTML;
-                        examBtnMobile.innerHTML = badgeHTML;
+            .then(r=>r.json())
+            .then(data=>{
+                if(data.success&&data.exams?.length>0){
+                    document.getElementById('examDocketSection')?.classList.remove('hidden');
+                    document.getElementById('examDocketSectionMobile')?.classList.remove('hidden');
+                    if(data.exams.some(e=>e.isEligible)){
+                        const n=data.exams.filter(e=>e.isEligible).length;
+                        const html=`<i class="material-icons" style="font-size:.8rem;">assignment</i><span>Exam Docket</span><span style="margin-left:.3rem;padding:.1rem .4rem;background:var(--coral);color:#fff;font-size:.65rem;border-radius:2rem;">${n}</span>`;
+                        ['examDocketBtn','examDocketBtnMobile'].forEach(id=>{ const el=document.getElementById(id); if(el)el.innerHTML=html; });
                     }
                 }
-            })
-            .catch(error => console.error('Error checking exam dockets:', error));
+            }).catch(()=>{});
     }
 
     function checkExamDockets() {
-        const modal = document.getElementById('examDocketModal');
+        const modal   = document.getElementById('examDocketModal');
         const content = document.getElementById('examDocketContent');
-
-        // Show loading
-        content.innerHTML = `
-            <div class="text-center py-8">
-                <svg class="animate-spin h-8 w-8 text-slate-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <p class="mt-2 text-slate-600">Loading exam information...</p>
-            </div>
-        `;
-
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-
-        // Fetch exam docket status
+        content.innerHTML=`<div style="text-align:center;padding:2rem 0;"><i class="material-icons animate-spin" style="font-size:2rem;color:var(--coral);">refresh</i><p style="margin-top:.6rem;font-size:.8rem;color:var(--text);">Loading exam information…</p></div>`;
+        modal.classList.add('show');
         fetch('/CourseRegistration/GetExamDocketStatus')
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    displayExamDockets(data.exams);
-                } else {
-                    content.innerHTML = `
-                        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
-                            <p class="text-red-700">${data.message || 'Error loading exam information'}</p>
-                        </div>
-                    `;
-                }
-            })
-            .catch(error => {
-                content.innerHTML = `
-                    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
-                        <p class="text-red-700">Failed to load exam information. Please try again.</p>
-                    </div>
-                `;
-            });
+            .then(r=>r.json())
+            .then(data=>{ if(data.success) displayExamDockets(data.exams); else content.innerHTML=`<div class="callout callout-amber" style="margin:0;"><i class="material-icons">warning</i><p class="callout-text">${data.message||'Error loading exam information'}</p></div>`; })
+            .catch(()=>{ content.innerHTML=`<div class="callout callout-amber" style="margin:0;"><i class="material-icons">warning</i><p class="callout-text">Failed to load exam information. Please try again.</p></div>`; });
     }
 
     function displayExamDockets(exams) {
-        const content = document.getElementById('examDocketContent');
-
-        if (!exams || exams.length === 0) {
-            content.innerHTML = `
-                <div class="bg-slate-50 rounded-lg p-6 text-center">
-                    <i class="material-icons text-slate-400 text-5xl mb-3">event_busy</i>
-                    <p class="text-slate-600">No exam events scheduled within the next two weeks.</p>
-                </div>
-            `;
+        const content=document.getElementById('examDocketContent');
+        if(!exams?.length){
+            content.innerHTML=`<div style="text-align:center;padding:2rem 0;"><i class="material-icons" style="font-size:2.5rem;color:#94a3b8;">event_busy</i><p style="font-size:.8rem;color:var(--text);margin-top:.5rem;">No exam events scheduled within the next two weeks.</p></div>`;
             return;
         }
-
-        let html = '<div class="space-y-4">';
-
-        exams.forEach(exam => {
-            const examDate = new Date(exam.startDateTime);
-            const today = new Date();
-            const daysUntil = Math.ceil((examDate - today) / (1000 * 60 * 60 * 24));
-
-            let statusBadge = '';
-            let actionButton = '';
-
-            if (exam.eventTypeName === 'Final Examination') {
-                if (exam.isEligible) {
-                    statusBadge = '<span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">Eligible</span>';
-                    actionButton = `
-                        <button onclick="generateExamDocket(${exam.id}, '${exam.eventTypeName}')"
-                                class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center">
-                            <i class="material-icons text-sm mr-1">download</i>
-                            Generate Docket
-                        </button>
-                    `;
+        let html='';
+        exams.forEach(exam=>{
+            const examDate=new Date(exam.startDateTime);
+            const daysUntil=Math.ceil((examDate-new Date())/(1000*60*60*24));
+            let badge='', action='';
+            if(exam.eventTypeName==='Final Examination'){
+                if(exam.isEligible){
+                    badge=`<span style="font-size:.65rem;font-weight:700;padding:.2rem .5rem;border-radius:2rem;background:var(--greenl);color:var(--green);">Eligible</span>`;
+                    action=`<button onclick="generateExamDocket(${exam.id},'${exam.eventTypeName}')" style="display:inline-flex;align-items:center;gap:.3rem;background:var(--coral);color:#fff;border:none;border-radius:.55rem;padding:.5rem .85rem;font-size:.75rem;font-weight:700;cursor:pointer;font-family:inherit;"><i class="material-icons" style="font-size:.8rem;">download</i>Generate Docket</button>`;
                 } else {
-                    statusBadge = '<span class="px-2 py-1 bg-amber-100 text-amber-700 text-xs rounded-full">Payment Required</span>';
-                    actionButton = `
-                        <a href="/Payments/StudentFinance"
-                           class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center">
-                            <i class="material-icons text-sm mr-1">payment</i>
-                            Pay Fees
-                        </a>
-                    `;
+                    badge=`<span style="font-size:.65rem;font-weight:700;padding:.2rem .5rem;border-radius:2rem;background:#fffbeb;color:#d97706;">Payment Required</span>`;
+                    action=`<a href="/Payments/StudentFinance" style="display:inline-flex;align-items:center;gap:.3rem;background:var(--navy);color:#fff;border-radius:.55rem;padding:.5rem .85rem;font-size:.75rem;font-weight:700;text-decoration:none;"><i class="material-icons" style="font-size:.8rem;">payment</i>Pay Fees</a>`;
                 }
-            } else if (exam.requiresApproval) {
-                if (exam.hasApprovedRequest) {
-                    statusBadge = '<span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">Approved</span>';
-                    actionButton = `
-                        <button onclick="generateExamDocket(${exam.id}, '${exam.eventTypeName}')"
-                                class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center">
-                            <i class="material-icons text-sm mr-1">download</i>
-                            Generate Docket
-                        </button>
-                    `;
+            } else if(exam.requiresApproval){
+                if(exam.hasApprovedRequest){
+                    badge=`<span style="font-size:.65rem;font-weight:700;padding:.2rem .5rem;border-radius:2rem;background:var(--greenl);color:var(--green);">Approved</span>`;
+                    action=`<button onclick="generateExamDocket(${exam.id},'${exam.eventTypeName}')" style="display:inline-flex;align-items:center;gap:.3rem;background:var(--coral);color:#fff;border:none;border-radius:.55rem;padding:.5rem .85rem;font-size:.75rem;font-weight:700;cursor:pointer;font-family:inherit;"><i class="material-icons" style="font-size:.8rem;">download</i>Generate Docket</button>`;
                 } else {
-                    statusBadge = `<span class="px-2 py-1 bg-slate-100 text-slate-700 text-xs rounded-full">${exam.requestStatus}</span>`;
-                    actionButton = `
-                        <a href="/AcademicRequest/Submit"
-                           class="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors flex items-center">
-                            <i class="material-icons text-sm mr-1">request_page</i>
-                            Submit Request
-                        </a>
-                    `;
+                    badge=`<span style="font-size:.65rem;font-weight:700;padding:.2rem .5rem;border-radius:2rem;background:var(--mist);color:var(--text);">${exam.requestStatus}</span>`;
+                    action=`<a href="/AcademicRequest/Submit" style="display:inline-flex;align-items:center;gap:.3rem;background:var(--navy);color:#fff;border-radius:.55rem;padding:.5rem .85rem;font-size:.75rem;font-weight:700;text-decoration:none;"><i class="material-icons" style="font-size:.8rem;">request_page</i>Submit Request</a>`;
                 }
             }
-
-            html += `
-                <div class="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                    <div class="flex justify-between items-start mb-3">
-                        <div>
-                            <h4 class="font-semibold text-slate-800 flex items-center">
-                                <i class="material-icons text-red-600 mr-2 text-sm">event</i>
-                                ${exam.title}
-                            </h4>
-                            <p class="text-sm text-slate-600 mt-1">${exam.eventTypeName}</p>
-                        </div>
-                        <div class="text-right">
-                            ${statusBadge}
-                            ${daysUntil >= 0 ? `
-                                <p class="text-xs text-slate-500 mt-1">
-                                    ${daysUntil === 0 ? 'Today' : daysUntil === 1 ? 'Tomorrow' : `In ${daysUntil} days`}
-                                </p>
-                            ` : ''}
-                        </div>
+            html+=`<div class="exam-card">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.65rem;">
+                    <div>
+                        <h4 style="font-family:'DM Serif Display',serif;font-size:.9rem;color:var(--ink);display:flex;align-items:center;gap:.35rem;"><i class="material-icons" style="font-size:.9rem;color:var(--coral);">event</i>${exam.title}</h4>
+                        <p style="font-size:.75rem;color:var(--text);margin-top:.15rem;">${exam.eventTypeName}</p>
                     </div>
-
-                    <div class="grid grid-cols-2 gap-3 text-sm text-slate-600 mb-3">
-                        <div class="flex items-center">
-                            <i class="material-icons text-xs mr-1">calendar_today</i>
-                            ${examDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-                        </div>
-                        ${exam.location ? `
-                            <div class="flex items-center">
-                                <i class="material-icons text-xs mr-1">location_on</i>
-                                ${exam.location}
-                            </div>
-                        ` : ''}
-                    </div>
-
-                    <div class="flex justify-end">
-                        ${actionButton}
-                    </div>
+                    <div style="text-align:right;">${badge}${daysUntil>=0?`<p style="font-size:.65rem;color:#94a3b8;margin-top:.25rem;">${daysUntil===0?'Today':daysUntil===1?'Tomorrow':`In ${daysUntil} days`}</p>`:''}</div>
                 </div>
-            `;
+                <div style="display:flex;gap:1rem;font-size:.75rem;color:var(--text);margin-bottom:.65rem;">
+                    <span style="display:flex;align-items:center;gap:.25rem;"><i class="material-icons" style="font-size:.8rem;">calendar_today</i>${examDate.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</span>
+                    ${exam.location?`<span style="display:flex;align-items:center;gap:.25rem;"><i class="material-icons" style="font-size:.8rem;">location_on</i>${exam.location}</span>`:''}
+                </div>
+                <div style="display:flex;justify-content:flex-end;">${action}</div>
+            </div>`;
         });
-
-        html += '</div>';
-        content.innerHTML = html;
+        content.innerHTML=html;
     }
 
     function closeExamDocketModal() {
-        const modal = document.getElementById('examDocketModal');
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
+        document.getElementById('examDocketModal').classList.remove('show');
     }
 
-       function generateExamDocket(examEventId, examType) {
-        // Show loading state
-        const button = event.target.closest('button');
-        const originalContent = button.innerHTML;
-        button.disabled = true;
-        button.innerHTML = `
-            <svg class="animate-spin h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            Generating...
-        `;
-
-        // Create form data for the request
-        const formData = new FormData();
-        formData.append('examEventId', examEventId);
-        formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
-
-        // Make request to generate docket
-        fetch('/CourseRegistration/GenerateExamDocket', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => {
-            if (response.ok) {
-                return response.blob();
-            } else {
-                return response.json().then(data => {
-                    throw new Error(data.message || 'Failed to generate exam docket');
-                });
-            }
-        })
-        .then(blob => {
-            // Create download link
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = url;
-            a.download = `ExamDocket_${examType.replace(/\s+/g, '')}_${new Date().toISOString().split('T')[0]}.pdf`;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
-
-            // Show success message
-            showCustomAlert('success', 'Success', 'Exam docket generated successfully!');
-
-            // Close modal after delay
-            setTimeout(() => {
-                closeExamDocketModal();
-            }, 2000);
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showCustomAlert('error', 'Error', error.message || 'An error occurred while generating the docket');
-        })
-        .finally(() => {
-            // Reset button
-            button.disabled = false;
-            button.innerHTML = originalContent;
-        });
+    function generateExamDocket(examEventId, examType) {
+        const button=event.target.closest('button');
+        const orig=button.innerHTML;
+        button.disabled=true;
+        button.innerHTML=`<svg class="animate-spin" style="width:.9rem;height:.9rem;margin-right:.3rem;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Generating…`;
+        const fd=new FormData();
+        fd.append('examEventId',examEventId);
+        fd.append('__RequestVerificationToken',document.querySelector('input[name="__RequestVerificationToken"]').value);
+        fetch('/CourseRegistration/GenerateExamDocket',{method:'POST',body:fd})
+            .then(r=>r.ok?r.blob():r.json().then(d=>{throw new Error(d.message||'Failed to generate exam docket');}))
+            .then(blob=>{
+                const url=window.URL.createObjectURL(blob);
+                const a=document.createElement('a'); a.style.display='none'; a.href=url;
+                a.download=`ExamDocket_${examType.replace(/\s+/g,'')}${new Date().toISOString().split('T')[0]}.pdf`;
+                document.body.appendChild(a); a.click(); window.URL.revokeObjectURL(url); document.body.removeChild(a);
+                showCustomAlert('success','Success','Exam docket generated successfully!');
+                setTimeout(closeExamDocketModal,2000);
+            })
+            .catch(err=>{ showCustomAlert('error','Error',err.message||'An error occurred while generating the docket'); })
+            .finally(()=>{ button.disabled=false; button.innerHTML=orig; });
     }
-
-    
-
-
 </script>

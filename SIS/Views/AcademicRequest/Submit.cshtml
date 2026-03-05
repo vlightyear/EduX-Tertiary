@@ -1,160 +1,639 @@
 ﻿@model SIS.Models.StudentApplication.Student
 @{
-    ViewData["Title"] = "Submit Academic Request";
+    ViewData["Title"] = "Requests";
 }
 
-<style>
-    @@keyframes fadeIn {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    
-    @@keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: .8; }
-    }
-    
-    .animate-fade-in { animation: fadeIn 0.5s ease-out; }
-    .animate-pulse { animation: pulse 2s infinite; }
-    
-    .form-section {
-        transition: all 0.3s ease;
-        border-radius: 1rem;
-    }
-    
-    .form-section.focus-within {
-        ring: 2px;
-        ring-color: rgb(59 130 246 / 0.2);
-        border-color: rgb(59 130 246);
-    }
-    
-    .file-upload-area {
-        transition: all 0.3s ease;
-    }
-    
-    .file-upload-area:hover {
-        border-color: rgb(59 130 246);
-        background-color: rgb(239 246 255);
-    }
-    
-    .file-upload-area.dragover {
-        border-color: rgb(59 130 246);
-        background-color: rgb(219 234 254);
-        transform: scale(1.02);
-    }
-    
-    .mobile-sticky-header {
-        position: sticky;
-        top: 0;
-        z-index: 10;
-        background: rgba(248, 250, 252, 0.95);
-        backdrop-filter: blur(10px);
-        border-bottom: 1px solid #e2e8f0;
-    }
-    
-    @@media (max-width: 768px) {
-        .mobile-floating-submit {
-            position: fixed;
-            bottom: 1rem;
-            left: 1rem;
-            right: 1rem;
-            z-index: 20;
-        }
-        
-        .mobile-content-padding {
-            padding-bottom: 6rem;
-        }
-    }
-</style>
+@section Styles {
+    <style>
+        @@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap');
 
-<div class="min-h-screen bg-slate-50">
-    <!-- Modern Header -->
-    <div class="mobile-sticky-header bg-white shadow-sm border-b border-gray-200">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between py-6">
-                <div class="flex items-center space-x-3">
-                    <div class="flex-shrink-0">
-                        <div class="w-10 h-10 bg-gradient-to-br from-slate-500 to-slate-600 rounded-xl flex items-center justify-center">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                            </svg>
-                        </div>
-                    </div>
-                    <div>
-                        <h1 class="text-2xl font-bold text-slate-900">Submit Academic Request</h1>
-                        <p class="text-sm text-slate-600">Submit various academic-related requests with supporting documents</p>
-                    </div>
-                </div>
-                
-                <div class="hidden sm:flex items-center space-x-3">
-                    <a asp-action="MyRequests" 
-                       class="inline-flex items-center px-4 py-2 text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                        </svg>
-                        My Requests
-                    </a>
-                </div>
+        :root {
+            --coral: #e85c5c;
+            --coral-d: #c94040;
+            --navy: #1e2d5e;
+            --navy-l: #2e3f7a;
+            --mist: #f5f7fa;
+            --border: #e8ecf2;
+            --ink: #1a1f2e;
+            --text: #475569;
+        }
+
+        .ar-wrap {
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        /* ── Hero ──────────────────────────── */
+        .ar-hero {
+            background: linear-gradient(135deg, var(--navy) 0%, var(--navy-l) 55%, #3a2060 100%);
+            border-radius: 1.25rem;
+            padding: 1.75rem 2rem 4rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+            .ar-hero::before {
+                content: '';
+                position: absolute;
+                top: -50px;
+                right: -50px;
+                width: 200px;
+                height: 200px;
+                background: rgba(232,92,92,.15);
+                border-radius: 50%;
+                pointer-events: none;
+            }
+
+            .ar-hero::after {
+                content: '';
+                position: absolute;
+                bottom: -60px;
+                left: 25%;
+                width: 280px;
+                height: 280px;
+                background: rgba(255,255,255,.03);
+                border-radius: 50%;
+                pointer-events: none;
+            }
+
+        .hero-inner {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .hero-eyebrow {
+            font-size: .72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .1em;
+            color: rgba(255,255,255,.5);
+            margin-bottom: .35rem;
+        }
+
+        .hero-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.85rem;
+            color: #fff;
+            line-height: 1.2;
+            margin-bottom: .3rem;
+        }
+
+        .hero-sub {
+            font-size: .82rem;
+            color: rgba(255,255,255,.55);
+        }
+
+        .btn-my-requests {
+            display: inline-flex;
+            align-items: center;
+            gap: .4rem;
+            background: rgba(255,255,255,.15);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,.25);
+            font-size: .78rem;
+            font-weight: 600;
+            padding: .55rem 1rem;
+            border-radius: .65rem;
+            text-decoration: none;
+            transition: background .15s;
+            white-space: nowrap;
+            align-self: center;
+            backdrop-filter: blur(4px);
+            font-family: inherit;
+        }
+
+            .btn-my-requests:hover {
+                background: rgba(255,255,255,.25);
+                color: #fff;
+            }
+
+            .btn-my-requests i {
+                font-size: .9rem;
+            }
+
+        /* ── Floating content strip (starts below hero) ── */
+        .ar-content {
+            margin-top: -2.25rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* ── Form cards ────────────────────── */
+        .ar-card {
+            background: #fff;
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 12px rgba(30,45,94,.06);
+            overflow: hidden;
+            margin-bottom: 1.25rem;
+        }
+
+        .ar-card-head {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+        }
+
+        .card-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: .5rem;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .card-icon i {
+                font-size: 1rem;
+            }
+
+        .ar-card-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1rem;
+            color: var(--ink);
+        }
+
+        .ar-card-sub {
+            font-size: .75rem;
+            color: var(--text);
+            margin-top: .1rem;
+        }
+
+        .ar-card-body {
+            padding: 1.5rem;
+        }
+
+        /* ── Student info grid ──────────────── */
+        .student-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: .5rem;
+            background: var(--mist);
+            border: 1px solid var(--border);
+            border-radius: .65rem;
+            padding: .875rem 1rem;
+        }
+
+        .student-cell-lbl {
+            font-size: .7rem;
+            color: var(--text);
+            margin-bottom: .1rem;
+        }
+
+        .student-cell-val {
+            font-size: .82rem;
+            font-weight: 600;
+            color: var(--ink);
+        }
+
+        /* ── Form fields ────────────────────── */
+        .field-label {
+            display: block;
+            font-size: .72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            color: #94a3b8;
+            margin-bottom: .35rem;
+        }
+
+        .field-required {
+            color: var(--coral);
+        }
+
+        .field-select, .field-input, .field-textarea {
+            width: 100%;
+            padding: .55rem .85rem;
+            border: 1.5px solid var(--border);
+            border-radius: .55rem;
+            font-size: .84rem;
+            font-family: inherit;
+            color: var(--ink);
+            background: #fff;
+            transition: border-color .15s;
+            appearance: none;
+        }
+
+        .field-select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='%2394a3b8'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right .75rem center;
+            padding-right: 2.25rem;
+        }
+
+            .field-select:focus, .field-input:focus, .field-textarea:focus {
+                outline: none;
+                border-color: var(--coral);
+            }
+
+            .field-select:disabled {
+                background-color: var(--mist);
+                color: #94a3b8;
+                cursor: not-allowed;
+            }
+
+        .field-textarea {
+            resize: none;
+            line-height: 1.6;
+        }
+
+        .field-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: .85rem;
+        }
+
+        .field-hint {
+            font-size: .7rem;
+            color: #94a3b8;
+            margin-top: .3rem;
+        }
+
+        .char-count {
+            font-size: .7rem;
+            color: #94a3b8;
+        }
+
+            .char-count.ok {
+                color: #16a34a;
+            }
+
+            .char-count.warn {
+                color: #d97706;
+            }
+
+        /* ── Programme change info box ──────── */
+        .info-callout {
+            display: flex;
+            align-items: flex-start;
+            gap: .6rem;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: .55rem;
+            padding: .65rem .9rem;
+            margin-bottom: .85rem;
+            font-size: .78rem;
+            color: #1d4ed8;
+        }
+
+            .info-callout i {
+                font-size: .9rem;
+                flex-shrink: 0;
+                margin-top: .05rem;
+            }
+
+        /* ── File upload area ───────────────── */
+        .drop-zone {
+            border: 2px dashed var(--border);
+            border-radius: .85rem;
+            padding: 2.25rem 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color .2s, background .2s;
+        }
+
+            .drop-zone:hover, .drop-zone.dragover {
+                border-color: var(--coral);
+                background: rgba(232,92,92,.04);
+            }
+
+        .drop-zone-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: var(--mist);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto .75rem;
+        }
+
+            .drop-zone-icon i {
+                font-size: 1.4rem;
+                color: #94a3b8;
+            }
+
+        .drop-zone-title {
+            font-size: .9rem;
+            font-weight: 700;
+            color: var(--ink);
+            margin-bottom: .2rem;
+        }
+
+        .drop-zone-sub {
+            font-size: .78rem;
+            color: var(--text);
+            margin-bottom: .35rem;
+        }
+
+        .drop-zone-hint {
+            font-size: .7rem;
+            color: #94a3b8;
+        }
+
+        /* File list */
+        .file-list {
+            margin-top: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: .5rem;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+            padding: .65rem .9rem;
+            border-radius: .65rem;
+            border: 1.5px solid var(--border);
+            background: var(--mist);
+            animation: cardIn .2s ease;
+        }
+        @@keyframes cardIn {
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .file-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: .45rem;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .file-icon i {
+                font-size: .95rem;
+            }
+
+        .file-name {
+            font-size: .82rem;
+            font-weight: 600;
+            color: var(--ink);
+        }
+
+        .file-meta {
+            font-size: .7rem;
+            color: var(--text);
+        }
+
+        .btn-remove-file {
+            margin-left: auto;
+            width: 26px;
+            height: 26px;
+            border-radius: .35rem;
+            flex-shrink: 0;
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background .15s, color .15s;
+        }
+
+            .btn-remove-file:hover {
+                background: #fee2e2;
+                color: var(--coral);
+            }
+
+            .btn-remove-file i {
+                font-size: .9rem;
+            }
+
+        /* ── Submit bar ─────────────────────── */
+        .submit-bar {
+            background: #fff;
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 12px rgba(30,45,94,.06);
+            padding: 1.1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: .75rem;
+        }
+
+        .btn-submit {
+            display: inline-flex;
+            align-items: center;
+            gap: .4rem;
+            background: var(--coral);
+            color: #fff;
+            border: none;
+            font-size: .85rem;
+            font-weight: 700;
+            font-family: inherit;
+            padding: .65rem 1.5rem;
+            border-radius: .7rem;
+            cursor: pointer;
+            transition: background .15s;
+            box-shadow: 0 4px 14px rgba(232,92,92,.3);
+        }
+
+            .btn-submit:hover {
+                background: var(--coral-d);
+            }
+
+            .btn-submit i {
+                font-size: .95rem;
+            }
+
+        .btn-cancel-link {
+            font-size: .82rem;
+            font-weight: 600;
+            color: var(--text);
+            text-decoration: none;
+            padding: .65rem 1rem;
+            border-radius: .7rem;
+            transition: background .15s;
+        }
+
+            .btn-cancel-link:hover {
+                background: var(--mist);
+            }
+
+        /* ── Loading overlay ────────────────── */
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15,20,40,.55);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .loading-box {
+            background: #fff;
+            border-radius: 1rem;
+            padding: 1.75rem 2.25rem;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(15,20,40,.2);
+            animation: modalIn .22s ease;
+        }
+        @@keyframes modalIn {
+            from {
+                transform: translateY(12px) scale(.97);
+                opacity: 0;
+            }
+
+            to {
+                transform: none;
+                opacity: 1;
+            }
+        }
+
+        .spin {
+            animation: spin 1s linear infinite;
+            font-size: 2rem;
+            color: var(--coral);
+            display: block;
+            margin: 0 auto .75rem;
+        }
+        @@keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-box h3 {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.05rem;
+            color: var(--ink);
+            margin-bottom: .25rem;
+        }
+
+        .loading-box p {
+            font-size: .78rem;
+            color: var(--text);
+        }
+
+        /* ── Mobile floating submit ─────────── */
+        @@media (max-width: 640px) {
+            .desktop-submit {
+                display: none;
+            }
+
+            .mobile-submit-bar {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: #fff;
+                border-top: 1px solid var(--border);
+                padding: .85rem 1rem;
+                z-index: 50;
+                box-shadow: 0 -4px 20px rgba(30,45,94,.1);
+            }
+
+            .ar-wrap {
+                padding-bottom: 5rem;
+            }
+        }
+        @@media (min-width: 641px) {
+            .mobile-submit-bar {
+                display: none;
+            }
+        }
+
+        @@media (max-width: 540px) {
+            .student-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .field-grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+}
+
+<!-- Loading overlay -->
+<div id="loadingModal" class="loading-overlay">
+    <div class="loading-box">
+        <i class="material-icons spin">refresh</i>
+        <h3>Submitting Request</h3>
+        <p>Please wait while we process your request…</p>
+    </div>
+</div>
+
+<div class="ar-wrap p-4 md:p-6">
+
+    <!-- Hero -->
+    <div class="ar-hero mb-6">
+        <div class="hero-inner">
+            <div>
+                <p class="hero-eyebrow">Student Portal</p>
+                <h1 class="hero-title">Make A Request</h1>
+                <p class="hero-sub">Submit various academic-related requests with supporting documents</p>
             </div>
+            <a asp-action="MyRequests" class="btn-my-requests">
+                <i class="material-icons">list_alt</i> Requests
+            </a>
         </div>
     </div>
 
-    <!-- Main Content -->
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mobile-content-padding">
-        <div class="animate-fade-in">
-            <form id="academicRequestForm" enctype="multipart/form-data" class="space-y-8">
-                @Html.AntiForgeryToken()
+    <div class="ar-content">
+        <form id="academicRequestForm" enctype="multipart/form-data">
+            @Html.AntiForgeryToken()
 
-                <!-- Student Information Card -->
-                <div class="form-section bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <div class="flex items-center mb-4">
-                        <div class="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center mr-3">
-                            <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                            </svg>
-                        </div>
-                        <h2 class="text-lg font-semibold text-slate-900">Student Information</h2>
+            <!-- Student Information -->
+            <div class="ar-card">
+                <div class="ar-card-head">
+                    <div class="card-icon" style="background:#f1f5f9;">
+                        <i class="material-icons" style="color:#64748b;">person</i>
                     </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm bg-slate-50 rounded-lg p-4">
-                        <div class="flex items-center space-x-2">
-                            <span class="font-medium text-slate-700">Name:</span> 
-                            <span class="text-slate-900">@Model.FullName</span>
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <span class="font-medium text-slate-700">Student ID:</span> 
-                            <span class="text-slate-900">@Model.StudentId_Number</span>
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <span class="font-medium text-slate-700">Email:</span> 
-                            <span class="text-slate-900">@Model.Email</span>
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <span class="font-medium text-slate-700">Programme:</span> 
-                            <span class="text-slate-900">@Model.Programme?.Name</span>
-                        </div>
+                    <div>
+                        <h2 class="ar-card-title">Student Information</h2>
                     </div>
                 </div>
-
-                <!-- Request Details Card -->
-                <div class="form-section bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <div class="flex items-center mb-6">
-                        <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                            </svg>
-                        </div>
-                        <h2 class="text-lg font-semibold text-slate-900">Request Details</h2>
+                <div class="ar-card-body">
+                    <div class="student-grid">
+                        <div><p class="student-cell-lbl">Full Name</p><p class="student-cell-val">@Model.FullName</p></div>
+                        <div><p class="student-cell-lbl">Student ID</p><p class="student-cell-val">@Model.StudentId_Number</p></div>
+                        <div><p class="student-cell-lbl">Email</p><p class="student-cell-val">@Model.Email</p></div>
+                        <div><p class="student-cell-lbl">Programme</p><p class="student-cell-val">@Model.Programme?.Name</p></div>
                     </div>
+                </div>
+            </div>
 
-                    <!-- Request Type -->
-                    <div class="mb-6">
-                        <label for="requestType" class="block text-sm font-medium text-slate-700 mb-2">
-                            Request Type <span class="text-red-500">*</span>
-                        </label>
-                        <select name="requestType" id="requestType" required
-                                class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white">
-                            <option value="">Select Request Type</option>
+            <!-- Request Details -->
+            <div class="ar-card">
+                <div class="ar-card-head">
+                    <div class="card-icon" style="background:#fef2f2;">
+                        <i class="material-icons" style="color:var(--coral);">description</i>
+                    </div>
+                    <div>
+                        <h2 class="ar-card-title">Request Details</h2>
+                    </div>
+                </div>
+                <div class="ar-card-body">
+
+                    <!-- Request type -->
+                    <div style="margin-bottom:1.25rem;">
+                        <label class="field-label" for="requestType">Request Type <span class="field-required">*</span></label>
+                        <select name="requestType" id="requestType" required class="field-select">
+                            <option value="">Select a request type…</option>
                             <option value="Withdrawal">Withdrawal</option>
                             <option value="Programme Change">Programme Change</option>
                             @if (Model.ProgrammeId == 88 || Model.ProgrammeId == 1141)
@@ -167,431 +646,253 @@
                         </select>
                     </div>
 
-                    <!-- Programme Change Fields -->
-                    <div id="programmeChangeFields" class="mb-6 hidden">
-                        <div class="bg-blue-50 rounded-lg p-4 border border-blue-200 mb-4">
-                            <div class="flex items-center">
-                                <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                </svg>
-                                <span class="text-sm font-medium text-blue-900">Select your new programme details</span>
-                            </div>
+                    <!-- Programme change fields (hidden by default) -->
+                    <div id="programmeChangeFields" style="margin-bottom:1.25rem;display:none;">
+                        <div class="info-callout">
+                            <i class="material-icons">info</i>
+                            <span>Select the school and programme you wish to transfer into.</span>
                         </div>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="field-grid-2">
                             <div>
-                                <label for="schoolId" class="block text-sm font-medium text-slate-700 mb-2">
-                                    School <span class="text-red-500">*</span>
-                                </label>
-                                <select name="schoolId" id="schoolId"
-                                        class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white">
-                                    <option value="">Select School</option>
+                                <label class="field-label" for="schoolId">School <span class="field-required">*</span></label>
+                                <select name="schoolId" id="schoolId" class="field-select">
+                                    <option value="">Select school…</option>
                                 </select>
                             </div>
                             <div>
-                                <label for="programmeId" class="block text-sm font-medium text-slate-700 mb-2">
-                                    Programme <span class="text-red-500">*</span>
-                                </label>
-                                <select name="programmeId" id="programmeId" disabled
-                                        class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-slate-100">
-                                    <option value="">Select Programme</option>
+                                <label class="field-label" for="programmeId">Programme <span class="field-required">*</span></label>
+                                <select name="programmeId" id="programmeId" disabled class="field-select">
+                                    <option value="">Select programme…</option>
                                 </select>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Description -->
-                    <div class="mb-6">
-                        <label for="description" class="block text-sm font-medium text-slate-700 mb-2">
-                            Justification/Description <span class="text-red-500">*</span>
-                        </label>
-                        <textarea name="description" id="description" rows="4" required
-                                  placeholder="Please provide detailed justification for your request..."
-                                  class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"></textarea>
-                        <div class="flex justify-between items-center mt-2">
-                            <p class="text-sm text-slate-500">Minimum 20 characters required</p>
-                            <span id="charCount" class="text-sm text-slate-400">0 characters</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- File Upload Card -->
-                <div class="form-section bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <div class="flex items-center mb-6">
-                        <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
-                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h2 class="text-lg font-semibold text-slate-900">Supporting Documents</h2>
-                            <p class="text-sm text-slate-600">Optional - Upload relevant documents to support your request</p>
+                    <!-- Justification -->
+                    <div>
+                        <label class="field-label" for="description">Justification / Description <span class="field-required">*</span></label>
+                        <textarea name="description" id="description" rows="5" required class="field-textarea"
+                                  placeholder="Provide a detailed justification for your request…"></textarea>
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:.3rem;">
+                            <p class="field-hint">Minimum 20 characters required</p>
+                            <span id="charCount" class="char-count">0 characters</span>
                         </div>
                     </div>
 
-                    <div class="file-upload-area border-2 border-dashed border-slate-300 rounded-xl p-8 text-center">
-                        <input type="file" name="documents" id="documents" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" class="hidden">
-                        <div id="dropZone" class="cursor-pointer">
-                            <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <svg class="w-8 h-8 text-slate-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
-                            </div>
-                            <h3 class="text-lg font-medium text-slate-900 mb-2">Upload Documents</h3>
-                            <p class="text-slate-600 mb-2">Click to browse or drag and drop files here</p>
-                            <p class="text-sm text-slate-500">PDF, DOC, DOCX, JPG, PNG • Max 5MB each • Up to 5 files</p>
-                        </div>
-                    </div>
-                    
-                    <div id="fileList" class="mt-6 space-y-3"></div>
                 </div>
+            </div>
 
-                <!-- Desktop Submit Button -->
-                <div class="hidden sm:flex justify-end">
-                    <button type="submit" id="submitBtn"
-                            class="inline-flex items-center px-8 py-3 bg-slate-600 text-white rounded-lg hover:bg-slate-700 focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 transition-all duration-200 font-medium">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
-                        </svg>
-                        Submit Request
-                    </button>
+            <!-- Supporting Documents -->
+            <div class="ar-card">
+                <div class="ar-card-head">
+                    <div class="card-icon" style="background:#f0fdf4;">
+                        <i class="material-icons" style="color:#16a34a;">attach_file</i>
+                    </div>
+                    <div>
+                        <h2 class="ar-card-title">Supporting Documents</h2>
+                        <p class="ar-card-sub">Optional — upload relevant documents to support your request</p>
+                    </div>
                 </div>
-            </form>
-        </div>
+                <div class="ar-card-body">
+
+                    <div class="drop-zone" id="dropZone">
+                        <input type="file" name="documents" id="documents" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" class="hidden" style="display:none;">
+                        <div class="drop-zone-icon"><i class="material-icons">cloud_upload</i></div>
+                        <p class="drop-zone-title">Upload Documents</p>
+                        <p class="drop-zone-sub">Click to browse or drag &amp; drop files here</p>
+                        <p class="drop-zone-hint">PDF, DOC, DOCX, JPG, PNG &nbsp;·&nbsp; Max 5 MB each &nbsp;·&nbsp; Up to 5 files</p>
+                    </div>
+
+                    <div id="fileList" class="file-list"></div>
+
+                </div>
+            </div>
+
+            <!-- Desktop submit bar -->
+            <div class="submit-bar desktop-submit">
+                <a asp-action="MyRequests" class="btn-cancel-link">Cancel</a>
+                <button type="submit" id="submitBtn" class="btn-submit">
+                    <i class="material-icons">send</i> Submit Request
+                </button>
+            </div>
+
+        </form>
     </div>
 
-    <!-- Mobile Floating Submit Button -->
-    <div class="mobile-floating-submit sm:hidden">
-        <button type="submit" id="mobileSubmitBtn" form="academicRequestForm"
-                class="w-full inline-flex items-center justify-center px-6 py-4 bg-slate-600 text-white rounded-xl hover:bg-slate-700 transition-colors font-medium text-lg shadow-lg">
-            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
-            </svg>
-            Submit Request
+    <!-- Mobile floating submit -->
+    <div class="mobile-submit-bar">
+        <button type="submit" form="academicRequestForm" class="btn-submit" style="width:100%;justify-content:center;">
+            <i class="material-icons">send</i> Submit Request
         </button>
     </div>
 
-    <!-- Mobile Navigation -->
-    <div class="sm:hidden fixed bottom-20 right-4 z-10">
-        <a asp-action="MyRequests" 
-           class="inline-flex items-center justify-center w-14 h-14 bg-white text-slate-600 rounded-full shadow-lg border border-slate-200 hover:bg-slate-50 transition-colors">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-            </svg>
-        </a>
-    </div>
-</div>
-
-<!-- Loading Modal -->
-<div id="loadingModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-    <div class="bg-white rounded-xl p-8 text-center max-w-sm mx-4 animate-fade-in">
-        <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg class="animate-spin h-8 w-8 text-slate-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-        </div>
-        <h3 class="text-lg font-semibold text-slate-900 mb-2">Submitting Request</h3>
-        <p class="text-slate-600">Please wait while we process your request...</p>
-    </div>
 </div>
 
 @section Scripts {
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script>
-$(document).ready(function() {
-    let selectedFiles = [];
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        $(document).ready(function () {
+            let selectedFiles = [];
 
-    // Character count for description
-    $('#description').on('input', function() {
-        const count = $(this).val().length;
-        $('#charCount').text(`${count} characters`);
-        
-        if (count < 20) {
-            $('#charCount').removeClass('text-green-600').addClass('text-amber-600');
-        } else {
-            $('#charCount').removeClass('text-amber-600').addClass('text-green-600');
-        }
-    });
-
-    // Request type change handler
-    $('#requestType').change(function() {
-        const requestType = $(this).val();
-        const programmeFields = $('#programmeChangeFields');
-
-        if (requestType === 'Programme Change' || requestType === 'Quota Request') {
-            programmeFields.removeClass('hidden').addClass('animate-fade-in');
-            loadSchools();
-        } else {
-            programmeFields.addClass('hidden');
-            $('#schoolId, #programmeId').val('').removeAttr('required');
-        }
-    });
-
-    // School selection handler
-    $('#schoolId').change(function() {
-        const schoolId = $(this).val();
-        const programmeSelect = $('#programmeId');
-
-        if (schoolId) {
-            loadProgrammes(schoolId);
-        } else {
-            programmeSelect.prop('disabled', true).html('<option value="">Select Programme</option>');
-        }
-    });
-
-    // File upload handlers
-    $('#dropZone').click(function() {
-        $('#documents').click();
-    });
-
-    $('#documents').change(function() {
-        handleFiles(this.files);
-    });
-
-    // Enhanced drag and drop
-    $('#dropZone').on('dragover', function(e) {
-        e.preventDefault();
-        $(this).closest('.file-upload-area').addClass('dragover');
-    });
-
-    $('#dropZone').on('dragleave', function(e) {
-        e.preventDefault();
-        $(this).closest('.file-upload-area').removeClass('dragover');
-    });
-
-    $('#dropZone').on('drop', function(e) {
-        e.preventDefault();
-        $(this).closest('.file-upload-area').removeClass('dragover');
-        handleFiles(e.originalEvent.dataTransfer.files);
-    });
-
-    // Form submission
-    $('#academicRequestForm').submit(function(e) {
-        e.preventDefault();
-        if (!validateForm()) return;
-        submitRequest();
-    });
-
-    // Mobile submit button
-    $('#mobileSubmitBtn').click(function(e) {
-        e.preventDefault();
-        if (!validateForm()) return;
-        submitRequest();
-    });
-
-    function loadSchools() {
-        $.get('/AcademicRequest/GetSchools', function(response) {
-            if (response.success) {
-                const schoolSelect = $('#schoolId');
-                schoolSelect.html('<option value="">Select School</option>');
-
-                response.schools.forEach(function(school) {
-                    schoolSelect.append(`<option value="${school.id}">${school.name}</option>`);
-                });
-
-                schoolSelect.attr('required', 'required').prop('disabled', false);
-            }
-        });
-    }
-
-    function loadProgrammes(schoolId) {
-        const programmeSelect = $('#programmeId');
-        programmeSelect.prop('disabled', true).html('<option value="">Loading...</option>');
-
-        $.get('/AcademicRequest/GetProgrammes', { schoolId: schoolId }, function(response) {
-            if (response.success) {
-                programmeSelect.html('<option value="">Select Programme</option>');
-
-                response.programmes.forEach(function(programme) {
-                    programmeSelect.append(`<option value="${programme.id}">${programme.name}</option>`);
-                });
-
-                programmeSelect.prop('disabled', false).attr('required', 'required').removeClass('bg-slate-100').addClass('bg-white');
-            }
-        });
-    }
-
-    function handleFiles(files) {
-        for (let file of files) {
-            if (file.size > 5 * 1024 * 1024) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'File Too Large',
-                    text: `File "${file.name}" is too large. Maximum size is 5MB.`,
-                    confirmButtonColor: '#475569'
-                });
-                continue;
-            }
-
-            if (selectedFiles.length >= 5) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Maximum Files Reached',
-                    text: 'You can upload a maximum of 5 files.',
-                    confirmButtonColor: '#475569'
-                });
-                break;
-            }
-
-            selectedFiles.push(file);
-        }
-
-        updateFileList();
-    }
-
-    function updateFileList() {
-        const fileList = $('#fileList');
-        fileList.empty();
-
-        if (selectedFiles.length > 0) {
-            fileList.append('<h4 class="text-sm font-medium text-slate-900 mb-3">Selected Files</h4>');
-        }
-
-        selectedFiles.forEach(function(file, index) {
-            const fileExtension = file.name.split('.').pop().toLowerCase();
-            let iconColor = 'text-slate-400';
-            let bgColor = 'bg-slate-100';
-
-            if (['pdf'].includes(fileExtension)) {
-                iconColor = 'text-red-500';
-                bgColor = 'bg-red-50';
-            } else if (['doc', 'docx'].includes(fileExtension)) {
-                iconColor = 'text-blue-500';
-                bgColor = 'bg-blue-50';
-            } else if (['jpg', 'jpeg', 'png'].includes(fileExtension)) {
-                iconColor = 'text-green-500';
-                bgColor = 'bg-green-50';
-            }
-
-            const fileItem = $(`
-                <div class="flex items-center justify-between ${bgColor} rounded-lg p-4 border border-slate-200 animate-fade-in">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 ${bgColor} rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 ${iconColor}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-slate-900">${file.name}</p>
-                            <p class="text-xs text-slate-500">${(file.size / 1024 / 1024).toFixed(2)} MB • ${fileExtension.toUpperCase()}</p>
-                        </div>
-                    </div>
-                    <button type="button" class="p-2 text-slate-400 hover:text-red-500 transition-colors" onclick="removeFile(${index})">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                        </svg>
-                    </button>
-                </div>
-            `);
-            fileList.append(fileItem);
-        });
-    }
-
-    window.removeFile = function(index) {
-        selectedFiles.splice(index, 1);
-        updateFileList();
-    }
-
-    function validateForm() {
-        const requestType = $('#requestType').val();
-        const description = $('#description').val();
-
-        if (!requestType) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Request Type Required',
-                text: 'Please select a request type.',
-                confirmButtonColor: '#475569'
+            /* ── Character counter ── */
+            $('#description').on('input', function () {
+                const n = $(this).val().length;
+                const el = $('#charCount');
+                el.text(n + ' characters');
+                el.removeClass('ok warn').addClass(n < 20 ? 'warn' : 'ok');
             });
-            return false;
-        }
 
-        if (!description || description.length < 20) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Description Required',
-                text: 'Please provide a detailed description (minimum 20 characters).',
-                confirmButtonColor: '#475569'
-            });
-            return false;
-        }
-
-        if (requestType === 'Programme Change') {
-            const schoolId = $('#schoolId').val();
-            const programmeId = $('#programmeId').val();
-
-            if (!schoolId || !programmeId) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Programme Details Required',
-                    text: 'Please select both school and programme for programme change requests.',
-                    confirmButtonColor: '#475569'
-                });
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    function submitRequest() {
-        const formData = new FormData();
-
-        // Add form fields
-        formData.append('requestType', $('#requestType').val());
-        formData.append('description', $('#description').val());
-        formData.append('schoolId', $('#schoolId').val() || 0);
-        formData.append('programmeId', $('#programmeId').val() || 0);
-
-        // Add files
-        selectedFiles.forEach(function(file) {
-            formData.append('documents', file);
-        });
-
-        // Add antiforgery token
-        formData.append('__RequestVerificationToken', $('input[name="__RequestVerificationToken"]').val());
-
-        $('#loadingModal').removeClass('hidden').addClass('flex');
-
-        $.ajax({
-            url: '/AcademicRequest/Submit',
-            type: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            success: function(response) {
-                $('#loadingModal').addClass('hidden');
-
-                if (response.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Request Submitted!',
-                        text: response.message,
-                        confirmButtonColor: '#475569'
-                    }).then(function() {
-                        window.location.href = '/AcademicRequest/MyRequests';
-                    });
+            /* ── Request type toggle ── */
+            $('#requestType').change(function () {
+                const t = $(this).val();
+                if (t === 'Programme Change' || t === 'Quota Request') {
+                    $('#programmeChangeFields').show();
+                    loadSchools();
                 } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Submission Failed',
-                        text: response.message,
-                        confirmButtonColor: '#475569'
-                    });
+                    $('#programmeChangeFields').hide();
+                    $('#schoolId, #programmeId').val('').removeAttr('required');
                 }
-            },
-            error: function() {
-                $('#loadingModal').addClass('hidden');
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'An error occurred while submitting your request.',
-                    confirmButtonColor: '#475569'
+            });
+
+            /* ── School → programme cascade ── */
+            $('#schoolId').change(function () {
+                const id = $(this).val();
+                if (id) loadProgrammes(id);
+                else $('#programmeId').prop('disabled', true).html('<option value="">Select programme…</option>');
+            });
+
+            /* ── Drop zone ── */
+            $('#dropZone').click(function () { $('#documents').click(); });
+            $('#documents').change(function () { handleFiles(this.files); });
+
+            $('#dropZone')
+                .on('dragover',  function (e) { e.preventDefault(); $(this).addClass('dragover'); })
+                .on('dragleave', function (e) { e.preventDefault(); $(this).removeClass('dragover'); })
+                .on('drop', function (e) {
+                    e.preventDefault(); $(this).removeClass('dragover');
+                    handleFiles(e.originalEvent.dataTransfer.files);
+                });
+
+            /* ── Form submit ── */
+            $('#academicRequestForm').submit(function (e) {
+                e.preventDefault();
+                if (validateForm()) submitRequest();
+            });
+
+            /* ────────────────────────────────── */
+
+            function loadSchools() {
+                $.get('/AcademicRequest/GetSchools', function (res) {
+                    if (res.success) {
+                        const s = $('#schoolId').html('<option value="">Select school…</option>').attr('required', 'required').prop('disabled', false);
+                        res.schools.forEach(sc => s.append(`<option value="${sc.id}">${sc.name}</option>`));
+                    }
+                });
+            }
+
+            function loadProgrammes(schoolId) {
+                const s = $('#programmeId').prop('disabled', true).html('<option value="">Loading…</option>');
+                $.get('/AcademicRequest/GetProgrammes', { schoolId }, function (res) {
+                    if (res.success) {
+                        s.html('<option value="">Select programme…</option>');
+                        res.programmes.forEach(p => s.append(`<option value="${p.id}">${p.name}</option>`));
+                        s.prop('disabled', false).attr('required', 'required');
+                    }
+                });
+            }
+
+            function handleFiles(files) {
+                for (let file of files) {
+                    if (file.size > 5 * 1024 * 1024) {
+                        Swal.fire({ icon: 'error', title: 'File Too Large', text: `"${file.name}" exceeds 5 MB.`, confirmButtonColor: 'var(--navy)' });
+                        continue;
+                    }
+                    if (selectedFiles.length >= 5) {
+                        Swal.fire({ icon: 'warning', title: 'Maximum Files', text: 'You can attach up to 5 files.', confirmButtonColor: 'var(--navy)' });
+                        break;
+                    }
+                    selectedFiles.push(file);
+                }
+                renderFileList();
+            }
+
+            function renderFileList() {
+                const list = $('#fileList').empty();
+                selectedFiles.forEach((file, i) => {
+                    const ext  = file.name.split('.').pop().toLowerCase();
+                    const isPdf  = ext === 'pdf';
+                    const isDoc  = ['doc','docx'].includes(ext);
+                    const isImg  = ['jpg','jpeg','png'].includes(ext);
+                    const iconBg   = isPdf ? '#fef2f2' : isDoc ? '#eff6ff' : isImg ? '#f0fdf4' : '#f1f5f9';
+                    const iconCol  = isPdf ? '#dc2626'  : isDoc ? '#2563eb'  : isImg ? '#16a34a'  : '#64748b';
+                    const iconName = isPdf ? 'picture_as_pdf' : isDoc ? 'article' : isImg ? 'image' : 'insert_drive_file';
+
+                    list.append(`
+                        <div class="file-item">
+                            <div class="file-icon" style="background:${iconBg};">
+                                <i class="material-icons" style="color:${iconCol};font-size:.95rem;">${iconName}</i>
+                            </div>
+                            <div>
+                                <p class="file-name">${file.name}</p>
+                                <p class="file-meta">${(file.size / 1024 / 1024).toFixed(2)} MB &nbsp;·&nbsp; ${ext.toUpperCase()}</p>
+                            </div>
+                            <button type="button" class="btn-remove-file" onclick="removeFile(${i})">
+                                <i class="material-icons">close</i>
+                            </button>
+                        </div>`);
+                });
+            }
+
+            window.removeFile = function (i) { selectedFiles.splice(i, 1); renderFileList(); };
+
+            function validateForm() {
+                const type = $('#requestType').val();
+                const desc = $('#description').val();
+
+                if (!type) {
+                    Swal.fire({ icon: 'error', title: 'Required', text: 'Please select a request type.', confirmButtonColor: 'var(--navy)' });
+                    return false;
+                }
+                if (!desc || desc.length < 20) {
+                    Swal.fire({ icon: 'error', title: 'Description Too Short', text: 'Please provide at least 20 characters.', confirmButtonColor: 'var(--navy)' });
+                    return false;
+                }
+                if (type === 'Programme Change' && (!$('#schoolId').val() || !$('#programmeId').val())) {
+                    Swal.fire({ icon: 'error', title: 'Programme Details Required', text: 'Please select both school and programme.', confirmButtonColor: 'var(--navy)' });
+                    return false;
+                }
+                return true;
+            }
+
+            function submitRequest() {
+                const fd = new FormData();
+                fd.append('requestType',   $('#requestType').val());
+                fd.append('description',   $('#description').val());
+                fd.append('schoolId',      $('#schoolId').val() || 0);
+                fd.append('programmeId',   $('#programmeId').val() || 0);
+                fd.append('__RequestVerificationToken', $('input[name="__RequestVerificationToken"]').val());
+                selectedFiles.forEach(f => fd.append('documents', f));
+
+                $('#loadingModal').css('display', 'flex');
+
+                $.ajax({
+                    url: '/AcademicRequest/Submit', type: 'POST',
+                    data: fd, processData: false, contentType: false,
+                    success: function (res) {
+                        $('#loadingModal').css('display', 'none');
+                        if (res.success) {
+                            Swal.fire({ icon: 'success', title: 'Request Submitted!', text: res.message, confirmButtonColor: 'var(--navy)' })
+                                .then(() => window.location.href = '/AcademicRequest/MyRequests');
+                        } else {
+                            Swal.fire({ icon: 'error', title: 'Submission Failed', text: res.message, confirmButtonColor: 'var(--navy)' });
+                        }
+                    },
+                    error: function () {
+                        $('#loadingModal').css('display', 'none');
+                        Swal.fire({ icon: 'error', title: 'Error', text: 'An error occurred. Please try again.', confirmButtonColor: 'var(--navy)' });
+                    }
                 });
             }
         });
-    }
-});
-</script>
+    </script>
 }

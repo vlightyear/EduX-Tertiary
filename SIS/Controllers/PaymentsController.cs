@@ -7,6 +7,7 @@ using PdfSharpCore.Pdf;
 using SIS.Data;
 using SIS.DTOs.StudentApplication;
 using SIS.Enums;
+using SIS.Interfaces;
 using SIS.Models.Accounting;
 using SIS.Models.Accounts;
 using SIS.Models.Fees;
@@ -34,6 +35,7 @@ namespace SIS.Controllers
         private readonly IBackgroundEmailService _backgroundEmailService;
         private readonly IStudentInvoiceService _studentInvoiceService;
         private readonly IPayBossService _payBoss;
+        private readonly IAccommodationAllocationService _accommodationAllocationService;
 
         public PaymentsController(
             ApplicationDbContext context,
@@ -45,7 +47,8 @@ namespace SIS.Controllers
             IAccountingService accountingService,
             IBackgroundEmailService backgroundEmailService,
             IStudentInvoiceService studentInvoiceService,
-            IPayBossService payBoss)
+            IPayBossService payBoss,
+            IAccommodationAllocationService accommodationAllocationService)
         {
             _context = context;
             _paymentService = paymentService;
@@ -57,6 +60,7 @@ namespace SIS.Controllers
             _backgroundEmailService = backgroundEmailService;
             _studentInvoiceService = studentInvoiceService;
             _payBoss = payBoss;
+            _accommodationAllocationService = accommodationAllocationService;
         }
 
         #region Existing Methods (PayNow, PaymentSuccess, GetApplicableFees, etc.)
@@ -727,6 +731,7 @@ namespace SIS.Controllers
             }
 
             var studentId = model.TransactionReference.Split('_').Last();
+            var refAcc = model.TransactionReference.Split('_').First();
             var student = await _context.Students
                 .Include(s => s.AcademicYear)
                 .Include(s => s.FinancialStatements)
@@ -739,7 +744,16 @@ namespace SIS.Controllers
             }
 
             // Build a unique, traceable transaction ID for PayBoss
-            var txnId = $"STDFEE_MOB_{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString()[..8].ToUpper()}";
+            var txnId = string.Empty;
+            if(String.Equals(refAcc, "ACCOM", StringComparison.OrdinalIgnoreCase))
+            {
+                txnId = $"STDACCOM_{model.TransactionReference.Split('_')[1]}_MOB_{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString()[..8].ToUpper()}";
+
+            }
+            else
+            {
+                txnId = $"STDFEE_MOB_{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString()[..8].ToUpper()}";
+            }
 
             try
             {
@@ -822,6 +836,7 @@ namespace SIS.Controllers
             }
 
             var studentId = model.TransactionReference.Split('_').Last();
+            var refAcc = model.TransactionReference.Split('_').First();
             var student = await _context.Students
                 .Include(s => s.AcademicYear)
                 .Include(s => s.FinancialStatements)
@@ -833,7 +848,16 @@ namespace SIS.Controllers
                 return RedirectToAction("Student_Dashboard", "Home");
             }
 
-            var txnId = $"STDFEE_CARD_{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString()[..8].ToUpper()}";
+            var txnId = string.Empty;
+            if (String.Equals(refAcc, "ACCOM", StringComparison.OrdinalIgnoreCase))
+            {
+                txnId = $"STDACCOM_{model.TransactionReference.Split('_')[1]}_CARD_{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString()[..8].ToUpper()}";
+            }
+            else
+            {
+                txnId = $"STDFEE_CARD_{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString()[..8].ToUpper()}";
+            }
+
             var narration = $"Student Fee Payment - {student.StudentId_Number}";
 
             // PayBoss will redirect back here after the card / 3DS flow
@@ -955,13 +979,33 @@ namespace SIS.Controllers
 
                 if(string.Equals(status.Status, "successful", StringComparison.OrdinalIgnoreCase) || string.Equals(status.Status, "success", StringComparison.OrdinalIgnoreCase) || string.Equals(status.Status, "failed", StringComparison.OrdinalIgnoreCase))
                 {
-                    var payment = await _context.OnlinePayments.FirstOrDefaultAsync(p => p.ReferenceNumber == txnId);
+                    var payment = await _context.OnlinePayments
+                        .Include(p => p.Student)
+                        .FirstOrDefaultAsync(p => p.ReferenceNumber == txnId);
 
                     if(payment != null)
                     {
                         if(string.Equals(status.Status, "successful", StringComparison.OrdinalIgnoreCase) || string.Equals(status.Status, "success", StringComparison.OrdinalIgnoreCase))
                         {
                             payment.Status = "Paid";
+                            var refAcc = txnId.Split("_").First();
+
+                            if(String.Equals(refAcc, "STDACCOM", StringComparison.OrdinalIgnoreCase))
+                            {
+                                var user = await _userManager.GetUserAsync(User);
+                                var allocatedBy = user?.Id ?? "SYSTEM_PAY_GATEWAY";
+                                var applicationId = txnId.Split("_")[1];
+
+                                var application = await _context.AccommodationApplications
+                                    .Include(a => a.Period)
+                                    .FirstOrDefaultAsync(a => a.ApplicationId == Int32.Parse(applicationId) && a.StudentId == payment.Student.Id);
+
+                                var result = await _accommodationAllocationService.AssignBedSpaceWithoutPayment(
+                                    payment.Student.Id,
+                                    application.SelectedBedId.Value,
+                                    allocatedBy
+                                );
+                            }
                         }
                         else
                         {
