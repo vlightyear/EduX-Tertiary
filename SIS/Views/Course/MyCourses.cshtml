@@ -1,145 +1,419 @@
 ﻿@model IEnumerable<SIS.Models.Registration.StudentCoursesViewModel>
-
 @{
     ViewData["Title"] = "My Courses";
 }
 
-<div class="min-h-screen bg-slate-50 p-6">
-    <!-- Header Section -->
-    <div class="flex flex-col md:flex-row justify-between items-center h-24 mb-4">
-        <div class="flex items-center text-slate-800">
-            <i class="material-icons text-3xl mr-2">school</i>
-            <h1 class="text-2xl font-bold">My Courses</h1>
+@section Styles {
+<style>
+    :root {
+        --coral:    #e85c5c;
+        --coral-d:  #c94040;
+        --navy:     #1e2d5e;
+        --navy-l:   #2e3f7a;
+        --mist:     #f5f7fa;
+        --border:   #e8ecf2;
+        --ink:      #1a1f2e;
+        --text:     #475569;
+    }
+
+    .courses-wrap { font-family: 'DM Sans', sans-serif; }
+
+    /* ── Hero banner ─────────────────────────── */
+    .courses-hero {
+        background: linear-gradient(135deg, var(--navy) 0%, var(--navy-l) 55%, #3a2060 100%);
+        border-radius: 1.25rem;
+        padding: 2rem 2.5rem 4.5rem;
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 0;
+    }
+    .courses-hero::before {
+        content: '';
+        position: absolute;
+        top: -50px; right: -50px;
+        width: 220px; height: 220px;
+        background: rgba(232,92,92,.15);
+        border-radius: 50%;
+        pointer-events: none;
+    }
+    .courses-hero::after {
+        content: '';
+        position: absolute;
+        bottom: -60px; left: 30%;
+        width: 300px; height: 300px;
+        background: rgba(255,255,255,.03);
+        border-radius: 50%;
+        pointer-events: none;
+    }
+    .hero-eyebrow {
+        font-size: .72rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: .1em;
+        color: rgba(255,255,255,.5);
+        margin-bottom: .4rem;
+    }
+    .hero-title {
+        font-family: 'DM Serif Display', serif;
+        font-size: 1.9rem; color: #fff;
+        line-height: 1.2; margin-bottom: 0;
+    }
+    .hero-chips { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: 1rem; }
+    .hero-chip {
+        display: inline-flex; align-items: center; gap: .35rem;
+        background: rgba(255,255,255,.1);
+        border: 1px solid rgba(255,255,255,.18);
+        color: rgba(255,255,255,.85);
+        font-size: .75rem; font-weight: 600;
+        padding: .35rem .8rem; border-radius: 2rem;
+        backdrop-filter: blur(6px);
+    }
+    .hero-chip i { font-size: .85rem; }
+
+    /* ── Stat strip ──────────────────────────── */
+    .stat-strip {
+        background: #fff;
+        border-radius: 1.1rem;
+        border: 1px solid var(--border);
+        box-shadow: 0 4px 24px rgba(30,45,94,.07);
+        margin-top: -2rem;
+        position: relative; z-index: 2;
+        display: flex;
+        overflow: hidden;
+    }
+    .stat-cell {
+        flex: 1;
+        padding: 1.1rem 1.5rem;
+        border-right: 1px solid var(--border);
+        display: flex; align-items: center; gap: .85rem;
+    }
+    .stat-cell:last-child { border-right: none; }
+    .stat-icon {
+        width: 38px; height: 38px; border-radius: .65rem; flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .stat-icon i { font-size: 1.1rem; }
+    .stat-num  { font-size: 1.25rem; font-weight: 800; color: var(--ink); line-height: 1; }
+    .stat-lbl  { font-size: .72rem; color: var(--text); margin-top: .1rem; }
+
+    /* ── Section header ──────────────────────── */
+    .section-header {
+        display: flex; align-items: center; gap: .75rem;
+        margin-bottom: 1.25rem;
+    }
+    .section-pip {
+        width: 4px; height: 22px; border-radius: 2px; flex-shrink: 0;
+    }
+    .section-title {
+        font-family: 'DM Serif Display', serif;
+        font-size: 1.15rem; color: var(--ink);
+    }
+    .section-count {
+        display: inline-flex; align-items: center;
+        background: var(--mist); border: 1px solid var(--border);
+        color: var(--text); font-size: .72rem; font-weight: 700;
+        padding: .15rem .55rem; border-radius: 2rem;
+        margin-left: auto;
+    }
+
+    /* ── Course card ─────────────────────────── */
+    .course-card {
+        background: #fff;
+        border: 1.5px solid var(--border);
+        border-radius: 1rem;
+        overflow: hidden;
+        display: flex; flex-direction: column;
+        transition: transform .18s, box-shadow .18s, border-color .18s;
+        text-decoration: none; color: inherit;
+        box-shadow: 0 2px 10px rgba(30,45,94,.05);
+    }
+    .course-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 32px rgba(30,45,94,.12);
+    }
+
+    /* Mandatory hover accent */
+    .course-card.mandatory:hover { border-color: var(--coral); }
+    .course-card.mandatory:hover .card-footer-bar { background: var(--coral); }
+
+    /* Elective hover accent */
+    .course-card.elective:hover { border-color: #22c55e; }
+    .course-card.elective:hover .card-footer-bar { background: #22c55e; }
+
+    .card-top {
+        padding: 1.25rem 1.25rem .85rem;
+        display: flex; justify-content: space-between; align-items: flex-start;
+        gap: .5rem;
+    }
+    .card-code {
+        font-size: .7rem; font-weight: 800;
+        text-transform: uppercase; letter-spacing: .07em;
+        padding: .3rem .7rem; border-radius: .4rem;
+    }
+    .code-mandatory { background: #fef2f2; color: var(--coral-d); }
+    .code-elective  { background: #f0fdf4; color: #166534; }
+
+    .card-arrow {
+        width: 28px; height: 28px; border-radius: .45rem; flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center;
+        background: var(--mist); border: 1px solid var(--border);
+        transition: background .15s, border-color .15s;
+    }
+    .card-arrow i { font-size: .95rem; color: var(--text); transition: color .15s, transform .2s; }
+    .course-card:hover .card-arrow { background: var(--navy); border-color: var(--navy); }
+    .course-card:hover .card-arrow i { color: #fff; transform: translateX(2px); }
+
+    .card-body { padding: 0 1.25rem 1rem; flex: 1; display: flex; flex-direction: column; }
+    .card-name {
+        font-weight: 700; font-size: .95rem; color: var(--ink);
+        margin-bottom: .4rem; line-height: 1.35;
+    }
+    .card-desc {
+        font-size: .8rem; color: var(--text); line-height: 1.55;
+        flex: 1;
+        display: -webkit-box; -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical; overflow: hidden;
+    }
+
+    .card-meta {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: .75rem 1.25rem;
+        border-top: 1px solid var(--border);
+        font-size: .72rem;
+    }
+    .meta-sem { color: var(--text); font-weight: 500; }
+    .meta-badge {
+        display: inline-flex; align-items: center; gap: .25rem;
+        font-weight: 700; padding: .2rem .55rem; border-radius: 2rem;
+    }
+    .meta-badge i { font-size: .75rem; }
+    .badge-mandatory { background: #fef2f2; color: var(--coral-d); }
+    .badge-elective  { background: #f0fdf4; color: #166534; }
+
+    /* Coloured bottom bar — shown on hover via CSS */
+    .card-footer-bar {
+        height: 3px;
+        background: var(--border);
+        transition: background .18s;
+    }
+
+    /* ── Empty / pending states ──────────────── */
+    .state-card {
+        background: #fff;
+        border-radius: 1.1rem;
+        border: 1px solid var(--border);
+        padding: 3.5rem 2rem;
+        text-align: center;
+        box-shadow: 0 2px 12px rgba(30,45,94,.05);
+    }
+    .state-icon-ring {
+        width: 68px; height: 68px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 1.1rem;
+    }
+    .state-icon-ring i { font-size: 1.75rem; }
+    .state-title { font-family: 'DM Serif Display', serif; font-size: 1.3rem; color: var(--ink); margin-bottom: .5rem; }
+    .state-body  { font-size: .84rem; color: var(--text); max-width: 380px; margin: 0 auto 1.5rem; line-height: 1.6; }
+
+    .btn-navy {
+        display: inline-flex; align-items: center; gap: .4rem;
+        background: var(--navy); color: #fff;
+        font-size: .82rem; font-weight: 600;
+        padding: .6rem 1.25rem; border-radius: .65rem;
+        text-decoration: none; transition: background .15s;
+    }
+    .btn-navy:hover { background: var(--navy-l); }
+    .btn-navy i { font-size: .9rem; }
+
+    /* ── Grid ────────────────────────────────── */
+    .course-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+        gap: 1.1rem;
+    }
+
+    /* ── Stagger animation ───────────────────── */
+    .course-card { animation: cardIn .3s ease both; }
+    @@keyframes cardIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    @for (var d = 0; d < 12; d++) {
+        /* .course-card:nth-child(@(d+1)) { animation-delay: @(d * 40)ms; } */
+    }
+</style>
+}
+
+<div class="courses-wrap p-4 md:p-6">
+    <!-- Hero -->
+    <div class="courses-hero mb-6">
+        <div class="relative z-10 flex items-start justify-between flex-wrap gap-4">
+            <div>
+                <p class="hero-eyebrow">Student Portal</p>
+                <h1 class="hero-title">My Courses</h1>
+                <div class="hero-chips">
+                    <span class="hero-chip">
+                        <i class="material-icons">calendar_today</i>
+                        @ViewBag.AcademicYear
+                    </span>
+                    <span class="hero-chip">
+                        <i class="material-icons">event</i>
+                        Semester @ViewBag.Semester
+                    </span>
+                </div>
+            </div>
+            <i class="material-icons relative z-10" style="font-size:3rem;color:rgba(255,255,255,.12);">school</i>
         </div>
-        <div class="mt-4 md:mt-0">
-            <div class="flex items-center gap-3">
-                <span class="inline-flex items-center px-3 py-1.5 rounded-lg bg-blue-100 text-blue-800">
-                    <i class="material-icons text-sm mr-1">calendar_today</i>
-                    <span>Academic Year: @ViewBag.AcademicYear</span>
-                </span>
-                <span class="inline-flex items-center px-3 py-1.5 rounded-lg bg-purple-100 text-purple-800">
-                    <i class="material-icons text-sm mr-1">event</i>
-                    <span>Semester: @ViewBag.Semester</span>
-                </span>
+    </div>
+
+    @if (ViewBag.RegistrationStatus == SIS.Enums.Status.Pending)
+    {
+        <!-- Pending state -->
+        <div class="stat-strip mb-6">
+            <div class="stat-cell" style="justify-content:center;">
+                <i class="material-icons" style="color:#f59e0b;font-size:1.25rem;">pending_actions</i>
+                <span style="font-size:.84rem;color:var(--text);">Your registration is awaiting approval</span>
             </div>
         </div>
-    </div>
-
-    <!-- Main Content -->
-    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-        <div class="p-6">
-            @if (ViewBag.RegistrationStatus == SIS.Enums.Status.Pending)
-            {
-                <div class="flex flex-col items-center justify-center py-12 px-4">
-                    <div class="bg-amber-50 rounded-full p-4 mb-4">
-                        <i class="material-icons text-3xl text-amber-500">pending_actions</i>
-                    </div>
-                    <h2 class="text-xl font-semibold text-slate-800 mb-2">Registration Pending</h2>
-                    <p class="text-slate-600 text-center max-w-md mb-6">
-                        Your course registration is currently pending approval. You will be able to view your courses once the registration process is complete.
-                    </p>
-
-                    <a href="@Url.Action("RegisterCourses", "CourseRegistration")" class="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
-                        <i class="material-icons text-sm mr-2">arrow_back</i>
-                        Return to Registration
-                    </a>
-                </div>
-            }
-            else if (!Model.Any())
-            {
-                <div class="flex items-center gap-2 p-4 bg-amber-50 text-amber-800 rounded-lg">
-                    <i class="material-icons">warning</i>
-                    <p>You are not registered for any courses at this time.</p>
-                </div>
-            }
-            else
-            {
-                <!-- Course Categories -->
-                <div class="mb-8">
-                    <div class="flex items-center mb-6">
-                        <i class="material-icons mr-2 text-blue-600">star</i>
-                        <h2 class="text-xl font-semibold text-slate-800">Mandatory Courses</h2>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        @foreach (var course in Model.Where(c => c.IsMandatory))
-                        {
-                            <a href="@Url.Action("ViewCourseContent", "Course", new { id = course.Id })"
-                               class="block group">
-                                <div class="bg-white border border-blue-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition-all duration-300 h-full flex flex-col">
-                                    <div class="flex justify-between mb-3">
-                                        <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
-                                            @course.CourseCode
-                                        </span>
-                                        <span class="text-slate-400 group-hover:text-blue-500 transition-colors">
-                                            <i class="material-icons">arrow_forward</i>
-                                        </span>
-                                    </div>
-                                    <h3 class="text-lg font-semibold text-slate-800 mb-2 group-hover:text-blue-600 transition-colors">
-                                        @course.CourseName
-                                    </h3>
-                                    <p class="text-slate-600 text-sm flex-grow mb-4">
-                                        @course.CourseDescription
-                                    </p>
-                                    <div class="mt-auto">
-                                        <div class="flex justify-between items-center">
-                                            <span class="text-xs font-medium text-slate-500">
-                                                Semester @course.Semester
-                                            </span>
-                                            <span class="inline-flex items-center px-2 py-1 rounded bg-blue-50 text-blue-700 text-xs">
-                                                <i class="material-icons text-xs mr-1">star</i>
-                                                Mandatory
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </a>
-                        }
-                    </div>
-                </div>
-
-                <!-- Elective Courses -->
-                <div>
-                    <div class="flex items-center mb-6">
-                        <i class="material-icons mr-2 text-green-600">library_books</i>
-                        <h2 class="text-xl font-semibold text-slate-800">Elective Courses</h2>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        @foreach (var course in Model.Where(c => !c.IsMandatory))
-                        {
-                            <a href="@Url.Action("ViewCourseContent", "Course", new { id = course.Id })"
-                               class="block group">
-                                <div class="bg-white border border-green-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-green-300 transition-all duration-300 h-full flex flex-col">
-                                    <div class="flex justify-between mb-3">
-                                        <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
-                                            @course.CourseCode
-                                        </span>
-                                        <span class="text-slate-400 group-hover:text-green-500 transition-colors">
-                                            <i class="material-icons">arrow_forward</i>
-                                        </span>
-                                    </div>
-                                    <h3 class="text-lg font-semibold text-slate-800 mb-2 group-hover:text-green-600 transition-colors">
-                                        @course.CourseName
-                                    </h3>
-                                    <p class="text-slate-600 text-sm flex-grow mb-4">
-                                        @course.CourseDescription
-                                    </p>
-                                    <div class="mt-auto">
-                                        <div class="flex justify-between items-center">
-                                            <span class="text-xs font-medium text-slate-500">
-                                                Semester @course.Semester
-                                            </span>
-                                            <span class="inline-flex items-center px-2 py-1 rounded bg-green-50 text-green-700 text-xs">
-                                                <i class="material-icons text-xs mr-1">bookmark</i>
-                                                Elective
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </a>
-                        }
-                    </div>
-                </div>
-            }
+        <div class="state-card">
+            <div class="state-icon-ring" style="background:#fef3c7;">
+                <i class="material-icons" style="color:#d97706;">pending_actions</i>
+            </div>
+            <h2 class="state-title">Registration Pending</h2>
+            <p class="state-body">
+                Your course registration is currently awaiting approval. Your courses will appear here once the process is complete.
+            </p>
+            <a href="@Url.Action("RegisterCourses", "CourseRegistration")" class="btn-navy">
+                <i class="material-icons">arrow_back</i>
+                Return to Registration
+            </a>
         </div>
-    </div>
+    }
+    else if (!Model.Any())
+    {
+        <!-- Empty state -->
+        <div class="state-card">
+            <div class="state-icon-ring" style="background:#fef2f2;">
+                <i class="material-icons" style="color:var(--coral);">library_books</i>
+            </div>
+            <h2 class="state-title">No Courses Yet</h2>
+            <p class="state-body">
+                You are not registered for any courses this semester. Visit the registration page to get started.
+            </p>
+            <a href="@Url.Action("RegisterCourses", "CourseRegistration")" class="btn-navy">
+                <i class="material-icons">how_to_reg</i>
+                Register Courses
+            </a>
+        </div>
+    }
+    else
+    {
+        var mandatory = Model.Where(c => c.IsMandatory).ToList();
+        var elective  = Model.Where(c => !c.IsMandatory).ToList();
+
+        <!-- Stat strip -->
+        <div class="stat-strip mb-6">
+            <div class="stat-cell">
+                <div class="stat-icon" style="background:#fef2f2;">
+                    <i class="material-icons" style="color:var(--coral);">menu_book</i>
+                </div>
+                <div>
+                    <div class="stat-num">@Model.Count()</div>
+                    <div class="stat-lbl">Total Courses</div>
+                </div>
+            </div>
+            <div class="stat-cell">
+                <div class="stat-icon" style="background:#fef2f2;">
+                    <i class="material-icons" style="color:var(--coral);">star</i>
+                </div>
+                <div>
+                    <div class="stat-num">@mandatory.Count</div>
+                    <div class="stat-lbl">Mandatory</div>
+                </div>
+            </div>
+            <div class="stat-cell">
+                <div class="stat-icon" style="background:#f0fdf4;">
+                    <i class="material-icons" style="color:#16a34a;">bookmark</i>
+                </div>
+                <div>
+                    <div class="stat-num">@elective.Count</div>
+                    <div class="stat-lbl">Elective</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mandatory courses -->
+        @if (mandatory.Any())
+        {
+            <div class="mb-8">
+                <div class="section-header">
+                    <div class="section-pip" style="background:var(--coral);"></div>
+                    <h2 class="section-title">Mandatory Courses</h2>
+                    <span class="section-count">@mandatory.Count</span>
+                </div>
+                <div class="course-grid">
+                    @foreach (var course in mandatory)
+                    {
+                        <a href="@Url.Action("ViewCourseContent", "Course", new { id = course.Id })"
+                           class="course-card mandatory">
+                            <div class="card-top">
+                                <span class="card-code code-mandatory">@course.CourseCode</span>
+                                <div class="card-arrow"><i class="material-icons">arrow_forward</i></div>
+                            </div>
+                            <div class="card-body">
+                                <p class="card-name">@course.CourseName</p>
+                                <p class="card-desc">@course.CourseDescription</p>
+                            </div>
+                            <div class="card-meta">
+                                <span class="meta-sem">
+                                    <i class="material-icons" style="font-size:.8rem;vertical-align:middle;margin-right:.2rem;">event</i>
+                                    Semester @course.Semester
+                                </span>
+                                <span class="meta-badge badge-mandatory">
+                                    <i class="material-icons">star</i>Mandatory
+                                </span>
+                            </div>
+                            <div class="card-footer-bar"></div>
+                        </a>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- Elective courses -->
+        @if (elective.Any())
+        {
+            <div>
+                <div class="section-header">
+                    <div class="section-pip" style="background:#22c55e;"></div>
+                    <h2 class="section-title">Elective Courses</h2>
+                    <span class="section-count">@elective.Count</span>
+                </div>
+                <div class="course-grid">
+                    @foreach (var course in elective)
+                    {
+                        <a href="@Url.Action("ViewCourseContent", "Course", new { id = course.Id })"
+                           class="course-card elective">
+                            <div class="card-top">
+                                <span class="card-code code-elective">@course.CourseCode</span>
+                                <div class="card-arrow"><i class="material-icons">arrow_forward</i></div>
+                            </div>
+                            <div class="card-body">
+                                <p class="card-name">@course.CourseName</p>
+                                <p class="card-desc">@course.CourseDescription</p>
+                            </div>
+                            <div class="card-meta">
+                                <span class="meta-sem">
+                                    <i class="material-icons" style="font-size:.8rem;vertical-align:middle;margin-right:.2rem;">event</i>
+                                    Semester @course.Semester
+                                </span>
+                                <span class="meta-badge badge-elective">
+                                    <i class="material-icons">bookmark</i>Elective
+                                </span>
+                            </div>
+                            <div class="card-footer-bar"></div>
+                        </a>
+                    }
+                </div>
+            </div>
+        }
+    }
 </div>

@@ -1,212 +1,768 @@
 ﻿@model IEnumerable<SIS.Models.Zoom.ZoomMeeting>
 
-<div class="min-h-screen bg-slate-50 p-6">
-    <!-- Header Section -->
-    <div class="flex items-center h-24 mb-4">
-        <div class="flex items-center text-slate-800">
-            <i class="material-icons text-3xl mr-2">videocam</i>
+@section Styles {
+    <style>
+        @@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap');
+
+        :root {
+            --coral: #e85c5c;
+            --coral-d: #c94040;
+            --navy: #1e2d5e;
+            --navy-l: #2e3f7a;
+            --mist: #f5f7fa;
+            --border: #e8ecf2;
+            --ink: #1a1f2e;
+            --text: #475569;
+        }
+
+        .om-wrap {
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        /* ── Hero ──────────────────────────── */
+        .om-hero {
+            background: linear-gradient(135deg, var(--navy) 0%, var(--navy-l) 55%, #3a2060 100%);
+            border-radius: 1.25rem;
+            padding: 1.75rem 2rem 4rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+            .om-hero::before {
+                content: '';
+                position: absolute;
+                top: -50px;
+                right: -50px;
+                width: 200px;
+                height: 200px;
+                background: rgba(232,92,92,.15);
+                border-radius: 50%;
+                pointer-events: none;
+            }
+
+            .om-hero::after {
+                content: '';
+                position: absolute;
+                bottom: -60px;
+                left: 25%;
+                width: 280px;
+                height: 280px;
+                background: rgba(255,255,255,.03);
+                border-radius: 50%;
+                pointer-events: none;
+            }
+
+        .hero-inner {
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-eyebrow {
+            font-size: .72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .1em;
+            color: rgba(255,255,255,.5);
+            margin-bottom: .35rem;
+        }
+
+        .hero-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.85rem;
+            color: #fff;
+            line-height: 1.2;
+            margin-bottom: .3rem;
+        }
+
+        .hero-sub {
+            font-size: .82rem;
+            color: rgba(255,255,255,.55);
+        }
+
+        /* ── Stat strip ────────────────────── */
+        .om-strip {
+            background: #fff;
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 24px rgba(30,45,94,.07);
+            margin-top: -2.25rem;
+            position: relative;
+            z-index: 2;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .strip-cell {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            border-right: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: .85rem;
+        }
+
+            .strip-cell:last-child {
+                border-right: none;
+            }
+
+        .strip-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: .65rem;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .strip-icon i {
+                font-size: 1.1rem;
+            }
+
+        .strip-val {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--ink);
+            line-height: 1;
+        }
+
+        .strip-lbl {
+            font-size: .7rem;
+            color: var(--text);
+            margin-top: .1rem;
+        }
+
+        /* ── Section header ────────────────── */
+        .sec-header {
+            display: flex;
+            align-items: center;
+            gap: .65rem;
+            margin-bottom: 1.1rem;
+        }
+
+        .sec-pip {
+            width: 4px;
+            height: 20px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+
+        .sec-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.1rem;
+            color: var(--ink);
+        }
+
+        .sec-count {
+            display: inline-flex;
+            align-items: center;
+            background: var(--mist);
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-size: .7rem;
+            font-weight: 700;
+            padding: .15rem .5rem;
+            border-radius: 2rem;
+        }
+
+        /* ── Two-column layout ─────────────── */
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1.65fr;
+            gap: 1.25rem;
+            align-items: start;
+        }
+
+        /* ── Meeting cards ─────────────────── */
+        .meeting-card {
+            background: #fff;
+            border-radius: 1rem;
+            border: 1.5px solid var(--border);
+            box-shadow: 0 2px 10px rgba(30,45,94,.05);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: transform .18s, box-shadow .18s, border-color .18s;
+        }
+
+            .meeting-card:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 10px 32px rgba(30,45,94,.12);
+                border-color: #22c55e;
+            }
+
+        .card-bar {
+            height: 4px;
+            background: linear-gradient(90deg, #22c55e, #4ade80);
+        }
+
+        .card-inner {
+            padding: 1.25rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: .85rem;
+        }
+
+        .pill-live {
+            display: inline-flex;
+            align-items: center;
+            gap: .25rem;
+            background: #dcfce7;
+            color: #16a34a;
+            font-size: .68rem;
+            font-weight: 700;
+            padding: .2rem .6rem;
+            border-radius: 2rem;
+        }
+
+            .pill-live i {
+                font-size: .75rem;
+            }
+
+        .card-icon-ring {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            background: #dcfce7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .card-icon-ring i {
+                font-size: 1.1rem;
+                color: #16a34a;
+            }
+
+        .card-topic {
+            font-weight: 700;
+            font-size: .95rem;
+            color: var(--ink);
+            margin-bottom: .25rem;
+            line-height: 1.35;
+        }
+
+        .card-course {
+            font-size: .78rem;
+            color: var(--text);
+            margin-bottom: .85rem;
+        }
+
+        .card-meta {
+            display: flex;
+            flex-direction: column;
+            gap: .4rem;
+            margin-bottom: 1rem;
+        }
+
+        .meta-row {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            font-size: .78rem;
+            color: var(--text);
+        }
+
+            .meta-row i {
+                font-size: .9rem;
+                color: #94a3b8;
+            }
+
+        .card-foot {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding-top: .85rem;
+            border-top: 1px solid var(--border);
+            margin-top: auto;
+        }
+
+        .btn-join {
+            display: inline-flex;
+            align-items: center;
+            gap: .3rem;
+            padding: .5rem 1.1rem;
+            border-radius: .6rem;
+            font-size: .82rem;
+            font-weight: 700;
+            background: #22c55e;
+            color: #fff;
+            text-decoration: none;
+            transition: background .15s;
+        }
+
+            .btn-join:hover {
+                background: #16a34a;
+            }
+
+            .btn-join i {
+                font-size: .9rem;
+            }
+
+        /* ── Tables ────────────────────────── */
+        .tbl-card {
+            background: #fff;
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 10px rgba(30,45,94,.05);
+            overflow: hidden;
+        }
+
+        .bgs-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .82rem;
+        }
+
+            .bgs-table thead tr {
+                background: var(--navy);
+            }
+
+            .bgs-table thead th {
+                padding: .65rem 1rem;
+                text-align: left;
+                color: #fff;
+                font-size: .68rem;
+                text-transform: uppercase;
+                letter-spacing: .05em;
+                font-weight: 700;
+            }
+
+                .bgs-table thead th:last-child {
+                    text-align: right;
+                }
+
+            .bgs-table tbody tr {
+                border-bottom: 1px solid var(--border);
+            }
+
+                .bgs-table tbody tr:last-child {
+                    border-bottom: none;
+                }
+
+                .bgs-table tbody tr:hover {
+                    background: var(--mist);
+                }
+
+            .bgs-table tbody td {
+                padding: .75rem 1rem;
+                color: var(--ink);
+                vertical-align: middle;
+            }
+
+                .bgs-table tbody td:last-child {
+                    text-align: right;
+                }
+
+        .topic-name {
+            font-weight: 600;
+            font-size: .84rem;
+            color: var(--ink);
+        }
+
+        .course-code {
+            display: inline-block;
+            font-size: .7rem;
+            font-weight: 700;
+            background: #fef2f2;
+            color: var(--coral-d);
+            padding: .15rem .5rem;
+            border-radius: .35rem;
+        }
+
+        .host-name {
+            font-size: .82rem;
+            color: var(--text);
+        }
+
+        .tbl-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: .2rem;
+            font-size: .68rem;
+            font-weight: 700;
+            padding: .2rem .55rem;
+            border-radius: 2rem;
+        }
+
+            .tbl-pill i {
+                font-size: .75rem;
+            }
+
+        .pill-completed {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .pill-missed {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        /* Calendar button */
+        .btn-cal {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            border-radius: .45rem;
+            background: var(--mist);
+            border: 1px solid var(--border);
+            color: var(--text);
+            cursor: pointer;
+            transition: background .15s, color .15s;
+        }
+
+            .btn-cal:hover {
+                background: var(--navy);
+                color: #fff;
+            }
+
+            .btn-cal i {
+                font-size: .95rem;
+            }
+
+        /* Recording placeholder */
+        .rec-placeholder {
+            display: inline-flex;
+            align-items: center;
+            color: #cbd5e1;
+        }
+
+            .rec-placeholder i {
+                font-size: 1.1rem;
+            }
+
+        /* ── Live pulse ────────────────────── */
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+            display: inline-block;
+            position: relative;
+        }
+
+            .live-dot::after {
+                content: '';
+                position: absolute;
+                inset: -3px;
+                border-radius: 50%;
+                border: 2px solid #22c55e;
+                animation: pulse-ring 1.5s ease infinite;
+            }
+        @@keyframes pulse-ring {
+            0% {
+                transform: scale(1);
+                opacity: .8;
+            }
+
+            100% {
+                transform: scale(2);
+                opacity: 0;
+            }
+        }
+
+        /* ── Empty state ───────────────────── */
+        .empty-state {
+            background: #fff;
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+            padding: 2.5rem 1.5rem;
+            text-align: center;
+        }
+
+            .empty-state i {
+                font-size: 2.5rem;
+                color: #cbd5e1;
+                display: block;
+                margin-bottom: .65rem;
+            }
+
+            .empty-state h3 {
+                font-size: .9rem;
+                font-weight: 700;
+                color: var(--ink);
+                margin-bottom: .25rem;
+            }
+
+            .empty-state p {
+                font-size: .78rem;
+                color: var(--text);
+            }
+
+        @@media (max-width: 900px) {
+            .two-col {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @@media (max-width: 640px) {
+            .om-strip {
+                flex-wrap: wrap;
+            }
+
+            .strip-cell {
+                min-width: 50%;
+            }
+        }
+    </style>
+}
+
+@{
+    var activeMeetings = Model.Where(m => m.Status == SIS.Enums.Status.Active).ToList();
+    var upcomingMeetings = Model.Where(m => m.Status == SIS.Enums.Status.Scheduled && m.StartTime > DateTime.Now)
+                               .OrderBy(m => m.StartTime).ToList();
+    var pastMeetings = Model.Where(m => m.Status == SIS.Enums.Status.Completed ||
+                               (m.Status == SIS.Enums.Status.Scheduled && m.StartTime.AddMinutes(m.Duration) < DateTime.Now))
+                               .OrderByDescending(m => m.StartTime).Take(10).ToList();
+}
+
+<div class="om-wrap p-4 md:p-6">
+
+    <!-- Hero -->
+    <div class="om-hero mb-6">
+        <div class="hero-inner">
+            <p class="hero-eyebrow">Student Portal</p>
+            <h1 class="hero-title">Online Classes</h1>
+            <p class="hero-sub">Online classes for your enrolled courses</p>
+        </div>
+    </div>
+
+    <!-- Stat strip -->
+    <div class="om-strip mb-7">
+        <div class="strip-cell">
+            <div class="strip-icon" style="background:#dcfce7;">
+                <i class="material-icons" style="color:#16a34a;">fiber_manual_record</i>
+            </div>
             <div>
-                <h1 class="text-2xl font-bold">Online Meetings</h1>
-                <p class="text-sm text-slate-600">Online meetings for your enrolled courses</p>
+                <div class="strip-val">@activeMeetings.Count</div>
+                <div class="strip-lbl">Live Now</div>
+            </div>
+        </div>
+        <div class="strip-cell">
+            <div class="strip-icon" style="background:#dbeafe;">
+                <i class="material-icons" style="color:var(--navy);">event</i>
+            </div>
+            <div>
+                <div class="strip-val">@upcomingMeetings.Count</div>
+                <div class="strip-lbl">Upcoming</div>
+            </div>
+        </div>
+        <div class="strip-cell">
+            <div class="strip-icon" style="background:#f1f5f9;">
+                <i class="material-icons" style="color:#64748b;">history</i>
+            </div>
+            <div>
+                <div class="strip-val">@pastMeetings.Count</div>
+                <div class="strip-lbl">Past (recent)</div>
             </div>
         </div>
     </div>
 
-    <!-- Active Meetings Section -->
-    <div class="mb-8">
-        <h2 class="text-lg font-semibold text-slate-800 mb-4">Active Meetings</h2>
+    <!-- ── Two-column row: Live Now (left) + Upcoming (right) ── -->
+    <div class="two-col mb-8">
 
-        @{
-            var activeMeetings = Model.Where(m => m.Status == SIS.Enums.Status.Active).ToList();
-        }
-
-        @if (activeMeetings.Any())
-        {
-            <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                @foreach (var meeting in activeMeetings)
+        <!-- Live Now -->
+        <div>
+            <div class="sec-header">
+                <div class="sec-pip" style="background:#22c55e;"></div>
+                <h2 class="sec-title">Live Now</h2>
+                @if (activeMeetings.Any())
                 {
-                    <div class="bg-white rounded-xl shadow-sm border-l-4 border-green-500 overflow-hidden">
-                        <div class="p-5">
-                            <div class="flex items-start justify-between">
-                                <div>
-                                    <div class="flex items-center">
-                                        <span class="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 mr-2">
-                                            <i class="material-icons text-xs mr-1">fiber_manual_record</i>
-                                            Live Now
-                                        </span>
+                    <span class="live-dot"></span>
+                }
+                <span class="sec-count">@activeMeetings.Count</span>
+            </div>
+
+            @if (activeMeetings.Any())
+            {
+                <div style="display:flex;flex-direction:column;gap:.85rem;">
+                    @foreach (var meeting in activeMeetings)
+                    {
+                        <div class="meeting-card">
+                            <div class="card-bar"></div>
+                            <div class="card-inner">
+                                <div class="card-top-row">
+                                    <span class="pill-live">
+                                        <i class="material-icons">fiber_manual_record</i> Live
+                                    </span>
+                                    <div class="card-icon-ring">
+                                        <i class="material-icons">videocam</i>
                                     </div>
-                                    <h3 class="text-lg font-semibold text-slate-800 mt-2">@meeting.Topic</h3>
-                                    <p class="text-sm text-slate-600 mt-1">@meeting.Course.CourseCode - @meeting.Course.CourseName</p>
                                 </div>
-                                <div class="bg-green-100 rounded-full p-2">
-                                    <i class="material-icons text-green-600">videocam</i>
+                                <p class="card-topic">@meeting.Topic</p>
+                                <p class="card-course">@meeting.Course.CourseCode &nbsp;·&nbsp; @meeting.Course.CourseName</p>
+                                <div class="card-meta">
+                                    <div class="meta-row">
+                                        <i class="material-icons">person</i>
+                                        @meeting.CreatedBy.FullName
+                                    </div>
+                                    <div class="meta-row">
+                                        <i class="material-icons">schedule</i>
+                                        Started at @meeting.StartTime.ToString("hh:mm tt")
+                                    </div>
                                 </div>
-                            </div>
-
-                            <div class="mt-4">
-                                <div class="flex items-center text-sm text-slate-600 mb-2">
-                                    <i class="material-icons text-slate-400 text-base mr-2">person</i>
-                                    <span>Host: @meeting.CreatedBy.FullName</span>
+                                <div class="card-foot">
+                                    <a asp-action="JoinMeeting" asp-route-id="@meeting.Id" class="btn-join">
+                                        <i class="material-icons">login</i> Join Meeting
+                                    </a>
                                 </div>
-                                <div class="flex items-center text-sm text-slate-600 mb-2">
-                                    <i class="material-icons text-slate-400 text-base mr-2">schedule</i>
-                                    <span>Started at @meeting.StartTime.ToString("hh:mm tt")</span>
-                                </div>
-                            </div>
-
-                            <div class="mt-5 pt-4 border-t border-slate-100 flex justify-end">
-                                <a asp-action="JoinMeeting" asp-route-id="@meeting.Id" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                                    <i class="material-icons text-sm mr-1">login</i>
-                                    Join Meeting
-                                </a>
                             </div>
                         </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="material-icons">videocam_off</i>
+                    <h3>No live classes</h3>
+                    <p>Active meetings appear here when started by your instructor.</p>
+                </div>
+            }
+        </div>
+
+        <!-- Upcoming Classes -->
+        <div>
+            <div class="sec-header">
+                <div class="sec-pip" style="background:var(--navy);"></div>
+                <h2 class="sec-title">Upcoming Classes</h2>
+                <span class="sec-count">@upcomingMeetings.Count</span>
+            </div>
+
+            @if (upcomingMeetings.Any())
+            {
+                <div class="tbl-card">
+                    <div style="overflow-x:auto;">
+                        <table class="bgs-table">
+                            <thead>
+                                <tr>
+                                    <th>Topic</th>
+                                    <th>Course</th>
+                                    <th>Host</th>
+                                    <th>Date &amp; Time</th>
+                                    <th>Duration</th>
+                                    <th>Cal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var meeting in upcomingMeetings)
+                                {
+                                    <tr>
+                                        <td><span class="topic-name">@meeting.Topic</span></td>
+                                        <td>
+                                            <span class="course-code">@meeting.Course.CourseCode</span>
+                                            <div style="font-size:.72rem;color:var(--text);margin-top:.2rem;">@meeting.Course.CourseName</div>
+                                        </td>
+                                        <td><span class="host-name">@meeting.CreatedBy.FullName</span></td>
+                                        <td>
+                                            <div style="font-size:.82rem;font-weight:600;color:var(--ink);">@meeting.StartTime.ToString("MMM dd, yyyy")</div>
+                                            <div style="font-size:.72rem;color:var(--text);">@meeting.StartTime.ToString("hh:mm tt")</div>
+                                        </td>
+                                        <td style="font-size:.82rem;">@meeting.Duration min</td>
+                                        <td>
+                                            <button class="btn-cal" title="Add to Calendar">
+                                                <i class="material-icons">calendar_today</i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
                     </div>
-                }
-            </div>
-        }
-        else
-        {
-            <div class="bg-white rounded-xl shadow-sm p-6 text-center">
-                <i class="material-icons text-5xl text-slate-300 mb-2">videocam_off</i>
-                <h3 class="text-lg font-medium text-slate-700 mb-2">No active meetings</h3>
-                <p class="text-sm text-slate-500 mb-4">When your instructors start meetings, they'll appear here.</p>
-            </div>
-        }
-    </div>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="material-icons">event_busy</i>
+                    <h3>No upcoming classes</h3>
+                    <p>Scheduled classes will appear here when your instructors create them.</p>
+                </div>
+            }
+        </div>
 
-    <!-- Upcoming Meetings Section -->
-    <div class="mb-8">
-        <h2 class="text-lg font-semibold text-slate-800 mb-4">Upcoming Meetings</h2>
-
-        @{
-            var upcomingMeetings = Model.Where(m => m.Status == SIS.Enums.Status.Scheduled && m.StartTime > DateTime.Now)
-            .OrderBy(m => m.StartTime).ToList();
-        }
-
-        @if (upcomingMeetings.Any())
-        {
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-slate-200 bg-white rounded-xl shadow-sm">
-                    <thead class="bg-slate-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider rounded-tl-xl">Topic</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Course</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Host</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date & Time</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Duration</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider rounded-tr-xl">Add to Calendar</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-slate-200">
-                        @foreach (var meeting in upcomingMeetings)
-                        {
-                            <tr class="hover:bg-slate-50">
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm font-medium text-slate-900">@meeting.Topic</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-slate-700">@meeting.Course.CourseCode</div>
-                                    <div class="text-xs text-slate-500">@meeting.Course.CourseName</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-slate-700">@meeting.CreatedBy.FullName</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-slate-700">@meeting.StartTime.ToString("MMM dd, yyyy")</div>
-                                    <div class="text-xs text-slate-500">@meeting.StartTime.ToString("hh:mm tt")</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-slate-700">@meeting.Duration min</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <!-- Add to Calendar Feature (Optional) -->
-                                    <button class="text-primary-600 hover:text-primary-900">
-                                        <i class="material-icons">calendar_today</i>
-                                    </button>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        }
-        else
-        {
-            <div class="bg-white rounded-xl shadow-sm p-6 text-center">
-                <i class="material-icons text-5xl text-slate-300 mb-2">event_busy</i>
-                <h3 class="text-lg font-medium text-slate-700 mb-2">No upcoming meetings</h3>
-                <p class="text-sm text-slate-500 mb-4">Future meetings will be listed here when scheduled.</p>
-            </div>
-        }
-    </div>
-
-    <!-- Past Meetings Section -->
+    </div><!-- /two-col -->
+    <!-- ── Past Classes (full width) ── -->
     <div>
-        <h2 class="text-lg font-semibold text-slate-800 mb-4">Past Meetings</h2>
-
-        @{
-            var pastMeetings = Model.Where(m => m.Status == SIS.Enums.Status.Completed ||
-            (m.Status == SIS.Enums.Status.Scheduled && m.StartTime.AddMinutes(m.Duration) < DateTime.Now))
-            .OrderByDescending(m => m.StartTime).Take(10).ToList();
-        }
+        <div class="sec-header">
+            <div class="sec-pip" style="background:#94a3b8;"></div>
+            <h2 class="sec-title">Past Classes</h2>
+            <span class="sec-count">@pastMeetings.Count</span>
+        </div>
 
         @if (pastMeetings.Any())
         {
-            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-                <table class="min-w-full divide-y divide-slate-200">
-                    <thead class="bg-slate-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Topic</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Course</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Recording</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-slate-200">
-                        @foreach (var meeting in pastMeetings)
-                        {
+            <div class="tbl-card">
+                <div style="overflow-x:auto;">
+                    <table class="bgs-table">
+                        <thead>
                             <tr>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm font-medium text-slate-900">@meeting.Topic</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-slate-700">@meeting.Course.CourseCode</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-slate-700">@meeting.StartTime.ToString("MMM dd, yyyy")</div>
-                                    <div class="text-xs text-slate-500">@meeting.StartTime.ToString("hh:mm tt")</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    @if (meeting.Status == SIS.Enums.Status.Completed)
-                                    {
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Completed</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-slate-100 text-slate-800">Missed</span>
-                                    }
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <!-- Placeholder for future recording access -->
-                                    <span class="text-slate-400">
-                                        <i class="material-icons">videocam_off</i>
-                                    </span>
-                                </td>
+                                <th>Topic</th>
+                                <th>Course</th>
+                                <th>Host</th>
+                                <th>Date &amp; Time</th>
+                                <th>Duration</th>
+                                <th>Status</th>
+                                <th>Recording</th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @foreach (var meeting in pastMeetings)
+                            {
+                                <tr>
+                                    <td><span class="topic-name">@meeting.Topic</span></td>
+                                    <td><span class="course-code">@meeting.Course.CourseCode</span></td>
+                                    <td><span class="host-name">@meeting.CreatedBy.FullName</span></td>
+                                    <td>
+                                        <div style="font-size:.82rem;font-weight:600;color:var(--ink);">@meeting.StartTime.ToString("MMM dd, yyyy")</div>
+                                        <div style="font-size:.72rem;color:var(--text);">@meeting.StartTime.ToString("hh:mm tt")</div>
+                                    </td>
+                                    <td style="font-size:.82rem;">@meeting.Duration min</td>
+                                    <td>
+                                        @if (meeting.Status == SIS.Enums.Status.Completed)
+                                        {
+                                            <span class="tbl-pill pill-completed">
+                                                <i class="material-icons">check_circle</i> Completed
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="tbl-pill pill-missed">
+                                                <i class="material-icons">remove_circle_outline</i> Missed
+                                            </span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="rec-placeholder" title="Recording not available">
+                                            <i class="material-icons">videocam_off</i>
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
             </div>
         }
         else
         {
-            <div class="bg-white rounded-xl shadow-sm p-6 text-center">
-                <i class="material-icons text-5xl text-slate-300 mb-2">history</i>
-                <h3 class="text-lg font-medium text-slate-700 mb-2">No past meetings</h3>
-                <p class="text-sm text-slate-500 mb-4">Previous meetings will be listed here.</p>
+            <div class="empty-state">
+                <i class="material-icons">history</i>
+                <h3>No past classes</h3>
+                <p>Previous classes will be listed here once they've ended.</p>
             </div>
         }
     </div>
+
 </div>

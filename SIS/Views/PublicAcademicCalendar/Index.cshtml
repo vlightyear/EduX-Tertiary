@@ -2,45 +2,740 @@
     ViewData["Title"] = "Academic Calendar";
 }
 
-<div class="min-h-screen bg-slate-50 p-6">
-    <!-- Header Section -->
-    <div class="flex flex-col md:flex-row justify-between items-center h-24 mb-4">
-        <div class="flex items-center text-slate-800">
-            <i class="material-icons text-3xl mr-2">event</i>
-            <div>
-                <h1 class="text-2xl font-bold">Academic Calendar</h1>
-                <p class="text-sm text-slate-600">View academic events and deadlines</p>
+@section Styles {
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.0/main.min.css" rel="stylesheet" />
+    <style>
+        @@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap');
+
+        :root {
+            --coral: #e85c5c;
+            --coral-d: #c94040;
+            --navy: #1e2d5e;
+            --navy-l: #2e3f7a;
+            --mist: #f5f7fa;
+            --border: #e8ecf2;
+            --ink: #1a1f2e;
+            --text: #475569;
+        }
+
+        .ac-wrap {
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        /* Hero */
+        .ac-hero {
+            background: linear-gradient(135deg, var(--navy) 0%, var(--navy-l) 55%, #3a2060 100%);
+            border-radius: 1.25rem;
+            padding: 1.75rem 2rem 4rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ac-hero::before {
+            content: '';
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 200px;
+            height: 200px;
+            background: rgba(232,92,92,.15);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .ac-hero::after {
+            content: '';
+            position: absolute;
+            bottom: -60px;
+            left: 25%;
+            width: 280px;
+            height: 280px;
+            background: rgba(255,255,255,.03);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .hero-inner {
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-eyebrow {
+            font-size: .72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .1em;
+            color: rgba(255,255,255,.5);
+            margin-bottom: .35rem;
+        }
+
+        .hero-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.85rem;
+            color: #fff;
+            line-height: 1.2;
+            margin-bottom: .3rem;
+        }
+
+        .hero-sub {
+            font-size: .82rem;
+            color: rgba(255,255,255,.55);
+        }
+
+        /* Shared card */
+        .ac-card {
+            background: #fff;
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 12px rgba(30,45,94,.06);
+            overflow: hidden;
+        }
+
+        .ac-card-head {
+            padding: 1.1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .ac-card-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1rem;
+            color: var(--ink);
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+        }
+
+        .ac-card-title i {
+            font-size: 1rem;
+            color: var(--coral);
+        }
+
+        .ac-card-body {
+            padding: 1.25rem 1.5rem;
+        }
+
+        /* Filter strip */
+        .filter-strip {
+            background: #fff;
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 24px rgba(30,45,94,.07);
+            margin-top: -2.25rem;
+            position: relative;
+            z-index: 2;
+            overflow: hidden;
+        }
+
+        .filter-head {
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .filter-head-title {
+            font-size: .82rem;
+            font-weight: 700;
+            color: var(--ink);
+            display: flex;
+            align-items: center;
+            gap: .4rem;
+        }
+
+        .filter-head-title i {
+            font-size: .95rem;
+            color: var(--coral);
+        }
+
+        .btn-toggle-filters {
+            display: inline-flex;
+            align-items: center;
+            gap: .3rem;
+            font-size: .75rem;
+            font-weight: 600;
+            color: var(--text);
+            background: var(--mist);
+            border: 1px solid var(--border);
+            padding: .3rem .7rem;
+            border-radius: .45rem;
+            cursor: pointer;
+            transition: background .15s, color .15s, border-color .15s;
+            font-family: inherit;
+        }
+
+        .btn-toggle-filters:hover {
+            background: var(--navy);
+            color: #fff;
+            border-color: var(--navy);
+        }
+
+        .btn-toggle-filters i {
+            font-size: .85rem;
+        }
+
+        .filter-body {
+            padding: 1.25rem 1.5rem;
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: .85rem;
+        }
+
+        .filter-field label {
+            display: block;
+            font-size: .72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            color: #94a3b8;
+            margin-bottom: .35rem;
+        }
+
+        .filter-select {
+            width: 100%;
+            padding: .5rem .75rem;
+            border: 1.5px solid var(--border);
+            border-radius: .55rem;
+            font-size: .82rem;
+            font-family: inherit;
+            color: var(--ink);
+            background: #fff;
+            transition: border-color .15s;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='%2394a3b8'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right .6rem center;
+            padding-right: 2rem;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--coral);
+        }
+
+        .filter-select:disabled {
+            background: var(--mist);
+            color: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        /* Profile banner */
+        .profile-banner {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: .5rem;
+            padding: .875rem 1rem;
+            background: linear-gradient(135deg, rgba(30,45,94,.04), rgba(30,45,94,.02));
+            border: 1px solid rgba(30,45,94,.12);
+            border-radius: .65rem;
+            margin-top: .85rem;
+        }
+
+        .profile-banner-header {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: .35rem;
+        }
+
+        .profile-banner-title {
+            font-size: .72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            color: var(--navy);
+            display: flex;
+            align-items: center;
+            gap: .35rem;
+        }
+
+        .profile-banner-title i {
+            font-size: .85rem;
+        }
+
+        .profile-cell {
+            font-size: .75rem;
+            color: var(--text);
+        }
+
+        .profile-cell strong {
+            color: var(--ink);
+            font-weight: 600;
+        }
+
+        .btn-use-profile {
+            display: inline-flex;
+            align-items: center;
+            gap: .3rem;
+            background: var(--navy);
+            color: #fff;
+            font-size: .72rem;
+            font-weight: 700;
+            padding: .3rem .75rem;
+            border-radius: .4rem;
+            border: none;
+            cursor: pointer;
+            transition: background .15s;
+            font-family: inherit;
+        }
+
+        .btn-use-profile:hover {
+            background: var(--navy-l);
+        }
+
+        .btn-use-profile i {
+            font-size: .8rem;
+        }
+
+        /* View toggle */
+        .view-toggle {
+            display: inline-flex;
+            border-radius: .55rem;
+            overflow: hidden;
+            border: 1.5px solid var(--border);
+        }
+
+        .view-btn {
+            padding: .4rem .9rem;
+            font-size: .78rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: background .15s, color .15s;
+            background: #fff;
+            color: var(--text);
+            font-family: inherit;
+        }
+
+        .view-btn + .view-btn {
+            border-left: 1px solid var(--border);
+        }
+
+        .view-btn.active {
+            background: var(--navy);
+            color: #fff;
+        }
+
+        .view-btn:hover:not(.active) {
+            background: var(--mist);
+        }
+
+        .btn-today {
+            display: inline-flex;
+            align-items: center;
+            gap: .3rem;
+            padding: .4rem .9rem;
+            border-radius: .55rem;
+            font-size: .78rem;
+            font-weight: 600;
+            font-family: inherit;
+            border: 1.5px solid var(--border);
+            background: #fff;
+            color: var(--text);
+            cursor: pointer;
+            transition: background .15s, color .15s, border-color .15s;
+        }
+
+        .btn-today:hover {
+            background: var(--navy);
+            color: #fff;
+            border-color: var(--navy);
+        }
+
+        .btn-today i {
+            font-size: .85rem;
+        }
+
+        /* FullCalendar overrides */
+        .fc .fc-toolbar-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.1rem;
+            color: var(--ink);
+        }
+
+        .fc .fc-button {
+            background: var(--navy) !important;
+            border-color: var(--navy) !important;
+            font-family: 'DM Sans', sans-serif;
+            font-size: .78rem !important;
+        }
+
+        .fc .fc-button:hover {
+            background: var(--navy-l) !important;
+        }
+
+        .fc .fc-button:focus {
+            box-shadow: none !important;
+        }
+
+        .fc .fc-daygrid-day-number {
+            color: var(--text);
+            font-size: .78rem;
+        }
+
+        .fc .fc-col-header-cell-cushion {
+            font-size: .72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            color: var(--text);
+        }
+
+        .fc .fc-event {
+            border-radius: .35rem;
+            border: none;
+            font-size: .72rem;
+            font-weight: 600;
+        }
+
+        .fc .fc-daygrid-day.fc-day-today {
+            background: rgba(232,92,92,.05);
+        }
+
+        .fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+            background: var(--coral);
+            color: #fff;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+
+        .fc-event-main-wrapper {
+            padding: 0 2px;
+        }
+
+        /* Key dates */
+        .key-dates-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: .85rem;
+        }
+
+        .key-date-card {
+            display: flex;
+            align-items: flex-start;
+            gap: .75rem;
+            padding: .875rem 1rem;
+            background: var(--mist);
+            border: 1.5px solid var(--border);
+            border-radius: .75rem;
+            cursor: pointer;
+            transition: transform .15s, box-shadow .15s, border-color .15s;
+        }
+
+        .key-date-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(30,45,94,.1);
+            border-color: var(--coral);
+        }
+
+        .key-date-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: .5rem;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .key-date-icon i {
+            font-size: 1rem;
+            color: #fff;
+        }
+
+        .key-date-name {
+            font-size: .82rem;
+            font-weight: 700;
+            color: var(--ink);
+            margin-bottom: .15rem;
+            line-height: 1.3;
+        }
+
+        .key-date-date {
+            font-size: .72rem;
+            color: var(--text);
+            margin-bottom: .1rem;
+        }
+
+        .key-date-type {
+            font-size: .68rem;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+        }
+
+        /* Skeleton */
+        .skeleton-card {
+            padding: .875rem 1rem;
+            background: var(--mist);
+            border: 1.5px solid var(--border);
+            border-radius: .75rem;
+            display: flex;
+            gap: .75rem;
+            align-items: flex-start;
+        }
+
+        .skeleton {
+            background: linear-gradient(90deg, #f1f5f9 25%, #e8ecf2 50%, #f1f5f9 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.4s infinite;
+            border-radius: .45rem;
+        }
+        @@keyframes shimmer {
+            0% {
+                background-position: 200% 0;
+            }
+
+            100% {
+                background-position: -200% 0;
+            }
+        }
+
+        /* Event modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15,20,40,.55);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+            .modal-overlay.hidden {
+                display: none;
+            }
+
+        .modal-box {
+            background: #fff;
+            border-radius: 1.1rem;
+            width: 90%;
+            max-width: 460px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 24px 48px rgba(15,20,40,.2);
+            animation: modalIn .22s ease;
+        }
+        @@keyframes modalIn {
+            from {
+                transform: translateY(16px) scale(.97);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+        }
+
+        .modal-head {
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            gap: 1rem;
+        }
+
+        .modal-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.1rem;
+            color: var(--ink);
+            line-height: 1.3;
+        }
+
+        .modal-close {
+            width: 28px;
+            height: 28px;
+            border-radius: .4rem;
+            flex-shrink: 0;
+            background: var(--mist);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text);
+            transition: background .15s;
+        }
+
+            .modal-close:hover {
+                background: #fee2e2;
+                color: var(--coral);
+            }
+
+            .modal-close i {
+                font-size: 1rem;
+            }
+
+        .modal-body {
+            padding: 1.25rem 1.5rem;
+        }
+
+        .modal-event-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: .85rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+        }
+
+            .modal-event-icon i {
+                font-size: 1.6rem;
+                color: #fff;
+            }
+
+        .modal-datetime {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: .4rem;
+            font-size: .78rem;
+            color: var(--text);
+            margin-bottom: 1rem;
+        }
+
+            .modal-datetime i {
+                font-size: .85rem;
+                color: #94a3b8;
+            }
+
+        .modal-desc {
+            font-size: .82rem;
+            color: var(--text);
+            line-height: 1.6;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 1rem;
+        }
+
+        .modal-meta-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: .6rem;
+        }
+
+        .modal-meta-row {
+            display: flex;
+            align-items: flex-start;
+            gap: .4rem;
+            font-size: .78rem;
+            color: var(--text);
+        }
+
+            .modal-meta-row i {
+                font-size: .85rem;
+                color: #94a3b8;
+                flex-shrink: 0;
+                margin-top: .05rem;
+            }
+
+        .modal-applies {
+            margin-top: .85rem;
+            padding: .6rem .85rem;
+            background: var(--mist);
+            border-radius: .5rem;
+            font-size: .72rem;
+            color: var(--text);
+            font-style: italic;
+        }
+
+        @@media (max-width: 768px) {
+            .filter-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .profile-banner {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @@media (max-width: 540px) {
+            .filter-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .profile-banner {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+}
+
+<!-- Event Details Modal -->
+<div id="eventModal" class="modal-overlay hidden">
+    <div class="modal-box">
+        <div class="modal-head">
+            <h3 id="eventTitle" class="modal-title">Event Title</h3>
+            <button id="closeEventModal" class="modal-close"><i class="material-icons">close</i></button>
+        </div>
+        <div class="modal-body">
+            <div id="eventIcon" class="modal-event-icon"><i class="material-icons">event</i></div>
+            <div id="eventDateTime" class="modal-datetime">
+                <i class="material-icons">schedule</i><span>Date and time</span>
             </div>
+            <p id="eventDescription" class="modal-desc">Event description will appear here.</p>
+            <div class="modal-meta-grid">
+                <div id="eventLocation" class="modal-meta-row"><i class="material-icons">place</i><span>Location</span></div>
+                <div id="eventContact" class="modal-meta-row"><i class="material-icons">person</i><span>Contact</span></div>
+                <div id="eventType" class="modal-meta-row"><i class="material-icons">label</i><span>Type</span></div>
+                <div id="eventEmail" class="modal-meta-row"><i class="material-icons">email</i><span>Email</span></div>
+            </div>
+            <div id="eventAppliesTo" class="modal-applies">This event applies to all students.</div>
+        </div>
+    </div>
+</div>
+
+<div class="ac-wrap p-4 md:p-6">
+
+    <!-- Hero -->
+    <div class="ac-hero mb-6">
+        <div class="hero-inner">
+            <p class="hero-eyebrow">Student Portal</p>
+            <h1 class="hero-title">Academic Calendar</h1>
+            <p class="hero-sub">View academic events and deadlines for your programme</p>
         </div>
     </div>
 
-    <!-- Filters Card -->
-    <div class="bg-white rounded-xl shadow-sm mb-6">
-        <div class="p-6">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-lg font-semibold text-slate-800">Filters</h2>
-                <button id="toggleFiltersBtn" class="text-cyan-600 hover:text-cyan-800 flex items-center text-sm">
-                    <i class="material-icons text-sm mr-1">tune</i>
-                    <span>Toggle Filters</span>
-                </button>
-            </div>
-            
-            <div id="filtersContainer" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <!-- Academic Year -->
-                <div>
-                    <label for="academicYearSelect" class="block text-sm font-medium text-slate-700 mb-1">Academic Year</label>
-                    <select id="academicYearSelect" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm">
+    <!-- Filter strip -->
+    <div class="filter-strip mb-6">
+        <div class="filter-head">
+            <span class="filter-head-title"><i class="material-icons">tune</i> Filters</span>
+            <button id="toggleFiltersBtn" class="btn-toggle-filters">
+                <i class="material-icons">expand_less</i> Hide
+            </button>
+        </div>
+        <div id="filtersContainer" class="filter-body">
+            <div class="filter-grid">
+                <div class="filter-field">
+                    <label for="academicYearSelect">Academic Year</label>
+                    <select id="academicYearSelect" class="filter-select">
                         @foreach (var year in ViewBag.AcademicYears)
                         {
                             <option value="@year.Value" selected="@year.Selected">@year.Text</option>
                         }
                     </select>
                 </div>
-
-                <!-- School -->
-                <div>
-                    <label for="schoolSelect" class="block text-sm font-medium text-slate-700 mb-1">School</label>
-                    <select id="schoolSelect" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm">
+                <div class="filter-field">
+                    <label for="schoolSelect">School</label>
+                    <select id="schoolSelect" class="filter-select">
                         <option value="">All Schools</option>
                         @foreach (var school in ViewBag.Schools)
                         {
@@ -48,19 +743,15 @@
                         }
                     </select>
                 </div>
-
-                <!-- Programme (will be populated via AJAX) -->
-                <div>
-                    <label for="programmeSelect" class="block text-sm font-medium text-slate-700 mb-1">Programme</label>
-                    <select id="programmeSelect" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm" disabled>
+                <div class="filter-field">
+                    <label for="programmeSelect">Programme</label>
+                    <select id="programmeSelect" class="filter-select" disabled>
                         <option value="">All Programmes</option>
                     </select>
                 </div>
-
-                <!-- Programme Level -->
-                <div>
-                    <label for="programmeLevelSelect" class="block text-sm font-medium text-slate-700 mb-1">Programme Level</label>
-                    <select id="programmeLevelSelect" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm">
+                <div class="filter-field">
+                    <label for="programmeLevelSelect">Level</label>
+                    <select id="programmeLevelSelect" class="filter-select">
                         <option value="">All Levels</option>
                         @foreach (var level in ViewBag.ProgrammeLevels)
                         {
@@ -68,11 +759,9 @@
                         }
                     </select>
                 </div>
-
-                <!-- Mode of Study -->
-                <div>
-                    <label for="modeOfStudySelect" class="block text-sm font-medium text-slate-700 mb-1">Mode of Study</label>
-                    <select id="modeOfStudySelect" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm">
+                <div class="filter-field">
+                    <label for="modeOfStudySelect">Mode of Study</label>
+                    <select id="modeOfStudySelect" class="filter-select">
                         <option value="">All Modes</option>
                         @foreach (var mode in ViewBag.ModesOfStudy)
                         {
@@ -80,11 +769,9 @@
                         }
                     </select>
                 </div>
-
-                <!-- Student Year -->
-                <div>
-                    <label for="studentYearSelect" class="block text-sm font-medium text-slate-700 mb-1">Student Year</label>
-                    <select id="studentYearSelect" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 sm:text-sm">
+                <div class="filter-field">
+                    <label for="studentYearSelect">Student Year</label>
+                    <select id="studentYearSelect" class="filter-select">
                         <option value="">All Years</option>
                         <option value="1">Year 1</option>
                         <option value="2">Year 2</option>
@@ -97,670 +784,355 @@
 
             @if (ViewBag.StudentInfo != null)
             {
-                <div class="mt-4 p-3 bg-cyan-50 rounded-lg border border-cyan-100">
-                    <h3 class="text-sm font-medium text-cyan-800 mb-2">Your Academic Profile</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-cyan-700">
-                        <div>
-                            <span class="font-medium">School:</span> @ViewBag.StudentInfo.SchoolName
-                        </div>
-                        <div>
-                            <span class="font-medium">Programme:</span> @ViewBag.StudentInfo.ProgrammeName
-                        </div>
-                        <div>
-                            <span class="font-medium">Level:</span> @ViewBag.StudentInfo.ProgrammeLevelName
-                        </div>
-                        <div>
-                            <span class="font-medium">Mode:</span> @ViewBag.StudentInfo.ModeOfStudyName
-                        </div>
-                        <div>
-                            <span class="font-medium">Year:</span> @ViewBag.StudentInfo.StudentYear
-                        </div>
-                        <div>
-                            <span class="font-medium">Semester:</span> @ViewBag.StudentInfo.Semester
-                        </div>
-                    </div>
-                    <div class="mt-2 flex justify-end">
-                        <button id="useMyProfileBtn" class="text-xs bg-cyan-600 text-white px-3 py-1 rounded hover:bg-cyan-700 transition-colors">
-                            Filter Events for My Profile
+                <div class="profile-banner">
+                    <div class="profile-banner-header">
+                        <span class="profile-banner-title">
+                            <i class="material-icons">person</i> Your Academic Profile
+                        </span>
+                        <button id="useMyProfileBtn" class="btn-use-profile">
+                            <i class="material-icons">filter_alt</i> Filter for My Profile
                         </button>
                     </div>
+                    <div class="profile-cell"><strong>School:</strong> @ViewBag.StudentInfo.SchoolName</div>
+                    <div class="profile-cell"><strong>Programme:</strong> @ViewBag.StudentInfo.ProgrammeName</div>
+                    <div class="profile-cell"><strong>Level:</strong> @ViewBag.StudentInfo.ProgrammeLevelName</div>
+                    <div class="profile-cell"><strong>Mode:</strong> @ViewBag.StudentInfo.ModeOfStudyName</div>
+                    <div class="profile-cell"><strong>Year:</strong> @ViewBag.StudentInfo.StudentYear</div>
+                    <div class="profile-cell"><strong>Semester:</strong> @ViewBag.StudentInfo.Semester</div>
                 </div>
             }
         </div>
     </div>
 
-    <!-- Calendar Card -->
-    <div class="bg-white rounded-xl shadow-sm mb-6">
-        <div class="p-6">
-            <h2 class="text-lg font-semibold text-slate-800 mb-4">Events Calendar</h2>
-            
-            <!-- View Type Toggle -->
-            <div class="mb-4 flex justify-between items-center">
-                <div class="inline-flex rounded-md shadow-sm" role="group">
-                    <button type="button" id="monthViewBtn" class="bg-cyan-600 text-white px-4 py-2 text-sm font-medium rounded-l-lg hover:bg-cyan-700">
-                        Month
-                    </button>
-                    <button type="button" id="weekViewBtn" class="bg-slate-200 text-slate-800 px-4 py-2 text-sm font-medium hover:bg-slate-300">
-                        Week
-                    </button>
-                    <button type="button" id="listViewBtn" class="bg-slate-200 text-slate-800 px-4 py-2 text-sm font-medium rounded-r-lg hover:bg-slate-300">
-                        List
-                    </button>
+    <!-- Calendar card -->
+    <div class="ac-card mb-6">
+        <div class="ac-card-head">
+            <h2 class="ac-card-title">
+                <i class="material-icons">calendar_month</i> Events Calendar
+            </h2>
+            <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;">
+                <div class="view-toggle">
+                    <button id="monthViewBtn" class="view-btn active">Month</button>
+                    <button id="weekViewBtn" class="view-btn">Week</button>
+                    <button id="listViewBtn" class="view-btn">List</button>
                 </div>
-                <div>
-                    <button id="todayBtn" class="bg-slate-200 text-slate-800 px-4 py-2 text-sm font-medium rounded-lg hover:bg-slate-300">
-                        Today
-                    </button>
-                </div>
+                <button id="todayBtn" class="btn-today">
+                    <i class="material-icons">today</i> Today
+                </button>
             </div>
-            
-            <!-- Calendar Container -->
-            <div id="calendar" class="mt-4"></div>
+        </div>
+        <div class="ac-card-body">
+            <div id="calendar"></div>
         </div>
     </div>
 
-    <!-- Key Dates Section -->
-    <div class="bg-white rounded-xl shadow-sm mb-6">
-        <div class="p-6">
-            <h2 class="text-lg font-semibold text-slate-800 mb-4">Key Academic Dates</h2>
-            <div id="keyDatesContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <!-- Key dates will be populated via JavaScript -->
-                <div class="p-4 border border-slate-200 rounded-lg animate-pulse">
-                    <div class="h-4 bg-slate-200 rounded w-3/4 mb-2"></div>
-                    <div class="h-3 bg-slate-200 rounded w-1/2"></div>
-                </div>
-                <div class="p-4 border border-slate-200 rounded-lg animate-pulse">
-                    <div class="h-4 bg-slate-200 rounded w-3/4 mb-2"></div>
-                    <div class="h-3 bg-slate-200 rounded w-1/2"></div>
-                </div>
-                <div class="p-4 border border-slate-200 rounded-lg animate-pulse">
-                    <div class="h-4 bg-slate-200 rounded w-3/4 mb-2"></div>
-                    <div class="h-3 bg-slate-200 rounded w-1/2"></div>
-                </div>
+    <!-- Key dates card -->
+    <div class="ac-card">
+        <div class="ac-card-head">
+            <h2 class="ac-card-title">
+                <i class="material-icons">push_pin</i> Key Academic Dates
+            </h2>
+        </div>
+        <div class="ac-card-body">
+            <div id="keyDatesContainer" class="key-dates-grid">
+                @for (int i = 0; i < 6; i++)
+                {
+                    <div class="skeleton-card">
+                        <div class="skeleton" style="width:36px;height:36px;border-radius:.5rem;flex-shrink:0;"></div>
+                        <div style="flex:1;">
+                            <div class="skeleton" style="height:12px;width:70%;margin-bottom:.4rem;"></div>
+                            <div class="skeleton" style="height:10px;width:45%;"></div>
+                        </div>
+                    </div>
+                }
             </div>
         </div>
     </div>
-</div>
 
-<!-- Event Details Modal -->
-<div id="eventModal" class="hidden fixed inset-0 bg-slate-900 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-    <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
-        <div class="flex justify-between items-center border-b pb-3">
-            <h3 id="eventTitle" class="text-lg font-medium text-slate-900">Event Title</h3>
-            <button id="closeEventModal" class="text-slate-400 hover:text-slate-500">
-                <i class="material-icons">close</i>
-            </button>
-        </div>
-        <div class="mt-4">
-            <div id="eventIcon" class="bg-slate-100 h-12 w-12 rounded-full flex items-center justify-center mb-4 mx-auto">
-                <i class="material-icons text-2xl">event</i>
-            </div>
-            
-            <div id="eventDateTime" class="flex items-center justify-center text-sm text-slate-500 mb-4">
-                <i class="material-icons text-sm mr-1">schedule</i>
-                <span>Date and time</span>
-            </div>
-            
-            <div id="eventDescription" class="text-sm text-slate-600 mb-4 border-b pb-4">
-                Event description will appear here.
-            </div>
-            
-            <div class="grid grid-cols-2 gap-4 text-sm">
-                <div id="eventLocation" class="flex items-start">
-                    <i class="material-icons text-sm mr-1 text-slate-400">place</i>
-                    <span class="text-slate-600">Location</span>
-                </div>
-                <div id="eventContact" class="flex items-start">
-                    <i class="material-icons text-sm mr-1 text-slate-400">person</i>
-                    <span class="text-slate-600">Contact</span>
-                </div>
-                <div id="eventType" class="flex items-start">
-                    <i class="material-icons text-sm mr-1 text-slate-400">label</i>
-                    <span class="text-slate-600">Type</span>
-                </div>
-                <div id="eventEmail" class="flex items-start">
-                    <i class="material-icons text-sm mr-1 text-slate-400">email</i>
-                    <span class="text-slate-600">Email</span>
-                </div>
-            </div>
-            
-            <div id="eventAppliesTo" class="mt-4 text-xs text-slate-500 italic">
-                This event applies to all students.
-            </div>
-        </div>
-    </div>
 </div>
 
 @section Scripts {
-    <!-- FullCalendar Dependencies -->
-    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.0/main.min.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.0/main.min.js"></script>
-    
     <script>
-        // Global variables
         let calendar;
         let currentView = 'dayGridMonth';
         let currentFilters = {
             academicYearId: '@ViewBag.CurrentAcademicYearId',
-            schoolId: '',
-            programmeId: '',
-            programmeLevelId: '',
-            modeOfStudyId: '',
-            studentYear: '',
-            semester: ''
+            schoolId: '', programmeId: '', programmeLevelId: '',
+            modeOfStudyId: '', studentYear: '', semester: ''
         };
-        
-        // Initialize the calendar when DOM is loaded
-        document.addEventListener('DOMContentLoaded', function() {
+
+        document.addEventListener('DOMContentLoaded', function () {
             initializeCalendar();
             setupEventListeners();
             loadKeyDates();
-            
-            // Check if Student info exists, if so, add the student's school ID to select
+
             @if (ViewBag.StudentInfo != null)
             {
-                <text>
-                // Pre-select student's school in the dropdown if it exists
-                const schoolSelect = document.getElementById('schoolSelect');
-                const schoolId = '@ViewBag.StudentInfo.SchoolId';
-                if (schoolId && schoolSelect) {
-                    schoolSelect.value = schoolId;
-                    loadProgrammes(schoolId);
-                    
-                    // After loading programmes, pre-select student's programme
-                    setTimeout(() => {
-                        const programmeSelect = document.getElementById('programmeSelect');
-                        if (programmeSelect) {
-                            programmeSelect.value = '@ViewBag.StudentInfo.ProgrammeId';
-                        }
-                    }, 500);
-                }
-                </text>
+                    <text>
+                    const schoolSelect = document.getElementById('schoolSelect');
+                    const schoolId = '@ViewBag.StudentInfo.SchoolId';
+                    if (schoolId && schoolSelect) {
+                        schoolSelect.value = schoolId;
+                        loadProgrammes(schoolId);
+                        setTimeout(() => {
+                            const ps = document.getElementById('programmeSelect');
+                            if (ps) ps.value = '@ViewBag.StudentInfo.ProgrammeId';
+                        }, 500);
+                    }
+                    </text>
             }
         });
 
-        // Initialize FullCalendar
         function initializeCalendar() {
-            const calendarEl = document.getElementById('calendar');
-            
-            calendar = new FullCalendar.Calendar(calendarEl, {
+            calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
                 initialView: currentView,
-                headerToolbar: {
-                    left: 'prev,next',
-                    center: 'title',
-                    right: ''
-                },
-                height: 'auto',
-                aspectRatio: 1.8,
+                headerToolbar: { left: 'prev,next', center: 'title', right: '' },
+                height: 'auto', aspectRatio: 1.8,
                 events: fetchEvents,
-                eventTimeFormat: {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    meridiem: 'short'
-                },
+                eventTimeFormat: { hour: '2-digit', minute: '2-digit', meridiem: 'short' },
                 eventClick: handleEventClick,
-                datesSet: function(info) {
-                    // Update date ranges when calendar dates change
-                    loadKeyDates();
-                },
-                loading: function(isLoading) {
-                    // Could add loading indicator here
-                },
-                eventContent: function(info) {
-                    // Custom rendering of events to include icons
+                datesSet: function () { loadKeyDates(); },
+                eventContent: function (info) {
                     let icon = info.event.extendedProps.icon || 'event';
-                    let title = info.event.title;
-                    
                     let eventEl = document.createElement('div');
                     eventEl.className = 'fc-event-main-wrapper';
-                    
                     if (!info.event.allDay) {
-                        let timeText = info.timeText;
                         let timeEl = document.createElement('div');
                         timeEl.className = 'fc-event-time text-xs';
-                        timeEl.innerHTML = timeText;
+                        timeEl.innerHTML = info.timeText;
                         eventEl.appendChild(timeEl);
                     }
-                    
-                    let contentWrapper = document.createElement('div');
-                    contentWrapper.className = 'flex items-center';
-                    
+                    let wrap = document.createElement('div');
+                    wrap.className = 'flex items-center';
                     let iconEl = document.createElement('i');
                     iconEl.className = 'material-icons text-xs mr-1';
                     iconEl.innerHTML = icon;
-                    contentWrapper.appendChild(iconEl);
-                    
+                    wrap.appendChild(iconEl);
                     let titleEl = document.createElement('div');
                     titleEl.className = 'fc-event-title text-xs font-medium truncate';
-                    titleEl.innerHTML = title;
-                    contentWrapper.appendChild(titleEl);
-                    
-                    eventEl.appendChild(contentWrapper);
-                    
+                    titleEl.innerHTML = info.event.title;
+                    wrap.appendChild(titleEl);
+                    eventEl.appendChild(wrap);
                     return { domNodes: [eventEl] };
                 }
             });
-            
             calendar.render();
         }
-        
-        // Set up event listeners for the UI
+
         function setupEventListeners() {
-            // Filters change event listener
             document.getElementById('academicYearSelect').addEventListener('change', updateFilters);
-            document.getElementById('schoolSelect').addEventListener('change', function() {
-                loadProgrammes(this.value);
-                updateFilters();
+            document.getElementById('schoolSelect').addEventListener('change', function () {
+                loadProgrammes(this.value); updateFilters();
             });
             document.getElementById('programmeSelect').addEventListener('change', updateFilters);
             document.getElementById('programmeLevelSelect').addEventListener('change', updateFilters);
             document.getElementById('modeOfStudySelect').addEventListener('change', updateFilters);
             document.getElementById('studentYearSelect').addEventListener('change', updateFilters);
-            
-            // View toggle buttons
-            document.getElementById('monthViewBtn').addEventListener('click', function() {
-                setCalendarView('dayGridMonth', this);
+
+            document.getElementById('monthViewBtn').addEventListener('click', function () { setCalendarView('dayGridMonth', this); });
+            document.getElementById('weekViewBtn').addEventListener('click',  function () { setCalendarView('timeGridWeek',  this); });
+            document.getElementById('listViewBtn').addEventListener('click',  function () { setCalendarView('listMonth',    this); });
+            document.getElementById('todayBtn').addEventListener('click', () => calendar.today());
+
+            document.getElementById('toggleFiltersBtn').addEventListener('click', function () {
+                const fc = document.getElementById('filtersContainer');
+                const hidden = fc.style.display === 'none';
+                fc.style.display = hidden ? '' : 'none';
+                this.innerHTML = hidden
+                    ? '<i class="material-icons">expand_less</i> Hide'
+                    : '<i class="material-icons">expand_more</i> Show';
             });
-            document.getElementById('weekViewBtn').addEventListener('click', function() {
-                setCalendarView('timeGridWeek', this);
-            });
-            document.getElementById('listViewBtn').addEventListener('click', function() {
-                setCalendarView('listMonth', this);
-            });
-            
-            // Today button
-            document.getElementById('todayBtn').addEventListener('click', function() {
-                calendar.today();
-            });
-            
-            // Filter toggle button
-            document.getElementById('toggleFiltersBtn').addEventListener('click', function() {
-                const filtersContainer = document.getElementById('filtersContainer');
-                if (filtersContainer.classList.contains('hidden')) {
-                    filtersContainer.classList.remove('hidden');
-                    this.innerHTML = '<i class="material-icons text-sm mr-1">tune</i><span>Hide Filters</span>';
-                } else {
-                    filtersContainer.classList.add('hidden');
-                    this.innerHTML = '<i class="material-icons text-sm mr-1">tune</i><span>Show Filters</span>';
-                }
-            });
-            
-            // Close event modal
-            document.getElementById('closeEventModal').addEventListener('click', function() {
+
+            document.getElementById('closeEventModal').addEventListener('click', () => {
                 document.getElementById('eventModal').classList.add('hidden');
             });
-            
-            // Use my profile button (for students)
+
             const useMyProfileBtn = document.getElementById('useMyProfileBtn');
             if (useMyProfileBtn) {
-                useMyProfileBtn.addEventListener('click', function() {
+                useMyProfileBtn.addEventListener('click', function () {
                     @if (ViewBag.StudentInfo != null)
                     {
-                        <text>
-                        // Set filters to student's profile
-                        document.getElementById('schoolSelect').value = '@ViewBag.StudentInfo.SchoolId';
-                        loadProgrammes('@ViewBag.StudentInfo.SchoolId', function() {
-                            document.getElementById('programmeSelect').value = '@ViewBag.StudentInfo.ProgrammeId';
-                            document.getElementById('programmeLevelSelect').value = '@ViewBag.StudentInfo.ProgrammeLevelId';
-                            document.getElementById('modeOfStudySelect').value = '@ViewBag.StudentInfo.ModeOfStudyId';
-                            document.getElementById('studentYearSelect').value = '@ViewBag.StudentInfo.StudentYear';
-                            
-                            // Update filters and refresh calendar
-                            updateFilters();
-                        });
-                        </text>
+                            <text>
+                            document.getElementById('schoolSelect').value = '@ViewBag.StudentInfo.SchoolId';
+                            loadProgrammes('@ViewBag.StudentInfo.SchoolId', function () {
+                                document.getElementById('programmeSelect').value      = '@ViewBag.StudentInfo.ProgrammeId';
+                                document.getElementById('programmeLevelSelect').value = '@ViewBag.StudentInfo.ProgrammeLevelId';
+                                document.getElementById('modeOfStudySelect').value    = '@ViewBag.StudentInfo.ModeOfStudyId';
+                                document.getElementById('studentYearSelect').value    = '@ViewBag.StudentInfo.StudentYear';
+                                updateFilters();
+                            });
+                            </text>
                     }
                 });
             }
         }
-        
-        // Update filters and refresh calendar
+
         function updateFilters() {
             currentFilters = {
-                academicYearId: document.getElementById('academicYearSelect').value,
-                schoolId: document.getElementById('schoolSelect').value,
-                programmeId: document.getElementById('programmeSelect').value,
+                academicYearId:   document.getElementById('academicYearSelect').value,
+                schoolId:         document.getElementById('schoolSelect').value,
+                programmeId:      document.getElementById('programmeSelect').value,
                 programmeLevelId: document.getElementById('programmeLevelSelect').value,
-                modeOfStudyId: document.getElementById('modeOfStudySelect').value,
-                studentYear: document.getElementById('studentYearSelect').value,
-                semester: document.getElementById('semesterSelect')?.value || ''
+                modeOfStudyId:    document.getElementById('modeOfStudySelect').value,
+                studentYear:      document.getElementById('studentYearSelect').value,
+                semester:         document.getElementById('semesterSelect')?.value || ''
             };
-            
-            // Refresh the calendar with new filters
             calendar.refetchEvents();
-            
-            // Also refresh the key dates
             loadKeyDates();
         }
-        
-        // Load programmes based on selected school
+
         function loadProgrammes(schoolId, callback) {
-            const programmeSelect = document.getElementById('programmeSelect');
-            
-            // Reset and disable the programmes dropdown
-            programmeSelect.innerHTML = '<option value="">All Programmes</option>';
-            programmeSelect.disabled = true;
-            
-            if (!schoolId) {
-                return;
-            }
-            
-            // Fetch programmes for the selected school
+            const ps = document.getElementById('programmeSelect');
+            ps.innerHTML = '<option value="">All Programmes</option>';
+            ps.disabled = true;
+            if (!schoolId) return;
             fetch(`/PublicAcademicCalendar/GetProgrammes/${schoolId}`)
-                .then(response => response.json())
+                .then(r => r.json())
                 .then(data => {
-                    // Add options for each programme
-                    data.forEach(programme => {
-                        const option = document.createElement('option');
-                        option.value = programme.id;
-                        option.textContent = programme.name;
-                        programmeSelect.appendChild(option);
+                    data.forEach(p => {
+                        const opt = document.createElement('option');
+                        opt.value = p.id; opt.textContent = p.name;
+                        ps.appendChild(opt);
                     });
-                    
-                    // Enable the dropdown
-                    programmeSelect.disabled = false;
-                    
-                    // Call the callback if provided
-                    if (callback && typeof callback === 'function') {
-                        callback();
-                    }
+                    ps.disabled = false;
+                    if (callback) callback();
                 })
-                .catch(error => {
-                    console.error('Error loading programmes:', error);
-                });
+                .catch(err => console.error('Error loading programmes:', err));
         }
-        
-        // Fetch events from the server for FullCalendar
-        function fetchEvents(info, successCallback, failureCallback) {
-            const start = info.startStr;
-            const end = info.endStr;
-            
-            // Construct the URL with query parameters
-            const url = new URL('/PublicAcademicCalendar/GetEvents', window.location.origin);
+
+        function buildUrl(base, extra) {
+            const url = new URL(base, window.location.origin);
             url.searchParams.append('academicYearId', currentFilters.academicYearId);
-            url.searchParams.append('start', start);
-            url.searchParams.append('end', end);
-            
-            // Add filters if they have values
-            if (currentFilters.schoolId) url.searchParams.append('schoolId', currentFilters.schoolId);
-            if (currentFilters.programmeId) url.searchParams.append('programmeId', currentFilters.programmeId);
+            if (extra) Object.entries(extra).forEach(([k, v]) => url.searchParams.append(k, v));
+            if (currentFilters.schoolId)         url.searchParams.append('schoolId',         currentFilters.schoolId);
+            if (currentFilters.programmeId)      url.searchParams.append('programmeId',      currentFilters.programmeId);
             if (currentFilters.programmeLevelId) url.searchParams.append('programmeLevelId', currentFilters.programmeLevelId);
-            if (currentFilters.modeOfStudyId) url.searchParams.append('modeOfStudyId', currentFilters.modeOfStudyId);
-            if (currentFilters.studentYear) url.searchParams.append('studentYear', currentFilters.studentYear);
-            if (currentFilters.semester) url.searchParams.append('semester', currentFilters.semester);
-            
-            // Fetch the events
-            fetch(url)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    successCallback(data);
-                })
-                .catch(error => {
-                    console.error('Error fetching events:', error);
-                    failureCallback(error);
-                });
+            if (currentFilters.modeOfStudyId)    url.searchParams.append('modeOfStudyId',    currentFilters.modeOfStudyId);
+            if (currentFilters.studentYear)      url.searchParams.append('studentYear',      currentFilters.studentYear);
+            if (currentFilters.semester)         url.searchParams.append('semester',         currentFilters.semester);
+            return url;
         }
-        
-        // Handle event click to show details
+
+        function fetchEvents(info, successCallback, failureCallback) {
+            fetch(buildUrl('/PublicAcademicCalendar/GetEvents', { start: info.startStr, end: info.endStr }))
+                .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+                .then(data => successCallback(data))
+                .catch(err => failureCallback(err));
+        }
+
         function handleEventClick(info) {
             const event = info.event;
-            const modal = document.getElementById('eventModal');
-            
-            // Set event details in the modal
             document.getElementById('eventTitle').textContent = event.title;
-            
-            // Format the date and time
+
             let dateTimeStr = '';
             if (event.allDay) {
-                dateTimeStr = new Date(event.start).toLocaleDateString('en-GB', { 
-                    weekday: 'long', 
-                    day: 'numeric', 
-                    month: 'long', 
-                    year: 'numeric' 
-                });
-                
+                dateTimeStr = new Date(event.start).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
                 if (event.end) {
-                    // For multi-day events, end date is exclusive in FullCalendar
-                    let endDate = new Date(event.end);
-                    endDate.setDate(endDate.getDate() - 1); // Adjust to inclusive end date
-                    
-                    dateTimeStr += ' - ' + endDate.toLocaleDateString('en-GB', { 
-                        weekday: 'long', 
-                        day: 'numeric', 
-                        month: 'long', 
-                        year: 'numeric' 
-                    });
+                    let endDate = new Date(event.end); endDate.setDate(endDate.getDate() - 1);
+                    dateTimeStr += ' \u2013 ' + endDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
                 }
-                
                 dateTimeStr += ' (All day)';
             } else {
-                dateTimeStr = new Date(event.start).toLocaleDateString('en-GB', { 
-                    weekday: 'long', 
-                    day: 'numeric', 
-                    month: 'long', 
-                    year: 'numeric' 
-                });
-                
-                dateTimeStr += ' at ' + new Date(event.start).toLocaleTimeString('en-GB', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-                
-                if (event.end) {
-                    dateTimeStr += ' - ' + new Date(event.end).toLocaleTimeString('en-GB', {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    });
-                }
+                dateTimeStr = new Date(event.start).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+                dateTimeStr += ' at ' + new Date(event.start).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+                if (event.end) dateTimeStr += ' \u2013 ' + new Date(event.end).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
             }
-            
-            document.getElementById('eventDateTime').innerHTML = `
-                <i class="material-icons text-sm mr-1">schedule</i>
-                <span>${dateTimeStr}</span>
-            `;
-            
-            // Set description
+
+            document.getElementById('eventDateTime').innerHTML = `<i class="material-icons">schedule</i><span>${dateTimeStr}</span>`;
             document.getElementById('eventDescription').textContent = event.extendedProps.description || 'No description available.';
-            
-            // Set icon and background color
+
             const iconEl = document.getElementById('eventIcon');
-            iconEl.innerHTML = `<i class="material-icons text-2xl">${event.extendedProps.icon || 'event'}</i>`;
-            iconEl.style.backgroundColor = event.backgroundColor || '#3788d8';
-            iconEl.style.color = event.textColor || '#ffffff';
-            
-            // Set additional details
-            document.getElementById('eventLocation').innerHTML = `
-                <i class="material-icons text-sm mr-1 text-slate-400">place</i>
-                <span class="text-slate-600">${event.extendedProps.location || 'No location specified'}</span>
-            `;
-            
-            document.getElementById('eventContact').innerHTML = `
-                <i class="material-icons text-sm mr-1 text-slate-400">person</i>
-                <span class="text-slate-600">${event.extendedProps.contactPerson || 'No contact specified'}</span>
-            `;
-            
-            document.getElementById('eventType').innerHTML = `
-                <i class="material-icons text-sm mr-1 text-slate-400">label</i>
-                <span class="text-slate-600">${event.extendedProps.eventType || 'General'}</span>
-            `;
-            
-            document.getElementById('eventEmail').innerHTML = `
-                <i class="material-icons text-sm mr-1 text-slate-400">email</i>
-                <span class="text-slate-600">${event.extendedProps.contactEmail || 'No email specified'}</span>
-            `;
-            
-            // Set the "applies to" text
-            let appliesTo = 'This event applies to all students.';
-            const applicableGroups = [];
-            
-            if (event.extendedProps.school) applicableGroups.push(event.extendedProps.school);
-            if (event.extendedProps.programme) applicableGroups.push(event.extendedProps.programme);
-            if (event.extendedProps.programmeLevel) applicableGroups.push(event.extendedProps.programmeLevel);
-            if (event.extendedProps.modeOfStudy) applicableGroups.push(event.extendedProps.modeOfStudy);
-            if (event.extendedProps.studentYear) applicableGroups.push(`Year ${event.extendedProps.studentYear}`);
-            if (event.extendedProps.semester) applicableGroups.push(`Semester ${event.extendedProps.semester}`);
-            
-            if (applicableGroups.length > 0) {
-                appliesTo = 'This event applies to: ' + applicableGroups.join(', ');
-            }
-            
-            document.getElementById('eventAppliesTo').textContent = appliesTo;
-            
-            // Show the modal
-            modal.classList.remove('hidden');
+            iconEl.innerHTML = `<i class="material-icons">${event.extendedProps.icon || 'event'}</i>`;
+            iconEl.style.backgroundColor = event.backgroundColor || '#1e2d5e';
+
+            document.getElementById('eventLocation').innerHTML = `<i class="material-icons">place</i><span>${event.extendedProps.location      || 'No location specified'}</span>`;
+            document.getElementById('eventContact').innerHTML  = `<i class="material-icons">person</i><span>${event.extendedProps.contactPerson || 'No contact specified'}</span>`;
+            document.getElementById('eventType').innerHTML     = `<i class="material-icons">label</i><span>${event.extendedProps.eventType      || 'General'}</span>`;
+            document.getElementById('eventEmail').innerHTML    = `<i class="material-icons">email</i><span>${event.extendedProps.contactEmail   || 'No email specified'}</span>`;
+
+            const groups = [];
+            if (event.extendedProps.school)         groups.push(event.extendedProps.school);
+            if (event.extendedProps.programme)      groups.push(event.extendedProps.programme);
+            if (event.extendedProps.programmeLevel) groups.push(event.extendedProps.programmeLevel);
+            if (event.extendedProps.modeOfStudy)    groups.push(event.extendedProps.modeOfStudy);
+            if (event.extendedProps.studentYear)    groups.push(`Year ${event.extendedProps.studentYear}`);
+            if (event.extendedProps.semester)       groups.push(`Semester ${event.extendedProps.semester}`);
+            document.getElementById('eventAppliesTo').textContent = groups.length
+                ? 'Applies to: ' + groups.join(', ')
+                : 'This event applies to all students.';
+
+            document.getElementById('eventModal').classList.remove('hidden');
         }
-        
-        // Set calendar view and update button styles
+
         function setCalendarView(view, button) {
-            // Update current view
             currentView = view;
             calendar.changeView(view);
-            
-            // Update button styles
-            const buttons = [
-                document.getElementById('monthViewBtn'),
-                document.getElementById('weekViewBtn'),
-                document.getElementById('listViewBtn')
-            ];
-            
-            buttons.forEach(btn => {
-                btn.classList.remove('bg-cyan-600', 'text-white');
-                btn.classList.add('bg-slate-200', 'text-slate-800');
-            });
-            
-            button.classList.remove('bg-slate-200', 'text-slate-800');
-            button.classList.add('bg-cyan-600', 'text-white');
+            document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+            button.classList.add('active');
         }
-        
-        // Load key dates for the Key Dates section
+
         function loadKeyDates() {
             const container = document.getElementById('keyDatesContainer');
-            
-            // Get current calendar dates
-            const calendarInfo = calendar.getDate();
-            const currentMonth = calendarInfo.getMonth();
-            const currentYear = calendarInfo.getFullYear();
-            
-            // Construct date range for the query (current month +/- 2 months)
-            const start = new Date(currentYear, currentMonth - 2, 1).toISOString();
-            const end = new Date(currentYear, currentMonth + 3, 0).toISOString();
-            
-            // Construct the URL with query parameters
-            const url = new URL('/PublicAcademicCalendar/GetEvents', window.location.origin);
-            url.searchParams.append('academicYearId', currentFilters.academicYearId);
-            url.searchParams.append('start', start);
-            url.searchParams.append('end', end);
-            
-            // Add filters if they have values
-            if (currentFilters.schoolId) url.searchParams.append('schoolId', currentFilters.schoolId);
-            if (currentFilters.programmeId) url.searchParams.append('programmeId', currentFilters.programmeId);
-            if (currentFilters.programmeLevelId) url.searchParams.append('programmeLevelId', currentFilters.programmeLevelId);
-            if (currentFilters.modeOfStudyId) url.searchParams.append('modeOfStudyId', currentFilters.modeOfStudyId);
-            if (currentFilters.studentYear) url.searchParams.append('studentYear', currentFilters.studentYear);
-            if (currentFilters.semester) url.searchParams.append('semester', currentFilters.semester);
+            const d     = calendar.getDate();
+            const start = new Date(d.getFullYear(), d.getMonth() - 2, 1).toISOString();
+            const end   = new Date(d.getFullYear(), d.getMonth() + 3, 0).toISOString();
 
-            // Fetch the events
-            fetch(url)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
+            fetch(buildUrl('/PublicAcademicCalendar/GetEvents', { start, end }))
+                .then(r => { if (!r.ok) throw new Error(); return r.json(); })
                 .then(data => {
-                    // Sort events by date
                     data.sort((a, b) => new Date(a.start) - new Date(b.start));
-
-                    // Take only the first 6 events
                     const keyEvents = data.slice(0, 6);
-
-                    // Clear the container and remove loading state
                     container.innerHTML = '';
 
-                    if (keyEvents.length === 0) {
+                    if (!keyEvents.length) {
                         container.innerHTML = `
-                            <div class="col-span-full p-4 text-center text-slate-500">
-                                <i class="material-icons text-2xl mb-2">event_busy</i>
-                                <p>No events found for the selected filters.</p>
-                            </div>
-                        `;
+                            <div style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--text);">
+                                <i class="material-icons" style="font-size:2rem;color:#cbd5e1;display:block;margin-bottom:.5rem;">event_busy</i>
+                                <p style="font-size:.82rem;">No events found for the selected filters.</p>
+                            </div>`;
                         return;
                     }
 
-                    // Create cards for each key event
                     keyEvents.forEach(event => {
-                        // Format the date
-                        let dateStr = new Date(event.start).toLocaleDateString('en-GB', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric'
-                        });
-
-                        // For multi-day events, add end date
+                        let dateStr = new Date(event.start).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
                         if (event.end && event.allDay) {
-                            // For multi-day events, end date is exclusive in FullCalendar
-                            let endDate = new Date(event.end);
-                            endDate.setDate(endDate.getDate() - 1); // Adjust to inclusive end date
-
-                            dateStr += ' - ' + endDate.toLocaleDateString('en-GB', {
-                                day: 'numeric',
-                                month: 'short',
-                                year: 'numeric'
-                            });
+                            let endDate = new Date(event.end); endDate.setDate(endDate.getDate() - 1);
+                            dateStr += ' \u2013 ' + endDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
                         }
-
-                        // Create the event card
                         const card = document.createElement('div');
-                        card.className = 'p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer';
+                        card.className = 'key-date-card';
                         card.onclick = () => {
-                            // Find the corresponding calendar event and click it
-                            const calendarEvent = calendar.getEventById(event.id);
-                            if (calendarEvent) {
-                                calendar.gotoDate(calendarEvent.start);
-                                setTimeout(() => {
-                                    handleEventClick({ event: calendarEvent });
-                                }, 300);
+                            const calEvent = calendar.getEventById(event.id);
+                            if (calEvent) {
+                                calendar.gotoDate(calEvent.start);
+                                setTimeout(() => handleEventClick({ event: calEvent }), 300);
                             }
                         };
-
                         card.innerHTML = `
-                            <div class="flex items-start">
-                                <div class="bg-${event.color.substring(1)} rounded-full p-2 mr-3" style="background-color: ${event.color}">
-                                    <i class="material-icons text-white">${event.icon || 'event'}</i>
-                                </div>
-                                <div>
-                                    <h3 class="text-sm font-medium text-slate-800">${event.title}</h3>
-                                    <p class="text-xs text-slate-500">${dateStr}</p>
-                                    <p class="text-xs text-slate-600 mt-1">${event.eventType || 'General Event'}</p>
-                                </div>
+                            <div class="key-date-icon" style="background:${event.color || 'var(--navy)'}">
+                                <i class="material-icons">${event.icon || 'event'}</i>
                             </div>
-                        `;
-
+                            <div>
+                                <p class="key-date-name">${event.title}</p>
+                                <p class="key-date-date">${dateStr}</p>
+                                <p class="key-date-type">${event.eventType || 'General Event'}</p>
+                            </div>`;
                         container.appendChild(card);
                     });
                 })
-                .catch(error => {
-                    console.error('Error fetching key dates:', error);
+                .catch(() => {
                     container.innerHTML = `
-                        <div class="col-span-full p-4 text-center text-red-500">
-                            <i class="material-icons text-2xl mb-2">error</i>
-                            <p>Error loading events. Please try again later.</p>
-                        </div>
-                    `;
+                        <div style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--coral);">
+                            <i class="material-icons" style="font-size:2rem;display:block;margin-bottom:.5rem;">error</i>
+                            <p style="font-size:.82rem;">Error loading events. Please try again later.</p>
+                        </div>`;
                 });
         }
 
-        // Click outside modal to close it
-        window.addEventListener('click', function(event) {
+        window.addEventListener('click', function (e) {
             const modal = document.getElementById('eventModal');
-            if (event.target === modal) {
-                modal.classList.add('hidden');
-            }
+            if (e.target === modal) modal.classList.add('hidden');
         });
     </script>
 }

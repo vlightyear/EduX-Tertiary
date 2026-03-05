@@ -1,74 +1,691 @@
 ﻿@model IEnumerable<SIS.Models.Zoom.ZoomMeeting>
 
-<div class="min-h-screen bg-slate-50 p-6">
-    <!-- Header Section -->
-    <div class="flex flex-col md:flex-row justify-between items-center h-24 mb-4">
-        <div class="flex items-center text-slate-800">
-            <i class="material-icons text-3xl mr-2">videocam</i>
+@section Styles {
+    <style>
+        :root {
+            --coral: #e85c5c;
+            --coral-d: #c94040;
+            --navy: #1e2d5e;
+            --navy-l: #2e3f7a;
+            --mist: #f5f7fa;
+            --border: #e8ecf2;
+            --ink: #1a1f2e;
+            --text: #475569;
+        }
+
+        .oc-wrap {
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        /* ── Hero ──────────────────────────────────── */
+        .oc-hero {
+            background: linear-gradient(135deg, var(--navy) 0%, var(--navy-l) 55%, #3a2060 100%);
+            border-radius: 1.25rem;
+            padding: 1.75rem 2rem 4rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+            .oc-hero::before {
+                content: '';
+                position: absolute;
+                top: -50px;
+                right: -50px;
+                width: 200px;
+                height: 200px;
+                background: rgba(232,92,92,.15);
+                border-radius: 50%;
+                pointer-events: none;
+            }
+
+            .oc-hero::after {
+                content: '';
+                position: absolute;
+                bottom: -60px;
+                left: 25%;
+                width: 280px;
+                height: 280px;
+                background: rgba(255,255,255,.03);
+                border-radius: 50%;
+                pointer-events: none;
+            }
+
+        .hero-inner {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .hero-eyebrow {
+            font-size: .72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .1em;
+            color: rgba(255,255,255,.5);
+            margin-bottom: .35rem;
+        }
+
+        .hero-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.85rem;
+            color: #fff;
+            line-height: 1.2;
+            margin-bottom: .3rem;
+        }
+
+        .hero-sub {
+            font-size: .82rem;
+            color: rgba(255,255,255,.55);
+        }
+
+        /* Schedule button */
+        .btn-schedule {
+            display: inline-flex;
+            align-items: center;
+            gap: .4rem;
+            background: var(--coral);
+            color: #fff;
+            font-size: .82rem;
+            font-weight: 700;
+            padding: .65rem 1.25rem;
+            border-radius: .7rem;
+            text-decoration: none;
+            transition: background .15s;
+            white-space: nowrap;
+            flex-shrink: 0;
+            align-self: center;
+            box-shadow: 0 4px 16px rgba(232,92,92,.3);
+        }
+
+            .btn-schedule:hover {
+                background: var(--coral-d);
+            }
+
+            .btn-schedule i {
+                font-size: .95rem;
+            }
+
+        /* ── Stat strip ─────────────────────────────── */
+        .oc-strip {
+            background: #fff;
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 24px rgba(30,45,94,.07);
+            margin-top: -2.25rem;
+            position: relative;
+            z-index: 2;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .strip-cell {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            border-right: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: .85rem;
+        }
+
+            .strip-cell:last-child {
+                border-right: none;
+            }
+
+        .strip-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: .65rem;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .strip-icon i {
+                font-size: 1.1rem;
+            }
+
+        .strip-val {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--ink);
+            line-height: 1;
+        }
+
+        .strip-lbl {
+            font-size: .7rem;
+            color: var(--text);
+            margin-top: .1rem;
+        }
+
+        /* ── Section header ────────────────────────── */
+        .sec-header {
+            display: flex;
+            align-items: center;
+            gap: .65rem;
+            margin-bottom: 1.1rem;
+        }
+
+        .sec-pip {
+            width: 4px;
+            height: 20px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+
+        .sec-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.1rem;
+            color: var(--ink);
+        }
+
+        .sec-count {
+            display: inline-flex;
+            align-items: center;
+            background: var(--mist);
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-size: .7rem;
+            font-weight: 700;
+            padding: .15rem .5rem;
+            border-radius: 2rem;
+        }
+
+        /* ── Meeting cards ──────────────────────────── */
+        .meeting-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+
+        .meeting-card {
+            background: #fff;
+            border-radius: 1rem;
+            border: 1.5px solid var(--border);
+            box-shadow: 0 2px 10px rgba(30,45,94,.05);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: transform .18s, box-shadow .18s, border-color .18s;
+        }
+
+            .meeting-card:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 10px 32px rgba(30,45,94,.12);
+            }
+
+            .meeting-card.active-card:hover {
+                border-color: #22c55e;
+            }
+
+            .meeting-card.sched-card:hover {
+                border-color: var(--navy);
+            }
+
+        /* Coloured top bar */
+        .card-bar {
+            height: 4px;
+        }
+
+        .bar-green {
+            background: linear-gradient(90deg, #22c55e, #4ade80);
+        }
+
+        .bar-navy {
+            background: linear-gradient(90deg, var(--navy), var(--navy-l));
+        }
+
+        .card-inner {
+            padding: 1.25rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top row: status pill + icon */
+        .card-top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: .85rem;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: .25rem;
+            font-size: .68rem;
+            font-weight: 700;
+            padding: .2rem .6rem;
+            border-radius: 2rem;
+        }
+
+            .status-pill i {
+                font-size: .75rem;
+            }
+
+        .pill-live {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .pill-sched {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .card-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .card-icon i {
+                font-size: 1.1rem;
+            }
+
+        .icon-green {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .icon-navy {
+            background: #dbeafe;
+            color: var(--navy);
+        }
+
+        /* Topic + course */
+        .card-topic {
+            font-weight: 700;
+            font-size: .95rem;
+            color: var(--ink);
+            margin-bottom: .25rem;
+            line-height: 1.35;
+        }
+
+        .card-course {
+            font-size: .78rem;
+            color: var(--text);
+            margin-bottom: 1rem;
+        }
+
+        /* Meta rows */
+        .card-meta {
+            display: flex;
+            flex-direction: column;
+            gap: .4rem;
+            margin-bottom: 1rem;
+        }
+
+        .meta-row {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            font-size: .78rem;
+            color: var(--text);
+        }
+
+            .meta-row i {
+                font-size: .9rem;
+                color: #94a3b8;
+            }
+
+        /* Card footer */
+        .card-foot {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: .85rem;
+            border-top: 1px solid var(--border);
+            margin-top: auto;
+        }
+
+        .link-details {
+            display: inline-flex;
+            align-items: center;
+            gap: .25rem;
+            font-size: .78rem;
+            font-weight: 600;
+            color: var(--text);
+            text-decoration: none;
+            transition: color .15s;
+        }
+
+            .link-details:hover {
+                color: var(--navy);
+            }
+
+            .link-details i {
+                font-size: .9rem;
+            }
+
+        .btn-join {
+            display: inline-flex;
+            align-items: center;
+            gap: .3rem;
+            padding: .45rem 1rem;
+            border-radius: .6rem;
+            font-size: .78rem;
+            font-weight: 700;
+            text-decoration: none;
+            transition: background .15s;
+        }
+
+            .btn-join i {
+                font-size: .85rem;
+            }
+
+        .btn-green {
+            background: #22c55e;
+            color: #fff;
+        }
+
+            .btn-green:hover {
+                background: #16a34a;
+            }
+
+        .btn-navy {
+            background: var(--navy);
+            color: #fff;
+        }
+
+            .btn-navy:hover {
+                background: var(--navy-l);
+            }
+
+        .btn-disabled {
+            background: #e2e8f0;
+            color: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        /* ── Past meetings table ────────────────────── */
+        .past-card {
+            background: #fff;
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 10px rgba(30,45,94,.05);
+            overflow: hidden;
+        }
+
+        .past-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .82rem;
+        }
+
+            .past-table thead tr {
+                background: var(--navy);
+            }
+
+            .past-table thead th {
+                padding: .65rem 1rem;
+                text-align: left;
+                color: #fff;
+                font-size: .68rem;
+                text-transform: uppercase;
+                letter-spacing: .05em;
+                font-weight: 700;
+            }
+
+                .past-table thead th:last-child {
+                    text-align: right;
+                }
+
+            .past-table tbody tr {
+                border-bottom: 1px solid var(--border);
+            }
+
+                .past-table tbody tr:last-child {
+                    border-bottom: none;
+                }
+
+                .past-table tbody tr:hover {
+                    background: var(--mist);
+                }
+
+            .past-table tbody td {
+                padding: .75rem 1rem;
+                color: var(--ink);
+                vertical-align: middle;
+            }
+
+                .past-table tbody td:last-child {
+                    text-align: right;
+                }
+
+        .topic-name {
+            font-weight: 600;
+            font-size: .84rem;
+            color: var(--ink);
+        }
+
+        .course-code {
+            display: inline-block;
+            font-size: .7rem;
+            font-weight: 700;
+            background: #fef2f2;
+            color: var(--coral-d);
+            padding: .15rem .5rem;
+            border-radius: .35rem;
+        }
+
+        .pill-completed {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .pill-missed {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .tbl-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: .2rem;
+            font-size: .68rem;
+            font-weight: 700;
+            padding: .2rem .55rem;
+            border-radius: 2rem;
+        }
+
+        /* ── Empty states ───────────────────────────── */
+        .empty-state {
+            background: #fff;
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+            padding: 2.5rem 1.5rem;
+            text-align: center;
+        }
+
+            .empty-state i {
+                font-size: 2.5rem;
+                color: #cbd5e1;
+                display: block;
+                margin-bottom: .65rem;
+            }
+
+            .empty-state h3 {
+                font-size: .9rem;
+                font-weight: 700;
+                color: var(--ink);
+                margin-bottom: .25rem;
+            }
+
+            .empty-state p {
+                font-size: .78rem;
+                color: var(--text);
+            }
+
+        /* ── Live pulse animation ───────────────────── */
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+            display: inline-block;
+            position: relative;
+        }
+
+            .live-dot::after {
+                content: '';
+                position: absolute;
+                inset: -3px;
+                border-radius: 50%;
+                border: 2px solid #22c55e;
+                animation: pulse-ring 1.5s ease infinite;
+            }
+        @@keyframes pulse-ring {
+            0% {
+                transform: scale(1);
+                opacity: .8;
+            }
+
+            100% {
+                transform: scale(2);
+                opacity: 0;
+            }
+        }
+
+        @@media (max-width: 640px) {
+            .oc-strip {
+                flex-wrap: wrap;
+            }
+
+            .strip-cell {
+                min-width: 50%;
+            }
+
+            .meeting-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+}
+
+@{
+    var activeMeetings = Model.Where(m => m.Status == SIS.Enums.Status.Active).ToList();
+    var upcomingMeetings = Model.Where(m => m.Status == SIS.Enums.Status.Scheduled).OrderBy(m => m.StartTime).ToList();
+    var pastMeetings = Model.Where(m => m.Status == SIS.Enums.Status.Completed ||
+                               (m.Status == SIS.Enums.Status.Scheduled && m.StartTime.AddMinutes(m.Duration) < DateTime.Now))
+                               .OrderByDescending(m => m.StartTime).Take(10).ToList();
+}
+
+<div class="oc-wrap p-4 md:p-6">
+
+    <!-- Hero -->
+    <div class="oc-hero mb-6">
+        <div class="hero-inner">
             <div>
-                <h1 class="text-2xl font-bold">My Online Meetings</h1>
-                <p class="text-sm text-slate-600">Manage your scheduled and active meetings</p>
+                <p class="hero-eyebrow">Learning Management</p>
+                <h1 class="hero-title">Online Classes</h1>
+                <p class="hero-sub">Manage your scheduled and active meetings</p>
             </div>
-        </div>
-        <div class="mt-4 md:mt-0">
-            <a asp-action="Create" class="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
-                <i class="material-icons text-sm mr-1">add</i>
-                <span>Schedule Meeting</span>
+            <a asp-action="Create" class="btn-schedule">
+                <i class="material-icons">add</i> Schedule Meeting
             </a>
         </div>
     </div>
 
-    <!-- Active Meetings Section -->
-    <div class="mb-8">
-        <h2 class="text-lg font-semibold text-slate-800 mb-4">Active Meetings</h2>
+    <!-- Stat strip -->
+    <div class="oc-strip mb-7">
+        <div class="strip-cell">
+            <div class="strip-icon" style="background:#dcfce7;">
+                <i class="material-icons" style="color:#16a34a;">fiber_manual_record</i>
+            </div>
+            <div>
+                <div class="strip-val">@activeMeetings.Count</div>
+                <div class="strip-lbl">Live Now</div>
+            </div>
+        </div>
+        <div class="strip-cell">
+            <div class="strip-icon" style="background:#dbeafe;">
+                <i class="material-icons" style="color:var(--navy);">event</i>
+            </div>
+            <div>
+                <div class="strip-val">@upcomingMeetings.Count</div>
+                <div class="strip-lbl">Upcoming</div>
+            </div>
+        </div>
+        <div class="strip-cell">
+            <div class="strip-icon" style="background:#f1f5f9;">
+                <i class="material-icons" style="color:#64748b;">history</i>
+            </div>
+            <div>
+                <div class="strip-val">@pastMeetings.Count</div>
+                <div class="strip-lbl">Past (recent)</div>
+            </div>
+        </div>
+        <div class="strip-cell">
+            <div class="strip-icon" style="background:#fef2f2;">
+                <i class="material-icons" style="color:var(--coral);">videocam</i>
+            </div>
+            <div>
+                <div class="strip-val">@Model.Count()</div>
+                <div class="strip-lbl">Total Meetings</div>
+            </div>
+        </div>
+    </div>
 
-        @{
-            var activeMeetings = Model.Where(m => m.Status == SIS.Enums.Status.Active).ToList();
-        }
+    <!-- ── Active Meetings ── -->
+    <div class="mb-8">
+        <div class="sec-header">
+            <div class="sec-pip" style="background:#22c55e;"></div>
+            <h2 class="sec-title">Live Classes</h2>
+            @if (activeMeetings.Any())
+            {
+                <span class="live-dot"></span>
+            }
+            <span class="sec-count">@activeMeetings.Count</span>
+        </div>
 
         @if (activeMeetings.Any())
         {
-            <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div class="meeting-grid">
                 @foreach (var meeting in activeMeetings)
                 {
-                    <div class="bg-white rounded-xl shadow-sm border-l-4 border-green-500 overflow-hidden">
-                        <div class="p-5">
-                            <div class="flex items-start justify-between">
-                                <div>
-                                    <div class="flex items-center">
-                                        <span class="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 mr-2">
-                                            <i class="material-icons text-xs mr-1">fiber_manual_record</i>
-                                            Active
-                                        </span>
-                                        <p class="text-xs text-slate-500">@meeting.CreatedAt.ToString("MMM dd, yyyy")</p>
-                                    </div>
-                                    <h3 class="text-lg font-semibold text-slate-800 mt-2">@meeting.Topic</h3>
-                                    <p class="text-sm text-slate-600 mt-1">@meeting.Course.CourseCode - @meeting.Course.CourseName</p>
-                                </div>
-                                <div class="bg-green-100 rounded-full p-2">
-                                    <i class="material-icons text-green-600">videocam</i>
+                    <div class="meeting-card active-card">
+                        <div class="card-bar bar-green"></div>
+                        <div class="card-inner">
+                            <div class="card-top-row">
+                                <span class="status-pill pill-live">
+                                    <i class="material-icons">fiber_manual_record</i> Live
+                                </span>
+                                <div class="card-icon icon-green">
+                                    <i class="material-icons">videocam</i>
                                 </div>
                             </div>
-
-                            <div class="mt-4">
-                                <div class="flex items-center text-sm text-slate-600 mb-2">
-                                    <i class="material-icons text-slate-400 text-base mr-2">schedule</i>
-                                    <span>Started at @meeting.StartTime.ToString("hh:mm tt")</span>
+                            <p class="card-topic">@meeting.Topic</p>
+                            <p class="card-course">@meeting.Course.CourseCode &nbsp;·&nbsp; @meeting.Course.CourseName</p>
+                            <div class="card-meta">
+                                <div class="meta-row">
+                                    <i class="material-icons">schedule</i>
+                                    Started at @meeting.StartTime.ToString("hh:mm tt")
                                 </div>
-                                <div class="flex items-center text-sm text-slate-600">
-                                    <i class="material-icons text-slate-400 text-base mr-2">timelapse</i>
-                                    <span>Duration: @meeting.Duration minutes</span>
+                                <div class="meta-row">
+                                    <i class="material-icons">timelapse</i>
+                                    Duration: @meeting.Duration minutes
+                                </div>
+                                <div class="meta-row">
+                                    <i class="material-icons">calendar_today</i>
+                                    @meeting.CreatedAt.ToString("MMM dd, yyyy")
                                 </div>
                             </div>
-
-                            <div class="mt-5 pt-4 border-t border-slate-100 flex justify-between">
-                                <a asp-action="Details" asp-route-id="@meeting.Id" class="text-primary-600 hover:text-primary-800 inline-flex items-center">
-                                    <i class="material-icons text-sm mr-1">info</i>
-                                    Details
+                            <div class="card-foot">
+                                <a asp-action="Details" asp-route-id="@meeting.Id" class="link-details">
+                                    <i class="material-icons">info</i> Details
                                 </a>
-                                <a asp-action="StartMeeting" asp-route-id="@meeting.Id" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                                    <i class="material-icons text-sm mr-1">login</i>
-                                    Rejoin Meeting
+                                <a asp-action="StartMeeting" asp-route-id="@meeting.Id" class="btn-join btn-green">
+                                    <i class="material-icons">login</i> Rejoin
                                 </a>
                             </div>
                         </div>
@@ -78,78 +695,70 @@
         }
         else
         {
-            <div class="bg-white rounded-xl shadow-sm p-6 text-center">
-                <i class="material-icons text-5xl text-slate-300 mb-2">videocam_off</i>
-                <h3 class="text-lg font-medium text-slate-700 mb-2">No active meetings</h3>
-                <p class="text-sm text-slate-500 mb-4">Your active meetings will appear here.</p>
+            <div class="empty-state">
+                <i class="material-icons">videocam_off</i>
+                <h3>No live classes right now</h3>
+                <p>Active meetings will appear here when they go live.</p>
             </div>
         }
     </div>
 
-    <!-- Upcoming Meetings Section -->
+    <!-- ── Upcoming Meetings ── -->
     <div class="mb-8">
-        <h2 class="text-lg font-semibold text-slate-800 mb-4">Upcoming Meetings</h2>
-
-        @{
-            var upcomingMeetings = Model.Where(m => m.Status == SIS.Enums.Status.Scheduled).OrderBy(m => m.StartTime).ToList();
-        }
+        <div class="sec-header">
+            <div class="sec-pip" style="background:var(--navy);"></div>
+            <h2 class="sec-title">Upcoming Meetings</h2>
+            <span class="sec-count">@upcomingMeetings.Count</span>
+        </div>
 
         @if (upcomingMeetings.Any())
         {
-            <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div class="meeting-grid">
                 @foreach (var meeting in upcomingMeetings)
                 {
-                    <div class="bg-white rounded-xl shadow-sm border-l-4 border-blue-500 overflow-hidden">
-                        <div class="p-5">
-                            <div class="flex items-start justify-between">
-                                <div>
-                                    <div class="flex items-center">
-                                        <span class="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-2">
-                                            Scheduled
-                                        </span>
-                                        <p class="text-xs text-slate-500">@meeting.CreatedAt.ToString("MMM dd, yyyy")</p>
-                                    </div>
-                                    <h3 class="text-lg font-semibold text-slate-800 mt-2">@meeting.Topic</h3>
-                                    <p class="text-sm text-slate-600 mt-1">@meeting.Course.CourseCode - @meeting.Course.CourseName</p>
-                                </div>
-                                <div class="bg-blue-100 rounded-full p-2">
-                                    <i class="material-icons text-blue-600">event</i>
+                    var canStart = DateTime.Now >= meeting.StartTime.AddMinutes(-5);
+                    <div class="meeting-card sched-card">
+                        <div class="card-bar bar-navy"></div>
+                        <div class="card-inner">
+                            <div class="card-top-row">
+                                <span class="status-pill pill-sched">
+                                    <i class="material-icons">event</i> Scheduled
+                                </span>
+                                <div class="card-icon icon-navy">
+                                    <i class="material-icons">event</i>
                                 </div>
                             </div>
-
-                            <div class="mt-4">
-                                <div class="flex items-center text-sm text-slate-600 mb-2">
-                                    <i class="material-icons text-slate-400 text-base mr-2">event</i>
-                                    <span>@meeting.StartTime.ToString("MMM dd, yyyy")</span>
+                            <p class="card-topic">@meeting.Topic</p>
+                            <p class="card-course">@meeting.Course.CourseCode &nbsp;·&nbsp; @meeting.Course.CourseName</p>
+                            <div class="card-meta">
+                                <div class="meta-row">
+                                    <i class="material-icons">calendar_today</i>
+                                    @meeting.StartTime.ToString("MMM dd, yyyy")
                                 </div>
-                                <div class="flex items-center text-sm text-slate-600 mb-2">
-                                    <i class="material-icons text-slate-400 text-base mr-2">schedule</i>
-                                    <span>@meeting.StartTime.ToString("hh:mm tt")</span>
+                                <div class="meta-row">
+                                    <i class="material-icons">schedule</i>
+                                    @meeting.StartTime.ToString("hh:mm tt")
                                 </div>
-                                <div class="flex items-center text-sm text-slate-600">
-                                    <i class="material-icons text-slate-400 text-base mr-2">timelapse</i>
-                                    <span>Duration: @meeting.Duration minutes</span>
+                                <div class="meta-row">
+                                    <i class="material-icons">timelapse</i>
+                                    @meeting.Duration minutes
                                 </div>
                             </div>
-
-                            <div class="mt-5 pt-4 border-t border-slate-100 flex justify-between">
-                                <a asp-action="Details" asp-route-id="@meeting.Id" class="text-primary-600 hover:text-primary-800 inline-flex items-center">
-                                    <i class="material-icons text-sm mr-1">info</i>
-                                    Details
+                            <div class="card-foot">
+                                <a asp-action="Details" asp-route-id="@meeting.Id" class="link-details">
+                                    <i class="material-icons">info</i> Details
                                 </a>
-                                @if (DateTime.Now >= meeting.StartTime.AddMinutes(-5))
+                                @if (canStart)
                                 {
-                                    <a asp-action="StartMeeting" asp-route-id="@meeting.Id" class="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
-                                        <i class="material-icons text-sm mr-1">play_arrow</i>
-                                        Start Meeting
+                                    <a asp-action="StartMeeting" asp-route-id="@meeting.Id" class="btn-join btn-navy">
+                                        <i class="material-icons">play_arrow</i> Start
                                     </a>
                                 }
                                 else
                                 {
-                                    <button disabled class="inline-flex items-center px-4 py-2 bg-slate-200 text-slate-500 rounded-lg cursor-not-allowed">
-                                        <i class="material-icons text-sm mr-1">play_arrow</i>
-                                        Start Meeting
-                                    </button>
+                                    <span class="btn-join btn-disabled">
+                                        <i class="material-icons">play_arrow</i> Start
+                                    </span>
                                 }
                             </div>
                         </div>
@@ -159,89 +768,97 @@
         }
         else
         {
-            <div class="bg-white rounded-xl shadow-sm p-6 text-center">
-                <i class="material-icons text-5xl text-slate-300 mb-2">event_busy</i>
-                <h3 class="text-lg font-medium text-slate-700 mb-2">No upcoming meetings</h3>
-                <p class="text-sm text-slate-500 mb-4">Schedule a meeting using the button above.</p>
+            <div class="empty-state">
+                <i class="material-icons">event_busy</i>
+                <h3>No upcoming meetings</h3>
+                <p>Use the Schedule Meeting button above to create one.</p>
             </div>
         }
     </div>
 
-    <!-- Past Meetings Section -->
+    <!-- ── Past Meetings ── -->
     <div>
-        <h2 class="text-lg font-semibold text-slate-800 mb-4">Past Meetings</h2>
-
-        @{
-            var pastMeetings = Model.Where(m => m.Status == SIS.Enums.Status.Completed ||
-            (m.Status == SIS.Enums.Status.Scheduled && m.StartTime.AddMinutes(m.Duration) < DateTime.Now))
-            .OrderByDescending(m => m.StartTime).Take(10).ToList();
-        }
+        <div class="sec-header">
+            <div class="sec-pip" style="background:#94a3b8;"></div>
+            <h2 class="sec-title">Past Meetings</h2>
+            <span class="sec-count">@pastMeetings.Count</span>
+        </div>
 
         @if (pastMeetings.Any())
         {
-            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-                <table class="min-w-full divide-y divide-slate-200">
-                    <thead class="bg-slate-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Topic</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Course</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Duration</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-slate-200">
-                        @foreach (var meeting in pastMeetings)
-                        {
+            <div class="past-card">
+                <div style="overflow-x:auto;">
+                    <table class="past-table">
+                        <thead>
                             <tr>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm font-medium text-slate-900">@meeting.Topic</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-slate-700">@meeting.Course.CourseCode</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-slate-700">@meeting.StartTime.ToString("MMM dd, yyyy")</div>
-                                    <div class="text-xs text-slate-500">@meeting.StartTime.ToString("hh:mm tt")</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-slate-700">@meeting.Duration min</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    @if (meeting.Status == SIS.Enums.Status.Completed)
-                                    {
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Completed</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Missed</span>
-                                    }
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <a asp-action="Details" asp-route-id="@meeting.Id" class="text-primary-600 hover:text-primary-900 mr-3">
-                                        Details
-                                    </a>
-                                    <form asp-action="Delete" asp-route-id="@meeting.Id" method="post" class="inline">
-                                        @Html.AntiForgeryToken()
-                                        <button type="submit" class="text-red-600 hover:text-red-900" onclick="return confirm('Are you sure you want to delete this meeting?');">
-                                            Delete
-                                        </button>
-                                    </form>
-                                </td>
+                                <th>Topic</th>
+                                <th>Course</th>
+                                <th>Date &amp; Time</th>
+                                <th>Duration</th>
+                                <th>Status</th>
+                                <th>Actions</th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @foreach (var meeting in pastMeetings)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="topic-name">@meeting.Topic</div>
+                                    </td>
+                                    <td>
+                                        <span class="course-code">@meeting.Course.CourseCode</span>
+                                    </td>
+                                    <td>
+                                        <div style="font-size:.82rem;font-weight:600;color:var(--ink);">@meeting.StartTime.ToString("MMM dd, yyyy")</div>
+                                        <div style="font-size:.72rem;color:var(--text);">@meeting.StartTime.ToString("hh:mm tt")</div>
+                                    </td>
+                                    <td style="font-size:.82rem;">@meeting.Duration min</td>
+                                    <td>
+                                        @if (meeting.Status == SIS.Enums.Status.Completed)
+                                        {
+                                            <span class="tbl-pill pill-completed">
+                                                <i class="material-icons" style="font-size:.75rem;">check_circle</i> Completed
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="tbl-pill pill-missed">
+                                                <i class="material-icons" style="font-size:.75rem;">cancel</i> Missed
+                                            </span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div style="display:flex;align-items:center;justify-content:flex-end;gap:.75rem;">
+                                            <a asp-action="Details" asp-route-id="@meeting.Id"
+                                               style="font-size:.78rem;font-weight:600;color:var(--navy);text-decoration:none;">
+                                                Details
+                                            </a>
+                                            <form asp-action="Delete" asp-route-id="@meeting.Id" method="post" style="display:inline;">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit"
+                                                        style="font-size:.78rem;font-weight:600;color:var(--coral);background:none;border:none;cursor:pointer;padding:0;"
+                                                        onclick="return confirm('Delete this meeting?')">
+                                                    Delete
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
             </div>
         }
         else
         {
-            <div class="bg-white rounded-xl shadow-sm p-6 text-center">
-                <i class="material-icons text-5xl text-slate-300 mb-2">history</i>
-                <h3 class="text-lg font-medium text-slate-700 mb-2">No past meetings</h3>
-                <p class="text-sm text-slate-500 mb-4">Your past meetings will appear here.</p>
+            <div class="empty-state">
+                <i class="material-icons">history</i>
+                <h3>No past meetings</h3>
+                <p>Your completed and missed meetings will show up here.</p>
             </div>
         }
     </div>
+
 </div>
