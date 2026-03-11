@@ -1,1385 +1,1493 @@
 ﻿@model IEnumerable<SIS.Models.StudentAccommodation.Hostel>
 
-<div class="h-[90vh] p-4">
-    <!-- Header Section -->
-    <div class="flex justify-between items-center mb-4">
-        <div class="flex items-center text-secondary-800">
-            <i class="material-icons text-3xl mr-2">apartment</i>
-            <div>
-                <h1 class="text-2xl font-bold">Hostel Management</h1>
-                <p class="text-sm text-slate-600">Manage hostel buildings for student accommodation</p>
+@{
+    ViewData["Title"] = "Hostels";
+    var totalHostels = Model?.Count() ?? 0;
+    var totalCapacity = Model?.Sum(h => h.TotalCapacity ?? 0) ?? 0;
+    var activeHostels = Model?.Count(h => h.Status.ToString().ToLower() == "active") ?? 0;
+    var maleHostels = Model?.Count(h => h.Gender?.ToLower() == "male") ?? 0;
+    var femaleHostels = Model?.Count(h => h.Gender?.ToLower() == "female") ?? 0;
+}
+
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+
+<style>
+    :root {
+        --coral: #e85c5c;
+        --coral-d: #c94040;
+        --navy: #1e2d5e;
+        --navy-l: #2e3f7a;
+        --mist: #f5f7fa;
+        --border: #e8ecf2;
+        --ink: #1a1f2e;
+        --text: #475569;
+        --green: #16a34a;
+        --greenl: #dcfce7;
+        --amber: #d97706;
+        --amberl: #fffbeb;
+    }
+
+    * {
+        font-family: 'DM Sans', sans-serif;
+        box-sizing: border-box;
+    }
+
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    @@keyframes fadeUp {
+        from {
+            opacity: 0;
+            transform: translateY(12px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .hm-page {
+        background: var(--mist);
+        min-height: 100vh;
+    }
+
+    /* ── Hero ── */
+    .hm-hero {
+        background: linear-gradient(135deg, #141c3a 0%, var(--navy) 45%, var(--navy-l) 80%, #2a185e 100%);
+        padding: 1.75rem 2rem 4.25rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .hm-hero::before {
+            content: '';
+            position: absolute;
+            top: -70px;
+            right: -50px;
+            width: 260px;
+            height: 260px;
+            background: radial-gradient(circle,rgba(232,92,92,.16) 0%,transparent 70%);
+            pointer-events: none;
+        }
+
+        .hm-hero::after {
+            content: '';
+            position: absolute;
+            bottom: -80px;
+            left: 10%;
+            width: 320px;
+            height: 320px;
+            background: radial-gradient(circle,rgba(255,255,255,.04) 0%,transparent 70%);
+            pointer-events: none;
+        }
+
+    .hm-hero-inner {
+        position: relative;
+        z-index: 1;
+    }
+
+    .hm-hero-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .hm-hero-left {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .hm-hero-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 1rem;
+        flex-shrink: 0;
+        background: rgba(255,255,255,.1);
+        border: 1.5px solid rgba(255,255,255,.2);
+        backdrop-filter: blur(8px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .hm-hero-icon i {
+            font-size: 1.8rem;
+            color: #fff;
+        }
+
+    .hm-eyebrow {
+        font-size: .67rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .1em;
+        color: rgba(255,255,255,.4);
+        margin-bottom: .2rem;
+    }
+
+    .hm-title {
+        font-family: 'DM Serif Display',serif;
+        font-size: 1.65rem;
+        color: #fff;
+        margin: 0;
+        line-height: 1.2;
+    }
+
+    .hm-sub {
+        font-size: .78rem;
+        color: rgba(255,255,255,.5);
+        margin-top: .15rem;
+    }
+
+    .hm-stats {
+        display: flex;
+        gap: .85rem;
+        margin-top: 1.25rem;
+        flex-wrap: wrap;
+    }
+
+    .hm-stat {
+        display: flex;
+        align-items: center;
+        gap: .65rem;
+        background: rgba(255,255,255,.08);
+        border: 1px solid rgba(255,255,255,.14);
+        border-radius: .75rem;
+        padding: .5rem .9rem;
+        backdrop-filter: blur(6px);
+    }
+
+        .hm-stat i {
+            font-size: 1rem;
+            color: rgba(255,255,255,.6);
+        }
+
+    .hm-stat-val {
+        font-family: 'DM Serif Display',serif;
+        font-size: 1.25rem;
+        color: #fff;
+        line-height: 1;
+    }
+
+    .hm-stat-lbl {
+        font-size: .64rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        color: rgba(255,255,255,.4);
+        margin-top: .1rem;
+    }
+
+    .btn-hero-create {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        background: var(--coral);
+        color: #fff;
+        border: none;
+        font-size: .82rem;
+        font-weight: 700;
+        font-family: inherit;
+        padding: .7rem 1.35rem;
+        border-radius: .7rem;
+        cursor: pointer;
+        box-shadow: 0 4px 18px rgba(232,92,92,.4);
+        transition: background .15s,transform .1s;
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+
+        .btn-hero-create:hover {
+            background: var(--coral-d);
+            transform: translateY(-1px);
+        }
+
+        .btn-hero-create i {
+            font-size: 1rem;
+        }
+
+    /* ── Strip ── */
+    .hm-strip {
+        margin: -2.35rem 2rem 0;
+        position: relative;
+        z-index: 3;
+        display: flex;
+        flex-direction: column;
+        gap: .65rem;
+    }
+
+    .hm-alert {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        border-radius: .75rem;
+        padding: .85rem 1rem;
+        font-size: .8rem;
+        background: #fff;
+        box-shadow: 0 4px 20px rgba(30,45,94,.12);
+        animation: fadeUp .25s ease-out;
+    }
+
+        .hm-alert i {
+            font-size: 1.05rem;
+            flex-shrink: 0;
+        }
+
+    .hm-alert-s {
+        border-left: 4px solid var(--green);
+        color: #166534;
+    }
+
+        .hm-alert-s i {
+            color: var(--green);
+        }
+
+    .hm-alert-e {
+        border-left: 4px solid var(--coral);
+        color: #991b1b;
+    }
+
+        .hm-alert-e i {
+            color: var(--coral);
+        }
+
+    /* ── Body ── */
+    .hm-body {
+        padding: 0 2rem 2.5rem;
+        margin-top: 1.35rem;
+    }
+
+    /* ── Toolbar ── */
+    .hm-toolbar {
+        background: #fff;
+        border: 1.5px solid var(--border);
+        border-radius: 1rem;
+        padding: .85rem 1.1rem;
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        flex-wrap: wrap;
+        box-shadow: 0 2px 10px rgba(30,45,94,.06);
+        margin-bottom: .85rem;
+    }
+
+    .hm-search {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        flex: 1;
+        min-width: 180px;
+        background: var(--mist);
+        border: 1.5px solid var(--border);
+        border-radius: .6rem;
+        padding: .5rem .75rem;
+        transition: border-color .15s;
+    }
+
+        .hm-search:focus-within {
+            border-color: var(--navy);
+        }
+
+        .hm-search i {
+            font-size: 1rem;
+            color: #94a3b8;
+            flex-shrink: 0;
+        }
+
+        .hm-search input {
+            border: none;
+            background: transparent;
+            font-family: inherit;
+            font-size: .82rem;
+            color: var(--ink);
+            flex: 1;
+            outline: none;
+        }
+
+            .hm-search input::placeholder {
+                color: #94a3b8;
+            }
+
+    .hm-fw {
+        display: flex;
+        align-items: center;
+        gap: .4rem;
+    }
+
+    .hm-fl {
+        font-size: .68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        color: #94a3b8;
+        white-space: nowrap;
+    }
+
+    .hm-fs {
+        padding: .48rem .8rem;
+        border: 1.5px solid var(--border);
+        border-radius: .55rem;
+        font-family: inherit;
+        font-size: .78rem;
+        color: var(--ink);
+        background: var(--mist);
+        cursor: pointer;
+        transition: border-color .15s;
+        -webkit-appearance: none;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%2394a3b8' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right .5rem center;
+        padding-right: 1.75rem;
+    }
+
+        .hm-fs:focus {
+            outline: none;
+            border-color: var(--navy);
+        }
+
+    .hm-count {
+        margin-left: auto;
+        font-size: .72rem;
+        font-weight: 700;
+        color: var(--text);
+        background: var(--mist);
+        border: 1px solid var(--border);
+        border-radius: .5rem;
+        padding: .3rem .65rem;
+        white-space: nowrap;
+    }
+
+    #visibleCount {
+        color: var(--navy);
+    }
+
+    /* ── Table card ── */
+    .hm-card {
+        background: #fff;
+        border: 1.5px solid var(--border);
+        border-radius: 1rem;
+        box-shadow: 0 2px 12px rgba(30,45,94,.06);
+        overflow: hidden;
+        animation: fadeUp .3s ease-out;
+    }
+
+    .tbl-wrap {
+        overflow-x: auto;
+    }
+
+    table.ht {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: .8rem;
+    }
+
+        table.ht thead tr {
+            background: var(--mist);
+        }
+
+        table.ht th {
+            padding: .65rem 1rem;
+            text-align: left;
+            font-size: .64rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            color: #94a3b8;
+            border-bottom: 1.5px solid var(--border);
+            white-space: nowrap;
+            user-select: none;
+        }
+
+            table.ht th.c {
+                text-align: center;
+            }
+
+        table.ht td {
+            padding: .75rem 1rem;
+            border-bottom: 1px solid var(--border);
+            color: var(--text);
+            vertical-align: middle;
+        }
+
+            table.ht td.c {
+                text-align: center;
+            }
+
+        table.ht tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        table.ht tbody tr:hover {
+            background: #fafbfd;
+        }
+
+    .th-s {
+        display: flex;
+        align-items: center;
+        gap: .3rem;
+        cursor: pointer;
+    }
+
+        .th-s:hover {
+            color: var(--navy);
+        }
+
+    .si {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        opacity: .4;
+        transition: opacity .15s;
+    }
+
+    .th-s:hover .si {
+        opacity: 1;
+    }
+
+    .si .u {
+        width: 0;
+        height: 0;
+        border-left: 4px solid transparent;
+        border-right: 4px solid transparent;
+        border-bottom: 5px solid currentColor;
+    }
+
+    .si .d {
+        width: 0;
+        height: 0;
+        border-left: 4px solid transparent;
+        border-right: 4px solid transparent;
+        border-top: 5px solid currentColor;
+    }
+
+    .h-cell {
+        display: flex;
+        align-items: center;
+        gap: .65rem;
+    }
+
+    .h-av {
+        width: 34px;
+        height: 34px;
+        border-radius: .55rem;
+        flex-shrink: 0;
+        background: linear-gradient(135deg,var(--navy),var(--navy-l));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .h-av i {
+            font-size: .95rem;
+            color: #fff;
+        }
+
+    .h-name {
+        font-weight: 700;
+        color: var(--ink);
+        font-size: .82rem;
+    }
+
+    .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: .2rem;
+        font-size: .65rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .03em;
+        padding: .22rem .55rem;
+        border-radius: 2rem;
+    }
+
+    .pm {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .pf {
+        background: #fce7f3;
+        color: #9d174d;
+    }
+
+    .px {
+        background: #f5f3ff;
+        color: #6d28d9;
+    }
+
+    .pa {
+        background: var(--greenl);
+        color: #166534;
+    }
+
+    .pi {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .pt {
+        background: var(--amberl);
+        color: var(--amber);
+        border: 1px solid #fde68a;
+    }
+
+    .row-acts {
+        display: flex;
+        align-items: center;
+        gap: .35rem;
+        justify-content: center;
+    }
+
+    .rb {
+        width: 28px;
+        height: 28px;
+        border-radius: .4rem;
+        background: none;
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all .15s;
+        color: var(--text);
+        text-decoration: none;
+    }
+
+        .rb i {
+            font-size: .9rem;
+        }
+
+        .rb:hover {
+            background: var(--mist);
+            border-color: #c4cfe2;
+            color: var(--ink);
+        }
+
+        .rb.v:hover {
+            border-color: #93c5fd;
+            color: #2563eb;
+            background: #eff6ff;
+        }
+
+        .rb.e:hover {
+            border-color: #6ee7b7;
+            color: var(--green);
+            background: var(--greenl);
+        }
+
+        .rb.d:hover {
+            border-color: #fca5a5;
+            color: var(--coral);
+            background: #fef2f2;
+        }
+
+    .hm-empty {
+        padding: 4rem 2rem;
+        text-align: center;
+    }
+
+    .hm-empty-ring {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        margin: 0 auto 1.25rem;
+        background: linear-gradient(135deg,var(--navy),var(--navy-l));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 24px rgba(30,45,94,.25);
+    }
+
+        .hm-empty-ring i {
+            font-size: 2rem;
+            color: #fff;
+        }
+
+    .hm-empty h4 {
+        font-family: 'DM Serif Display',serif;
+        font-size: 1.2rem;
+        color: var(--ink);
+        margin: 0 0 .4rem;
+    }
+
+    .hm-empty p {
+        font-size: .8rem;
+        color: var(--text);
+        max-width: 22rem;
+        margin: 0 auto;
+    }
+
+    .hm-foot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: .5rem;
+        padding: .75rem 1rem;
+        border-top: 1.5px solid var(--border);
+        background: var(--mist);
+        font-size: .73rem;
+        color: var(--text);
+    }
+
+        .hm-foot strong {
+            color: var(--ink);
+        }
+
+    /* ── Loading ── */
+    #loadingIndicator {
+        position: fixed;
+        inset: 0;
+        background: rgba(15,20,40,.55);
+        backdrop-filter: blur(4px);
+        z-index: 10000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+
+        #loadingIndicator[style*="display: flex"] {
+            display: flex !important;
+        }
+
+    .li-box {
+        background: #fff;
+        border-radius: 1rem;
+        padding: 1.4rem 2rem;
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        box-shadow: 0 20px 40px rgba(15,20,40,.22);
+    }
+
+    .li-spin {
+        animation: spin 1s linear infinite;
+        font-size: 1.5rem;
+        color: var(--coral);
+    }
+
+    .li-txt {
+        font-size: .85rem;
+        font-weight: 700;
+        color: var(--ink);
+    }
+
+    /* ── Modals ── */
+    .mo {
+        position: fixed;
+        inset: 0;
+        background: rgba(15,20,40,.55);
+        backdrop-filter: blur(4px);
+        z-index: 9998;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        overflow-y: auto;
+    }
+
+        .mo.hidden {
+            display: none !important;
+        }
+
+    .mb {
+        background: #fff;
+        border-radius: 1.25rem;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+        margin: auto;
+        box-shadow: 0 24px 60px rgba(15,20,40,.3);
+        animation: fadeUp .22s ease-out;
+    }
+
+    .mh {
+        background: linear-gradient(135deg,var(--navy),var(--navy-l));
+        padding: 1.1rem 1.4rem;
+        border-radius: 1.25rem 1.25rem 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+
+        .mh.mhc {
+            background: linear-gradient(135deg,var(--coral-d),var(--coral));
+        }
+
+    .mh-title {
+        font-family: 'DM Serif Display',serif;
+        font-size: 1.05rem;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        margin: 0;
+    }
+
+        .mh-title i {
+            font-size: 1rem;
+            color: rgba(255,255,255,.65);
+        }
+
+    .mc {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: rgba(255,255,255,.12);
+        border: 1px solid rgba(255,255,255,.22);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background .15s;
+        flex-shrink: 0;
+    }
+
+        .mc:hover {
+            background: rgba(255,255,255,.24);
+        }
+
+        .mc i {
+            font-size: .9rem;
+        }
+
+    .mbody {
+        padding: 1.5rem;
+    }
+
+    .mfoot {
+        display: flex;
+        justify-content: flex-end;
+        gap: .65rem;
+        padding: 1rem 1.5rem;
+        border-top: 1.5px solid var(--border);
+    }
+
+    /* form */
+    .fsec {
+        margin-bottom: 1.5rem;
+    }
+
+    .fst {
+        font-size: .71rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .07em;
+        color: var(--navy);
+        display: flex;
+        align-items: center;
+        gap: .4rem;
+        padding-bottom: .6rem;
+        border-bottom: 1.5px solid var(--border);
+        margin-bottom: 1rem;
+    }
+
+        .fst i {
+            font-size: .85rem;
+        }
+
+    .fg2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: .85rem;
+    }
+
+    .fg3 {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: .85rem;
+    }
+
+    .fgf {
+        grid-column: 1/-1;
+    }
+
+    @@media (max-width:580px) {
+        .fg2, .fg3 {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .ff {
+        display: flex;
+        flex-direction: column;
+        gap: .35rem;
+    }
+
+        .ff label {
+            font-size: .71rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            color: var(--ink);
+        }
+
+            .ff label .r {
+                color: var(--coral);
+            }
+
+            .ff label .o {
+                font-weight: 400;
+                text-transform: none;
+                color: #94a3b8;
+                font-size: .67rem;
+                letter-spacing: 0;
+            }
+
+        .ff input[type=text], .ff input[type=number], .ff select, .ff textarea {
+            padding: .55rem .75rem;
+            border: 1.5px solid var(--border);
+            border-radius: .55rem;
+            font-family: inherit;
+            font-size: .82rem;
+            color: var(--ink);
+            background: #fff;
+            transition: border-color .15s,box-shadow .15s;
+            width: 100%;
+        }
+
+            .ff input:focus, .ff select:focus, .ff textarea:focus {
+                outline: none;
+                border-color: var(--navy);
+                box-shadow: 0 0 0 3px rgba(30,45,94,.1);
+            }
+
+        .ff textarea {
+            resize: vertical;
+            min-height: 72px;
+        }
+
+    .ckr {
+        display: flex;
+        align-items: flex-start;
+        gap: .65rem;
+        background: var(--mist);
+        border: 1.5px solid var(--border);
+        border-radius: .65rem;
+        padding: .7rem .9rem;
+    }
+
+        .ckr input[type=checkbox] {
+            accent-color: var(--navy);
+            width: 1rem;
+            height: 1rem;
+            margin-top: .1rem;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+
+    .ckr-l {
+        font-size: .82rem;
+        font-weight: 700;
+        color: var(--ink);
+    }
+
+    .bdc {
+        background: var(--mist);
+        border: 1.5px solid var(--border);
+        border-radius: .7rem;
+        padding: .85rem 1rem;
+    }
+
+    .bdc-t {
+        font-size: .72rem;
+        font-weight: 700;
+        color: var(--navy);
+        display: flex;
+        align-items: center;
+        gap: .3rem;
+        margin-bottom: .65rem;
+    }
+
+        .bdc-t i {
+            font-size: .85rem;
+        }
+
+    .dw {
+        display: flex;
+        align-items: flex-start;
+        gap: .65rem;
+        background: var(--amberl);
+        border: 1.5px solid #fde68a;
+        border-radius: .65rem;
+        padding: .75rem .9rem;
+        font-size: .78rem;
+        color: #92400e;
+    }
+
+        .dw i {
+            font-size: .95rem;
+            color: var(--amber);
+            flex-shrink: 0;
+            margin-top: .05rem;
+        }
+
+    .btn-p {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        background: var(--navy);
+        color: #fff;
+        border: none;
+        font-size: .82rem;
+        font-weight: 700;
+        font-family: inherit;
+        padding: .6rem 1.15rem;
+        border-radius: .6rem;
+        cursor: pointer;
+        box-shadow: 0 3px 10px rgba(30,45,94,.22);
+        transition: background .15s;
+    }
+
+        .btn-p:hover {
+            background: var(--navy-l);
+        }
+
+    .btn-c {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        background: var(--coral);
+        color: #fff;
+        border: none;
+        font-size: .82rem;
+        font-weight: 700;
+        font-family: inherit;
+        padding: .6rem 1.15rem;
+        border-radius: .6rem;
+        cursor: pointer;
+        box-shadow: 0 3px 10px rgba(232,92,92,.3);
+        transition: background .15s;
+    }
+
+        .btn-c:hover {
+            background: var(--coral-d);
+        }
+
+    .btn-g {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        background: var(--mist);
+        color: var(--text);
+        border: 1.5px solid var(--border);
+        font-size: .82rem;
+        font-weight: 700;
+        font-family: inherit;
+        padding: .6rem 1.1rem;
+        border-radius: .6rem;
+        cursor: pointer;
+        transition: all .15s;
+    }
+
+        .btn-g:hover {
+            background: #eaecf0;
+            color: var(--ink);
+        }
+
+    @@media (max-width:640px) {
+        .hm-hero {
+            padding: 1.25rem 1.25rem 3.5rem;
+        }
+
+        .hm-strip {
+            margin: -2rem 1rem 0;
+        }
+
+        .hm-body {
+            padding: 0 1rem 2rem;
+        }
+    }
+</style>
+
+<div id="loadingIndicator">
+    <div class="li-box"><i class="material-icons li-spin">refresh</i><span class="li-txt">Loading…</span></div>
+</div>
+
+<div class="hm-page">
+
+    <!-- Hero -->
+    <div class="hm-hero">
+        <div class="hm-hero-inner">
+            <div class="hm-hero-top">
+                <div class="hm-hero-left">
+                    <div class="hm-hero-icon"><i class="material-icons">apartment</i></div>
+                    <div>
+                        <p class="hm-eyebrow">Accommodation</p>
+                        <h1 class="hm-title">Hostel Management</h1>
+                        <p class="hm-sub">Manage hostel buildings for student accommodation</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-hero-create" onclick="showCreateHostelModal()">
+                    <i class="material-icons">add</i> Create Hostel
+                </button>
+            </div>
+            <div class="hm-stats">
+                <div class="hm-stat">
+                    <i class="material-icons">apartment</i>
+                    <div><div class="hm-stat-val">@totalHostels</div><div class="hm-stat-lbl">Total Hostels</div></div>
+                </div>
+                <div class="hm-stat">
+                    <i class="material-icons">king_bed</i>
+                    <div><div class="hm-stat-val">@totalCapacity</div><div class="hm-stat-lbl">Total Capacity</div></div>
+                </div>
+                <div class="hm-stat">
+                    <i class="material-icons">check_circle</i>
+                    <div><div class="hm-stat-val">@activeHostels</div><div class="hm-stat-lbl">Active</div></div>
+                </div>
+                <div class="hm-stat">
+                    <i class="material-icons">wc</i>
+                    <div><div class="hm-stat-val">@maleHostels / @femaleHostels</div><div class="hm-stat-lbl">Male / Female</div></div>
+                </div>
             </div>
         </div>
-        <button type="button"
-                onclick="showCreateHostelModal()"
-                class="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors flex items-center">
-            <i class="material-icons mr-2">add_circle</i>
-            Create Hostel
-        </button>
     </div>
 
-    <!-- Main Content Layout -->
-    <div class="flex gap-4 h-[calc(90vh-80px)]">
-        <!-- Main Table Section (3/4 width) -->
-        <div class="w-3/4">
-            <div class="bg-white rounded-lg shadow-md h-full">
-                <div class="p-4">
-                    <div class="flex justify-between items-center mb-4">
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                <i class="material-icons text-slate-400 text-sm">search</i>
-                            </div>
-                            <input type="text" id="searchInput"
-                                   class="block w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500"
-                                   placeholder="Search hostels..." />
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <div class="flex items-center">
-                                <label for="filterCampus" class="text-sm text-slate-600 mr-2">Campus:</label>
-                                <select id="filterCampus"
-                                        class="px-4 py-2 border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500">
-                                    <option value="all">All Campuses</option>
-                                    @if (ViewBag.Campuses != null)
-                                    {
-                                        foreach (var item in ViewBag.Campuses)
-                                        {
-                                            <option value="@item.Value">@item.Text</option>
-                                        }
-                                    }
-                                </select>
-                            </div>
-                            <div class="flex items-center">
-                                <label for="filterGender" class="text-sm text-slate-600 mr-2">Gender:</label>
-                                <select id="filterGender"
-                                        class="px-4 py-2 border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500">
-                                    <option value="all">All Types</option>
-                                    <option value="male">Male</option>
-                                    <option value="female">Female</option>
-                                    <option value="mixed">Mixed</option>
-                                </select>
-                            </div>
-                            <div class="flex items-center">
-                                <label for="filterStatus" class="text-sm text-slate-600 mr-2">Status:</label>
-                                <select id="filterStatus"
-                                        class="px-4 py-2 border border-slate-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500">
-                                    <option value="all">All Statuses</option>
-                                    <option value="active">Active</option>
-                                    <option value="inactive">Inactive</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
+    <!-- Alerts -->
+    <div class="hm-strip">
+        @if (TempData["Success"] != null)
+        {
+            <div class="hm-alert hm-alert-s"><i class="material-icons">check_circle</i><span>@TempData["Success"]</span></div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="hm-alert hm-alert-e"><i class="material-icons">error</i><span>@TempData["Error"]</span></div>
+        }
+    </div>
 
-                    <div class="overflow-y-auto h-[calc(100%-60px)]">
-                        @if (TempData["Success"] != null)
+    <!-- Body -->
+    <div class="hm-body">
+
+        <!-- Toolbar -->
+        <div class="hm-toolbar">
+            <div class="hm-search">
+                <i class="material-icons">search</i>
+                <input type="text" id="searchInput" placeholder="Search by hostel name…" />
+            </div>
+            <div class="hm-fw">
+                <span class="hm-fl">Campus</span>
+                <select id="filterCampus" class="hm-fs" onchange="filterTable()">
+                    <option value="all">All</option>
+                    @if (ViewBag.Campuses != null)
+                    {
+                        foreach (var item in ViewBag.Campuses)
                         {
-                            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4" role="alert">
-                                <p>@TempData["Success"]</p>
-                            </div>
+                            <option value="@item.Value">@item.Text</option>
                         }
+                    }
+                </select>
+            </div>
+            <div class="hm-fw">
+                <span class="hm-fl">Gender</span>
+                <select id="filterGender" class="hm-fs" onchange="filterTable()">
+                    <option value="all">All</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="mixed">Mixed</option>
+                </select>
+            </div>
+            <div class="hm-fw">
+                <span class="hm-fl">Status</span>
+                <select id="filterStatus" class="hm-fs" onchange="filterTable()">
+                    <option value="all">All</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="maintenance">Maintenance</option>
+                </select>
+            </div>
+            <span class="hm-count"><span id="visibleCount">@totalHostels</span> of @totalHostels</span>
+        </div>
 
-                        @if (TempData["Error"] != null)
+        <!-- Table -->
+        <div class="hm-card">
+            <div class="tbl-wrap">
+                <table class="ht" id="hostelsTable">
+                    <thead>
+                        <tr>
+                            <th style="width:52px;"><span class="th-s" data-sort="index"># <span class="si"><span class="u"></span><span class="d"></span></span></span></th>
+                            <th><span class="th-s" data-sort="name">Hostel Name <span class="si"><span class="u"></span><span class="d"></span></span></span></th>
+                            <th>Campus</th>
+                            <th>Gender</th>
+                            <th><span class="th-s" data-sort="capacity">Capacity <span class="si"><span class="u"></span><span class="d"></span></span></span></th>
+                            <th>Status</th>
+                            <th class="c">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="hostelsTableBody">
+                        @if (Model != null && Model.Any())
                         {
-                            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" role="alert">
-                                <p>@TempData["Error"]</p>
-                            </div>
-                        }
-
-                        <table id="hostelsTable" class="w-full text-sm text-secondary-600">
-                            <thead class="sticky top-0 bg-slate-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left">
-                                        <span class="flex items-center">
-                                            #
-                                            <button class="sort-btn ml-1" data-sort="index">
-                                                <svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 15 4 4 4-4m0-6-4-4-4 4" />
-                                                </svg>
-                                            </button>
-                                        </span>
-                                    </th>
-                                    <th class="px-6 py-3 text-left">
-                                        <span class="flex items-center">
-                                            Hostel Name
-                                            <button class="sort-btn ml-1" data-sort="name">
-                                                <svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 15 4 4 4-4m0-6-4-4-4 4" />
-                                                </svg>
-                                            </button>
-                                        </span>
-                                    </th>
-                                    <th class="px-6 py-3 text-left">
-                                        <span class="flex items-center">
-                                            Campus
-                                        </span>
-                                    </th>
-                                    <th class="px-6 py-3 text-left">
-                                        <span class="flex items-center">
-                                            Gender
-                                        </span>
-                                    </th>
-                                    <th class="px-6 py-3 text-left">
-                                        <span class="flex items-center">
-                                            Capacity
-                                            <button class="sort-btn ml-1" data-sort="capacity">
-                                                <svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 15 4 4 4-4m0-6-4-4-4 4" />
-                                                </svg>
-                                            </button>
-                                        </span>
-                                    </th>
-                                    <th class="px-6 py-3 text-left">Status</th>
-                                    <th class="px-6 py-3 text-left">Actions</th>
+                            int idx = 1;
+                            foreach (var h in Model)
+                            {
+                                var gc = h.Gender?.ToLower() switch { "male" => "pm", "female" => "pf", _ => "px" };
+                                var sc = h.Status.ToString().ToLower() switch { "active" => "pa", "inactive" => "pi", "maintenance" => "pt", _ => "pi" };
+                                <tr data-campus="@h.CampusId" data-gender="@h.Gender?.ToLower()" data-status="@h.Status.ToString().ToLower()">
+                                    <td>@idx</td>
+                                    <td>
+                                        <div class="h-cell">
+                                            <div class="h-av"><i class="material-icons">apartment</i></div>
+                                            <span class="h-name">@h.HostelName</span>
+                                        </div>
+                                    </td>
+                                    <td>@(h.Campus?.CampusName ?? "—")</td>
+                                    <td><span class="pill @gc">@h.Gender</span></td>
+                                    <td><strong style="color:var(--ink);">@h.TotalCapacity</strong> <span style="font-size:.68rem;color:#94a3b8;">beds</span></td>
+                                    <td><span class="pill @sc">@h.Status</span></td>
+                                    <td class="c">
+                                        <div class="row-acts">
+                                            <a href="@Url.Action("Details", new { id = h.HostelId })" class="rb v" title="View Details"><i class="material-icons">visibility</i></a>
+                                            <button type="button" class="rb e" title="Edit" onclick="showUpdateHostelModal(@h.HostelId)"><i class="material-icons">edit</i></button>
+                                            <button type="button" class="rb d" title="Delete" onclick="showDeleteHostelModal(@h.HostelId, '@h.HostelName')"><i class="material-icons">delete</i></button>
+                                        </div>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody id="hostelsTableBody">
-                                @if (Model != null && Model.Any())
-                                {
-                                    int index = 1;
-                                    foreach (var hostel in Model)
-                                    {
-                                        <tr data-campus="@hostel.CampusId"
-                                            data-gender="@hostel.Gender?.ToLower()"
-                                            data-status="@hostel.Status.ToString().ToLower()"
-                                            class="border-b hover:bg-slate-50 transition-colors">
-                                            <td class="px-6 py-4">@index</td>
-                                            <td class="px-6 py-4 font-medium">@hostel.HostelName</td>
-                                            <td class="px-6 py-4">@(hostel.Campus?.CampusName ?? "N/A")</td>
-                                            <td class="px-6 py-4">
-                                                <span class="px-2 py-1 rounded-full text-xs @(hostel.Gender == "Male" ? "bg-blue-100 text-blue-800" : hostel.Gender == "Female" ? "bg-pink-100 text-pink-800" : "bg-purple-100 text-purple-800")">
-                                                    @hostel.Gender
-                                                </span>
-                                            </td>
-                                            <td class="px-6 py-4">@hostel.TotalCapacity</td>
-                                            <td class="px-6 py-4">
-                                                <span class="px-2 py-1 rounded-full text-xs @(hostel.Status.ToString().ToLower() == "active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800")">
-                                                    @hostel.Status
-                                                </span>
-                                            </td>
-                                            <td class="px-6 py-4">
-                                                <div class="flex space-x-2">
-                                                    <a href="@Url.Action("Details", new { id = hostel.HostelId })"
-                                                       class="text-cyan-600 hover:text-cyan-800"
-                                                       title="View Details">
-                                                        <i class="material-icons text-lg">visibility</i>
-                                                    </a>
-                                                    <button type="button"
-                                                            onclick="showUpdateHostelModal(@hostel.HostelId)"
-                                                            class="text-blue-600 hover:text-blue-800"
-                                                            title="Edit">
-                                                        <i class="material-icons text-lg">edit</i>
-                                                    </button>
-                                                    <button type="button"
-                                                            onclick="showDeleteHostelModal(@hostel.HostelId, '@hostel.HostelName')"
-                                                            class="text-red-600 hover:text-red-800"
-                                                            title="Delete">
-                                                        <i class="material-icons text-lg">delete</i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        index++;
-                                    }
-                                }
-                                else
-                                {
-                                    <tr>
-                                        <td colspan="7" class="px-6 py-8 text-center text-slate-500">
-                                            <div class="flex flex-col items-center">
-                                                <i class="material-icons text-6xl mb-2 text-slate-300">apartment</i>
-                                                <p class="text-lg">No hostels found</p>
-                                                <p class="text-sm">Click "Create Hostel" to add your first hostel</p>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                                idx++;
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="7">
+                                    <div class="hm-empty">
+                                        <div class="hm-empty-ring"><i class="material-icons">apartment</i></div>
+                                        <h4>No Hostels Found</h4>
+                                        <p>Click "Create Hostel" to add your first hostel building.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
             </div>
+            @if (Model != null && Model.Any())
+            {
+                <div class="hm-foot">
+                    <span>Showing <strong id="footCount">@totalHostels</strong> of <strong>@totalHostels</strong> hostels</span>
+                    <span style="color:#94a3b8;font-size:.68rem;">Click column headers to sort</span>
+                </div>
+            }
         </div>
 
-        <!-- Side Statistics Panel (1/4 width) -->
-        <div class="w-1/4 flex flex-col gap-4">
-            <!-- Quick Stats Card -->
-            <div class="bg-white rounded-lg shadow-md p-4">
-                <h3 class="text-lg font-semibold text-slate-700 mb-3 flex items-center">
-                    <i class="material-icons mr-2">analytics</i>
-                    Quick Stats
-                </h3>
-                <div class="space-y-3">
-                    <div class="flex justify-between items-center">
-                        <span class="text-sm text-slate-600">Total Hostels</span>
-                        <span id="totalHostels" class="text-xl font-bold text-cyan-600">@(Model?.Count() ?? 0)</span>
-                    </div>
-                    <div class="flex justify-between items-center">
-                        <span class="text-sm text-slate-600">Total Capacity</span>
-                        <span class="text-xl font-bold text-blue-600">@(Model?.Sum(h => h.TotalCapacity ?? 0) ?? 0)</span>
-                    </div>
-                    <div class="flex justify-between items-center">
-                        <span class="text-sm text-slate-600">Active</span>
-                        <span class="text-xl font-bold text-green-600">@(Model?.Count(h => h.Status.ToString().ToLower() == "active") ?? 0)</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Gender Distribution Chart -->
-            <div class="bg-white rounded-lg shadow-md p-4 flex-1">
-                <h3 class="text-lg font-semibold text-slate-700 mb-3 flex items-center">
-                    <i class="material-icons mr-2">pie_chart</i>
-                    Gender Distribution
-                </h3>
-                <div id="hostelGenderChart" class="h-[200px]"></div>
-            </div>
-
-            <!-- Campus Distribution Chart -->
-            <div class="bg-white rounded-lg shadow-md p-4 flex-1">
-                <h3 class="text-lg font-semibold text-slate-700 mb-3 flex items-center">
-                    <i class="material-icons mr-2">bar_chart</i>
-                    Campus Distribution
-                </h3>
-                <div id="hostelCampusChart" class="h-[200px]"></div>
-            </div>
-        </div>
     </div>
 </div>
 
-<!-- Loading Indicator -->
-<div id="loadingIndicator" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
-    <div class="bg-white rounded-lg p-6 flex items-center space-x-4">
-        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600"></div>
-        <span class="text-slate-700">Loading...</span>
-    </div>
-</div>
-
-<!-- Create Hostel Modal -->
-<div id="createHostelModal" class="fixed inset-0 z-50 hidden flex items-center justify-center">
-    <div class="fixed inset-0 bg-black opacity-40" onclick="hideCreateHostelModal()"></div>
-    <div class="bg-white rounded-lg shadow-lg w-11/12 md:w-2/3 z-10 overflow-hidden max-h-[90vh] overflow-y-auto">
-        <div class="px-6 py-4 bg-cyan-600 text-white sticky top-0">
-            <h3 class="text-xl font-semibold flex items-center">
-                <i class="material-icons mr-2">add_circle</i>
-                Create New Hostel
-            </h3>
+<!-- ══ Create Modal ══ -->
+<div id="createHostelModal" class="mo hidden">
+    <div class="mb" style="max-width:800px;">
+        <div class="mh">
+            <h5 class="mh-title"><i class="material-icons">add_circle</i>Create New Hostel</h5>
+            <button class="mc" type="button" onclick="hideCreateHostelModal()"><i class="material-icons">close</i></button>
         </div>
         <form id="createHostelForm" method="post">
             @Html.AntiForgeryToken()
-            <div class="px-6 py-4">
-                <!-- Basic Information -->
-                <div class="grid grid-cols-2 gap-4 mb-6">
-                    <div class="relative z-0 w-full group">
-                        <input required type="text" name="HostelName" id="hostelName"
-                               class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
-                               placeholder=" " />
-                        <label for="hostelName"
-                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                            Hostel Name
-                        </label>
-                    </div>
-
-                    <div class="relative z-0 w-full group">
-                        <select required name="CampusId" id="campusID"
-                                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer">
-                            <option value="">Select Campus</option>
-                            @if (ViewBag.Campuses != null)
-                            {
-                                foreach (var item in ViewBag.Campuses)
-                                {
-                                    <option value="@item.Value">@item.Text</option>
-                                }
-                            }
-                        </select>
-                        <label for="campusID"
-                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                            Campus
-                        </label>
-                    </div>
-
-                    <div class="relative z-0 w-full group">
-                        <select required name="Gender" id="gender"
-                                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer">
-                            <option value="">Select Gender</option>
-                            <option value="Male">Male</option>
-                            <option value="Female">Female</option>
-                            <option value="Mixed">Mixed</option>
-                        </select>
-                        <label for="gender"
-                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                            Gender
-                        </label>
-                    </div>
-
-                    <div class="relative z-0 w-full group">
-                        <select name="WardenId" id="wardenID"
-                                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer">
-                            <option value="">Select Warden (Optional)</option>
-                            @if (ViewBag.Wardens != null)
-                            {
-                                foreach (var item in ViewBag.Wardens)
-                                {
-                                    <option value="@item.Value">@item.Text</option>
-                                }
-                            }
-                        </select>
-                        <label for="wardenID"
-                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                            Warden
-                        </label>
-                    </div>
-
-                    <div class="relative z-0 w-full group">
-                        <input required type="number" name="TotalRooms" id="totalRooms"
-                               class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
-                               placeholder=" " min="1" />
-                        <label for="totalRooms"
-                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                            Total Rooms
-                        </label>
-                    </div>
-
-                    <div class="relative z-0 w-full group">
-                        <select required name="Status" id="status"
-                                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer">
-                            <option value="Active">Active</option>
-                            <option value="Inactive">Inactive</option>
-                            <option value="Maintenance">Maintenance</option>
-                        </select>
-                        <label for="status"
-                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                            Status
-                        </label>
+            <div class="mbody">
+                <div class="fsec">
+                    <p class="fst"><i class="material-icons">info</i>Basic Information</p>
+                    <div class="fg2">
+                        <div class="ff"><label for="hostelName">Hostel Name <span class="r">*</span></label><input type="text" name="HostelName" id="hostelName" required placeholder="e.g. Block A" /></div>
+                        <div class="ff"><label for="campusID">Campus <span class="r">*</span></label><select name="CampusId" id="campusID" required><option value="">Select Campus…</option>@if(ViewBag.Campuses!=null){foreach(var i in ViewBag.Campuses){
+                        <option value="@i.Value">@i.Text</option>
+                                                }}
+</select></div>
+                        <div class="ff"><label for="gender">Gender <span class="r">*</span></label><select name="Gender" id="gender" required><option value="">Select…</option><option value="Male">Male</option><option value="Female">Female</option><option value="Mixed">Mixed</option></select></div>
+                        <div class="ff"><label for="wardenID">Warden <span class="o">(optional)</span></label><select name="WardenId" id="wardenID"><option value="">Select Warden…</option>@if(ViewBag.Wardens!=null){foreach(var i in ViewBag.Wardens){
+                        <option value="@i.Value">@i.Text</option>
+                                                }}
+</select></div>
+                        <div class="ff"><label for="totalRooms">Total Rooms <span class="r">*</span></label><input type="number" name="TotalRooms" id="totalRooms" required min="1" placeholder="e.g. 40" /></div>
+                        <div class="ff"><label for="status">Status <span class="r">*</span></label><select name="Status" id="status" required><option value="Active">Active</option><option value="Inactive">Inactive</option><option value="Maintenance">Maintenance</option></select></div>
                     </div>
                 </div>
-
-                <!-- Room Generation Settings -->
-                <div class="border-t border-slate-200 pt-4 mb-6">
-                    <h4 class="text-md font-semibold text-slate-700 mb-4 flex items-center">
-                        <i class="material-icons mr-2 text-lg">settings</i>
-                        Room Generation Settings
-                    </h4>
-                    <div class="grid grid-cols-3 gap-4">
-                        <!-- Default Room Type -->
-                        <div class="relative z-0 w-full group">
-                            <select name="DefaultRoomType" id="defaultRoomType"
-                                    class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer">
-                                <option value="Single">Single</option>
-                                <option value="Double">Double</option>
-                                <option value="Triple">Triple</option>
-                                <option value="Quad">Quad</option>
-                            </select>
-                            <label for="defaultRoomType"
-                                   class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                                Default Room Type
-                            </label>
-                        </div>
-
-                        <!-- Default Capacity -->
-                        <div class="relative z-0 w-full group">
-                            <input type="number" name="DefaultCapacity" id="defaultCapacity"
-                                   class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
-                                   placeholder=" " required min="1" max="10" value="1" onchange="generateBedDistributionInputs()" />
-                            <label for="defaultCapacity"
-                                   class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                                Capacity Per Room
-                            </label>
-                        </div>
-
-                        <!-- Rooms Per Floor -->
-                        <div class="relative z-0 w-full group">
-                            <input type="number" name="RoomsPerFloor" id="roomsPerFloor"
-                                   class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
-                                   placeholder=" " required min="1" value="10" />
-                            <label for="roomsPerFloor"
-                                   class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                                Rooms Per Floor
-                            </label>
-                        </div>
-
-                        <!-- Room Numbering Pattern -->
-                        <div class="relative z-0 w-full group col-span-3">
-                            <input type="text" name="RoomNumberingPattern" id="roomNumberingPattern"
-                                   class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
-                                   placeholder=" " required value="F{0}R{1}" />
-                            <label for="roomNumberingPattern"
-                                   class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                                Room Numbering Pattern (e.g., F{0}R{1})
-                            </label>
-                        </div>
+                <div class="fsec">
+                    <p class="fst"><i class="material-icons">settings</i>Room Generation Settings</p>
+                    <div class="fg3">
+                        <div class="ff"><label for="defaultRoomType">Room Type</label><select name="DefaultRoomType" id="defaultRoomType"><option value="Single">Single</option><option value="Double">Double</option><option value="Triple">Triple</option><option value="Quad">Quad</option></select></div>
+                        <div class="ff"><label for="defaultCapacity">Capacity / Room <span class="r">*</span></label><input type="number" name="DefaultCapacity" id="defaultCapacity" required min="1" max="10" value="1" /></div>
+                        <div class="ff"><label for="roomsPerFloor">Rooms / Floor <span class="r">*</span></label><input type="number" name="RoomsPerFloor" id="roomsPerFloor" required min="1" value="10" /></div>
+                        <div class="ff fgf"><label for="roomNumberingPattern">Numbering Pattern <span class="r">*</span></label><input type="text" name="RoomNumberingPattern" id="roomNumberingPattern" required value="F{0}R{1}" placeholder="e.g. F{0}R{1}" /></div>
                     </div>
-
-                    <!-- Auto Generate Beds -->
-                    <div class="flex items-center mt-4">
-                        <input id="autoGenerateBeds" name="AutoGenerateBeds" type="checkbox" value="true" checked onchange="toggleBedDistributionSection()"
-                               class="w-4 h-4 text-cyan-600 bg-gray-100 border-gray-300 rounded focus:ring-cyan-500 focus:ring-2">
-                        <label for="autoGenerateBeds" class="ms-2 text-sm font-medium text-gray-700">Automatically create bed spaces for each room</label>
+                    <div class="ckr" style="margin-top:.85rem;">
+                        <input type="checkbox" id="autoGenerateBeds" name="AutoGenerateBeds" value="true" checked onchange="toggleBedSection()">
+                        <div><p class="ckr-l">Automatically create bed spaces for each room</p></div>
                     </div>
                 </div>
-
-                <!-- Bed Distribution Configuration Section -->
-                <div id="bedDistributionSection" class="border-t border-slate-200 pt-4 mb-6">
-                    <h4 class="text-md font-semibold text-slate-700 mb-4 flex items-center">
-                        <i class="material-icons mr-2 text-lg">bed</i>
-                        Bed Space Distribution (Year & Semester)
-                        <span class="ml-2 text-xs text-slate-500 font-normal">(0 = All Years/Semesters)</span>
-                    </h4>
-                    <div id="bedDistributionInputs" class="grid grid-cols-2 gap-4">
-                        <!-- Dynamic inputs will be generated here -->
-                    </div>
+                <div id="bedDistributionSection" class="fsec">
+                    <p class="fst"><i class="material-icons">bed</i>Bed Space Distribution <span style="font-weight:400;color:#94a3b8;font-size:.67rem;text-transform:none;letter-spacing:0;">(0 = All Years / Semesters)</span></p>
+                    <div id="bedDistributionInputs" class="fg2"></div>
                 </div>
-
-                <!-- Description -->
-                <div class="relative z-0 w-full group">
-                    <textarea required name="Description" id="description" rows="3"
-                              class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
-                              placeholder=" "></textarea>
-                    <label for="description"
-                           class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                        Description
-                    </label>
+                <div class="fsec" style="margin-bottom:0;">
+                    <p class="fst"><i class="material-icons">notes</i>Description</p>
+                    <div class="ff"><label for="description">Description <span class="r">*</span></label><textarea name="Description" id="description" rows="3" required placeholder="Brief description of the hostel…"></textarea></div>
                 </div>
             </div>
-            <div class="px-6 py-4 bg-gray-50 flex justify-end gap-2">
-                <button type="button" onclick="hideCreateHostelModal()" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300 transition-colors">
-                    Cancel
-                </button>
-                <button type="submit" class="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors">
-                    Create Hostel
-                </button>
+            <div class="mfoot">
+                <button type="button" class="btn-g" onclick="hideCreateHostelModal()"><i class="material-icons">close</i> Cancel</button>
+                <button type="submit" class="btn-p"><i class="material-icons">save</i> Create Hostel</button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- Update Hostel Modal -->
-<div id="updateHostelModal" class="fixed inset-0 z-50 hidden flex items-center justify-center">
-    <div class="fixed inset-0 bg-black opacity-40" onclick="hideUpdateHostelModal()"></div>
-    <div class="bg-white rounded-lg shadow-lg w-11/12 md:w-2/3 z-10 overflow-hidden max-h-[90vh] overflow-y-auto">
-        <div class="px-6 py-4 bg-blue-600 text-white sticky top-0">
-            <h3 class="text-xl font-semibold flex items-center">
-                <i class="material-icons mr-2">edit</i>
-                Update Hostel
-            </h3>
+<!-- ══ Update Modal ══ -->
+<div id="updateHostelModal" class="mo hidden">
+    <div class="mb" style="max-width:800px;">
+        <div class="mh">
+            <h5 class="mh-title"><i class="material-icons">edit</i>Update Hostel</h5>
+            <button class="mc" type="button" onclick="hideUpdateHostelModal()"><i class="material-icons">close</i></button>
         </div>
         <form id="updateHostelForm" method="post">
             @Html.AntiForgeryToken()
             <input type="hidden" id="updateHostelID" name="HostelId" />
             <input type="hidden" id="updateHostelIDForUrl" />
-            <div class="px-6 py-4">
-                <!-- Basic Information -->
-                <div class="grid grid-cols-2 gap-4 mb-6">
-                    <div class="relative z-0 w-full group">
-                        <input required type="text" name="HostelName" id="updateHostelName"
-                               class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
-                               placeholder=" " />
-                        <label for="updateHostelName"
-                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                            Hostel Name
-                        </label>
-                    </div>
-
-                    <div class="relative z-0 w-full group">
-                        <select required name="CampusId" id="updateCampusID"
-                                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer">
-                            <option value="">Select Campus</option>
-                            @if (ViewBag.Campuses != null)
-                            {
-                                foreach (var item in ViewBag.Campuses)
-                                {
-                                    <option value="@item.Value">@item.Text</option>
-                                }
-                            }
-                        </select>
-                        <label for="updateCampusID"
-                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                            Campus
-                        </label>
-                    </div>
-
-                    <div class="relative z-0 w-full group">
-                        <select required name="Gender" id="updateGender"
-                                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer">
-                            <option value="">Select Gender</option>
-                            <option value="Male">Male</option>
-                            <option value="Female">Female</option>
-                            <option value="Mixed">Mixed</option>
-                        </select>
-                        <label for="updateGender"
-                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                            Gender
-                        </label>
-                    </div>
-
-                    <div class="relative z-0 w-full group">
-                        <select name="WardenId" id="updateWardenID"
-                                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer">
-                            <option value="">Select Warden (Optional)</option>
-                            @if (ViewBag.Wardens != null)
-                            {
-                                foreach (var item in ViewBag.Wardens)
-                                {
-                                    <option value="@item.Value">@item.Text</option>
-                                }
-                            }
-                        </select>
-                        <label for="updateWardenID"
-                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                            Warden
-                        </label>
-                    </div>
-
-                    <div class="relative z-0 w-full group">
-                        <input required type="number" name="TotalRooms" id="updateTotalRooms"
-                               class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
-                               placeholder=" " min="1" />
-                        <label for="updateTotalRooms"
-                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                            Total Rooms
-                        </label>
-                    </div>
-
-                    <div class="relative z-0 w-full group">
-                        <select required name="Status" id="updateStatus"
-                                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer">
-                            <option value="Active">Active</option>
-                            <option value="Inactive">Inactive</option>
-                            <option value="Maintenance">Maintenance</option>
-                        </select>
-                        <label for="updateStatus"
-                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                            Status
-                        </label>
+            <div class="mbody">
+                <div class="fsec">
+                    <p class="fst"><i class="material-icons">info</i>Basic Information</p>
+                    <div class="fg2">
+                        <div class="ff"><label for="updateHostelName">Hostel Name <span class="r">*</span></label><input type="text" name="HostelName" id="updateHostelName" required /></div>
+                        <div class="ff"><label for="updateCampusID">Campus <span class="r">*</span></label><select name="CampusId" id="updateCampusID" required><option value="">Select Campus…</option>@if(ViewBag.Campuses!=null){foreach(var i in ViewBag.Campuses){
+                        <option value="@i.Value">@i.Text</option>
+                                                }}
+</select></div>
+                        <div class="ff"><label for="updateGender">Gender <span class="r">*</span></label><select name="Gender" id="updateGender" required><option value="">Select…</option><option value="Male">Male</option><option value="Female">Female</option><option value="Mixed">Mixed</option></select></div>
+                        <div class="ff"><label for="updateWardenID">Warden <span class="o">(optional)</span></label><select name="WardenId" id="updateWardenID"><option value="">Select Warden…</option>@if(ViewBag.Wardens!=null){foreach(var i in ViewBag.Wardens){
+                        <option value="@i.Value">@i.Text</option>
+                                                }}
+</select></div>
+                        <div class="ff"><label for="updateTotalRooms">Total Rooms <span class="r">*</span></label><input type="number" name="TotalRooms" id="updateTotalRooms" required min="1" /></div>
+                        <div class="ff"><label for="updateStatus">Status <span class="r">*</span></label><select name="Status" id="updateStatus" required><option value="Active">Active</option><option value="Inactive">Inactive</option><option value="Maintenance">Maintenance</option></select></div>
                     </div>
                 </div>
-
-                <!-- Room Generation Settings -->
-                <div class="border-t border-slate-200 pt-4 mb-6">
-                    <h4 class="text-md font-semibold text-slate-700 mb-4 flex items-center">
-                        <i class="material-icons mr-2 text-lg">settings</i>
-                        Room Generation Settings
-                    </h4>
-                    <div class="grid grid-cols-3 gap-4">
-                        <!-- Default Room Type -->
-                        <div class="relative z-0 w-full group">
-                            <select name="DefaultRoomType" id="updateDefaultRoomType"
-                                    class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer">
-                                <option value="Single">Single</option>
-                                <option value="Double">Double</option>
-                                <option value="Triple">Triple</option>
-                                <option value="Quad">Quad</option>
-                            </select>
-                            <label for="updateDefaultRoomType"
-                                   class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                                Default Room Type
-                            </label>
-                        </div>
-
-                        <!-- Default Capacity -->
-                        <div class="relative z-0 w-full group">
-                            <input type="number" name="DefaultCapacity" id="updateDefaultCapacity"
-                                   class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
-                                   placeholder=" " required min="1" />
-                            <label for="updateDefaultCapacity"
-                                   class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                                Capacity Per Room
-                            </label>
-                        </div>
-
-                        <!-- Rooms Per Floor -->
-                        <div class="relative z-0 w-full group">
-                            <input type="number" name="RoomsPerFloor" id="updateRoomsPerFloor"
-                                   class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
-                                   placeholder=" " required min="1" />
-                            <label for="updateRoomsPerFloor"
-                                   class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                                Rooms Per Floor
-                            </label>
-                        </div>
-
-                        <!-- Room Numbering Pattern -->
-                        <div class="relative z-0 w-full group col-span-3">
-                            <input type="text" name="RoomNumberingPattern" id="updateRoomNumberingPattern"
-                                   class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
-                                   placeholder=" " required />
-                            <label for="updateRoomNumberingPattern"
-                                   class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                                Room Numbering Pattern (e.g., F{0}R{1})
-                            </label>
-                        </div>
+                <div class="fsec">
+                    <p class="fst"><i class="material-icons">settings</i>Room Generation Settings</p>
+                    <div class="fg3">
+                        <div class="ff"><label for="updateDefaultRoomType">Room Type</label><select name="DefaultRoomType" id="updateDefaultRoomType"><option value="Single">Single</option><option value="Double">Double</option><option value="Triple">Triple</option><option value="Quad">Quad</option></select></div>
+                        <div class="ff"><label for="updateDefaultCapacity">Capacity / Room <span class="r">*</span></label><input type="number" name="DefaultCapacity" id="updateDefaultCapacity" required min="1" /></div>
+                        <div class="ff"><label for="updateRoomsPerFloor">Rooms / Floor <span class="r">*</span></label><input type="number" name="RoomsPerFloor" id="updateRoomsPerFloor" required min="1" /></div>
+                        <div class="ff fgf"><label for="updateRoomNumberingPattern">Numbering Pattern <span class="r">*</span></label><input type="text" name="RoomNumberingPattern" id="updateRoomNumberingPattern" required /></div>
                     </div>
-
-                    <!-- Auto Generate Beds -->
-                    <div class="flex items-center mt-4">
-                        <input id="updateAutoGenerateBeds" name="AutoGenerateBeds" type="checkbox" value="true"
-                               class="w-4 h-4 text-cyan-600 bg-gray-100 border-gray-300 rounded focus:ring-cyan-500 focus:ring-2">
-                        <label for="updateAutoGenerateBeds" class="ms-2 text-sm font-medium text-gray-700">Automatically create bed spaces for new rooms</label>
+                    <div class="ckr" style="margin-top:.85rem;">
+                        <input type="checkbox" id="updateAutoGenerateBeds" name="AutoGenerateBeds" value="true">
+                        <div><p class="ckr-l">Automatically create bed spaces for new rooms</p></div>
                     </div>
                 </div>
-
-                <!-- Description -->
-                <div class="relative z-0 w-full group">
-                    <textarea required name="Description" id="updateDescription" rows="3"
-                              class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
-                              placeholder=" "></textarea>
-                    <label for="updateDescription"
-                           class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                        Description
-                    </label>
+                <div class="fsec" style="margin-bottom:0;">
+                    <p class="fst"><i class="material-icons">notes</i>Description</p>
+                    <div class="ff"><label for="updateDescription">Description <span class="r">*</span></label><textarea name="Description" id="updateDescription" rows="3" required></textarea></div>
                 </div>
             </div>
-            <div class="px-6 py-4 bg-gray-50 flex justify-end gap-2">
-                <button type="button" onclick="hideUpdateHostelModal()" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300 transition-colors">
-                    Cancel
-                </button>
-                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                    Update Hostel
-                </button>
+            <div class="mfoot">
+                <button type="button" class="btn-g" onclick="hideUpdateHostelModal()"><i class="material-icons">close</i> Cancel</button>
+                <button type="submit" class="btn-p"><i class="material-icons">save</i> Update Hostel</button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- Delete Hostel Modal -->
-<div id="deleteHostelModal" class="fixed inset-0 z-50 hidden flex items-center justify-center">
-    <div class="fixed inset-0 bg-black opacity-40" onclick="hideDeleteHostelModal()"></div>
-    <div class="bg-white rounded-lg shadow-lg w-full md:w-1/3 z-10 overflow-hidden">
-        <div class="px-6 py-4 bg-red-600 text-white">
-            <h3 class="text-xl font-semibold flex items-center">
-                <i class="material-icons mr-2">warning</i>
-                Confirm Delete
-            </h3>
+<!-- ══ Delete Modal ══ -->
+<div id="deleteHostelModal" class="mo hidden">
+    <div class="mb" style="max-width:460px;">
+        <div class="mh mhc">
+            <h5 class="mh-title"><i class="material-icons">warning</i>Confirm Deletion</h5>
+            <button class="mc" type="button" onclick="hideDeleteHostelModal()"><i class="material-icons">close</i></button>
         </div>
         <form id="deleteHostelForm" method="post">
             @Html.AntiForgeryToken()
             <input type="hidden" id="deleteHostelID" name="id" />
-            <div class="px-6 py-4">
-                <p class="text-slate-700 mb-4">
-                    Are you sure you want to delete the hostel
-                    <strong id="deleteHostelName"></strong>?
-                    This action cannot be undone.
+            <div class="mbody">
+                <p style="font-size:.83rem;color:var(--text);margin:0 0 1rem;line-height:1.65;">
+                    Are you sure you want to delete <strong id="deleteHostelName" style="color:var(--ink);"></strong>? This action cannot be undone.
                 </p>
-                <div id="hasRoomsWarning" class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mt-4 hidden">
-                    <p class="font-bold">Warning!</p>
-                    <p>This hostel has existing rooms. You must remove all rooms before deleting the hostel.</p>
+                <div id="hasRoomsWarning" class="dw hidden">
+                    <i class="material-icons">warning</i>
+                    <div><strong style="display:block;margin-bottom:.2rem;">Cannot Delete</strong>This hostel has existing rooms. Remove all rooms before deleting.</div>
                 </div>
             </div>
-            <div class="px-6 py-4 bg-gray-50 flex justify-end gap-2">
-                <button type="button" onclick="hideDeleteHostelModal()" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300 transition-colors">
-                    Cancel
-                </button>
-                <button type="submit" id="confirmDeleteBtn" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
-                    Delete Hostel
-                </button>
+            <div class="mfoot">
+                <button type="button" class="btn-g" onclick="hideDeleteHostelModal()"><i class="material-icons">close</i> Cancel</button>
+                <button type="submit" id="confirmDeleteBtn" class="btn-c"><i class="material-icons">delete</i> Delete Hostel</button>
             </div>
         </form>
     </div>
 </div>
 
 @section Scripts {
-    <!-- ApexCharts for statistics -->
-    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-
     <script>
-        // Function to generate bed distribution inputs based on capacity
+        /* ── Bed distribution ── */
         function generateBedDistributionInputs() {
-            const capacity = parseInt(document.getElementById('defaultCapacity').value) || 0;
-            const container = document.getElementById('bedDistributionInputs');
-            const autoGenerate = document.getElementById('autoGenerateBeds').checked;
-
-            // Clear existing inputs
-            container.innerHTML = '';
-
-            if (!autoGenerate || capacity <= 0) {
-                document.getElementById('bedDistributionSection').style.display = 'none';
-                return;
-            }
-
+            const cap = parseInt(document.getElementById('defaultCapacity').value) || 0;
+            const cont = document.getElementById('bedDistributionInputs');
+            const auto = document.getElementById('autoGenerateBeds').checked;
+            cont.innerHTML = '';
+            if (!auto || cap <= 0) { document.getElementById('bedDistributionSection').style.display = 'none'; return; }
             document.getElementById('bedDistributionSection').style.display = 'block';
-
-            // Generate inputs for each bed space
-            for (let i = 0; i < capacity; i++) {
-                const bedLetter = String.fromCharCode(65 + i); // A, B, C, etc.
-
-                const bedCard = document.createElement('div');
-                bedCard.className = 'border border-slate-200 rounded-lg p-4 bg-slate-50';
-
-                bedCard.innerHTML = `
-                    <h5 class="font-semibold text-slate-700 mb-3 flex items-center">
-                        <i class="material-icons text-sm mr-1">bed</i>
-                        Bed Space ${bedLetter}
-                    </h5>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div class="relative z-0 w-full group">
-                            <input type="number"
-                                   name="bedDistributions[${i}].Year"
-                                   id="bed${i}Year"
-                                   class="block py-2 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
-                                   placeholder=" "
-                                   min="0"
-                                   max="7"
-                                   value="0" />
-                            <label for="bed${i}Year"
-                                   class="peer-focus:font-medium absolute text-xs text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                                Year (0 = All)
-                            </label>
-                        </div>
-                        <div class="relative z-0 w-full group">
-                            <input type="number"
-                                   name="bedDistributions[${i}].Semester"
-                                   id="bed${i}Semester"
-                                   class="block py-2 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
-                                   placeholder=" "
-                                   min="0"
-                                   max="2"
-                                   value="0" />
-                            <label for="bed${i}Semester"
-                                   class="peer-focus:font-medium absolute text-xs text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-cyan-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                                Semester (0 = All)
-                            </label>
-                        </div>
+            for (let i = 0; i < cap; i++) {
+                const letter = String.fromCharCode(65 + i);
+                const bc = document.createElement('div');
+                bc.className = 'bdc';
+                bc.innerHTML = `
+                    <p class="bdc-t"><i class="material-icons">bed</i>Bed Space ${letter}</p>
+                    <div class="fg2">
+                        <div class="ff"><label>Year <span style="font-weight:400;color:#94a3b8;font-size:.67rem;">(0 = All)</span></label><input type="number" name="bedDistributions[${i}].Year" min="0" max="7" value="0" /></div>
+                        <div class="ff"><label>Semester <span style="font-weight:400;color:#94a3b8;font-size:.67rem;">(0 = All)</span></label><input type="number" name="bedDistributions[${i}].Semester" min="0" max="2" value="0" /></div>
                         <input type="hidden" name="bedDistributions[${i}].BedIndex" value="${i}" />
-                    </div>
-                `;
-
-                container.appendChild(bedCard);
+                    </div>`;
+                cont.appendChild(bc);
             }
         }
+        function toggleBedSection() {
+            if (document.getElementById('autoGenerateBeds').checked) generateBedDistributionInputs();
+            else document.getElementById('bedDistributionSection').style.display = 'none';
+        }
 
-        // Function to toggle bed distribution section
-        function toggleBedDistributionSection() {
-            const autoGenerate = document.getElementById('autoGenerateBeds').checked;
-            if (autoGenerate) {
-                generateBedDistributionInputs();
-            } else {
-                document.getElementById('bedDistributionSection').style.display = 'none';
-            }
+        /* ── Filter & sort ── */
+        let sortState = {};
+        function filterTable() {
+            const term = document.getElementById('searchInput').value.toLowerCase();
+            const camp = document.getElementById('filterCampus').value;
+            const gen  = document.getElementById('filterGender').value;
+            const sta  = document.getElementById('filterStatus').value;
+            let n = 0;
+            document.querySelectorAll('#hostelsTableBody tr').forEach(row => {
+                if (row.querySelector('td[colspan]')) return;
+                const name = row.querySelector('.h-name')?.textContent.toLowerCase() || '';
+                const show = name.includes(term)
+                          && (camp === 'all' || row.dataset.campus === camp)
+                          && (gen  === 'all' || row.dataset.gender === gen)
+                          && (sta  === 'all' || row.dataset.status === sta);
+                row.style.display = show ? '' : 'none';
+                if (show) row.cells[0].textContent = ++n;
+            });
+            document.getElementById('visibleCount').textContent = n;
+            const fc = document.getElementById('footCount'); if (fc) fc.textContent = n;
+        }
+        function sortTable(key) {
+            const tbody = document.getElementById('hostelsTableBody');
+            const rows = Array.from(tbody.querySelectorAll('tr')).filter(r => !r.querySelector('td[colspan]'));
+            sortState[key] = sortState[key] === 'asc' ? 'desc' : 'asc';
+            rows.sort((a, b) => {
+                let av, bv;
+                if (key==='index')    { av=parseInt(a.cells[0].textContent); bv=parseInt(b.cells[0].textContent); }
+                if (key==='name')     { av=a.querySelector('.h-name')?.textContent.toLowerCase()||''; bv=b.querySelector('.h-name')?.textContent.toLowerCase()||''; }
+                if (key==='capacity') { av=parseInt(a.cells[4].textContent)||0; bv=parseInt(b.cells[4].textContent)||0; }
+                if (av===undefined) return 0;
+                return sortState[key]==='asc'?(av>bv?1:av<bv?-1:0):(av<bv?1:av>bv?-1:0);
+            });
+            rows.forEach((r,i) => { tbody.appendChild(r); r.cells[0].textContent = i+1; });
+        }
+
+        /* ── Helpers ── */
+        const $ld  = () => document.getElementById('loadingIndicator').style.display = 'flex';
+        const $uld = () => document.getElementById('loadingIndicator').style.display = 'none';
+        const cleanFD = fd => { if (fd.get('WardenId')==='') fd.delete('WardenId'); return fd; };
+        function showNotif(msg, type='success') {
+            const el = document.createElement('div');
+            el.style.cssText = `position:fixed;top:1.25rem;right:1.25rem;z-index:99999;display:flex;align-items:center;gap:.5rem;padding:.75rem 1.1rem;border-radius:.75rem;font-size:.82rem;font-weight:700;box-shadow:0 8px 24px rgba(15,20,40,.2);background:${type==='success'?'var(--green)':'var(--coral)'};color:#fff;animation:fadeUp .2s ease-out;`;
+            el.innerHTML = `<i class="material-icons" style="font-size:1rem;">${type==='success'?'check_circle':'error'}</i><span>${msg}</span>`;
+            document.body.appendChild(el);
+            setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateX(24px)'; el.style.transition='all .28s'; setTimeout(()=>el.remove(),300); },3000);
+        }
+        async function handleForm(url, form, onSuccess) {
+            const btn = form.querySelector('button[type="submit"]'), orig = btn.innerHTML;
+            btn.disabled=true; btn.innerHTML='<i class="material-icons li-spin">refresh</i><span>Please wait…</span>'; $ld();
+            try {
+                const r = await fetch(url, { method:'POST', body: cleanFD(new FormData(form)) });
+                if (r.redirected) { window.location.href=r.url; return; }
+                if (r.ok) { onSuccess(); showNotif(onSuccess.successMsg||'Done!'); setTimeout(()=>location.reload(),1000); }
+                else { let t=await r.text(); try{ const d=new DOMParser().parseFromString(t,'text/html'); const e=d.querySelector('.validation-summary-errors,.field-validation-error'); if(e)t=e.textContent.trim(); }catch{} showNotif(t,'error'); }
+            } catch { showNotif('Network error. Please try again.','error'); }
+            finally { btn.disabled=false; btn.innerHTML=orig; $uld(); }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            const createHostelModal = document.getElementById('createHostelModal');
-            const updateHostelModal = document.getElementById('updateHostelModal');
-            const deleteHostelModal = document.getElementById('deleteHostelModal');
-            const loadingIndicator = document.getElementById('loadingIndicator');
-            const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
-
-            const hostelsTableBody = document.getElementById('hostelsTableBody');
-            const searchInput = document.getElementById('searchInput');
-            const filterCampus = document.getElementById('filterCampus');
-            const filterGender = document.getElementById('filterGender');
-            const filterStatus = document.getElementById('filterStatus');
-
-            // Initialize bed distribution inputs when capacity changes
             document.getElementById('defaultCapacity').addEventListener('change', generateBedDistributionInputs);
-
-            // Initialize on page load
             generateBedDistributionInputs();
+            document.getElementById('searchInput').addEventListener('input', filterTable);
+            document.querySelectorAll('.th-s').forEach(el => el.addEventListener('click', ()=>sortTable(el.dataset.sort)));
+            document.addEventListener('keydown', e => { if(e.key==='Escape'){hideCreateHostelModal();hideUpdateHostelModal();hideDeleteHostelModal();} });
 
-            // Filtering and Search
-            const filterTable = () => {
-                const searchTerm = searchInput.value.toLowerCase();
-                const selectedCampus = filterCampus.value;
-                const selectedGender = filterGender.value;
-                const selectedStatus = filterStatus.value;
+            /* Create */
+            const cf = document.getElementById('createHostelForm');
+            cf.addEventListener('submit', e => { e.preventDefault(); handleForm('/Hostel/CreateHostel', cf, ()=>hideCreateHostelModal()); });
+            window.showCreateHostelModal = () => { cf.reset(); generateBedDistributionInputs(); document.getElementById('createHostelModal').classList.remove('hidden'); };
+            window.hideCreateHostelModal = () => document.getElementById('createHostelModal').classList.add('hidden');
 
-                const rows = hostelsTableBody.querySelectorAll('tr');
-                let visibleCount = 0;
-
-                rows.forEach(row => {
-                    if (row.querySelector('td[colspan]')) return;
-
-                    const hostelName = row.children[1]?.textContent.toLowerCase() || '';
-                    const campusId = row.getAttribute('data-campus');
-                    const gender = row.getAttribute('data-gender');
-                    const status = row.getAttribute('data-status');
-
-                    const matchesSearch = hostelName.includes(searchTerm);
-                    const matchesCampus = selectedCampus === 'all' || campusId === selectedCampus;
-                    const matchesGender = selectedGender === 'all' || gender === selectedGender;
-                    const matchesStatus = selectedStatus === 'all' || status === selectedStatus;
-
-                    if (matchesSearch && matchesCampus && matchesGender && matchesStatus) {
-                        row.style.display = '';
-                        visibleCount++;
-                        row.children[0].textContent = visibleCount;
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
-            };
-
-            // Sorting
-            let sortState = {};
-            const sortTable = (key) => {
-                const rows = Array.from(hostelsTableBody.querySelectorAll('tr')).filter(row => !row.querySelector('td[colspan]'));
-
-                if (!sortState[key]) sortState[key] = 'asc';
-                else sortState[key] = sortState[key] === 'asc' ? 'desc' : 'asc';
-
-                rows.sort((a, b) => {
-                    let aVal, bVal;
-
-                    switch (key) {
-                        case 'index':
-                            aVal = parseInt(a.children[0].textContent);
-                            bVal = parseInt(b.children[0].textContent);
-                            break;
-                        case 'name':
-                            aVal = a.children[1].textContent.toLowerCase();
-                            bVal = b.children[1].textContent.toLowerCase();
-                            break;
-                        case 'capacity':
-                            aVal = parseInt(a.children[4].textContent) || 0;
-                            bVal = parseInt(b.children[4].textContent) || 0;
-                            break;
-                        default:
-                            return 0;
-                    }
-
-                    if (sortState[key] === 'asc') {
-                        return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
-                    } else {
-                        return aVal < bVal ? 1 : aVal > bVal ? -1 : 0;
-                    }
-                });
-
-                rows.forEach((row, index) => {
-                    hostelsTableBody.appendChild(row);
-                    row.children[0].textContent = index + 1;
-                });
-            };
-
-            // Initialize ApexCharts donut chart for gender distribution
-            const initializeGenderChart = () => {
-                const chartContainer = document.getElementById('hostelGenderChart');
-                const rows = hostelsTableBody.querySelectorAll('tr');
-
-                if (rows.length === 0) {
-                    chartContainer.innerHTML = `
-                        <div class="flex flex-col items-center justify-center h-full text-slate-500">
-                            <p class="text-sm">Chart data will appear here once hostels are added.</p>
-                        </div>
-                    `;
-                    return;
-                }
-
-                const genderCounts = { male: 0, female: 0, mixed: 0 };
-
-                rows.forEach(row => {
-                    const gender = row.getAttribute('data-gender');
-                    if (gender && genderCounts.hasOwnProperty(gender)) {
-                        genderCounts[gender]++;
-                    }
-                });
-
-                const series = [genderCounts.male, genderCounts.female, genderCounts.mixed];
-                const labels = ['Male', 'Female', 'Mixed'];
-
-                const options = {
-                    series: series,
-                    chart: {
-                        type: 'donut',
-                        height: '90%'
-                    },
-                    labels: labels,
-                    colors: ['#3b82f6', '#ec4899', '#a855f7'],
-                    plotOptions: {
-                        pie: {
-                            donut: {
-                                size: '70%',
-                                labels: {
-                                    show: true,
-                                    total: {
-                                        show: true,
-                                        label: 'Total',
-                                        formatter: () => series.reduce((a, b) => a + b, 0)
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    dataLabels: { enabled: false },
-                    responsive: [{
-                        breakpoint: 480,
-                        options: {
-                            chart: { height: 200 },
-                            legend: { show: false }
-                        }
-                    }],
-                    legend: { show: false }
-                };
-
-                const chart = new ApexCharts(chartContainer, options);
-                chart.render();
-            };
-
-            // Initialize ApexCharts bar chart for campus distribution
-            const initializeCampusChart = () => {
-                const chartContainer = document.getElementById('hostelCampusChart');
-                const rows = hostelsTableBody.querySelectorAll('tr');
-
-                if (rows.length === 0) {
-                    chartContainer.innerHTML = `
-                        <div class="flex flex-col items-center justify-center h-full text-slate-500">
-                            <p class="text-sm">Chart data will appear here once hostels are added.</p>
-                        </div>
-                    `;
-                    return;
-                }
-
-                const campusCounts = {};
-                const campusNames = {};
-
-                Array.from(filterCampus.options).forEach(option => {
-                    if (option.value !== 'all') {
-                        campusCounts[option.value] = 0;
-                        campusNames[option.value] = option.text;
-                    }
-                });
-
-                rows.forEach(row => {
-                    const campusId = row.getAttribute('data-campus');
-                    if (campusId in campusCounts) {
-                        campusCounts[campusId]++;
-                    }
-                });
-
-                const campusData = [];
-                for (const campusId in campusCounts) {
-                    campusData.push({
-                        x: campusNames[campusId] || `Campus ${campusId}`,
-                        y: campusCounts[campusId]
-                    });
-                }
-
-                campusData.sort((a, b) => b.y - a.y);
-
-                const options = {
-                    series: [{ name: 'Hostels', data: campusData }],
-                    chart: {
-                        type: 'bar',
-                        height: '90%',
-                        toolbar: { show: false }
-                    },
-                    plotOptions: {
-                        bar: {
-                            borderRadius: 4,
-                            horizontal: true,
-                            barHeight: '70%',
-                            distributed: true
-                        }
-                    },
-                    colors: ['#06b6d4', '#0891b2', '#0e7490', '#155e75', '#164e63'],
-                    dataLabels: {
-                        enabled: true,
-                        formatter: (val) => val,
-                        style: {
-                            fontSize: '12px',
-                            colors: ['#fff']
-                        }
-                    },
-                    xaxis: {
-                        categories: campusData.map(item => item.x),
-                        labels: { style: { fontSize: '12px' } }
-                    },
-                    yaxis: { labels: { show: true } },
-                    grid: { show: false },
-                    legend: { show: false }
-                };
-
-                const chart = new ApexCharts(chartContainer, options);
-                chart.render();
-            };
-
-            // Notification function for user feedback
-            const showNotification = (message, type = 'success') => {
-                const notification = document.createElement('div');
-                notification.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg transition-all transform translate-x-0 ${
-                    type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-                }`;
-                notification.innerHTML = `
-                    <div class="flex items-center space-x-2">
-                        <i class="material-icons">${type === 'success' ? 'check_circle' : 'error'}</i>
-                        <span>${message}</span>
-                    </div>
-                `;
-                document.body.appendChild(notification);
-
-                // Animate in
-                setTimeout(() => {
-                    notification.style.transform = 'translateX(0)';
-                }, 10);
-
-                // Remove after 3 seconds
-                setTimeout(() => {
-                    notification.style.transform = 'translateX(400px)';
-                    setTimeout(() => {
-                        notification.remove();
-                    }, 300);
-                }, 3000);
-            };
-
-            // Helper function to clean form data before submission
-            const cleanFormData = (formData) => {
-                // If WardenId is empty string, remove it so it's not sent
-                if (formData.get('WardenId') === '') {
-                    formData.delete('WardenId');
-                }
-                return formData;
-            };
-
-            // Handle create form submission
-            const createHostelForm = document.getElementById('createHostelForm');
-            const createSubmitBtn = createHostelForm.querySelector('button[type="submit"]');
-            const createSubmitBtnOriginalText = createSubmitBtn.innerHTML;
-
-            createHostelForm.addEventListener('submit', async (e) => {
+            /* Update */
+            const uf = document.getElementById('updateHostelForm');
+            uf.addEventListener('submit', e => {
                 e.preventDefault();
-
-                // Show loading on button
-                createSubmitBtn.disabled = true;
-                createSubmitBtn.innerHTML = `
-                    <div class="flex items-center justify-center">
-                        <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                        Creating...
-                    </div>
-                `;
-                loadingIndicator.style.display = 'flex';
-
-                try {
-                    let formData = new FormData(createHostelForm);
-                    formData = cleanFormData(formData);
-
-                    const response = await fetch('/Hostel/CreateHostel', {
-                        method: 'POST',
-                        body: formData
-                    });
-
-                    if (response.redirected) {
-                        // If redirected, it likely succeeded - follow the redirect
-                        window.location.href = response.url;
-                        return;
-                    }
-
-                    if (response.ok) {
-                        // Close modal
-                        hideCreateHostelModal();
-
-                        // Show success message
-                        showNotification('Hostel created successfully!', 'success');
-
-                        // Reload the page to show updated data with new statistics
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 1000);
-                    } else {
-                        let errorText = 'Error creating hostel';
-                        try {
-                            errorText = await response.text();
-                            // Try to extract meaningful error message
-                            const parser = new DOMParser();
-                            const doc = parser.parseFromString(errorText, 'text/html');
-                            const errorMsg = doc.querySelector('.validation-summary-errors') ||
-                                           doc.querySelector('.field-validation-error');
-                            if (errorMsg) {
-                                errorText = errorMsg.textContent.trim();
-                            }
-                        } catch (parseError) {
-                            console.error('Error parsing response:', parseError);
-                        }
-                        console.error('Server response:', errorText);
-                        showNotification(errorText, 'error');
-                    }
-                } catch (error) {
-                    console.error('Network error:', error);
-                    showNotification('Network error. Please check your connection and try again.', 'error');
-                } finally {
-                    // Reset button state
-                    createSubmitBtn.disabled = false;
-                    createSubmitBtn.innerHTML = createSubmitBtnOriginalText;
-                    loadingIndicator.style.display = 'none';
-                }
+                const id = document.getElementById('updateHostelIDForUrl').value;
+                handleForm(`/Hostel/UpdateHostel/${id}`, uf, ()=>hideUpdateHostelModal());
             });
-
-            // Modal functions
-            window.showCreateHostelModal = () => {
-                document.getElementById('createHostelForm').reset();
-                generateBedDistributionInputs(); // Generate inputs for default capacity
-                createHostelModal.classList.remove('hidden');
+            window.showUpdateHostelModal = async id => {
+                $ld();
+                try {
+                    const r = await fetch(`/Hostel/GetHostel/${id}`);
+                    if (!r.ok) throw new Error();
+                    const h = await r.json();
+                    document.getElementById('updateHostelID').value            = h.id;
+                    document.getElementById('updateHostelIDForUrl').value      = h.id;
+                    document.getElementById('updateHostelName').value          = h.name;
+                    document.getElementById('updateCampusID').value            = h.campusId;
+                    document.getElementById('updateGender').value              = h.gender;
+                    document.getElementById('updateWardenID').value            = h.wardenId||'';
+                    document.getElementById('updateTotalRooms').value          = h.totalRooms;
+                    document.getElementById('updateStatus').value              = h.status;
+                    document.getElementById('updateDescription').value         = h.description||'';
+                    document.getElementById('updateDefaultRoomType').value     = h.defaultRoomType;
+                    document.getElementById('updateDefaultCapacity').value     = h.defaultCapacity;
+                    document.getElementById('updateRoomsPerFloor').value       = h.roomsPerFloor;
+                    document.getElementById('updateRoomNumberingPattern').value= h.roomNumberingPattern;
+                    document.getElementById('updateAutoGenerateBeds').checked  = h.autoGenerateBeds;
+                    document.getElementById('updateHostelModal').classList.remove('hidden');
+                } catch { showNotif('Error loading hostel data.','error'); }
+                finally { $uld(); }
             };
+            window.hideUpdateHostelModal = () => document.getElementById('updateHostelModal').classList.add('hidden');
 
-            window.hideCreateHostelModal = () => {
-                createHostelModal.classList.add('hidden');
-            };
-
-            // Handle update form submission
-            const updateHostelForm = document.getElementById('updateHostelForm');
-            const updateSubmitBtn = updateHostelForm.querySelector('button[type="submit"]');
-            const updateSubmitBtnOriginalText = updateSubmitBtn.innerHTML;
-
-            updateHostelForm.addEventListener('submit', async (e) => {
+            /* Delete */
+            const df = document.getElementById('deleteHostelForm');
+            const cdb = document.getElementById('confirmDeleteBtn');
+            df.addEventListener('submit', async e => {
                 e.preventDefault();
-
-                // Show loading on button
-                updateSubmitBtn.disabled = true;
-                updateSubmitBtn.innerHTML = `
-                    <div class="flex items-center justify-center">
-                        <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                        Updating...
-                    </div>
-                `;
-                loadingIndicator.style.display = 'flex';
-
+                const orig = cdb.innerHTML;
+                cdb.disabled=true; cdb.innerHTML='<i class="material-icons li-spin">refresh</i><span>Deleting…</span>'; $ld();
                 try {
-                    let formData = new FormData(updateHostelForm);
-                    formData = cleanFormData(formData);
-
-                    // Get the hostel ID from the hidden field
-                    const hostelId = document.getElementById('updateHostelIDForUrl').value;
-
-                    console.log('Updating hostel with ID:', hostelId);
-                    console.log('Form data:', Array.from(formData.entries()));
-
-                    const response = await fetch(`/Hostel/UpdateHostel/${hostelId}`, {
-                        method: 'POST',
-                        body: formData
-                    });
-
-                    console.log('Response status:', response.status);
-                    console.log('Response redirected:', response.redirected);
-
-                    if (response.redirected) {
-                        // If redirected, it likely succeeded - follow the redirect
-                        window.location.href = response.url;
-                        return;
-                    }
-
-                    if (response.ok) {
-                        // Close modal
-                        hideUpdateHostelModal();
-
-                        // Show success message
-                        showNotification('Hostel updated successfully!', 'success');
-
-                        // Reload the page to show updated data
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 1000);
-                    } else {
-                        let errorText = 'Error updating hostel';
-                        try {
-                            const responseText = await response.text();
-                            console.error('Error response:', responseText);
-                            errorText = responseText;
-
-                            const parser = new DOMParser();
-                            const doc = parser.parseFromString(errorText, 'text/html');
-                            const errorMsg = doc.querySelector('.validation-summary-errors') ||
-                                           doc.querySelector('.field-validation-error');
-                            if (errorMsg) {
-                                errorText = errorMsg.textContent.trim();
-                            }
-                        } catch (parseError) {
-                            console.error('Error parsing response:', parseError);
-                        }
-                        showNotification(errorText, 'error');
-                    }
-                } catch (error) {
-                    console.error('Network error:', error);
-                    showNotification('Network error. Please check your connection and try again.', 'error');
-                } finally {
-                    // Reset button state
-                    updateSubmitBtn.disabled = false;
-                    updateSubmitBtn.innerHTML = updateSubmitBtnOriginalText;
-                    loadingIndicator.style.display = 'none';
-                }
+                    const r = await fetch('/Hostel/DeleteHostel', { method:'POST', body:new FormData(df) });
+                    if (r.redirected) { window.location.href=r.url; return; }
+                    if (r.ok) { hideDeleteHostelModal(); showNotif('Hostel deleted successfully!'); setTimeout(()=>location.reload(),1000); }
+                    else { let t=await r.text(); try{const d=new DOMParser().parseFromString(t,'text/html');const em=d.querySelector('.validation-summary-errors,.field-validation-error');if(em)t=em.textContent.trim();}catch{} showNotif(t,'error'); }
+                } catch { showNotif('Network error. Please try again.','error'); }
+                finally { cdb.disabled=false; cdb.innerHTML=orig; $uld(); }
             });
-
-            window.showUpdateHostelModal = async (id) => {
-                console.log('=== Opening Update Modal ===');
-                console.log('Hostel ID:', id);
-                loadingIndicator.style.display = 'flex';
-
-                try {
-                    const response = await fetch(`/Hostel/GetHostel/${id}`);
-                    console.log('GetHostel response status:', response.status);
-
-                    if (!response.ok) {
-                        throw new Error('Failed to fetch hostel data');
-                    }
-
-                    const hostel = await response.json();
-                    console.log('Hostel data received:', hostel);
-
-                    // Set both hidden fields for the ID
-                    document.getElementById('updateHostelID').value = hostel.id;
-                    document.getElementById('updateHostelIDForUrl').value = hostel.id;
-
-                    console.log('Set updateHostelID to:', document.getElementById('updateHostelID').value);
-                    console.log('Set updateHostelIDForUrl to:', document.getElementById('updateHostelIDForUrl').value);
-
-                    document.getElementById('updateHostelName').value = hostel.name;
-                    document.getElementById('updateCampusID').value = hostel.campusId;
-                    document.getElementById('updateGender').value = hostel.gender;
-                    document.getElementById('updateWardenID').value = hostel.wardenId || '';
-                    document.getElementById('updateTotalRooms').value = hostel.totalRooms;
-                    document.getElementById('updateStatus').value = hostel.status;
-                    document.getElementById('updateDescription').value = hostel.description || '';
-
-                    document.getElementById('updateDefaultRoomType').value = hostel.defaultRoomType;
-                    document.getElementById('updateDefaultCapacity').value = hostel.defaultCapacity;
-                    document.getElementById('updateRoomsPerFloor').value = hostel.roomsPerFloor;
-                    document.getElementById('updateRoomNumberingPattern').value = hostel.roomNumberingPattern;
-                    document.getElementById('updateAutoGenerateBeds').checked = hostel.autoGenerateBeds;
-
-                    console.log('All form fields populated');
-                    updateHostelModal.classList.remove('hidden');
-                    console.log('Modal opened');
-                } catch (error) {
-                    console.error('Error fetching hostel data:', error);
-                    alert('Error loading hostel data. Please try again.');
-                } finally {
-                    loadingIndicator.style.display = 'none';
-                }
-            };
-
-            window.hideUpdateHostelModal = () => {
-                updateHostelModal.classList.add('hidden');
-            };
-
-            // Handle delete form submission
-            const deleteHostelForm = document.getElementById('deleteHostelForm');
-            const deleteSubmitBtn = document.getElementById('confirmDeleteBtn');
-            const deleteSubmitBtnOriginalText = deleteSubmitBtn.innerHTML;
-
-            deleteHostelForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-
-                // Show loading on button
-                deleteSubmitBtn.disabled = true;
-                deleteSubmitBtn.innerHTML = `
-                    <div class="flex items-center justify-center">
-                        <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                        Deleting...
-                    </div>
-                `;
-                loadingIndicator.style.display = 'flex';
-
-                try {
-                    const formData = new FormData(deleteHostelForm);
-
-                    const response = await fetch('/Hostel/DeleteHostel', {
-                        method: 'POST',
-                        body: formData
-                    });
-
-                    if (response.redirected) {
-                        // If redirected, it likely succeeded - follow the redirect
-                        window.location.href = response.url;
-                        return;
-                    }
-
-                    if (response.ok) {
-                        // Close modal
-                        hideDeleteHostelModal();
-
-                        // Show success message
-                        showNotification('Hostel deleted successfully!', 'success');
-
-                        // Reload the page to show updated data
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 1000);
-                    } else {
-                        let errorText = 'Error deleting hostel';
-                        try {
-                            errorText = await response.text();
-                            const parser = new DOMParser();
-                            const doc = parser.parseFromString(errorText, 'text/html');
-                            const errorMsg = doc.querySelector('.validation-summary-errors') ||
-                                           doc.querySelector('.field-validation-error');
-                            if (errorMsg) {
-                                errorText = errorMsg.textContent.trim();
-                            }
-                        } catch (parseError) {
-                            console.error('Error parsing response:', parseError);
-                        }
-                        console.error('Server response:', errorText);
-                        showNotification(errorText, 'error');
-                    }
-                } catch (error) {
-                    console.error('Network error:', error);
-                    showNotification('Network error. Please check your connection and try again.', 'error');
-                } finally {
-                    // Reset button state
-                    deleteSubmitBtn.disabled = false;
-                    deleteSubmitBtn.innerHTML = deleteSubmitBtnOriginalText;
-                    loadingIndicator.style.display = 'none';
-                }
-            });
-
             window.showDeleteHostelModal = async (id, name) => {
+                document.getElementById('deleteHostelID').value = id;
+                document.getElementById('deleteHostelName').textContent = name;
+                $ld();
                 try {
-                    document.getElementById('deleteHostelID').value = id;
-                    document.getElementById('deleteHostelName').textContent = name;
-
-                    loadingIndicator.style.display = 'flex';
-
-                    const response = await fetch(`/Hostel/GetHostel/${id}`);
-                    if (!response.ok) {
-                        throw new Error('Failed to fetch hostel data');
-                    }
-
-                    const hostel = await response.json();
-
-                    const hasRoomsWarning = document.getElementById('hasRoomsWarning');
-                    const hasRooms = hostel.statistics && hostel.statistics.totalRooms > 0;
-
-                    hasRoomsWarning.classList.toggle('hidden', !hasRooms);
-                    confirmDeleteBtn.disabled = hasRooms;
-                    confirmDeleteBtn.classList.toggle('opacity-50', hasRooms);
-                    confirmDeleteBtn.classList.toggle('cursor-not-allowed', hasRooms);
-
-                    deleteHostelModal.classList.remove('hidden');
-                } catch (error) {
-                    console.error('Error checking hostel details:', error);
-                    deleteHostelModal.classList.remove('hidden');
-                } finally {
-                    loadingIndicator.style.display = 'none';
-                }
+                    const r = await fetch(`/Hostel/GetHostel/${id}`);
+                    if (!r.ok) throw new Error();
+                    const h = await r.json();
+                    const hasRooms = h.statistics && h.statistics.totalRooms > 0;
+                    document.getElementById('hasRoomsWarning').classList.toggle('hidden', !hasRooms);
+                    cdb.disabled = hasRooms;
+                    cdb.style.opacity = hasRooms ? '.5' : '1';
+                    cdb.style.cursor  = hasRooms ? 'not-allowed' : '';
+                } catch { document.getElementById('hasRoomsWarning').classList.add('hidden'); }
+                finally { $uld(); document.getElementById('deleteHostelModal').classList.remove('hidden'); }
             };
-
-            window.hideDeleteHostelModal = () => {
-                deleteHostelModal.classList.add('hidden');
-            };
-
-            // Add event listeners for filtering
-            searchInput.addEventListener('input', filterTable);
-            filterCampus.addEventListener('change', filterTable);
-            filterGender.addEventListener('change', filterTable);
-            filterStatus.addEventListener('change', filterTable);
-
-            // Setup sorting buttons
-            document.querySelectorAll('.sort-btn').forEach(button => {
-                button.addEventListener('click', function () {
-                    const sortKey = this.getAttribute('data-sort');
-                    sortTable(sortKey);
-                });
-            });
-
-            // Handle Escape key to close modals
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') {
-                    hideCreateHostelModal();
-                    hideUpdateHostelModal();
-                    hideDeleteHostelModal();
-                }
-            });
-
-            // Initialize charts if we have data
-            if (hostelsTableBody.children.length > 0) {
-                initializeGenderChart();
-                initializeCampusChart();
-            }
+            window.hideDeleteHostelModal = () => document.getElementById('deleteHostelModal').classList.add('hidden');
         });
     </script>
 }

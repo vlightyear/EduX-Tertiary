@@ -1,524 +1,1379 @@
 ﻿@model SIS.Models.StudentAccommodation.Hostel
 @using SIS.Enums
 @using SIS.Models.StudentAccommodation
+
 @{
-    ViewData["Title"] = $"Hostel Details - {Model.HostelName}";
+    ViewData["Title"] = $"Details - {Model.HostelName}";
+
+    int totalBeds = ViewBag.TotalBeds ?? 0;
+    int occupiedBeds = ViewBag.OccupiedBeds ?? 0;
+    int availBeds = ViewBag.AvailableBeds ?? 0;
+    int totalRooms = ViewBag.TotalRooms ?? 0;
+    int availRooms = ViewBag.AvailableRooms ?? 0;
+    int maintRooms = ViewBag.MaintenanceRooms ?? 0;
+    int totalFloors = ViewBag.TotalFloors ?? 0;
+    int occupancyRate = totalBeds > 0 ? (int)((double)occupiedBeds / totalBeds * 100) : 0;
+
+    var genderIcon = Model.Gender?.ToLower() == "male" ? "male" : Model.Gender?.ToLower() == "female" ? "female" : "wc";
+    var genderColor = Model.Gender?.ToLower() == "male" ? "#2563eb" : Model.Gender?.ToLower() == "female" ? "#db2777" : "#7c3aed";
 }
 
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+
 <style>
-    /* Custom scrollbar */
-    .custom-scroll::-webkit-scrollbar {
-        width: 8px;
+    :root {
+        --coral: #e85c5c;
+        --coral-d: #c94040;
+        --navy: #1e2d5e;
+        --navy-l: #2e3f7a;
+        --mist: #f5f7fa;
+        --border: #e8ecf2;
+        --ink: #1a1f2e;
+        --text: #475569;
+        --green: #16a34a;
+        --greenl: #dcfce7;
+        --amber: #d97706;
+        --amberl: #fffbeb;
     }
 
-    .custom-scroll::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: 10px;
+    * {
+        font-family: 'DM Sans', sans-serif;
+        box-sizing: border-box;
     }
 
-    .custom-scroll::-webkit-scrollbar-thumb {
-        background: #888;
-        border-radius: 10px;
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
     }
 
-        .custom-scroll::-webkit-scrollbar-thumb:hover {
-            background: #555;
+    @@keyframes fadeUp {
+        from {
+            opacity: 0;
+            transform: translateY(12px);
         }
 
-    /* Room card styles */
-    .room-card {
-        transition: all 0.3s ease;
-        cursor: default !important;
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @@keyframes fillBar {
+        from {
+            width: 0;
+        }
+
+        to {
+            width: var(--w);
+        }
+    }
+
+    .hd-page {
+        background: var(--mist);
+        min-height: 100vh;
+    }
+
+    /* ── Hero ── */
+    .hd-hero {
+        background: linear-gradient(135deg, #141c3a 0%, var(--navy) 45%, var(--navy-l) 80%, #2a185e 100%);
+        padding: 1.75rem 2rem 4.5rem;
         position: relative;
+        overflow: hidden;
+    }
+
+        .hd-hero::before {
+            content: '';
+            position: absolute;
+            top: -70px;
+            right: -50px;
+            width: 280px;
+            height: 280px;
+            background: radial-gradient(circle,rgba(232,92,92,.16) 0%,transparent 70%);
+            pointer-events: none;
+        }
+
+        .hd-hero::after {
+            content: '';
+            position: absolute;
+            bottom: -90px;
+            left: 8%;
+            width: 360px;
+            height: 360px;
+            background: radial-gradient(circle,rgba(255,255,255,.04) 0%,transparent 70%);
+            pointer-events: none;
+        }
+
+    .hd-hero-inner {
+        position: relative;
+        z-index: 1;
+    }
+
+    /* breadcrumb */
+    .hd-bc {
+        display: flex;
+        align-items: center;
+        gap: .35rem;
+        margin-bottom: .9rem;
+    }
+
+        .hd-bc a {
+            font-size: .72rem;
+            color: rgba(255,255,255,.5);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: .2rem;
+            transition: color .15s;
+        }
+
+            .hd-bc a:hover {
+                color: rgba(255,255,255,.85);
+            }
+
+        .hd-bc i.sep {
+            font-size: .75rem;
+            color: rgba(255,255,255,.25);
+        }
+
+        .hd-bc span {
+            font-size: .72rem;
+            color: rgba(255,255,255,.75);
+            font-weight: 600;
+        }
+
+    /* hostel header row */
+    .hd-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .hd-header-left {
+        display: flex;
+        align-items: center;
+        gap: 1.1rem;
+    }
+
+    .hd-avatar {
+        width: 64px;
+        height: 64px;
+        border-radius: 1.15rem;
+        flex-shrink: 0;
+        background: rgba(255,255,255,.12);
+        border: 1.5px solid rgba(255,255,255,.22);
+        backdrop-filter: blur(8px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 6px 20px rgba(0,0,0,.2);
+    }
+
+        .hd-avatar i {
+            font-size: 2.2rem;
+            color: #fff;
+        }
+
+    .hd-hostel-name {
+        font-family: 'DM Serif Display',serif;
+        font-size: 1.9rem;
+        color: #fff;
+        margin: 0;
+        line-height: 1.15;
+    }
+
+    .hd-meta {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        margin-top: .4rem;
+        flex-wrap: wrap;
+    }
+
+    .hd-meta-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: .25rem;
+        background: rgba(255,255,255,.1);
+        border: 1px solid rgba(255,255,255,.18);
+        border-radius: 2rem;
+        padding: .18rem .65rem;
+        font-size: .71rem;
+        font-weight: 700;
+        color: rgba(255,255,255,.8);
+        backdrop-filter: blur(4px);
+    }
+
+        .hd-meta-pill i {
+            font-size: .82rem;
+        }
+
+    /* back button */
+    .btn-back {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        background: rgba(255,255,255,.1);
+        border: 1.5px solid rgba(255,255,255,.22);
+        color: #fff;
+        border-radius: .65rem;
+        padding: .6rem 1.1rem;
+        cursor: pointer;
+        font-size: .8rem;
+        font-weight: 700;
+        font-family: inherit;
+        text-decoration: none;
+        backdrop-filter: blur(6px);
+        transition: background .15s;
+    }
+
+        .btn-back:hover {
+            background: rgba(255,255,255,.2);
+        }
+
+        .btn-back i {
+            font-size: .95rem;
+        }
+
+    /* hero stat chips */
+    .hd-stats {
+        display: flex;
+        gap: .85rem;
+        margin-top: 1.25rem;
+        flex-wrap: wrap;
+    }
+
+    .hd-stat {
+        display: flex;
+        align-items: center;
+        gap: .65rem;
+        background: rgba(255,255,255,.08);
+        border: 1px solid rgba(255,255,255,.14);
+        border-radius: .75rem;
+        padding: .5rem .9rem;
+        backdrop-filter: blur(6px);
+    }
+
+        .hd-stat i {
+            font-size: 1rem;
+            color: rgba(255,255,255,.6);
+        }
+
+    .hd-stat-val {
+        font-family: 'DM Serif Display',serif;
+        font-size: 1.2rem;
+        color: #fff;
+        line-height: 1;
+    }
+
+    .hd-stat-lbl {
+        font-size: .63rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        color: rgba(255,255,255,.4);
+        margin-top: .1rem;
+    }
+
+    /* add room button */
+    .btn-add-room {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        background: var(--coral);
+        color: #fff;
+        border: none;
+        font-size: .82rem;
+        font-weight: 700;
+        font-family: inherit;
+        padding: .65rem 1.25rem;
+        border-radius: .7rem;
+        cursor: pointer;
+        text-decoration: none;
+        box-shadow: 0 4px 18px rgba(232,92,92,.4);
+        transition: background .15s,transform .1s;
+        flex-shrink: 0;
+    }
+
+        .btn-add-room:hover {
+            background: var(--coral-d);
+            transform: translateY(-1px);
+        }
+
+        .btn-add-room i {
+            font-size: 1rem;
+        }
+
+    /* ── Floating strip ── */
+    .hd-strip {
+        margin: -2.5rem 2rem 0;
+        position: relative;
+        z-index: 3;
+        display: flex;
+        flex-direction: column;
+        gap: .65rem;
+    }
+
+    .hd-alert {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        border-radius: .75rem;
+        padding: .85rem 1rem;
+        font-size: .8rem;
+        background: #fff;
+        box-shadow: 0 4px 20px rgba(30,45,94,.12);
+        animation: fadeUp .25s ease-out;
+    }
+
+        .hd-alert i {
+            font-size: 1.05rem;
+            flex-shrink: 0;
+        }
+
+    .hd-alert-s {
+        border-left: 4px solid var(--green);
+        color: #166534;
+    }
+
+        .hd-alert-s i {
+            color: var(--green);
+        }
+
+    .hd-alert-e {
+        border-left: 4px solid var(--coral);
+        color: #991b1b;
+    }
+
+        .hd-alert-e i {
+            color: var(--coral);
+        }
+
+    /* ── Body ── */
+    .hd-body {
+        padding: 0 2rem 2.5rem;
+        margin-top: 1.35rem;
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        gap: 1.35rem;
+    }
+
+    @@media (max-width:960px) {
+        .hd-body {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* ── Sidebar ── */
+    .hd-sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    /* generic white card */
+    .hd-card {
+        background: #fff;
+        border: 1.5px solid var(--border);
+        border-radius: 1rem;
+        box-shadow: 0 2px 12px rgba(30,45,94,.06);
+        animation: fadeUp .3s ease-out;
+    }
+
+    .hd-card-head {
+        padding: .85rem 1.1rem;
+        border-bottom: 1.5px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+    }
+
+    .hd-card-head-title {
+        font-size: .72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .07em;
+        color: var(--navy);
+        margin: 0;
+    }
+
+    .hd-card-head i {
+        font-size: .95rem;
+        color: var(--navy);
+    }
+
+    .hd-card-body {
+        padding: 1rem 1.1rem;
+    }
+
+    /* detail cell */
+    .dc {
+        background: var(--mist);
+        border: 1px solid var(--border);
+        border-radius: .6rem;
+        padding: .6rem .8rem;
+        margin-bottom: .5rem;
+    }
+
+        .dc:last-child {
+            margin-bottom: 0;
+        }
+
+    .dc-lbl {
+        font-size: .6rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        color: #94a3b8;
+        margin-bottom: .2rem;
+        display: flex;
+        align-items: center;
+        gap: .2rem;
+    }
+
+        .dc-lbl i {
+            font-size: .7rem;
+        }
+
+    .dc-val {
+        font-size: .83rem;
+        font-weight: 700;
+        color: var(--ink);
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+    }
+
+    /* stat trio */
+    .stat-trio {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: .5rem;
+    }
+
+    .stat-cell {
+        border-radius: .65rem;
+        padding: .7rem .5rem;
+        text-align: center;
+    }
+
+        .stat-cell i {
+            font-size: 1rem;
+            display: block;
+            margin-bottom: .2rem;
+        }
+
+    .stat-cell-v {
+        font-family: 'DM Serif Display',serif;
+        font-size: 1.35rem;
+        color: var(--ink);
+        line-height: 1;
+    }
+
+    .stat-cell-l {
+        font-size: .6rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        margin-top: .15rem;
+    }
+
+    .sc-blue {
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+    }
+
+        .sc-blue i, .sc-blue .stat-cell-l {
+            color: #2563eb;
+        }
+
+    .sc-green {
+        background: var(--greenl);
+        border: 1px solid #86efac;
+    }
+
+        .sc-green i, .sc-green .stat-cell-l {
+            color: var(--green);
+        }
+
+    .sc-amber {
+        background: var(--amberl);
+        border: 1px solid #fde68a;
+    }
+
+        .sc-amber i, .sc-amber .stat-cell-l {
+            color: var(--amber);
+        }
+
+    .sc-coral {
+        background: #fef2f2;
+        border: 1px solid #fca5a5;
+    }
+
+        .sc-coral i, .sc-coral .stat-cell-l {
+            color: var(--coral);
+        }
+
+    /* occupancy bar */
+    .occ-bar-wrap {
+        background: var(--border);
+        border-radius: 2rem;
+        height: 10px;
+        overflow: hidden;
+        margin: .5rem 0;
+    }
+
+    .occ-bar {
+        height: 10px;
+        border-radius: 2rem;
+        transition: width .6s ease-out;
+        animation: fillBar .6s ease-out;
+    }
+
+    .occ-bar-g {
+        background: linear-gradient(90deg,var(--green),#22c55e);
+    }
+
+    .occ-bar-a {
+        background: linear-gradient(90deg,var(--amber),#fbbf24);
+    }
+
+    .occ-bar-r {
+        background: linear-gradient(90deg,var(--coral-d),var(--coral));
+    }
+
+    /* room gen mini-grid */
+    .rg-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: .45rem;
+    }
+
+    .rg-cell {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: .5rem;
+        padding: .45rem .6rem;
+    }
+
+    .rg-lbl {
+        font-size: .58rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        color: #94a3b8;
+        margin-bottom: .15rem;
+    }
+
+    .rg-val {
+        font-size: .78rem;
+        font-weight: 700;
+        color: var(--ink);
+    }
+
+    /* audit rows */
+    .audit-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: .3rem 0;
+        border-bottom: 1px solid var(--border);
+        font-size: .75rem;
+    }
+
+        .audit-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+    .audit-row-lbl {
+        color: var(--text);
+    }
+
+    .audit-row-val {
+        font-weight: 700;
+        color: var(--ink);
+    }
+
+    /* ── Main: rooms panel ── */
+    .hd-main {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    /* toolbar */
+    .rooms-toolbar {
+        background: #fff;
+        border: 1.5px solid var(--border);
+        border-radius: 1rem;
+        padding: .8rem 1.1rem;
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        flex-wrap: wrap;
+        box-shadow: 0 2px 10px rgba(30,45,94,.06);
+    }
+
+    .rooms-title {
+        font-family: 'DM Serif Display',serif;
+        font-size: 1.15rem;
+        color: var(--ink);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+    }
+
+    .rooms-count {
+        background: var(--mist);
+        border: 1px solid var(--border);
+        border-radius: 2rem;
+        font-size: .7rem;
+        font-weight: 700;
+        color: var(--navy);
+        padding: .15rem .6rem;
+    }
+
+    .rt-spacer {
+        flex: 1;
+    }
+
+    .room-search {
+        display: flex;
+        align-items: center;
+        gap: .4rem;
+        background: var(--mist);
+        border: 1.5px solid var(--border);
+        border-radius: .6rem;
+        padding: .45rem .75rem;
+        transition: border-color .15s;
+        min-width: 180px;
+    }
+
+        .room-search:focus-within {
+            border-color: var(--navy);
+        }
+
+        .room-search i {
+            font-size: .95rem;
+            color: #94a3b8;
+            flex-shrink: 0;
+        }
+
+        .room-search input {
+            border: none;
+            background: transparent;
+            font-family: inherit;
+            font-size: .8rem;
+            color: var(--ink);
+            flex: 1;
+            outline: none;
+        }
+
+            .room-search input::placeholder {
+                color: #94a3b8;
+            }
+
+    /* filter tabs */
+    .floor-tabs {
+        display: flex;
+        gap: .4rem;
+        overflow-x: auto;
+        padding-bottom: .15rem;
+    }
+
+    .floor-tab {
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        gap: .3rem;
+        font-size: .73rem;
+        font-weight: 700;
+        padding: .4rem .85rem;
+        border-radius: 2rem;
+        border: 1.5px solid var(--border);
+        background: var(--mist);
+        color: var(--text);
+        cursor: pointer;
+        transition: all .15s;
+    }
+
+        .floor-tab:hover {
+            border-color: #c4cfe2;
+            color: var(--ink);
+        }
+
+        .floor-tab.active {
+            background: var(--navy);
+            border-color: var(--navy);
+            color: #fff;
+        }
+
+    .floor-tab-count {
+        background: rgba(255,255,255,.25);
+        border-radius: 2rem;
+        padding: .05rem .4rem;
+        font-size: .63rem;
+    }
+
+    .floor-tab.active .floor-tab-count {
+        background: rgba(255,255,255,.25);
+    }
+
+    .floor-tab:not(.active) .floor-tab-count {
+        background: rgba(30,45,94,.1);
+        color: var(--navy);
+    }
+
+    /* rooms grid card */
+    .rooms-grid-card {
+        background: #fff;
+        border: 1.5px solid var(--border);
+        border-radius: 1rem;
+        padding: 1.25rem;
+        box-shadow: 0 2px 12px rgba(30,45,94,.06);
+        animation: fadeUp .3s ease-out;
+    }
+
+    /* floor header inside card */
+    .floor-label {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        margin-bottom: .9rem;
+        padding-bottom: .6rem;
+        border-bottom: 1.5px solid var(--border);
+    }
+
+    .floor-label-ring {
+        width: 30px;
+        height: 30px;
+        border-radius: .5rem;
+        background: linear-gradient(135deg,var(--navy),var(--navy-l));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .floor-label-ring i {
+            font-size: .85rem;
+            color: #fff;
+        }
+
+    .floor-label-text {
+        font-size: .78rem;
+        font-weight: 700;
+        color: var(--ink);
+    }
+
+    .floor-label-count {
+        font-size: .65rem;
+        font-weight: 700;
+        color: #94a3b8;
+        background: var(--mist);
+        border: 1px solid var(--border);
+        border-radius: 2rem;
+        padding: .1rem .5rem;
+    }
+
+    /* individual room cards */
+    .rooms-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill,minmax(130px,1fr));
+        gap: .7rem;
+    }
+
+    .room-card {
+        border-radius: .85rem;
+        border: 1.5px solid var(--border);
+        background: #fff;
+        padding: .75rem;
+        position: relative;
+        cursor: default;
+        transition: transform .15s,box-shadow .15s;
+        overflow: hidden;
     }
 
         .room-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 6px 18px rgba(30,45,94,.12);
         }
 
-        .room-card .status-indicator {
+        .room-card::before {
+            content: '';
             position: absolute;
-            top: 8px;
-            right: 8px;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            border: 2px solid white;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
         }
 
-    /* Floor section */
-    .floor-section {
-        margin-bottom: 2rem;
+        .room-card.rc-avail {
+            border-color: #bbf7d0;
+        }
+
+            .room-card.rc-avail::before {
+                background: var(--green);
+            }
+
+        .room-card.rc-occ {
+            border-color: #fca5a5;
+        }
+
+            .room-card.rc-occ::before {
+                background: var(--coral);
+            }
+
+        .room-card.rc-maint {
+            border-color: #fde68a;
+        }
+
+            .room-card.rc-maint::before {
+                background: var(--amber);
+            }
+
+        .room-card.rc-other {
+            border-color: var(--border);
+        }
+
+            .room-card.rc-other::before {
+                background: #94a3b8;
+            }
+
+    .rc-status {
+        position: absolute;
+        top: .6rem;
+        right: .6rem;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
     }
 
-    .floor-header {
-        background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
-        padding: 0.75rem 1rem;
-        border-radius: 0.5rem;
-        margin-bottom: 1rem;
-        color: white;
+    .rc-dot-avail {
+        background: var(--green);
+    }
+
+    .rc-dot-occ {
+        background: var(--coral);
+    }
+
+    .rc-dot-maint {
+        background: var(--amber);
+    }
+
+    .rc-dot-other {
+        background: #94a3b8;
+    }
+
+    .rc-number {
+        font-family: 'DM Serif Display',serif;
+        font-size: 1.05rem;
+        color: var(--ink);
+        margin: 0 0 .15rem;
+    }
+
+    .rc-type {
+        font-size: .6rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        color: #94a3b8;
+        margin-bottom: .55rem;
+    }
+
+    .rc-beds {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        justify-content: space-between;
+        font-size: .7rem;
+        margin-bottom: .35rem;
     }
 
-    /* Stat card animation */
-    .stat-card {
-        transition: transform 0.2s;
+    .rc-beds-lbl {
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: .2rem;
     }
 
-        .stat-card:hover {
-            transform: scale(1.05);
+        .rc-beds-lbl i {
+            font-size: .75rem;
         }
+
+    .rc-beds-val strong {
+        color: var(--coral);
+    }
+
+    .rc-beds-val span {
+        color: #94a3b8;
+    }
+
+    .rc-bar-wrap {
+        background: var(--border);
+        border-radius: 2rem;
+        height: 4px;
+        overflow: hidden;
+    }
+
+    .rc-bar {
+        height: 4px;
+        border-radius: 2rem;
+    }
+
+    .rc-bar-g {
+        background: var(--green);
+    }
+
+    .rc-bar-a {
+        background: var(--amber);
+    }
+
+    .rc-bar-r {
+        background: var(--coral);
+    }
+
+    /* empty state */
+    .rooms-empty {
+        padding: 4rem 2rem;
+        text-align: center;
+    }
+
+    .rooms-empty-ring {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        margin: 0 auto 1.25rem;
+        background: linear-gradient(135deg,var(--navy),var(--navy-l));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 24px rgba(30,45,94,.25);
+    }
+
+        .rooms-empty-ring i {
+            font-size: 2rem;
+            color: #fff;
+        }
+
+    .rooms-empty h4 {
+        font-family: 'DM Serif Display',serif;
+        font-size: 1.15rem;
+        color: var(--ink);
+        margin: 0 0 .4rem;
+    }
+
+    .rooms-empty p {
+        font-size: .8rem;
+        color: var(--text);
+        max-width: 22rem;
+        margin: 0 auto;
+    }
+
+    @@media (max-width:640px) {
+        .hd-hero {
+            padding: 1.25rem 1.25rem 3.75rem;
+        }
+
+        .hd-strip {
+            margin: -2rem 1rem 0;
+        }
+
+        .hd-body {
+            padding: 0 1rem 2rem;
+        }
+    }
 </style>
 
-<div class="min-h-screen bg-gray-50 p-4">
-    <!-- Header Section -->
-    <div class="mb-6">
-        <div class="bg-white rounded-xl shadow-md p-6">
-            <div class="flex justify-between items-start mb-4">
-                <div class="flex items-start gap-4">
-                    <div class="bg-gradient-to-br from-cyan-500 to-cyan-600 p-4 rounded-xl shadow-lg">
-                        <i class="material-icons text-4xl text-white">apartment</i>
-                    </div>
+<div class="hd-page">
+
+    <!-- ── Hero ── -->
+    <div class="hd-hero">
+        <div class="hd-hero-inner">
+
+            <!-- Breadcrumb -->
+            <div class="hd-bc">
+                <a asp-controller="Hostel" asp-action="Hostels">
+                    <i class="material-icons" style="font-size:.8rem;">home</i>Hostels
+                </a>
+                <i class="material-icons sep">chevron_right</i>
+                <span>@Model.HostelName</span>
+            </div>
+
+            <!-- Header row -->
+            <div class="hd-header-row">
+                <div class="hd-header-left">
+                    <div class="hd-avatar"><i class="material-icons">apartment</i></div>
                     <div>
-                        <h1 class="text-3xl font-bold text-secondary-800 mb-2">@Model.HostelName</h1>
-                        <div class="flex items-center text-sm text-secondary-600 gap-2">
-                            <a asp-controller="Hostel" asp-action="Hostels" class="hover:text-cyan-600 transition">
-                                <i class="material-icons text-sm align-middle">home</i> Hostels
-                            </a>
-                            <i class="material-icons text-xs">chevron_right</i>
-                            <span class="font-medium">@Model.HostelName</span>
+                        <h1 class="hd-hostel-name">@Model.HostelName</h1>
+                        <div class="hd-meta">
+                            <span class="hd-meta-pill"><i class="material-icons">@genderIcon</i>@Model.Gender</span>
+                            @if (Model.Status == Status.Active)
+                            {
+                                <span class="hd-meta-pill"><i class="material-icons">check_circle</i>Active</span>
+                            }
+                            else
+                            {
+
+                                <span class="hd-meta-pill" style="background:rgba(232,92,92,.18);"><i class="material-icons">cancel</i>Inactive</span>
+                            }
+                            @if (Model.Campus != null)
+                            {
+                                <span class="hd-meta-pill"><i class="material-icons">location_city</i>@Model.Campus.CampusName</span>
+                            }
                         </div>
                     </div>
                 </div>
-                <div class="flex gap-3">
-                    <a asp-controller="Hostel" asp-action="Hostels"
-                       class="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2 shadow-sm">
-                        <i class="material-icons">arrow_back</i>
-                        <span>Back</span>
+                <div style="display:flex;align-items:center;gap:.65rem;flex-shrink:0;">
+                    <a asp-controller="Room" asp-action="CreateRoom" asp-route-hostelId="@Model.HostelId" class="btn-add-room">
+                        <i class="material-icons">add</i> Add Room
+                    </a>
+                    <a asp-controller="Hostel" asp-action="Hostels" class="btn-back">
+                        <i class="material-icons">arrow_back</i> Back
                     </a>
                 </div>
             </div>
 
-            @if (TempData["Success"] != null)
-            {
-                <div class="bg-green-50 border-l-4 border-green-500 text-green-800 p-4 rounded-lg mb-4 flex items-center gap-3" role="alert">
-                    <i class="material-icons text-green-600">check_circle</i>
-                    <p class="font-medium">@TempData["Success"]</p>
+            <!-- Hero stats -->
+            <div class="hd-stats">
+                <div class="hd-stat">
+                    <i class="material-icons">king_bed</i>
+                    <div><div class="hd-stat-val">@totalBeds</div><div class="hd-stat-lbl">Total Beds</div></div>
                 </div>
-            }
+                <div class="hd-stat">
+                    <i class="material-icons">event_available</i>
+                    <div><div class="hd-stat-val">@availBeds</div><div class="hd-stat-lbl">Available</div></div>
+                </div>
+                <div class="hd-stat">
+                    <i class="material-icons">meeting_room</i>
+                    <div><div class="hd-stat-val">@totalRooms</div><div class="hd-stat-lbl">Rooms</div></div>
+                </div>
+                <div class="hd-stat">
+                    <i class="material-icons">layers</i>
+                    <div><div class="hd-stat-val">@totalFloors</div><div class="hd-stat-lbl">Floors</div></div>
+                </div>
+                <div class="hd-stat">
+                    <i class="material-icons">show_chart</i>
+                    <div><div class="hd-stat-val">@occupancyRate%</div><div class="hd-stat-lbl">Occupancy</div></div>
+                </div>
+            </div>
 
-            @if (TempData["Error"] != null)
-            {
-                <div class="bg-red-50 border-l-4 border-red-500 text-red-800 p-4 rounded-lg mb-4 flex items-center gap-3" role="alert">
-                    <i class="material-icons text-red-600">error</i>
-                    <p class="font-medium">@TempData["Error"]</p>
-                </div>
-            }
         </div>
     </div>
 
-    <!-- Main Content Layout -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Left Column: Hostel Info (1/3) -->
-        <div class="lg:col-span-1 space-y-6">
-            <!-- Hostel Information Card -->
-            <div class="bg-white rounded-xl shadow-md p-6">
-                <h2 class="text-xl font-bold text-secondary-800 mb-6 flex items-center gap-2">
-                    <i class="material-icons text-cyan-600">info</i>
-                    Hostel Information
-                </h2>
+    <!-- ── Alerts strip ── -->
+    <div class="hd-strip">
+        @if (TempData["Success"] != null)
+        {
+            <div class="hd-alert hd-alert-s"><i class="material-icons">check_circle</i><span>@TempData["Success"]</span></div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="hd-alert hd-alert-e"><i class="material-icons">error</i><span>@TempData["Error"]</span></div>
+        }
+    </div>
 
-                <div class="space-y-4">
-                    <!-- Gender -->
-                    <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-lg border border-gray-200">
-                        <p class="text-xs text-gray-500 uppercase tracking-wider mb-2">Gender</p>
-                        <div class="flex items-center gap-2">
-                            @{
-                                var genderIcon = "people";
-                                var genderClass = "text-purple-600";
-                                var genderBg = "bg-purple-100";
+    <!-- ── Body: sidebar + main ── -->
+    <div class="hd-body">
 
-                                if (Model.Gender?.ToLower() == "male")
-                                {
-                                    genderIcon = "male";
-                                    genderClass = "text-blue-600";
-                                    genderBg = "bg-blue-100";
-                                }
-                                else if (Model.Gender?.ToLower() == "female")
-                                {
-                                    genderIcon = "female";
-                                    genderClass = "text-pink-600";
-                                    genderBg = "bg-pink-100";
-                                }
-                            }
-                            <div class="@genderBg p-2 rounded-lg">
-                                <i class="material-icons @genderClass">@genderIcon</i>
-                            </div>
-                            <p class="font-semibold text-lg text-secondary-800">@Model.Gender</p>
-                        </div>
+        <!-- ──────── Sidebar ──────── -->
+        <div class="hd-sidebar">
+
+            <!-- Hostel Details -->
+            <div class="hd-card">
+                <div class="hd-card-head">
+                    <i class="material-icons">info</i>
+                    <p class="hd-card-head-title">Hostel Details</p>
+                </div>
+                <div class="hd-card-body">
+                    <div class="dc">
+                        <p class="dc-lbl"><i class="material-icons">wc</i>Gender</p>
+                        <p class="dc-val" style="color:@genderColor;">
+                            <i class="material-icons" style="font-size:1rem;">@genderIcon</i>@Model.Gender
+                        </p>
                     </div>
-
-                    <!-- Status -->
-                    <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-lg border border-gray-200">
-                        <p class="text-xs text-gray-500 uppercase tracking-wider mb-2">Status</p>
-                        <div class="flex items-center gap-2">
+                    <div class="dc">
+                        <p class="dc-lbl"><i class="material-icons">radio_button_checked</i>Status</p>
+                        <p class="dc-val">
                             @if (Model.Status == Status.Active)
                             {
-                                <div class="bg-green-100 p-2 rounded-lg">
-                                    <i class="material-icons text-green-600">check_circle</i>
-                                </div>
-                                <p class="font-semibold text-lg text-secondary-800">Active</p>
+                                <span style="color:var(--green);display:flex;align-items:center;gap:.3rem;"><i class="material-icons" style="font-size:.95rem;">check_circle</i>Active</span>
                             }
                             else
                             {
-                                <div class="bg-red-100 p-2 rounded-lg">
-                                    <i class="material-icons text-red-600">cancel</i>
-                                </div>
-                                <p class="font-semibold text-lg text-secondary-800">Inactive</p>
+
+                                <span style="color:var(--coral);display:flex;align-items:center;gap:.3rem;"><i class="material-icons" style="font-size:.95rem;">cancel</i>@Model.Status</span>
                             }
-                        </div>
+                        </p>
                     </div>
-
-                    <!-- Campus -->
-                    <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-lg border border-gray-200">
-                        <p class="text-xs text-gray-500 uppercase tracking-wider mb-2">Campus</p>
-                        <div class="flex items-center gap-2">
-                            <div class="bg-cyan-100 p-2 rounded-lg">
-                                <i class="material-icons text-cyan-600">location_city</i>
-                            </div>
-                            <p class="font-semibold text-lg text-secondary-800">@(Model.Campus?.CampusName ?? "Not Assigned")</p>
-                        </div>
+                    <div class="dc">
+                        <p class="dc-lbl"><i class="material-icons">location_city</i>Campus</p>
+                        <p class="dc-val">@(Model.Campus?.CampusName ?? "—")</p>
                     </div>
-
-                    <!-- Warden -->
-                    <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-lg border border-gray-200">
-                        <p class="text-xs text-gray-500 uppercase tracking-wider mb-2">Warden</p>
-                        <div class="flex items-center gap-2">
-                            <div class="bg-gray-200 p-2 rounded-lg">
-                                <i class="material-icons text-secondary-600">person</i>
-                            </div>
-                            <p class="font-semibold text-lg text-secondary-800">@(Model.Warden?.UserName ?? "Not Assigned")</p>
-                        </div>
+                    <div class="dc">
+                        <p class="dc-lbl"><i class="material-icons">person</i>Warden</p>
+                        <p class="dc-val">@(Model.Warden?.UserName ?? "Not Assigned")</p>
                     </div>
-
-                    <!-- Description -->
                     @if (!string.IsNullOrEmpty(Model.Description))
                     {
-                        <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-lg border border-gray-200">
-                            <p class="text-xs text-gray-500 uppercase tracking-wider mb-2">Description</p>
-                            <p class="text-sm text-gray-700 leading-relaxed">@Model.Description</p>
+                        <div class="dc">
+                            <p class="dc-lbl"><i class="material-icons">notes</i>Description</p>
+                            <p style="font-size:.78rem;color:var(--text);line-height:1.6;margin:0;">@Model.Description</p>
                         </div>
                     }
-
-                    <!-- Room Generation Settings -->
-                    <div class="bg-gradient-to-br from-cyan-50 to-cyan-100 p-4 rounded-lg border border-cyan-200">
-                        <p class="text-xs text-cyan-700 uppercase tracking-wider mb-3 font-semibold">Room Generation Settings</p>
-                        <div class="grid grid-cols-2 gap-3 text-sm">
-                            <div class="bg-white p-2 rounded-lg">
-                                <span class="text-gray-500 text-xs block mb-1">Default Type</span>
-                                <span class="font-bold text-secondary-800">@ViewBag.DefaultRoomType</span>
-                            </div>
-                            <div class="bg-white p-2 rounded-lg">
-                                <span class="text-gray-500 text-xs block mb-1">Capacity</span>
-                                <span class="font-bold text-secondary-800">@ViewBag.DefaultCapacity</span>
-                            </div>
-                            <div class="bg-white p-2 rounded-lg">
-                                <span class="text-gray-500 text-xs block mb-1">Rooms/Floor</span>
-                                <span class="font-bold text-secondary-800">@ViewBag.RoomsPerFloor</span>
-                            </div>
-                            <div class="bg-white p-2 rounded-lg">
-                                <span class="text-gray-500 text-xs block mb-1">Auto-Beds</span>
-                                <span class="font-bold text-secondary-800">@(ViewBag.AutoGenerateBeds ? "Yes" : "No")</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Audit Info -->
-                    <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-lg border border-gray-200">
-                        <p class="text-xs text-gray-500 uppercase tracking-wider mb-3">Audit Information</p>
-                        <div class="space-y-2 text-sm">
-                            <div class="flex items-center justify-between">
-                                <span class="text-secondary-600">Created By:</span>
-                                <span class="font-semibold text-secondary-800">@Model.CreatedBy</span>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-secondary-600">Created At:</span>
-                                <span class="font-semibold text-secondary-800">@Model.CreatedAt.ToString("MMM dd, yyyy")</span>
-                            </div>
-                            @if (!string.IsNullOrEmpty(Model.UpdatedBy))
-                            {
-                                <hr class="my-2 border-gray-300" />
-                                <div class="flex items-center justify-between">
-                                    <span class="text-secondary-600">Updated By:</span>
-                                    <span class="font-semibold text-secondary-800">@Model.UpdatedBy</span>
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <span class="text-secondary-600">Updated At:</span>
-                                    <span class="font-semibold text-secondary-800">@Model.UpdatedAt?.ToString("MMM dd, yyyy")</span>
-                                </div>
-                            }
-                        </div>
-                    </div>
                 </div>
             </div>
 
-            <!-- Statistics Card -->
-            <div class="bg-white rounded-xl shadow-md p-6">
-                <h2 class="text-xl font-bold text-secondary-800 mb-6 flex items-center gap-2">
-                    <i class="material-icons text-cyan-600">analytics</i>
-                    Statistics
-                </h2>
+            <!-- Statistics -->
+            <div class="hd-card">
+                <div class="hd-card-head">
+                    <i class="material-icons">analytics</i>
+                    <p class="hd-card-head-title">Statistics</p>
+                </div>
+                <div class="hd-card-body">
 
-                <div class="space-y-6">
-                    <!-- Rooms Statistics -->
-                    <div>
-                        <p class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                            <i class="material-icons text-sm text-cyan-600">meeting_room</i>
-                            Rooms Overview
-                        </p>
-                        <div class="grid grid-cols-3 gap-3">
-                            <div class="stat-card bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg text-center border border-blue-200">
-                                <i class="material-icons text-blue-600 mb-2">door_front</i>
-                                <p class="text-2xl font-bold text-blue-700">@ViewBag.TotalRooms</p>
-                                <p class="text-xs text-blue-600 font-medium">Total</p>
-                            </div>
-                            <div class="stat-card bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg text-center border border-green-200">
-                                <i class="material-icons text-green-600 mb-2">check_circle</i>
-                                <p class="text-2xl font-bold text-green-700">@ViewBag.AvailableRooms</p>
-                                <p class="text-xs text-green-600 font-medium">Available</p>
-                            </div>
-                            <div class="stat-card bg-gradient-to-br from-amber-50 to-amber-100 p-4 rounded-lg text-center border border-amber-200">
-                                <i class="material-icons text-amber-600 mb-2">build</i>
-                                <p class="text-2xl font-bold text-amber-700">@ViewBag.MaintenanceRooms</p>
-                                <p class="text-xs text-amber-600 font-medium">Maintenance</p>
-                            </div>
+                    <!-- Rooms -->
+                    <p style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;margin-bottom:.55rem;">Rooms</p>
+                    <div class="stat-trio" style="margin-bottom:1rem;">
+                        <div class="stat-cell sc-blue">
+                            <i class="material-icons">door_front</i>
+                            <div class="stat-cell-v">@totalRooms</div>
+                            <div class="stat-cell-l">Total</div>
+                        </div>
+                        <div class="stat-cell sc-green">
+                            <i class="material-icons">check_circle</i>
+                            <div class="stat-cell-v">@availRooms</div>
+                            <div class="stat-cell-l">Avail</div>
+                        </div>
+                        <div class="stat-cell sc-amber">
+                            <i class="material-icons">build</i>
+                            <div class="stat-cell-v">@maintRooms</div>
+                            <div class="stat-cell-l">Maint</div>
                         </div>
                     </div>
 
-                    <!-- Beds Statistics -->
-                    <div>
-                        <p class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                            <i class="material-icons text-sm text-cyan-600">bed</i>
-                            Bed Spaces Overview
-                        </p>
-                        <div class="grid grid-cols-3 gap-3">
-                            <div class="stat-card bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg text-center border border-blue-200">
-                                <i class="material-icons text-blue-600 mb-2">hotel</i>
-                                <p class="text-2xl font-bold text-blue-700">@ViewBag.TotalBeds</p>
-                                <p class="text-xs text-blue-600 font-medium">Total</p>
-                            </div>
-                            <div class="stat-card bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg text-center border border-green-200">
-                                <i class="material-icons text-green-600 mb-2">event_available</i>
-                                <p class="text-2xl font-bold text-green-700">@ViewBag.AvailableBeds</p>
-                                <p class="text-xs text-green-600 font-medium">Available</p>
-                            </div>
-                            <div class="stat-card bg-gradient-to-br from-red-50 to-red-100 p-4 rounded-lg text-center border border-red-200">
-                                <i class="material-icons text-red-600 mb-2">event_busy</i>
-                                <p class="text-2xl font-bold text-red-700">@ViewBag.OccupiedBeds</p>
-                                <p class="text-xs text-red-600 font-medium">Occupied</p>
-                            </div>
+                    <!-- Beds -->
+                    <p style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;margin-bottom:.55rem;">Bed Spaces</p>
+                    <div class="stat-trio" style="margin-bottom:1rem;">
+                        <div class="stat-cell sc-blue">
+                            <i class="material-icons">hotel</i>
+                            <div class="stat-cell-v">@totalBeds</div>
+                            <div class="stat-cell-l">Total</div>
+                        </div>
+                        <div class="stat-cell sc-green">
+                            <i class="material-icons">event_available</i>
+                            <div class="stat-cell-v">@availBeds</div>
+                            <div class="stat-cell-l">Free</div>
+                        </div>
+                        <div class="stat-cell sc-coral">
+                            <i class="material-icons">event_busy</i>
+                            <div class="stat-cell-v">@occupiedBeds</div>
+                            <div class="stat-cell-l">Occ</div>
                         </div>
                     </div>
 
-                    <!-- Occupancy Rate -->
-                    <div>
-                        <p class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                            <i class="material-icons text-sm text-cyan-600">show_chart</i>
-                            Occupancy Rate
-                        </p>
+                    <!-- Occupancy bar -->
+                    <p style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;margin-bottom:.45rem;">Occupancy Rate</p>
+                    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.3rem;">
+                        <span style="font-family:'DM Serif Display',serif;font-size:1.6rem;color:var(--ink);line-height:1;">@occupancyRate<span style="font-size:.95rem;">%</span></span>
+                        <span style="font-size:.72rem;color:var(--text);">@occupiedBeds / @totalBeds beds</span>
+                    </div>
+                    <div class="occ-bar-wrap">
                         @{
-                            int totalBedsCount = ViewBag.TotalBeds ?? 0;
-                            int occupiedBedsCount = ViewBag.OccupiedBeds ?? 0;
-                            int occupancyRate = totalBedsCount > 0
-                            ? (int)((double)occupiedBedsCount / totalBedsCount * 100)
-                            : 0;
-                            string progressColor = occupancyRate < 50 ? "from-green-500 to-green-600"
-                            : occupancyRate < 80 ? "from-yellow-500 to-yellow-600"
-                            : "from-red-500 to-red-600";
+                            var barClass = occupancyRate < 50 ? "occ-bar-g" : occupancyRate < 80 ? "occ-bar-a" : "occ-bar-r";
                         }
-                        <div class="w-full bg-gray-200 rounded-full h-8 shadow-inner">
-                            <div class="bg-gradient-to-r @progressColor h-8 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-md transition-all duration-500"
-                                 style="width: @(occupancyRate)%">
-                                @occupancyRate%
-                            </div>
-                        </div>
-                        <p class="text-xs text-gray-500 mt-2 text-center">
-                            @occupiedBedsCount out of @totalBedsCount beds occupied
-                        </p>
+                        <div class="occ-bar @barClass" style="--w:@(occupancyRate)%;width:@(occupancyRate)%;"></div>
                     </div>
+                    <p style="font-size:.67rem;color:#94a3b8;margin-top:.35rem;">@(totalBeds - occupiedBeds) beds remaining</p>
+
                 </div>
             </div>
-        </div>
 
-        <!-- Right Column: Rooms List (2/3) -->
-        <div class="lg:col-span-2">
-            <div class="bg-white rounded-xl shadow-md h-full flex flex-col">
-                <div class="p-6 border-b border-gray-200">
-                    <div class="flex justify-between items-center">
-                        <h2 class="text-xl font-bold text-secondary-800 flex items-center gap-2">
-                            <i class="material-icons text-cyan-600">meeting_room</i>
-                            Rooms Directory
-                            <span class="bg-cyan-100 text-cyan-700 px-3 py-1 rounded-full text-sm font-semibold">@(ViewBag.TotalRooms ?? 0)</span>
-                        </h2>
-                        <div class="flex items-center gap-3">
-                            <div class="relative">
-                                <i class="material-icons absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">search</i>
-                                <input type="text" id="roomSearchInput"
-                                       class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                                       placeholder="Search rooms..." />
-                            </div>
-                            <a asp-controller="Room" asp-action="CreateRoom" asp-route-hostelId="@Model.HostelId"
-                               class="px-4 py-2 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg hover:from-cyan-700 hover:to-cyan-800 transition-all flex items-center gap-2 shadow-md">
-                                <i class="material-icons">add</i>
-                                <span>Add Room</span>
-                            </a>
-                        </div>
-                    </div>
+            <!-- Room Gen Settings -->
+            <div class="hd-card">
+                <div class="hd-card-head">
+                    <i class="material-icons">settings</i>
+                    <p class="hd-card-head-title">Room Generation</p>
                 </div>
-
-                <div class="p-6 overflow-y-auto flex-1 custom-scroll">
-                    @if (ViewBag.Rooms != null)
-                    {
-                        var rooms = ViewBag.Rooms as IEnumerable<Room>;
-                        if (rooms != null && rooms.Any())
-                        {
-                            int totalFloors = ViewBag.TotalFloors ?? 0;
-                            for (int floor = 0; floor < totalFloors; floor++)
-                            {
-                                var floorRooms = rooms.Where(r => r.Floor == floor).ToList();
-
-                                if (floorRooms.Any())
-                                {
-                                    <div class="floor-section">
-                                        <div class="floor-header shadow-md">
-                                            <i class="material-icons">layers</i>
-                                            <span class="font-bold text-lg">Floor @(floor + 1)</span>
-                                            <span class="bg-white bg-opacity-30 px-3 py-1 rounded-full text-sm">@floorRooms.Count rooms</span>
-                                        </div>
-
-                                        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                                            @foreach (var room in floorRooms)
-                                            {
-                                                int occupiedCount = 0;
-                                                int availableCount = 0;
-
-                                                if (room.BedSpaces != null)
-                                                {
-                                                    foreach (var bed in room.BedSpaces)
-                                                    {
-                                                        if (bed.Status == Status.Occupied)
-                                                        {
-                                                            occupiedCount++;
-                                                        }
-                                                        else if (bed.Status == Status.Available)
-                                                        {
-                                                            availableCount++;
-                                                        }
-                                                    }
-                                                }
-
-                                                var statusColor = room.Status == Status.Available ? "bg-green-500"
-                                                : room.Status == Status.Occupied ? "bg-red-500"
-                                                : room.Status == Status.Maintenance ? "bg-yellow-500"
-                                                : "bg-gray-500";
-
-                                                var statusText = room.Status == Status.Available ? "Available"
-                                                : room.Status == Status.Occupied ? "Occupied"
-                                                : room.Status == Status.Maintenance ? "Maintenance"
-                                                : "Other";
-
-                                                <div class="room-card bg-gradient-to-br from-white to-gray-50 border-2 border-gray-200 rounded-xl p-4 shadow-sm">
-                                                    <div class="status-indicator @statusColor" title="@statusText"></div>
-
-                                                    <div class="mb-3">
-                                                        <h3 class="font-bold text-lg text-secondary-800 mb-1">@room.RoomNumber</h3>
-                                                        <p class="text-xs text-gray-500 uppercase tracking-wide">@room.RoomType</p>
-                                                    </div>
-
-                                                    <div class="space-y-2">
-                                                        <div class="flex items-center justify-between text-sm">
-                                                            <span class="text-secondary-600 flex items-center gap-1">
-                                                                <i class="material-icons text-sm">hotel</i>
-                                                                Beds:
-                                                            </span>
-                                                            <span class="font-bold text-secondary-800">
-                                                                <span class="text-red-600">@occupiedCount</span>/<span class="text-gray-500">@room.Capacity</span>
-                                                            </span>
-                                                        </div>
-
-                                                        @if (room.Capacity > 0)
-                                                        {
-                                                            var bedOccupancyRate = (double)occupiedCount / room.Capacity * 100;
-                                                            var bedBarColor = bedOccupancyRate == 0 ? "bg-green-500"
-                                                            : bedOccupancyRate < 100 ? "bg-yellow-500"
-                                                            : "bg-red-500";
-
-                                                            <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                                                                <div class="@bedBarColor h-2 transition-all duration-500 rounded-full"
-                                                                     style="width: @(bedOccupancyRate)%"></div>
-                                                            </div>
-                                                        }
-                                                    </div>
-                                                </div>
-                                            }
-                                        </div>
-                                    </div>
-                                }
-                            }
-                        }
-                        else
-                        {
-                            <div class="flex flex-col items-center justify-center h-full text-gray-400">
-                                <div class="bg-gray-100 p-8 rounded-full mb-6">
-                                    <i class="material-icons text-6xl">meeting_room</i>
-                                </div>
-                                <p class="text-xl font-semibold text-secondary-600 mb-2">No Rooms Found</p>
-                                <p class="text-sm text-gray-500 text-center max-w-md">
-                                    Rooms will be automatically generated when you create this hostel,<br />
-                                    or click "Add Room" to manually add rooms.
-                                </p>
-                            </div>
-                        }
-                    }
-                    else
-                    {
-                        <div class="flex flex-col items-center justify-center h-full text-gray-400">
-                            <div class="bg-gray-100 p-8 rounded-full mb-6">
-                                <i class="material-icons text-6xl">meeting_room</i>
-                            </div>
-                            <p class="text-xl font-semibold text-secondary-600 mb-2">No Rooms Available</p>
-                            <p class="text-sm text-gray-500 text-center max-w-md">
-                                Click "Add Room" to create rooms for this hostel.
+                <div class="hd-card-body">
+                    <div class="rg-grid">
+                        <div class="rg-cell"><p class="rg-lbl">Default Type</p><p class="rg-val">@ViewBag.DefaultRoomType</p></div>
+                        <div class="rg-cell"><p class="rg-lbl">Capacity</p><p class="rg-val">@ViewBag.DefaultCapacity beds</p></div>
+                        <div class="rg-cell"><p class="rg-lbl">Rooms / Floor</p><p class="rg-val">@ViewBag.RoomsPerFloor</p></div>
+                        <div class="rg-cell">
+                            <p class="rg-lbl">Auto Beds</p>
+                            <p class="rg-val" style="color:@(ViewBag.AutoGenerateBeds == true ? "var(--green)" : "var(--coral)");">
+                                @(ViewBag.AutoGenerateBeds == true ? "Yes" : "No")
                             </p>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Audit -->
+            <div class="hd-card">
+                <div class="hd-card-head">
+                    <i class="material-icons">history</i>
+                    <p class="hd-card-head-title">Audit</p>
+                </div>
+                <div class="hd-card-body" style="padding-top:.75rem;">
+                    <div class="audit-row"><span class="audit-row-lbl">Created By</span><span class="audit-row-val">@Model.CreatedBy</span></div>
+                    <div class="audit-row"><span class="audit-row-lbl">Created At</span><span class="audit-row-val">@Model.CreatedAt.ToString("MMM dd, yyyy")</span></div>
+                    @if (!string.IsNullOrEmpty(Model.UpdatedBy))
+                    {
+                        <div class="audit-row"><span class="audit-row-lbl">Updated By</span><span class="audit-row-val">@Model.UpdatedBy</span></div>
+                        <div class="audit-row"><span class="audit-row-lbl">Updated At</span><span class="audit-row-val">@Model.UpdatedAt?.ToString("MMM dd, yyyy")</span></div>
                     }
                 </div>
             </div>
-        </div>
-    </div>
+
+        </div><!-- /sidebar -->
+        <!-- ──────── Main: Rooms ──────── -->
+        <div class="hd-main">
+
+            <!-- Toolbar -->
+            <div class="rooms-toolbar">
+                <h2 class="rooms-title">
+                    <i class="material-icons" style="font-size:1.15rem;color:var(--navy);">meeting_room</i>
+                    Rooms Directory
+                    <span class="rooms-count">@totalRooms</span>
+                </h2>
+                <div class="rt-spacer"></div>
+                <div class="room-search">
+                    <i class="material-icons">search</i>
+                    <input type="text" id="roomSearchInput" placeholder="Search rooms…" />
+                </div>
+            </div>
+
+            <!-- Floor filter tabs -->
+            @if (totalFloors > 0)
+            {
+                var rooms = ViewBag.Rooms as IEnumerable<Room>;
+                <div class="floor-tabs" id="floorTabs">
+                    <button class="floor-tab active" data-floor="all">
+                        All <span class="floor-tab-count">@totalRooms</span>
+                    </button>
+                    @for (int f = 0; f < totalFloors; f++)
+                    {
+                        var fc = rooms?.Count(r => r.Floor == f) ?? 0;
+                        if (fc > 0)
+                        {
+                            <button class="floor-tab" data-floor="@f">
+                                Floor @(f + 1) <span class="floor-tab-count">@fc</span>
+                            </button>
+                        }
+                    }
+                </div>
+            }
+
+            <!-- Room cards by floor -->
+            @{
+                var roomsList = ViewBag.Rooms as IEnumerable<Room>;
+            }
+            @if (roomsList != null && roomsList.Any())
+            {
+                for (int floor = 0; floor < totalFloors; floor++)
+                {
+                    var floorRooms = roomsList.Where(r => r.Floor == floor).ToList();
+                    if (!floorRooms.Any()) continue;
+
+                    <div class="rooms-grid-card floor-section-card" data-floor="@floor">
+                        <div class="floor-label">
+                            <div class="floor-label-ring"><i class="material-icons">layers</i></div>
+                            <span class="floor-label-text">Floor @(floor + 1)</span>
+                            <span class="floor-label-count">@floorRooms.Count rooms</span>
+                        </div>
+
+                        <div class="rooms-grid">
+                            @foreach (var room in floorRooms)
+                            {
+                                int occ = room.BedSpaces?.Count(b => b.Status == Status.Occupied) ?? 0;
+                                int cap = room.Capacity > 0 ? room.Capacity : 1;
+                                double pct = (double)occ / cap * 100;
+
+                                var rcClass = room.Status == Status.Available ? "rc-avail"
+                                : room.Status == Status.Occupied ? "rc-occ"
+                                : room.Status == Status.Maintenance ? "rc-maint"
+                                : "rc-other";
+                                var dotClass = room.Status == Status.Available ? "rc-dot-avail"
+                                : room.Status == Status.Occupied ? "rc-dot-occ"
+                                : room.Status == Status.Maintenance ? "rc-dot-maint"
+                                : "rc-dot-other";
+                                var barClass2 = pct == 0 ? "rc-bar-g" : pct < 100 ? "rc-bar-a" : "rc-bar-r";
+
+                                <div class="room-card @rcClass" data-room-number="@room.RoomNumber.ToLower()" data-room-type="@room.RoomType?.ToLower()">
+                                    <div class="rc-status @dotClass"></div>
+                                    <p class="rc-number">@room.RoomNumber</p>
+                                    <p class="rc-type">@room.RoomType</p>
+                                    <div class="rc-beds">
+                                        <span class="rc-beds-lbl"><i class="material-icons">hotel</i>Beds</span>
+                                        <span class="rc-beds-val"><strong>@occ</strong><span>/@room.Capacity</span></span>
+                                    </div>
+                                    @if (room.Capacity > 0)
+                                    {
+                                        <div class="rc-bar-wrap">
+                                            <div class="rc-bar @barClass2" style="width:@(pct)%;"></div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="rooms-grid-card">
+                    <div class="rooms-empty">
+                        <div class="rooms-empty-ring"><i class="material-icons">meeting_room</i></div>
+                        <h4>No Rooms Found</h4>
+                        <p>Rooms are auto-generated when you create a hostel, or click "Add Room" to add them manually.</p>
+                    </div>
+                </div>
+            }
+
+            <!-- Legend -->
+            <div style="display:flex;gap:1rem;flex-wrap:wrap;padding:.5rem .25rem;">
+                <span style="display:flex;align-items:center;gap:.35rem;font-size:.71rem;color:var(--text);"><span style="width:10px;height:10px;border-radius:50%;background:var(--green);display:inline-block;"></span>Available</span>
+                <span style="display:flex;align-items:center;gap:.35rem;font-size:.71rem;color:var(--text);"><span style="width:10px;height:10px;border-radius:50%;background:var(--amber);display:inline-block;"></span>Partially Occupied</span>
+                <span style="display:flex;align-items:center;gap:.35rem;font-size:.71rem;color:var(--text);"><span style="width:10px;height:10px;border-radius:50%;background:var(--coral);display:inline-block;"></span>Occupied / Maintenance</span>
+            </div>
+
+        </div><!-- /main -->
+
+    </div><!-- /body -->
 </div>
 
 @section Scripts {
     <script src="~/js/hostelDetails.js"></script>
     <script>
-        // Room search functionality
-        document.getElementById('roomSearchInput').addEventListener('input', function(e) {
-            const searchTerm = e.target.value.toLowerCase();
-            const roomCards = document.querySelectorAll('.room-card');
+        /* ── Search ── */
+        document.getElementById('roomSearchInput').addEventListener('input', function () {
+            const term = this.value.toLowerCase();
+            document.querySelectorAll('.room-card').forEach(card => {
+                const num  = card.dataset.roomNumber  || '';
+                const type = card.dataset.roomType || '';
+                card.style.display = (num.includes(term) || type.includes(term)) ? '' : 'none';
+            });
+            // show/hide floor section cards based on whether they have visible rooms
+            document.querySelectorAll('.floor-section-card').forEach(sec => {
+                const hasVisible = [...sec.querySelectorAll('.room-card')].some(c => c.style.display !== 'none');
+                sec.style.display = hasVisible ? '' : 'none';
+            });
+        });
 
-            roomCards.forEach(card => {
-                const roomNumber = card.querySelector('h3').textContent.toLowerCase();
-                const roomType = card.querySelector('.uppercase').textContent.toLowerCase();
-
-                if (roomNumber.includes(searchTerm) || roomType.includes(searchTerm)) {
-                    card.style.display = 'block';
-                } else {
-                    card.style.display = 'none';
-                }
+        /* ── Floor tabs ── */
+        document.querySelectorAll('.floor-tab').forEach(tab => {
+            tab.addEventListener('click', function () {
+                document.querySelectorAll('.floor-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                const floor = this.dataset.floor;
+                document.querySelectorAll('.floor-section-card').forEach(sec => {
+                    sec.style.display = (floor === 'all' || sec.dataset.floor === floor) ? '' : 'none';
+                });
             });
         });
     </script>

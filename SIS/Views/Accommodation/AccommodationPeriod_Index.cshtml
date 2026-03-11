@@ -2,75 +2,782 @@
 @using Microsoft.AspNetCore.Mvc.Rendering
 
 @{
-    ViewData["Title"] = "Accommodation Period Management";
+    ViewData["Title"] = "Accommodation Periods";
+    var totalPeriods = Model.Count();
+    var activePeriods = Model.Count(p => p.Status == SIS.Enums.Status.Active);
+    var totalApps = Model.Sum(p => p.Applications?.Count ?? 0);
 }
 
-<!-- Tailwind CSS CDN -->
-<script src="https://cdn.tailwindcss.com"></script>
-<!-- Material Icons -->
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-<!-- SweetAlert2 CSS -->
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
 <style>
-    /* Custom scrollbar */
-    .custom-scroll::-webkit-scrollbar {
-        width: 8px;
+    :root {
+        --coral: #e85c5c;
+        --coral-d: #c94040;
+        --navy: #1e2d5e;
+        --navy-l: #2e3f7a;
+        --mist: #f5f7fa;
+        --border: #e8ecf2;
+        --ink: #1a1f2e;
+        --text: #475569;
+        --green: #16a34a;
+        --greenl: #dcfce7;
+        --amber: #d97706;
+        --amberl: #fffbeb;
     }
 
-    .custom-scroll::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: 10px;
+    * {
+        font-family: 'DM Sans', sans-serif;
+        box-sizing: border-box;
     }
 
-    .custom-scroll::-webkit-scrollbar-thumb {
-        background: #888;
-        border-radius: 10px;
-    }
-
-        .custom-scroll::-webkit-scrollbar-thumb:hover {
-            background: #555;
-        }
-
-    /* Spinning animation for loader */
     @@keyframes spin {
-        from {
-            transform: rotate(0deg);
-        }
-
         to {
             transform: rotate(360deg);
         }
     }
 
-    .animate-spin {
-        animation: spin 1s linear infinite;
+    @@keyframes fadeUp {
+        from {
+            opacity: 0;
+            transform: translateY(16px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 
-    /* Loading Indicator */
+    @@keyframes pulse {
+        0%, 100% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: .55;
+        }
+    }
+
+    /* ── Page shell ─────────────────────── */
+    .ap-page {
+        background: var(--mist);
+        min-height: 100vh;
+    }
+
+    /* ── Hero ──────────────────────────── */
+    .ap-hero {
+        background: linear-gradient(135deg, #141c3a 0%, var(--navy) 40%, var(--navy-l) 75%, #2a1a5e 100%);
+        padding: 1.75rem 2rem 4.25rem;
+        position: relative;
+        overflow: hidden;
+    }
+        /* decorative spheres */
+        .ap-hero::before {
+            content: '';
+            position: absolute;
+            top: -70px;
+            right: -50px;
+            width: 260px;
+            height: 260px;
+            background: radial-gradient(circle, rgba(232,92,92,.18) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .ap-hero::after {
+            content: '';
+            position: absolute;
+            bottom: -90px;
+            left: 12%;
+            width: 340px;
+            height: 340px;
+            background: radial-gradient(circle, rgba(255,255,255,.04) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+    .ap-hero-inner {
+        position: relative;
+        z-index: 1;
+    }
+
+    /* top row */
+    .ap-hero-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .ap-hero-left {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .ap-hero-icon {
+        width: 58px;
+        height: 58px;
+        border-radius: 1rem;
+        flex-shrink: 0;
+        background: rgba(255,255,255,.1);
+        border: 1.5px solid rgba(255,255,255,.2);
+        backdrop-filter: blur(8px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 16px rgba(0,0,0,.2);
+    }
+
+        .ap-hero-icon i {
+            font-size: 1.85rem;
+            color: #fff;
+        }
+
+    .ap-hero-eyebrow {
+        font-size: .67rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .1em;
+        color: rgba(255,255,255,.4);
+        margin-bottom: .25rem;
+    }
+
+    .ap-hero-title {
+        font-family: 'DM Serif Display', serif;
+        font-size: 1.7rem;
+        color: #fff;
+        margin: 0;
+        line-height: 1.15;
+    }
+
+    .ap-hero-sub {
+        font-size: .78rem;
+        color: rgba(255,255,255,.5);
+        margin-top: .2rem;
+    }
+
+    /* stats row inside hero */
+    .ap-hero-stats {
+        display: flex;
+        gap: 2rem;
+        margin-top: 1.35rem;
+        flex-wrap: wrap;
+    }
+
+    .ap-stat {
+        display: flex;
+        align-items: center;
+        gap: .6rem;
+    }
+
+    .ap-stat-ring {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: rgba(255,255,255,.1);
+        border: 1.5px solid rgba(255,255,255,.18);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .ap-stat-ring i {
+            font-size: .95rem;
+            color: rgba(255,255,255,.75);
+        }
+
+    .ap-stat-val {
+        font-family: 'DM Serif Display', serif;
+        font-size: 1.35rem;
+        color: #fff;
+        line-height: 1;
+    }
+
+    .ap-stat-lbl {
+        font-size: .66rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        color: rgba(255,255,255,.4);
+    }
+
+    /* create button */
+    .btn-hero-create {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        background: var(--coral);
+        color: #fff;
+        border: none;
+        font-size: .82rem;
+        font-weight: 700;
+        font-family: inherit;
+        padding: .7rem 1.35rem;
+        border-radius: .7rem;
+        cursor: pointer;
+        box-shadow: 0 4px 18px rgba(232,92,92,.4);
+        transition: background .15s, transform .1s;
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+
+        .btn-hero-create:hover {
+            background: var(--coral-d);
+            transform: translateY(-1px);
+        }
+
+        .btn-hero-create i {
+            font-size: 1rem;
+        }
+
+    /* ── Floating strip (alerts) ───────── */
+    .ap-strip {
+        margin: -2.35rem 2rem 0;
+        position: relative;
+        z-index: 3;
+        display: flex;
+        flex-direction: column;
+        gap: .65rem;
+    }
+
+    .strip-alert {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        border-radius: .75rem;
+        padding: .85rem 1rem;
+        font-size: .8rem;
+        box-shadow: 0 4px 20px rgba(30,45,94,.12);
+        background: #fff;
+        animation: fadeUp .25s ease-out;
+    }
+
+        .strip-alert i {
+            font-size: 1.05rem;
+            flex-shrink: 0;
+        }
+
+    .strip-success {
+        border-left: 4px solid var(--green);
+        color: #166534;
+    }
+
+        .strip-success i {
+            color: var(--green);
+        }
+
+    .strip-error {
+        border-left: 4px solid var(--coral);
+        color: #991b1b;
+    }
+
+        .strip-error i {
+            color: var(--coral);
+        }
+
+    /* ── Periods grid ──────────────────── */
+    .ap-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.15rem;
+        padding: 1.85rem 2rem 2.5rem;
+        margin-top: 1.35rem;
+    }
+
+    /* ── Period card ───────────────────── */
+    .period-card {
+        background: #fff;
+        border: 1.5px solid var(--border);
+        border-radius: 1.1rem;
+        padding: 1.1rem;
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+        box-shadow: 0 2px 10px rgba(30,45,94,.06);
+        transition: border-color .15s, box-shadow .15s, transform .12s;
+        animation: fadeUp .35s ease-out both;
+    }
+
+        .period-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--navy), var(--navy-l));
+            opacity: 0;
+            transition: opacity .2s;
+        }
+
+        .period-card:hover {
+            border-color: #c4cfe2;
+            box-shadow: 0 8px 28px rgba(30,45,94,.13);
+            transform: translateY(-3px);
+        }
+
+            .period-card:hover::before {
+                opacity: 1;
+            }
+
+        .period-card.selected {
+            border-color: var(--coral);
+            box-shadow: 0 0 0 3px rgba(232,92,92,.15), 0 8px 28px rgba(30,45,94,.1);
+        }
+
+            .period-card.selected::before {
+                background: linear-gradient(90deg, var(--coral), var(--coral-d));
+                opacity: 1;
+            }
+
+        /* stagger animation delays */
+        .period-card:nth-child(1) {
+            animation-delay: .05s;
+        }
+
+        .period-card:nth-child(2) {
+            animation-delay: .1s;
+        }
+
+        .period-card:nth-child(3) {
+            animation-delay: .15s;
+        }
+
+        .period-card:nth-child(4) {
+            animation-delay: .2s;
+        }
+
+        .period-card:nth-child(5) {
+            animation-delay: .25s;
+        }
+
+        .period-card:nth-child(6) {
+            animation-delay: .3s;
+        }
+
+    /* ── Card header ───────────────────── */
+    .card-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: .85rem;
+        gap: .5rem;
+    }
+
+    .card-title {
+        font-family: 'DM Serif Display', serif;
+        font-size: 1.05rem;
+        color: var(--ink);
+        margin: 0 0 .45rem;
+        line-height: 1.2;
+    }
+
+    .card-badges {
+        display: flex;
+        gap: .35rem;
+        flex-wrap: wrap;
+    }
+
+    /* status pills */
+    .sp {
+        display: inline-flex;
+        align-items: center;
+        gap: .22rem;
+        font-size: .65rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        padding: .22rem .55rem;
+        border-radius: 2rem;
+    }
+
+        .sp i {
+            font-size: .75rem;
+        }
+
+    .sp-active {
+        background: var(--greenl);
+        color: #166534;
+    }
+
+    .sp-inactive {
+        background: var(--mist);
+        color: var(--text);
+        border: 1px solid var(--border);
+    }
+
+    .sp-upcoming {
+        background: #eff6ff;
+        color: #1e40af;
+    }
+
+    .sp-closed {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .sp-payment {
+        background: var(--amberl);
+        color: var(--amber);
+        border: 1px solid #fde68a;
+    }
+
+    /* ── Three-dot menu ─────────────────── */
+    .card-menu-wrap {
+        position: relative;
+        flex-shrink: 0;
+    }
+
+    .card-menu-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: .3rem;
+        border-radius: .45rem;
+        color: #94a3b8;
+        display: flex;
+        align-items: center;
+        transition: all .15s;
+    }
+
+        .card-menu-btn:hover {
+            background: var(--mist);
+            color: var(--ink);
+        }
+
+        .card-menu-btn i {
+            font-size: 1.1rem;
+        }
+
+    .drop-menu {
+        position: absolute;
+        right: 0;
+        top: calc(100% + .35rem);
+        width: 12rem;
+        background: #fff;
+        border-radius: .8rem;
+        border: 1.5px solid var(--border);
+        box-shadow: 0 10px 30px rgba(30,45,94,.15);
+        z-index: 30;
+        overflow: hidden;
+    }
+
+        .drop-menu a {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            padding: .65rem .9rem;
+            font-size: .8rem;
+            color: var(--text);
+            text-decoration: none;
+            transition: background .12s;
+        }
+
+            .drop-menu a i {
+                font-size: .9rem;
+            }
+
+            .drop-menu a:hover {
+                background: var(--mist);
+                color: var(--ink);
+            }
+
+            .drop-menu a.dm-del {
+                color: var(--coral);
+            }
+
+                .drop-menu a.dm-del:hover {
+                    background: #fef2f2;
+                }
+
+        .drop-menu hr {
+            margin: .2rem 0;
+            border: none;
+            border-top: 1px solid var(--border);
+        }
+
+    /* ── Detail cells ──────────────────── */
+    .dc-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: .45rem;
+        margin: .5rem 0 .7rem;
+    }
+
+    .dc {
+        background: var(--mist);
+        border: 1px solid var(--border);
+        border-radius: .55rem;
+        padding: .5rem .65rem;
+    }
+
+        .dc.full {
+            grid-column: 1 / -1;
+        }
+
+        .dc.amber-dc {
+            background: var(--amberl);
+            border-color: #fde68a;
+        }
+
+    .dc-lbl {
+        font-size: .6rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        color: #94a3b8;
+        margin-bottom: .18rem;
+        display: flex;
+        align-items: center;
+        gap: .2rem;
+    }
+
+        .dc-lbl i {
+            font-size: .68rem;
+        }
+
+    .dc.amber-dc .dc-lbl {
+        color: #a16207;
+    }
+
+    .dc-val {
+        font-size: .78rem;
+        font-weight: 700;
+        color: var(--ink);
+    }
+
+    .dc.amber-dc .dc-val {
+        color: var(--amber);
+    }
+
+    /* ── App count bar ─────────────────── */
+    .app-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--mist);
+        border: 1px solid var(--border);
+        border-radius: .55rem;
+        padding: .42rem .7rem;
+        margin-bottom: .6rem;
+    }
+
+    .app-bar-left {
+        display: flex;
+        align-items: center;
+        gap: .3rem;
+        font-size: .76rem;
+        font-weight: 700;
+        color: var(--ink);
+    }
+
+        .app-bar-left i {
+            font-size: .85rem;
+            color: var(--navy);
+        }
+
+    .app-bar-right {
+        display: flex;
+        gap: .55rem;
+        font-size: .67rem;
+        font-weight: 700;
+    }
+
+    .app-bar-approved {
+        color: var(--green);
+    }
+
+    .app-bar-pending {
+        color: var(--amber);
+    }
+
+    /* ── Eligibility tag ───────────────── */
+    .elig-tag {
+        display: flex;
+        align-items: center;
+        gap: .4rem;
+        border-radius: .55rem;
+        padding: .45rem .7rem;
+        font-size: .73rem;
+        font-weight: 600;
+        margin-bottom: .7rem;
+    }
+
+        .elig-tag i {
+            font-size: .85rem;
+        }
+
+    .elig-universal {
+        background: #ecfeff;
+        border: 1px solid #a5f3fc;
+        color: #0e7490;
+    }
+
+    .elig-restricted {
+        background: var(--mist);
+        border: 1px solid var(--border);
+        color: var(--text);
+    }
+
+    /* ── Card action buttons ───────────── */
+    .card-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: .5rem;
+        margin-top: .4rem;
+    }
+
+    .btn-select {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: .35rem;
+        background: var(--navy);
+        color: #fff;
+        border: none;
+        font-size: .76rem;
+        font-weight: 700;
+        font-family: inherit;
+        padding: .55rem;
+        border-radius: .55rem;
+        cursor: pointer;
+        transition: background .15s;
+    }
+
+        .btn-select:hover {
+            background: var(--navy-l);
+        }
+
+        .btn-select.selected {
+            background: var(--green);
+        }
+
+            .btn-select.selected:hover {
+                background: #15803d;
+            }
+
+        .btn-select i {
+            font-size: .85rem;
+        }
+
+    .btn-del-outline {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: .35rem;
+        background: transparent;
+        color: var(--coral);
+        border: 1.5px solid rgba(232,92,92,.3);
+        font-size: .76rem;
+        font-weight: 700;
+        font-family: inherit;
+        padding: .55rem;
+        border-radius: .55rem;
+        cursor: pointer;
+        transition: all .15s;
+    }
+
+        .btn-del-outline:hover {
+            background: var(--coral);
+            color: #fff;
+            border-color: var(--coral);
+        }
+
+        .btn-del-outline i {
+            font-size: .85rem;
+        }
+
+    /* ── Empty state ───────────────────── */
+    .ap-empty {
+        grid-column: 1 / -1;
+        background: #fff;
+        border: 1.5px solid var(--border);
+        border-radius: 1.25rem;
+        padding: 4rem 2rem;
+        text-align: center;
+        box-shadow: 0 2px 12px rgba(30,45,94,.06);
+    }
+
+    .empty-ring {
+        width: 84px;
+        height: 84px;
+        border-radius: 50%;
+        margin: 0 auto 1.35rem;
+        background: linear-gradient(135deg, var(--navy), var(--navy-l));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 28px rgba(30,45,94,.28);
+    }
+
+        .empty-ring i {
+            font-size: 2.4rem;
+            color: #fff;
+        }
+
+    .ap-empty h4 {
+        font-family: 'DM Serif Display', serif;
+        font-size: 1.4rem;
+        color: var(--ink);
+        margin: 0 0 .55rem;
+    }
+
+    .ap-empty p {
+        font-size: .8rem;
+        color: var(--text);
+        max-width: 22rem;
+        margin: 0 auto 1.75rem;
+        line-height: 1.65;
+    }
+
+    /* ── Loading overlay ───────────────── */
     #loadingIndicator {
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        width: 100vw !important;
-        height: 100vh !important;
-        z-index: 10000 !important;
-        background-color: rgba(0, 0, 0, 0.6) !important;
-        display: none !important;
-        align-items: center !important;
-        justify-content: center !important;
+        position: fixed;
+        inset: 0;
+        background: rgba(15,20,40,.55);
+        backdrop-filter: blur(4px);
+        z-index: 10000;
+        display: none;
+        align-items: center;
+        justify-content: center;
     }
 
         #loadingIndicator[style*="display: flex"] {
             display: flex !important;
         }
 
-    /* Modal fixes */
+    .li-box {
+        background: #fff;
+        border-radius: 1rem;
+        padding: 1.4rem 2rem;
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        box-shadow: 0 20px 40px rgba(15,20,40,.22);
+    }
+
+    .li-spin {
+        animation: spin 1s linear infinite;
+        font-size: 1.5rem;
+        color: var(--coral);
+    }
+
+    .li-txt {
+        font-size: .85rem;
+        font-weight: 700;
+        color: var(--ink);
+    }
+
+    /* ── Modals ────────────────────────── */
     .modal-overlay {
-        position: fixed !important;
-        inset: 0 !important;
-        z-index: 9998 !important;
-        background-color: rgba(0, 0, 0, 0.5);
+        position: fixed;
+        inset: 0;
+        background: rgba(15,20,40,.55);
+        backdrop-filter: blur(4px);
+        z-index: 9998;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -82,813 +789,733 @@
             display: none !important;
         }
 
-    .modal-content {
-        background: white;
-        border-radius: 1rem;
-        max-width: 900px;
+    .modal-box {
+        background: #fff;
+        border-radius: 1.25rem;
         width: 100%;
         max-height: 90vh;
         overflow-y: auto;
         margin: auto;
+        box-shadow: 0 24px 60px rgba(15,20,40,.3);
+        animation: fadeUp .22s ease-out;
     }
 
-    .modal-header {
-        background: linear-gradient(to right, #0891b2, #0e7490);
-        padding: 1rem 1.5rem;
-        border-radius: 1rem 1rem 0 0;
+    .modal-head {
+        background: linear-gradient(135deg, var(--navy), var(--navy-l));
+        padding: 1.1rem 1.4rem;
+        border-radius: 1.25rem 1.25rem 0 0;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        flex-shrink: 0;
+        position: sticky;
+        top: 0;
+        z-index: 1;
     }
 
-        .modal-header h5 {
-            color: white;
-            font-size: 1.25rem;
-            font-weight: 700;
-            margin: 0;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .modal-header button {
-            color: white;
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            padding: 0;
-            line-height: 1;
-        }
-
-            .modal-header button:hover {
-                opacity: 0.8;
-            }
-
-    /* Period card styling - Compact version */
-    .period-card {
-        transition: all 0.3s ease;
-        cursor: pointer;
-        background: white;
-        border-radius: 1rem;
-        position: relative;
-        overflow: hidden;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-
-        .period-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        .period-card.selected {
-            box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.3);
-            border: 2px solid #0891b2;
-        }
-
-    /* Status badges */
-    .status-badge {
-        display: inline-flex;
+    .modal-head-title {
+        font-family: 'DM Serif Display', serif;
+        font-size: 1.05rem;
+        color: #fff;
+        display: flex;
         align-items: center;
-        gap: 0.375rem;
-        padding: 0.25rem 0.625rem;
-        border-radius: 0.5rem;
-        font-size: 0.75rem;
-        font-weight: 600;
+        gap: .5rem;
+        margin: 0;
     }
 
-        .status-badge.active {
-            background: #d1fae5;
-            color: #065f46;
+        .modal-head-title i {
+            font-size: 1.05rem;
+            color: rgba(255,255,255,.65);
         }
 
-        .status-badge.inactive {
-            background: #f3f4f6;
-            color: #374151;
-        }
-
-        .status-badge.upcoming {
-            background: #dbeafe;
-            color: #1e40af;
-        }
-
-        .status-badge.closed {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        .status-badge .material-icons {
-            font-size: 14px;
-        }
-
-    /* Payment type badge */
-    .payment-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.375rem;
-        padding: 0.25rem 0.625rem;
-        border-radius: 0.5rem;
-        font-size: 0.75rem;
-        font-weight: 600;
-        background: #fef3c7;
-        color: #92400e;
-    }
-
-        .payment-badge .material-icons {
-            font-size: 14px;
-        }
-
-    /* Button styles */
-    .btn-primary {
-        background: linear-gradient(to right, #0891b2, #0e7490);
-        color: white;
-        padding: 0.75rem 1.5rem;
-        border-radius: 0.5rem;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        border: none;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        display: inline-flex;
+    .modal-close {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: rgba(255,255,255,.12);
+        border: 1px solid rgba(255,255,255,.22);
+        color: #fff;
+        display: flex;
         align-items: center;
         justify-content: center;
-        gap: 0.5rem;
         cursor: pointer;
+        transition: background .15s;
+        flex-shrink: 0;
+    }
+
+        .modal-close:hover {
+            background: rgba(255,255,255,.24);
+        }
+
+        .modal-close i {
+            font-size: .9rem;
+        }
+
+    /* modal body */
+    .modal-body {
+        padding: 1.5rem;
+    }
+
+    /* form sections */
+    .form-sec {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-sec-title {
+        font-size: .71rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .07em;
+        color: var(--navy);
+        display: flex;
+        align-items: center;
+        gap: .4rem;
+        padding-bottom: .6rem;
+        border-bottom: 1.5px solid var(--border);
+        margin-bottom: 1rem;
+    }
+
+        .form-sec-title i {
+            font-size: .85rem;
+        }
+
+    /* form grids */
+    .fg2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: .85rem;
+    }
+
+    .fg3 {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: .85rem;
+    }
+
+    @@media (max-width: 580px) {
+        .fg2, .fg3 {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .ff {
+        display: flex;
+        flex-direction: column;
+        gap: .35rem;
+    }
+
+        .ff label {
+            font-size: .71rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            color: var(--ink);
+        }
+
+            .ff label .req {
+                color: var(--coral);
+            }
+
+            .ff label .opt {
+                font-weight: 400;
+                text-transform: none;
+                color: #94a3b8;
+                font-size: .66rem;
+                letter-spacing: 0;
+            }
+
+        .ff input[type=date], .ff input[type=number], .ff select {
+            padding: .55rem .75rem;
+            border: 1.5px solid var(--border);
+            border-radius: .55rem;
+            font-family: inherit;
+            font-size: .82rem;
+            color: var(--ink);
+            background: #fff;
+            transition: border-color .15s, box-shadow .15s;
+            width: 100%;
+        }
+
+            .ff input:focus, .ff select:focus {
+                outline: none;
+                border-color: var(--navy);
+                box-shadow: 0 0 0 3px rgba(30,45,94,.1);
+            }
+
+            .ff input.err, .ff select.err {
+                border-color: var(--coral);
+            }
+
+        .ff .ferr {
+            font-size: .68rem;
+            color: var(--coral);
+            display: none;
+        }
+
+            .ff .ferr.show {
+                display: block;
+            }
+
+    /* checkbox row */
+    .chk-row {
+        display: flex;
+        align-items: flex-start;
+        gap: .65rem;
+        background: var(--mist);
+        border: 1.5px solid var(--border);
+        border-radius: .65rem;
+        padding: .75rem .9rem;
+    }
+
+        .chk-row input[type=checkbox] {
+            accent-color: var(--navy);
+            width: 1rem;
+            height: 1rem;
+            margin-top: .1rem;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+
+    .chk-row-title {
+        font-size: .82rem;
+        font-weight: 700;
+        color: var(--ink);
+    }
+
+    .chk-row-sub {
+        font-size: .72rem;
+        color: var(--text);
+        margin-top: .1rem;
+    }
+
+    #eligibilityCriteria {
+        transition: opacity .2s;
+    }
+
+    /* modal footer */
+    .modal-foot {
+        display: flex;
+        justify-content: flex-end;
+        gap: .65rem;
+        padding: 1rem 1.5rem;
+        border-top: 1.5px solid var(--border);
+    }
+
+    /* generic buttons */
+    .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        background: var(--navy);
+        color: #fff;
+        border: none;
+        font-size: .82rem;
+        font-weight: 700;
+        font-family: inherit;
+        padding: .6rem 1.15rem;
+        border-radius: .6rem;
+        cursor: pointer;
+        box-shadow: 0 3px 10px rgba(30,45,94,.22);
+        transition: background .15s;
     }
 
         .btn-primary:hover {
-            background: linear-gradient(to right, #0e7490, #155e75);
-            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
-            color: white;
-            text-decoration: none;
+            background: var(--navy-l);
         }
 
-    .btn-select {
-        background: linear-gradient(to right, #0891b2, #0e7490);
-        color: white;
-        padding: 0.5rem 1rem;
-        border-radius: 0.5rem;
-        font-weight: 600;
-        transition: all 0.3s ease;
+        .btn-primary i {
+            font-size: .9rem;
+        }
+
+    .btn-coral {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        background: var(--coral);
+        color: #fff;
         border: none;
-        width: 100%;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.375rem;
-        font-size: 0.875rem;
-        cursor: pointer;
-    }
-
-        .btn-select:hover {
-            background: linear-gradient(to right, #0e7490, #155e75);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
-            color: white;
-        }
-
-        .btn-select.selected {
-            background: linear-gradient(to right, #10b981, #059669);
-            box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
-        }
-
-            .btn-select.selected:hover {
-                background: linear-gradient(to right, #059669, #047857);
-            }
-
-        .btn-select .material-icons {
-            font-size: 16px;
-        }
-
-    .btn-danger-outline {
-        background-color: transparent;
-        color: #ef4444;
-        padding: 0.5rem 1rem;
-        border-radius: 0.5rem;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        border: 2px solid #ef4444;
-        width: 100%;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.375rem;
-        font-size: 0.875rem;
-        cursor: pointer;
-    }
-
-        .btn-danger-outline:hover {
-            background: linear-gradient(to right, #ef4444, #dc2626);
-            color: white;
-            box-shadow: 0 4px 6px rgba(239, 68, 68, 0.2);
-            border-color: #ef4444;
-        }
-
-        .btn-danger-outline .material-icons {
-            font-size: 16px;
-        }
-
-    .btn-secondary {
-        background-color: #f3f4f6;
-        color: #374151;
-        padding: 0.75rem 1.5rem;
-        border-radius: 0.5rem;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        border: none;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        cursor: pointer;
-    }
-
-        .btn-secondary:hover {
-            background-color: #e5e7eb;
-            color: #374151;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-    /* Info boxes - Compact */
-    .info-item {
-        background: linear-gradient(to bottom right, #f9fafb, #f3f4f6);
-        padding: 0.625rem;
-        border-radius: 0.5rem;
-        border: 1px solid #e5e7eb;
-        margin-bottom: 0.5rem;
-    }
-
-        .info-item .info-label {
-            font-size: 0.625rem;
-            color: #6b7280;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 0.25rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-        }
-
-            .info-item .info-label .material-icons {
-                font-size: 12px;
-            }
-
-        .info-item .info-value {
-            font-size: 0.8125rem;
-            color: #111827;
-            font-weight: 600;
-            margin: 0;
-        }
-
-    /* Section headings */
-    .section-heading {
-        font-size: 1rem;
+        font-size: .82rem;
         font-weight: 700;
-        color: #0891b2;
-        margin-bottom: 1rem;
-        display: flex;
+        font-family: inherit;
+        padding: .6rem 1.15rem;
+        border-radius: .6rem;
+        cursor: pointer;
+        box-shadow: 0 3px 10px rgba(232,92,92,.3);
+        transition: background .15s;
+    }
+
+        .btn-coral:hover {
+            background: var(--coral-d);
+        }
+
+    .btn-ghost {
+        display: inline-flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: .4rem;
+        background: var(--mist);
+        color: var(--text);
+        border: 1.5px solid var(--border);
+        font-size: .82rem;
+        font-weight: 700;
+        font-family: inherit;
+        padding: .6rem 1.1rem;
+        border-radius: .6rem;
+        cursor: pointer;
+        transition: all .15s;
     }
 
-        .section-heading .material-icons {
-            font-size: 20px;
+        .btn-ghost:hover {
+            background: #eaecf0;
+            color: var(--ink);
         }
 
-    /* Form control styling */
-    .form-control:focus,
-    .form-select:focus {
-        border-color: #0891b2 !important;
-        box-shadow: 0 0 0 0.2rem rgba(8, 145, 178, 0.25) !important;
-    }
-
-    /* Grid utilities */
-    .periods-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 1.25rem;
-    }
-
-    @@media (min-width: 768px) {
-        .periods-grid {
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-        }
-    }
-
-    /* Eligibility badge - Compact */
-    .eligibility-badge {
-        padding: 0.5rem 0.75rem;
-        border-radius: 0.5rem;
-        font-size: 0.75rem;
-        display: flex;
-        align-items: center;
-        gap: 0.375rem;
-        margin-bottom: 0.75rem;
-    }
-
-        .eligibility-badge.universal {
-            background: linear-gradient(to right, #ecfeff, #cffafe);
-            border: 1px solid #a5f3fc;
-            color: #0e7490;
-        }
-
-        .eligibility-badge.restricted {
-            background: linear-gradient(to right, #f9fafb, #f3f4f6);
-            border: 1px solid #e5e7eb;
-            color: #374151;
-        }
-
-        .eligibility-badge .material-icons {
-            font-size: 14px;
-        }
-
-        .eligibility-badge strong {
-            font-weight: 700;
-        }
-
-    /* Compact card header */
-    .card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: start;
-        margin-bottom: 0.75rem;
-    }
-
-        .card-header h3 {
-            font-size: 1.125rem;
-            font-weight: 700;
-            color: #1f2937;
-            margin: 0 0 0.375rem 0;
-        }
-
-    /* Dropdown menu */
-    .dropdown-menu {
-        position: absolute;
-        right: 0;
-        margin-top: 0.5rem;
-        width: 12rem;
-        background: white;
-        border-radius: 0.75rem;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        border: 1px solid #e5e7eb;
-        z-index: 10;
-        overflow: hidden;
-    }
-
-        .dropdown-menu a {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.75rem 1rem;
-            font-size: 0.875rem;
-            color: #374151;
-            text-decoration: none;
-            transition: background 0.2s;
-        }
-
-            .dropdown-menu a:hover {
-                background: #f3f4f6;
-            }
-
-            .dropdown-menu a.text-red {
-                color: #dc2626;
-            }
-
-                .dropdown-menu a.text-red:hover {
-                    background: #fee2e2;
-                }
-
-            .dropdown-menu a .material-icons {
-                font-size: 16px;
-            }
-
-        .dropdown-menu hr {
-            margin: 0.25rem 0;
-            border: none;
-            border-top: 1px solid #e5e7eb;
-        }
-
-    /* Action buttons container */
-    .action-buttons {
+    /* view modal cells */
+    .vdc-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 0.5rem;
+        gap: .5rem;
+        margin-bottom: .85rem;
+    }
+
+    .vdc {
+        background: var(--mist);
+        border: 1px solid var(--border);
+        border-radius: .55rem;
+        padding: .5rem .65rem;
+    }
+
+        .vdc.full {
+            grid-column: 1 / -1;
+        }
+
+        .vdc.amber-vdc {
+            background: var(--amberl);
+            border-color: #fde68a;
+        }
+
+    .vdc-lbl {
+        font-size: .6rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        color: #94a3b8;
+        margin-bottom: .18rem;
+    }
+
+    .vdc.amber-vdc .vdc-lbl {
+        color: #a16207;
+    }
+
+    .vdc-val {
+        font-size: .8rem;
+        font-weight: 700;
+        color: var(--ink);
+    }
+
+    .vdc.amber-vdc .vdc-val {
+        color: var(--amber);
+    }
+
+    .vsec-title {
+        font-size: .7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .07em;
+        color: var(--navy);
+        display: flex;
+        align-items: center;
+        gap: .4rem;
+        border-bottom: 1.5px solid var(--border);
+        padding-bottom: .55rem;
+        margin: .05rem 0 .75rem;
+    }
+
+        .vsec-title i {
+            font-size: .85rem;
+        }
+
+    @@media (max-width: 640px) {
+        .ap-hero {
+            padding: 1.25rem 1.25rem 3.5rem;
+        }
+
+        .ap-strip {
+            margin: -2rem 1rem 0;
+        }
+
+        .ap-grid {
+            padding: 1.25rem 1rem;
+        }
     }
 </style>
 
-<!-- Loading Indicator -->
+<!-- Loading overlay -->
 <div id="loadingIndicator">
-    <div class="text-center">
-        <div class="spinner-border text-light" role="status" style="width: 3rem; height: 3rem;">
-            <span class="visually-hidden">Loading...</span>
-        </div>
-        <p class="text-white mt-3">Loading...</p>
+    <div class="li-box">
+        <i class="material-icons li-spin">refresh</i>
+        <span class="li-txt">Loading…</span>
     </div>
 </div>
 
-<!-- Main Content -->
-<div style="min-height: 100vh; background: #f9fafb; padding: 1.5rem;">
-    <!-- Header Section -->
-    <div style="margin-bottom: 1.5rem;">
-        <div style="background: white; border-radius: 1rem; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); padding: 1.5rem;">
-            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
-                <div style="display: flex; align-items: start; gap: 1rem;">
-                    <div style="background: linear-gradient(to bottom right, #06b6d4, #0891b2); padding: 1rem; border-radius: 1rem; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-                        <i class="material-icons" style="font-size: 2.5rem; color: white;">event_available</i>
-                    </div>
+<div class="ap-page">
+
+    <!-- ── Hero ── -->
+    <div class="ap-hero">
+        <div class="ap-hero-inner">
+            <div class="ap-hero-row">
+                <div class="ap-hero-left">
+                    <div class="ap-hero-icon"><i class="material-icons">event_available</i></div>
                     <div>
-                        <h1 style="font-size: 1.875rem; font-weight: 700; color: #1f2937; margin: 0 0 0.5rem 0;">Accommodation Period Management</h1>
-                        <p style="font-size: 0.875rem; color: #6b7280; margin: 0;">Manage accommodation periods, payment types, and eligibility criteria</p>
+                        <p class="ap-hero-eyebrow">Administration</p>
+                        <h1 class="ap-hero-title">Accommodation Periods</h1>
+                        <p class="ap-hero-sub">Manage periods, payment types &amp; eligibility criteria</p>
                     </div>
                 </div>
-                <button type="button" class="btn-primary" onclick="showCreateModal()">
-                    <i class="material-icons" style="font-size: 20px;">add</i>
-                    <span>Create New Period</span>
+                <button type="button" class="btn-hero-create" onclick="showCreateModal()">
+                    <i class="material-icons">add</i> Create New Period
                 </button>
             </div>
-
-            @* TempData messages *@
-            @if (TempData["SuccessMessage"] != null)
+            @if (totalPeriods > 0)
             {
-                <div style="background: #d1fae5; border-left: 4px solid #10b981; color: #065f46; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.75rem;">
-                    <i class="material-icons" style="color: #10b981;">check_circle</i>
-                    <p style="font-weight: 600; margin: 0;">@TempData["SuccessMessage"]</p>
-                </div>
-            }
-
-            @if (TempData["ErrorMessage"] != null)
-            {
-                <div style="background: #fee2e2; border-left: 4px solid #ef4444; color: #991b1b; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.75rem;">
-                    <i class="material-icons" style="color: #ef4444;">error</i>
-                    <p style="font-weight: 600; margin: 0;">@TempData["ErrorMessage"]</p>
+                <div class="ap-hero-stats">
+                    <div class="ap-stat">
+                        <div class="ap-stat-ring"><i class="material-icons">event_note</i></div>
+                        <div>
+                            <div class="ap-stat-val">@totalPeriods</div>
+                            <div class="ap-stat-lbl">Total Periods</div>
+                        </div>
+                    </div>
+                    <div class="ap-stat">
+                        <div class="ap-stat-ring"><i class="material-icons">check_circle</i></div>
+                        <div>
+                            <div class="ap-stat-val">@activePeriods</div>
+                            <div class="ap-stat-lbl">Active</div>
+                        </div>
+                    </div>
+                    <div class="ap-stat">
+                        <div class="ap-stat-ring"><i class="material-icons">people</i></div>
+                        <div>
+                            <div class="ap-stat-val">@totalApps</div>
+                            <div class="ap-stat-lbl">Applications</div>
+                        </div>
+                    </div>
                 </div>
             }
         </div>
     </div>
 
-    <!-- Periods Grid -->
-    <div class="periods-grid">
+    <!-- ── TempData alerts strip ── -->
+    <div class="ap-strip">
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="strip-alert strip-success">
+                <i class="material-icons">check_circle</i>
+                <span>@TempData["SuccessMessage"]</span>
+            </div>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="strip-alert strip-error">
+                <i class="material-icons">error</i>
+                <span>@TempData["ErrorMessage"]</span>
+            </div>
+        }
+    </div>
+
+    <!-- ── Periods grid ── -->
+    <div class="ap-grid">
         @foreach (var period in Model)
         {
-            <div class="period-card" style="padding: 1rem;" onclick="showViewModal(@period.PeriodId)">
-                <!-- Header with Type and Status -->
-                <div class="card-header">
+            var statusClass = period.Status switch
+            {
+                SIS.Enums.Status.Active => "sp-active",
+                SIS.Enums.Status.Upcoming => "sp-upcoming",
+                SIS.Enums.Status.Closed => "sp-closed",
+                _ => "sp-inactive"
+            };
+            var statusIcon = period.Status switch
+            {
+                SIS.Enums.Status.Active => "check_circle",
+                SIS.Enums.Status.Upcoming => "schedule",
+                SIS.Enums.Status.Closed => "cancel",
+                _ => "remove_circle"
+            };
+            var appCount = period.Applications?.Count ?? 0;
+            var appApproved = period.Applications?.Count(a => a.Status == SIS.Enums.Status.Active) ?? 0;
+            var appPending = period.Applications?.Count(a => a.Status == SIS.Enums.Status.Upcoming) ?? 0;
+
+            <div class="period-card" onclick="showViewModal(@period.PeriodId)">
+
+                <!-- top row -->
+                <div class="card-top">
                     <div>
-                        <h3>@period.Type Period</h3>
-                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                            <span class="status-badge @period.Status.ToString().ToLower()">
-                                <i class="material-icons">
-                                    @if (period.Status == SIS.Enums.Status.Active)
-                                    {
-                                        <text>check_circle</text>
-                                    }
-                                    else if (period.Status == SIS.Enums.Status.Upcoming)
-                                    {
-                                        <text>schedule</text>
-                                    }
-                                    else if (period.Status == SIS.Enums.Status.Closed)
-                                    {
-                                        <text>cancel</text>
-                                    }
-                                    else
-                                    {
-                                        <text>remove_circle</text>
-                                    }
-                                </i>
-                                @period.Status.ToString()
+                        <h3 class="card-title">@period.Type Period</h3>
+                        <div class="card-badges">
+                            <span class="sp @statusClass">
+                                <i class="material-icons">@statusIcon</i>@period.Status.ToString()
                             </span>
                             @if (!string.IsNullOrEmpty(period.TypeOfPayment))
                             {
-                                <span class="payment-badge">
-                                    <i class="material-icons">payments</i>
-                                    @period.TypeOfPayment
-                                </span>
+                                <span class="sp sp-payment"><i class="material-icons">payments</i>@period.TypeOfPayment</span>
                             }
                         </div>
                     </div>
-                    <div style="position: relative;" onclick="event.stopPropagation()">
-                        <button style="color: #9ca3af; background: none; border: none; padding: 0.5rem; border-radius: 0.5rem; cursor: pointer; transition: all 0.2s;"
-                                onmouseover="this.style.color='#6b7280'; this.style.background='#f3f4f6';"
-                                onmouseout="this.style.color='#9ca3af'; this.style.background='none';"
-                                type="button"
-                                onclick="toggleDropdown(event, @period.PeriodId)">
+                    <div class="card-menu-wrap" onclick="event.stopPropagation()">
+                        <button class="card-menu-btn" type="button" onclick="toggleDropdown(event,@period.PeriodId)">
                             <i class="material-icons">more_vert</i>
                         </button>
-                        <div id="dropdown-@period.PeriodId" class="dropdown-menu" style="display: none;">
-                            <a href="#" onclick="event.preventDefault(); event.stopPropagation(); showViewModal(@period.PeriodId)">
+                        <div id="dropdown-@period.PeriodId" class="drop-menu" style="display:none;">
+                            <a href="#" onclick="event.preventDefault();event.stopPropagation();showViewModal(@period.PeriodId)">
                                 <i class="material-icons">visibility</i>View Details
                             </a>
-                            <a href="#" onclick="event.preventDefault(); event.stopPropagation(); showEditModal(@period.PeriodId)">
-                                <i class="material-icons">edit</i>Edit
+                            <a href="#" onclick="event.preventDefault();event.stopPropagation();showEditModal(@period.PeriodId)">
+                                <i class="material-icons">edit</i>Edit Period
                             </a>
                             <hr>
-                            <a href="#" class="text-red" onclick="event.preventDefault(); event.stopPropagation(); showDeleteModal(@period.PeriodId, '@period.Type')">
+                            <a href="#" class="dm-del" onclick="event.preventDefault();event.stopPropagation();showDeleteModal(@period.PeriodId,'@period.Type')">
                                 <i class="material-icons">delete</i>Delete
                             </a>
                         </div>
                     </div>
                 </div>
 
-                <!-- Payment Info -->
+                <!-- payment cell -->
                 @if (!string.IsNullOrEmpty(period.TypeOfPayment))
                 {
-                    <div class="info-item" style="background: linear-gradient(to bottom right, #fef3c7, #fde68a); border-color: #fcd34d;">
-                        <p class="info-label">
-                            <i class="material-icons">payments</i>PAYMENT
-                        </p>
-                        <p class="info-value" style="color: #92400e;">
-                            @period.TypeOfPayment - K @period.TypeOfPaymentAmount.ToString("N2")
-                        </p>
+                    <div class="dc-grid" style="margin-bottom:0;">
+                        <div class="dc amber-dc full">
+                            <p class="dc-lbl"><i class="material-icons">payments</i>Payment</p>
+                            <p class="dc-val">@period.TypeOfPayment — K @period.TypeOfPaymentAmount.ToString("N2")</p>
+                        </div>
                     </div>
                 }
 
-                <!-- Info Items - Compact -->
-                <div class="info-item">
-                    <p class="info-label">
-                        <i class="material-icons">category</i>TYPE
-                    </p>
-                    <p class="info-value">@period.Type</p>
+                <!-- detail cells -->
+                <div class="dc-grid">
+                    <div class="dc">
+                        <p class="dc-lbl"><i class="material-icons">category</i>Type</p>
+                        <p class="dc-val">@period.Type</p>
+                    </div>
+                    <div class="dc">
+                        <p class="dc-lbl"><i class="material-icons">schedule</i>Applications</p>
+                        <p class="dc-val">@period.ApplicationStartDate.ToString("MMM dd") – @period.ApplicationEndDate.ToString("MMM dd")</p>
+                    </div>
+                    <div class="dc full">
+                        <p class="dc-lbl"><i class="material-icons">date_range</i>Period</p>
+                        <p class="dc-val">@period.StartDate.ToString("MMM dd, yyyy") – @(period.IsPermanentUntilGraduation ? "Until Graduation" : period.EndDate?.ToString("MMM dd, yyyy"))</p>
+                    </div>
                 </div>
 
-                <div class="info-item">
-                    <p class="info-label">
-                        <i class="material-icons">date_range</i>PERIOD
-                    </p>
-                    <p class="info-value">
-                        @period.StartDate.ToString("MMM dd, yyyy") -
-                        @(period.IsPermanentUntilGraduation ? "Graduation" : period.EndDate?.ToString("MMM dd, yyyy"))
-                    </p>
+                <!-- applications bar -->
+                <div class="app-bar">
+                    <span class="app-bar-left"><i class="material-icons">people</i>@appCount Application@(appCount != 1 ? "s" : "")</span>
+                    @if (appCount > 0)
+                    {
+                        <span class="app-bar-right">
+                            <span class="app-bar-approved">✓ @appApproved</span>
+                            <span class="app-bar-pending">⏳ @appPending</span>
+                        </span>
+                    }
                 </div>
 
-                <div class="info-item">
-                    <p class="info-label">
-                        <i class="material-icons">schedule</i>APPLICATIONS
-                    </p>
-                    <p class="info-value">
-                        @period.ApplicationStartDate.ToString("MMM dd") - @period.ApplicationEndDate.ToString("MMM dd, yyyy")
-                    </p>
-                </div>
-
-                <div class="info-item">
-                    <p class="info-label">
-                        <i class="material-icons">people</i>SUBMITTED
-                    </p>
-                    <p class="info-value" style="color: #0891b2;">
-                        @(period.Applications?.Count ?? 0) applications
-                        @if (period.Applications != null && period.Applications.Any())
-                        {
-                            var approved = period.Applications.Count(a => a.Status == SIS.Enums.Status.Active);
-                            var pending = period.Applications.Count(a => a.Status == SIS.Enums.Status.Upcoming);
-                            <span style="font-size: 0.75rem; font-weight: normal; color: #6b7280;">
-                                (<span style="color: #10b981;">@approved approved</span>,
-                                <span style="color: #f59e0b;">@pending pending</span>)
-                            </span>
-                        }
-                    </p>
-                </div>
-
-                <!-- Eligibility Badge -->
+                <!-- eligibility tag -->
                 @if (period.AppliesUniversally)
                 {
-                    <div class="eligibility-badge universal">
+                    <div class="elig-tag elig-universal">
                         <i class="material-icons">public</i>
-                        <span><strong>Universal</strong> - Applies to all students</span>
+                        <span><strong>Universal</strong> — all students</span>
                     </div>
                 }
                 else
                 {
-                    <div class="eligibility-badge restricted">
+                    <div class="elig-tag elig-restricted">
                         <i class="material-icons">filter_alt</i>
-                        <span><strong>Restricted</strong> - Specific eligibility criteria</span>
+                        <span><strong>Restricted</strong> — specific criteria</span>
                     </div>
                 }
 
-                <!-- Action Buttons -->
-                <div class="action-buttons" onclick="event.stopPropagation()">
-                    <button type="button"
-                            id="selectBtn-@period.PeriodId"
-                            class="btn-select"
-                            onclick="selectPeriod(event, @period.PeriodId, '@period.Type', '@period.TypeOfPayment')">
-                        <i class="material-icons">check_circle</i>
-                        <span>Select</span>
+                <!-- action buttons -->
+                <div class="card-actions" onclick="event.stopPropagation()">
+                    <button type="button" id="selectBtn-@period.PeriodId" class="btn-select"
+                            onclick="selectPeriod(event,@period.PeriodId,'@period.Type','@period.TypeOfPayment')">
+                        <i class="material-icons">check_circle</i><span>Select</span>
                     </button>
-                    <button type="button"
-                            class="btn-danger-outline"
-                            onclick="event.stopPropagation(); showDeleteModal(@period.PeriodId, '@period.Type')">
-                        <i class="material-icons">delete</i>
-                        <span>Delete</span>
+                    <button type="button" class="btn-del-outline"
+                            onclick="event.stopPropagation();showDeleteModal(@period.PeriodId,'@period.Type')">
+                        <i class="material-icons">delete</i><span>Delete</span>
                     </button>
                 </div>
+
             </div>
         }
 
         @if (!Model.Any())
         {
-            <div style="grid-column: 1 / -1; background: white; border-radius: 1rem; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); padding: 3rem; text-align: center;">
-                <div style="background: linear-gradient(to bottom right, #a5f3fc, #67e8f9); width: 6rem; height: 6rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
-                    <i class="material-icons" style="font-size: 3.5rem; color: #0e7490;">event_busy</i>
-                </div>
-                <h4 style="color: #374151; font-size: 1.5rem; font-weight: 700; margin: 0 0 0.75rem 0;">No Accommodation Periods Found</h4>
-                <p style="color: #6b7280; margin: 0 auto 1.5rem; max-width: 28rem;">Create your first accommodation period to start managing student applications.</p>
-                <button type="button" class="btn-primary" onclick="showCreateModal()">
-                    <i class="material-icons" style="font-size: 20px;">add</i>
-                    <span>Create First Period</span>
+            <div class="ap-empty">
+                <div class="empty-ring"><i class="material-icons">event_busy</i></div>
+                <h4>No Accommodation Periods Found</h4>
+                <p>Create your first accommodation period to start managing student applications.</p>
+                <button type="button" class="btn-coral" onclick="showCreateModal()">
+                    <i class="material-icons">add</i> Create First Period
                 </button>
             </div>
         }
     </div>
+
 </div>
 
-<!-- Create/Edit Modal -->
+<!-- ══ Create / Edit Modal ══ -->
 <div id="periodModal" class="modal-overlay hidden">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h5 id="periodModalTitle">
-                <i class="material-icons">add_circle</i>
-                <span>Create Accommodation Period</span>
+    <div class="modal-box" style="max-width:900px;">
+        <div class="modal-head">
+            <h5 id="periodModalTitle" class="modal-head-title">
+                <i class="material-icons">add_circle</i>Create Accommodation Period
             </h5>
-            <button type="button" onclick="hideModal()">
-                <i class="material-icons">close</i>
-            </button>
+            <button class="modal-close" type="button" onclick="hideModal()"><i class="material-icons">close</i></button>
         </div>
+
         <form id="periodForm" method="post" action="">
             @Html.AntiForgeryToken()
             <input type="hidden" id="periodId" name="PeriodId" value="0" />
 
-            <div class="p-6">
+            <div class="modal-body">
+
                 <!-- Period Information -->
-                <div class="mb-6">
-                    <h6 class="text-lg font-bold mb-4 text-secondary-800 flex items-center gap-2">
-                        <i class="material-icons text-cyan-600">info</i>
-                        Period Information
-                    </h6>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="type" class="block text-sm font-semibold text-gray-700 mb-2">
-                                Period Type <span class="text-red-500">*</span>
-                            </label>
-                            <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500" id="type" name="Type" required>
-                                <option value="">Select Type</option>
-                                @foreach (var option in ViewBag.TypeOptions as List<SelectListItem>)
+                <div class="form-sec">
+                    <p class="form-sec-title"><i class="material-icons">info</i>Period Information</p>
+                    <div class="fg2">
+                        <div class="ff">
+                            <label for="type">Period Type <span class="req">*</span></label>
+                            <select id="type" name="Type" required>
+                                <option value="">Select type…</option>
+                                @foreach (var opt in ViewBag.TypeOptions as List<SelectListItem>)
                                 {
-                                    <option value="@option.Value">@option.Text</option>
+                                    <option value="@opt.Value">@opt.Text</option>
                                 }
                             </select>
-                            <p class="text-red-500 text-xs mt-1 hidden" id="typeError">This field is required</p>
+                            <span class="ferr" id="typeError">This field is required</span>
                         </div>
-                        <div>
-                            <label for="status" class="block text-sm font-semibold text-gray-700 mb-2">
-                                Period Status <span class="text-red-500">*</span>
-                            </label>
-                            <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500" id="status" name="Status" required>
-                                <option value="">Select Status</option>
-                                @foreach (var option in ViewBag.StatusOptions as List<SelectListItem>)
+                        <div class="ff">
+                            <label for="status">Period Status <span class="req">*</span></label>
+                            <select id="status" name="Status" required>
+                                <option value="">Select status…</option>
+                                @foreach (var opt in ViewBag.StatusOptions as List<SelectListItem>)
                                 {
-                                    <option value="@option.Value">@option.Text</option>
+                                    <option value="@opt.Value">@opt.Text</option>
                                 }
                             </select>
-                            <p class="text-red-500 text-xs mt-1 hidden" id="statusError">This field is required</p>
+                            <span class="ferr" id="statusError">This field is required</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Payment Information -->
-                <div class="mb-6">
-                    <h6 class="text-lg font-bold mb-4 text-secondary-800 flex items-center gap-2">
-                        <i class="material-icons text-cyan-600">payments</i>
-                        Payment Information
-                    </h6>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="typeOfPayment" class="block text-sm font-semibold text-gray-700 mb-2">
-                                Type of Payment <span class="text-red-500">*</span>
-                            </label>
-                            <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500" id="typeOfPayment" name="TypeOfPayment" required>
-                                <option value="">Select Payment Type</option>
-                                @foreach (var option in ViewBag.PaymentTypeOptions as List<SelectListItem>)
+                <div class="form-sec">
+                    <p class="form-sec-title"><i class="material-icons">payments</i>Payment Information</p>
+                    <div class="fg2">
+                        <div class="ff">
+                            <label for="typeOfPayment">Type of Payment <span class="req">*</span></label>
+                            <select id="typeOfPayment" name="TypeOfPayment" required>
+                                <option value="">Select payment type…</option>
+                                @foreach (var opt in ViewBag.PaymentTypeOptions as List<SelectListItem>)
                                 {
-                                    <option value="@option.Value">@option.Text</option>
+                                    <option value="@opt.Value">@opt.Text</option>
                                 }
                             </select>
-                            <p class="text-red-500 text-xs mt-1 hidden" id="typeOfPaymentError">This field is required</p>
+                            <span class="ferr" id="typeOfPaymentError">This field is required</span>
                         </div>
-                        <div>
-                            <label for="typeOfPaymentAmount" class="block text-sm font-semibold text-gray-700 mb-2">
-                                Payment Amount (K) <span class="text-red-500">*</span>
-                            </label>
-                            <input type="number" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500" id="typeOfPaymentAmount" name="TypeOfPaymentAmount" placeholder="0.00" required />
-                            <p class="text-red-500 text-xs mt-1 hidden" id="typeOfPaymentAmountError">This field is required</p>
+                        <div class="ff">
+                            <label for="typeOfPaymentAmount">Amount (K) <span class="req">*</span></label>
+                            <input type="number" step="0.01" min="0" id="typeOfPaymentAmount" name="TypeOfPaymentAmount" placeholder="0.00" required />
+                            <span class="ferr" id="typeOfPaymentAmountError">This field is required</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Period Dates -->
-                <div class="mb-6">
-                    <h6 class="text-lg font-bold mb-4 text-secondary-800 flex items-center gap-2">
-                        <i class="material-icons text-cyan-600">date_range</i>
-                        Period Dates
-                    </h6>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="startDate" class="block text-sm font-semibold text-gray-700 mb-2">
-                                Start Date <span class="text-red-500">*</span>
-                            </label>
-                            <input type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500" id="startDate" name="StartDate" required />
-                            <p class="text-red-500 text-xs mt-1 hidden" id="startDateError">This field is required</p>
+                <div class="form-sec">
+                    <p class="form-sec-title"><i class="material-icons">date_range</i>Period Dates</p>
+                    <div class="fg2">
+                        <div class="ff">
+                            <label for="startDate">Start Date <span class="req">*</span></label>
+                            <input type="date" id="startDate" name="StartDate" required />
+                            <span class="ferr" id="startDateError">This field is required</span>
                         </div>
-                        <div>
-                            <label for="endDate" class="block text-sm font-semibold text-gray-700 mb-2">
-                                End Date <span class="text-gray-500 text-xs font-normal">(Optional if permanent)</span>
-                            </label>
-                            <input type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500" id="endDate" name="EndDate" />
-                            <div class="flex items-center mt-2">
-                                <input type="checkbox" id="isPermanent" name="IsPermanentUntilGraduation" value="true" onchange="toggleEndDate()" class="w-4 h-4 text-cyan-600 border-gray-300 rounded focus:ring-cyan-500">
-                                <label for="isPermanent" class="ml-2 text-sm text-gray-700">
-                                    Permanent until graduation
-                                </label>
+                        <div class="ff">
+                            <label for="endDate">End Date <span class="opt">(leave blank if permanent)</span></label>
+                            <input type="date" id="endDate" name="EndDate" />
+                            <div class="chk-row" style="margin-top:.4rem;">
+                                <input type="checkbox" id="isPermanent" name="IsPermanentUntilGraduation" value="true" onchange="toggleEndDate()">
+                                <div>
+                                    <p class="chk-row-title">Permanent until graduation</p>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Application Period -->
-                <div class="mb-6">
-                    <h6 class="text-lg font-bold mb-4 text-secondary-800 flex items-center gap-2">
-                        <i class="material-icons text-cyan-600">edit_calendar</i>
-                        Application Period
-                    </h6>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="applicationStartDate" class="block text-sm font-semibold text-gray-700 mb-2">
-                                Application Start <span class="text-red-500">*</span>
-                            </label>
-                            <input type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500" id="applicationStartDate" name="ApplicationStartDate" required />
-                            <p class="text-red-500 text-xs mt-1 hidden" id="applicationStartDateError">This field is required</p>
+                <div class="form-sec">
+                    <p class="form-sec-title"><i class="material-icons">edit_calendar</i>Application Period</p>
+                    <div class="fg2">
+                        <div class="ff">
+                            <label for="applicationStartDate">Application Start <span class="req">*</span></label>
+                            <input type="date" id="applicationStartDate" name="ApplicationStartDate" required />
+                            <span class="ferr" id="applicationStartDateError">This field is required</span>
                         </div>
-                        <div>
-                            <label for="applicationEndDate" class="block text-sm font-semibold text-gray-700 mb-2">
-                                Application End <span class="text-red-500">*</span>
-                            </label>
-                            <input type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500" id="applicationEndDate" name="ApplicationEndDate" required />
-                            <p class="text-red-500 text-xs mt-1 hidden" id="applicationEndDateError">This field is required</p>
+                        <div class="ff">
+                            <label for="applicationEndDate">Application End <span class="req">*</span></label>
+                            <input type="date" id="applicationEndDate" name="ApplicationEndDate" required />
+                            <span class="ferr" id="applicationEndDateError">This field is required</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Eligibility Criteria -->
-                <div class="mb-6">
-                    <h6 class="text-lg font-bold mb-4 text-secondary-800 flex items-center gap-2">
-                        <i class="material-icons text-cyan-600">filter_alt</i>
-                        Eligibility Criteria
-                    </h6>
-                    <div class="flex items-start mb-4 p-4 bg-gray-50 rounded-lg">
-                        <input type="checkbox" id="appliesUniversally" name="AppliesUniversally" value="true" onchange="toggleEligibilityCriteria()" class="w-4 h-4 mt-0.5 text-cyan-600 border-gray-300 rounded focus:ring-cyan-500">
-                        <div class="ml-3">
-                            <label for="appliesUniversally" class="font-semibold text-gray-900">
-                                Applies to All Students (Universal)
-                            </label>
-                            <p class="text-sm text-secondary-600 mt-1">Check this if the period applies to all students regardless of school, programme, or level</p>
+                <div class="form-sec">
+                    <p class="form-sec-title"><i class="material-icons">filter_alt</i>Eligibility Criteria</p>
+                    <div class="chk-row" style="margin-bottom:1rem;">
+                        <input type="checkbox" id="appliesUniversally" name="AppliesUniversally" value="true" onchange="toggleEligibilityCriteria()">
+                        <div>
+                            <p class="chk-row-title">Applies to All Students (Universal)</p>
+                            <p class="chk-row-sub">Check this if the period applies to all students regardless of school, programme, or level.</p>
                         </div>
                     </div>
-
                     <div id="eligibilityCriteria">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label for="schoolId" class="block text-sm font-semibold text-gray-700 mb-2">School</label>
-                                <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500" id="schoolId" name="SchoolId" onchange="loadProgrammes()">
+                        <div class="fg2" style="margin-bottom:.85rem;">
+                            <div class="ff">
+                                <label for="schoolId">School</label>
+                                <select id="schoolId" name="SchoolId" onchange="loadProgrammes()">
                                     <option value="">All Schools</option>
                                 </select>
                             </div>
-                            <div>
-                                <label for="programmeId" class="block text-sm font-semibold text-gray-700 mb-2">Programme</label>
-                                <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500" id="programmeId" name="ProgrammeId">
+                            <div class="ff">
+                                <label for="programmeId">Programme</label>
+                                <select id="programmeId" name="ProgrammeId">
                                     <option value="">All Programmes</option>
                                 </select>
                             </div>
                         </div>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                            <div>
-                                <label for="modeOfStudyId" class="block text-sm font-semibold text-gray-700 mb-2">Mode of Study</label>
-                                <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500" id="modeOfStudyId" name="ModeOfStudyId">
+                        <div class="fg3">
+                            <div class="ff">
+                                <label for="modeOfStudyId">Mode of Study</label>
+                                <select id="modeOfStudyId" name="ModeOfStudyId">
                                     <option value="">All Modes</option>
                                 </select>
                             </div>
-                            <div>
-                                <label for="yearOfStudy" class="block text-sm font-semibold text-gray-700 mb-2">Year of Study</label>
-                                <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500" id="yearOfStudy" name="YearOfStudy">
+                            <div class="ff">
+                                <label for="yearOfStudy">Year of Study</label>
+                                <select id="yearOfStudy" name="YearOfStudy">
                                     <option value="">All Years</option>
-                                    <option value="1">Year 1</option>
-                                    <option value="2">Year 2</option>
-                                    <option value="3">Year 3</option>
-                                    <option value="4">Year 4</option>
-                                    <option value="5">Year 5</option>
-                                    <option value="6">Year 6</option>
+                                    @for (int y = 1; y <= 6; y++)
+                                    {
+                                        <option value="@y">Year @y</option>
+                                    }
                                 </select>
                             </div>
-                            <div>
-                                <label for="programLevelId" class="block text-sm font-semibold text-gray-700 mb-2">Programme Level</label>
-                                <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500" id="programLevelId" name="ProgramLevelId">
+                            <div class="ff">
+                                <label for="programLevelId">Programme Level</label>
+                                <select id="programLevelId" name="ProgramLevelId">
                                     <option value="">All Levels</option>
                                 </select>
                             </div>
@@ -896,51 +1523,40 @@
                     </div>
                 </div>
 
-                <!-- Modal Footer -->
-                <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
-                    <button type="button" class="btn-secondary" onclick="hideModal()">
-                        <i class="material-icons text-lg">close</i>
-                        <span>Cancel</span>
-                    </button>
-                    <button type="submit" class="btn-primary" onclick="return validateForm(event)">
-                        <i class="material-icons text-lg">save</i>
-                        <span id="submitButtonText">Create Period</span>
-                    </button>
-                </div>
+            </div>
+
+            <div class="modal-foot">
+                <button type="button" class="btn-ghost" onclick="hideModal()">
+                    <i class="material-icons">close</i> Cancel
+                </button>
+                <button type="submit" class="btn-primary" onclick="return validateForm(event)">
+                    <i class="material-icons">save</i>
+                    <span id="submitButtonText">Create Period</span>
+                </button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- View Modal -->
+<!-- ══ View Modal ══ -->
 <div id="viewModal" class="modal-overlay hidden">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h5>
-                <i class="material-icons">visibility</i>
-                <span>Period Details</span>
-            </h5>
-            <button type="button" onclick="hideViewModal()">
-                <i class="material-icons">close</i>
-            </button>
+    <div class="modal-box" style="max-width:560px;">
+        <div class="modal-head">
+            <h5 class="modal-head-title"><i class="material-icons">visibility</i>Period Details</h5>
+            <button class="modal-close" type="button" onclick="hideViewModal()"><i class="material-icons">close</i></button>
         </div>
-        <div id="viewModalContent" style="padding: 1.5rem;">
-            <!-- Content will be loaded dynamically -->
-        </div>
-        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; padding: 1rem 1.5rem; border-top: 1px solid #e5e7eb;">
-            <button type="button" class="btn-secondary" onclick="hideViewModal()">
-                <i class="material-icons" style="font-size: 18px;">close</i>
-                <span>Close</span>
+        <div id="viewModalContent" class="modal-body"></div>
+        <div class="modal-foot">
+            <button type="button" class="btn-ghost" onclick="hideViewModal()">
+                <i class="material-icons">close</i> Close
             </button>
             <button type="button" class="btn-primary" onclick="editFromView()">
-                <i class="material-icons" style="font-size: 18px;">edit</i>
-                <span>Edit Period</span>
+                <i class="material-icons">edit</i> Edit Period
             </button>
         </div>
     </div>
 </div>
 
-<!-- SweetAlert2 JS -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 @section Scripts {
@@ -948,718 +1564,323 @@
         let dropdownsLoaded = false;
         let currentPeriodId = 0;
 
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', () => {
             loadDropdowns();
-            loadSelectedPeriod(); // Load previously selected period
+            loadSelectedPeriod();
 
-            // Show TempData messages
-        @if (TempData["SuccessMessage"] != null)
-        {
-            <text>
-                                showNotification('@TempData["SuccessMessage"]', 'success');
-            </text>
-        }
+            @if (TempData["SuccessMessage"] != null)
+            {
+                    <text>showToast('@TempData["SuccessMessage"]','success');</text>
+            }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                    <text>showToast('@TempData["ErrorMessage"]','error');</text>
+            }
 
-        @if (TempData["ErrorMessage"] != null)
-        {
-            <text>
-                                showNotification('@TempData["ErrorMessage"]', 'error');
-            </text>
-        }
-
-            // Close dropdowns when clicking outside
-            document.addEventListener('click', function(event) {
-                if (!event.target.closest('[onclick*="toggleDropdown"]')) {
-                    document.querySelectorAll('[id^="dropdown-"]').forEach(dropdown => {
-                        dropdown.style.display = 'none';
-                    });
-                }
+            document.addEventListener('click', e => {
+                if (!e.target.closest('.card-menu-wrap'))
+                    document.querySelectorAll('[id^="dropdown-"]').forEach(d => d.style.display = 'none');
             });
         });
 
-        // Toggle dropdown menu
-        function toggleDropdown(event, periodId) {
-            event.stopPropagation();
-            const dropdown = document.getElementById(`dropdown-${periodId}`);
-
-            // Close all other dropdowns
-            document.querySelectorAll('[id^="dropdown-"]').forEach(dd => {
-                if (dd.id !== `dropdown-${periodId}`) {
-                    dd.style.display = 'none';
-                }
-            });
-
-            // Toggle current dropdown
-            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        /* ── Dropdown ── */
+        function toggleDropdown(e, id) {
+            e.stopPropagation();
+            const dd = document.getElementById(`dropdown-${id}`);
+            document.querySelectorAll('[id^="dropdown-"]').forEach(d => { if (d !== dd) d.style.display = 'none'; });
+            dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
         }
 
-        // Select Period
-        function selectPeriod(event, periodId, type, paymentType) {
-            event.stopPropagation();
-
-            // Remove selected class from all cards
-            document.querySelectorAll('.period-card').forEach(card => {
-                card.classList.remove('selected');
+        /* ── Select period ── */
+        function selectPeriod(e, periodId, type, payType) {
+            e.stopPropagation();
+            document.querySelectorAll('.period-card').forEach(c => c.classList.remove('selected'));
+            document.querySelectorAll('.btn-select').forEach(b => {
+                b.classList.remove('selected');
+                b.innerHTML = '<i class="material-icons">check_circle</i><span>Select</span>';
             });
-
-            // Remove selected class from all buttons
-            document.querySelectorAll('.btn-select').forEach(btn => {
-                btn.classList.remove('selected');
-                btn.innerHTML = '<i class="material-icons" style="font-size: 16px;">check_circle</i><span>Select</span>';
-            });
-
-            // Add selected class to current card
-            const selectedCard = event.target.closest('.period-card');
-            if (selectedCard) {
-                selectedCard.classList.add('selected');
-            }
-
-            // Update button to show selected state
-            const selectBtn = document.getElementById(`selectBtn-${periodId}`);
-            if (selectBtn) {
-                selectBtn.classList.add('selected');
-                selectBtn.innerHTML = '<i class="material-icons" style="font-size: 16px;">check_circle</i><span>Selected</span>';
-            }
-
-            // Store selected period in session storage
+            e.target.closest('.period-card')?.classList.add('selected');
+            const btn = document.getElementById(`selectBtn-${periodId}`);
+            if (btn) { btn.classList.add('selected'); btn.innerHTML = '<i class="material-icons">check_circle</i><span>Selected</span>'; }
             sessionStorage.setItem('selectedPeriodId', periodId);
-            sessionStorage.setItem('selectedPeriodInfo', JSON.stringify({
-                periodId: periodId,
-                type: type,
-                paymentType: paymentType,
-                selectedAt: new Date().toISOString()
-            }));
-
-            // Show success notification
-            showNotification(`Period "${type} - ${paymentType}" selected successfully!`, 'success');
+            sessionStorage.setItem('selectedPeriodInfo', JSON.stringify({ periodId, type, payType, selectedAt: new Date().toISOString() }));
+            showToast(`"${type} – ${payType}" selected!`, 'success');
         }
 
-        // Load selected period on page load
         function loadSelectedPeriod() {
-            const selectedPeriodId = sessionStorage.getItem('selectedPeriodId');
-            if (selectedPeriodId) {
-                const selectBtn = document.getElementById(`selectBtn-${selectedPeriodId}`);
-                if (selectBtn) {
-                    selectBtn.classList.add('selected');
-                    selectBtn.innerHTML = '<i class="material-icons" style="font-size: 16px;">check_circle</i><span>Selected</span>';
-
-                    const selectedCard = selectBtn.closest('.period-card');
-                    if (selectedCard) {
-                        selectedCard.classList.add('selected');
-                    }
-                }
+            const id = sessionStorage.getItem('selectedPeriodId');
+            if (!id) return;
+            const btn = document.getElementById(`selectBtn-${id}`);
+            if (btn) {
+                btn.classList.add('selected');
+                btn.innerHTML = '<i class="material-icons">check_circle</i><span>Selected</span>';
+                btn.closest('.period-card')?.classList.add('selected');
             }
         }
 
-        // Load all dropdown data
+        /* ── Load dropdowns ── */
         async function loadDropdowns() {
             if (dropdownsLoaded) return;
-
-            const loadingIndicator = document.getElementById('loadingIndicator');
-            loadingIndicator.style.display = 'flex';
-
+            showLoader();
             try {
-                // Load Schools
-                const schoolsResponse = await fetch('/AccommodationPeriod/GetSchools');
-                const schools = await schoolsResponse.json();
-                populateDropdown('schoolId', schools);
-
-                // Load Mode of Study
-                const modesResponse = await fetch('/AccommodationPeriod/GetModesOfStudy');
-                const modes = await modesResponse.json();
-                populateDropdown('modeOfStudyId', modes);
-
-                // Load Programme Levels
-                const levelsResponse = await fetch('/AccommodationPeriod/GetProgramLevels');
-                const levels = await levelsResponse.json();
-                populateDropdown('programLevelId', levels);
-
+                const [schools, modes, levels] = await Promise.all([
+                    fetch('/AccommodationPeriod/GetSchools').then(r => r.json()),
+                    fetch('/AccommodationPeriod/GetModesOfStudy').then(r => r.json()),
+                    fetch('/AccommodationPeriod/GetProgramLevels').then(r => r.json())
+                ]);
+                populateDrop('schoolId', schools);
+                populateDrop('modeOfStudyId', modes);
+                populateDrop('programLevelId', levels);
                 dropdownsLoaded = true;
-            } catch (error) {
-                console.error('Error loading dropdowns:', error);
-                showNotification('Error loading form data', 'error');
-            } finally {
-                loadingIndicator.style.display = 'none';
-            }
+            } catch { showToast('Error loading form data', 'error'); }
+            finally { hideLoader(); }
         }
 
-        function populateDropdown(selectId, items) {
-            const select = document.getElementById(selectId);
-            const currentValue = select.value;
-
-            // Keep the first option (placeholder)
-            while (select.options.length > 1) {
-                select.remove(1);
-            }
-
-            items.forEach(item => {
-                const option = new Option(item.text || item.name, item.value || item.id);
-                select.add(option);
-            });
-
-            // Restore selected value if it exists
-            if (currentValue) {
-                select.value = currentValue;
-            }
+        function populateDrop(id, items) {
+            const s = document.getElementById(id), cur = s.value;
+            while (s.options.length > 1) s.remove(1);
+            items.forEach(i => s.add(new Option(i.text || i.name, i.value || i.id)));
+            if (cur) s.value = cur;
         }
 
         async function loadProgrammes() {
-            const schoolId = document.getElementById('schoolId').value;
-            if (!schoolId) {
-                populateDropdown('programmeId', []);
-                return;
-            }
-
-            try {
-                const response = await fetch(`/AccommodationPeriod/GetProgrammes?schoolId=${schoolId}`);
-                const programmes = await response.json();
-                populateDropdown('programmeId', programmes);
-            } catch (error) {
-                console.error('Error loading programmes:', error);
-            }
+            const sid = document.getElementById('schoolId').value;
+            if (!sid) { populateDrop('programmeId', []); return; }
+            try { populateDrop('programmeId', await fetch(`/AccommodationPeriod/GetProgrammes?schoolId=${sid}`).then(r => r.json())); }
+            catch (e) { console.error(e); }
         }
 
-        // Show modals
+        /* ── Create modal ── */
         function showCreateModal() {
             currentPeriodId = 0;
             document.getElementById('periodId').value = '0';
             document.getElementById('periodForm').action = '/AccommodationPeriod/Create';
-            document.getElementById('periodModalTitle').innerHTML = '<i class="material-icons">add_circle</i><span>Create Accommodation Period</span>';
+            document.getElementById('periodModalTitle').innerHTML = '<i class="material-icons">add_circle</i>Create Accommodation Period';
             document.getElementById('submitButtonText').textContent = 'Create Period';
             document.getElementById('periodForm').reset();
-            document.getElementById('eligibilityCriteria').style.opacity = '1';
-            document.getElementById('eligibilityCriteria').style.pointerEvents = 'auto';
+            setEligibilityState(false);
             document.getElementById('periodModal').classList.remove('hidden');
         }
 
+        /* ── Edit modal ── */
         async function showEditModal(periodId) {
             currentPeriodId = periodId;
             document.getElementById('periodId').value = periodId;
             document.getElementById('periodForm').action = '/AccommodationPeriod/Edit';
-            document.getElementById('periodModalTitle').innerHTML = '<i class="material-icons">edit</i><span>Edit Accommodation Period</span>';
+            document.getElementById('periodModalTitle').innerHTML = '<i class="material-icons">edit</i>Edit Accommodation Period';
             document.getElementById('submitButtonText').textContent = 'Update Period';
-
-            const loadingIndicator = document.getElementById('loadingIndicator');
-            loadingIndicator.style.display = 'flex';
-
+            showLoader();
             try {
-                const response = await fetch(`/AccommodationPeriod/GetPeriod/${periodId}`);
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const period = await response.json();
-
-                console.log('Period data received:', period); // Debug log
-
-                // Handle both PascalCase (C#) and camelCase (JavaScript) property names
-                document.getElementById('type').value = period.Type || period.type || '';
-                document.getElementById('typeOfPayment').value = period.TypeOfPayment || period.typeOfPayment || '';
-                document.getElementById('typeOfPaymentAmount').value = period.TypeOfPaymentAmount || period.typeOfPaymentAmount || 0;
-                document.getElementById('startDate').value = formatDateForInput(period.StartDate || period.startDate);
-                document.getElementById('endDate').value = formatDateForInput(period.EndDate || period.endDate);
-                document.getElementById('isPermanent').checked = period.IsPermanentUntilGraduation || period.isPermanentUntilGraduation || false;
-                document.getElementById('applicationStartDate').value = formatDateForInput(period.ApplicationStartDate || period.applicationStartDate);
-                document.getElementById('applicationEndDate').value = formatDateForInput(period.ApplicationEndDate || period.applicationEndDate);
-                document.getElementById('status').value = (period.Status !== undefined ? period.Status : period.status !== undefined ? period.status : '');
-                document.getElementById('appliesUniversally').checked = period.AppliesUniversally || period.appliesUniversally || false;
-                document.getElementById('schoolId').value = period.SchoolId || period.schoolId || '';
-
-                if (period.SchoolId || period.schoolId) {
-                    await loadProgrammes();
-                }
-
-                document.getElementById('programmeId').value = period.ProgrammeId || period.programmeId || '';
-                document.getElementById('modeOfStudyId').value = period.ModeOfStudyId || period.modeOfStudyId || '';
-                document.getElementById('yearOfStudy').value = period.YearOfStudy || period.yearOfStudy || '';
-                document.getElementById('programLevelId').value = period.ProgramLevelId || period.programLevelId || '';
-
+                const r = await fetch(`/AccommodationPeriod/GetPeriod/${periodId}`);
+                if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                const p = await r.json();
+                const g = (k1, k2) => p[k1] !== undefined ? p[k1] : p[k2];
+                document.getElementById('type').value                 = g('Type','type') || '';
+                document.getElementById('typeOfPayment').value        = g('TypeOfPayment','typeOfPayment') || '';
+                document.getElementById('typeOfPaymentAmount').value  = g('TypeOfPaymentAmount','typeOfPaymentAmount') || 0;
+                document.getElementById('startDate').value            = fmtDateIn(g('StartDate','startDate'));
+                document.getElementById('endDate').value              = fmtDateIn(g('EndDate','endDate'));
+                document.getElementById('isPermanent').checked        = g('IsPermanentUntilGraduation','isPermanentUntilGraduation') || false;
+                document.getElementById('applicationStartDate').value = fmtDateIn(g('ApplicationStartDate','applicationStartDate'));
+                document.getElementById('applicationEndDate').value   = fmtDateIn(g('ApplicationEndDate','applicationEndDate'));
+                document.getElementById('status').value               = g('Status','status') !== undefined ? g('Status','status') : '';
+                document.getElementById('appliesUniversally').checked = g('AppliesUniversally','appliesUniversally') || false;
+                document.getElementById('schoolId').value             = g('SchoolId','schoolId') || '';
+                if (g('SchoolId','schoolId')) await loadProgrammes();
+                document.getElementById('programmeId').value    = g('ProgrammeId','programmeId') || '';
+                document.getElementById('modeOfStudyId').value  = g('ModeOfStudyId','modeOfStudyId') || '';
+                document.getElementById('yearOfStudy').value    = g('YearOfStudy','yearOfStudy') || '';
+                document.getElementById('programLevelId').value = g('ProgramLevelId','programLevelId') || '';
                 toggleEndDate();
-                toggleEligibilityCriteria();
-
+                setEligibilityState(document.getElementById('appliesUniversally').checked);
                 document.getElementById('periodModal').classList.remove('hidden');
-            } catch (error) {
-                console.error('Error loading period:', error);
-                showNotification(`Error loading period details: ${error.message}`, 'error');
-            } finally {
-                loadingIndicator.style.display = 'none';
-            }
+            } catch (e) { showToast(`Error loading period: ${e.message}`, 'error'); }
+            finally { hideLoader(); }
         }
 
+        /* ── View modal ── */
         async function showViewModal(periodId) {
-            const loadingIndicator = document.getElementById('loadingIndicator');
-            loadingIndicator.style.display = 'flex';
-
+            showLoader();
             try {
-                const response = await fetch(`/AccommodationPeriod/GetPeriod/${periodId}`);
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const period = await response.json();
-
-                console.log('Period data for view:', period); // Debug log
-
+                const r = await fetch(`/AccommodationPeriod/GetPeriod/${periodId}`);
+                if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                const p = await r.json();
                 currentPeriodId = periodId;
+                const g = (k1, k2) => p[k1] !== undefined ? p[k1] : p[k2];
 
-                // Handle both PascalCase and camelCase
-                const status = period.Status !== undefined ? period.Status : period.status;
-                const statusClass = status === 0 ? 'inactive' : status === 1 ? 'active' : status === 2 ? 'upcoming' : 'closed';
-                const statusText = status === 0 ? 'Inactive' : status === 1 ? 'Active' : status === 2 ? 'Upcoming' : 'Closed';
+                const status = g('Status','status');
+                const sCls  = status===0?'sp-inactive':status===1?'sp-active':status===2?'sp-upcoming':'sp-closed';
+                const sTxt  = status===0?'Inactive':status===1?'Active':status===2?'Upcoming':'Closed';
+                const sIcon = status===0?'remove_circle':status===1?'check_circle':status===2?'schedule':'cancel';
+                const pType = g('Type','type')||'N/A', pyType=g('TypeOfPayment','typeOfPayment')||'N/A';
+                const pyAmt = g('TypeOfPaymentAmount','typeOfPaymentAmount')||0;
+                const isPerm= g('IsPermanentUntilGraduation','isPermanentUntilGraduation');
+                const univ  = g('AppliesUniversally','appliesUniversally');
 
-                const periodType = period.Type || period.type || 'N/A';
-                const typeOfPayment = period.TypeOfPayment || period.typeOfPayment || 'N/A';
-                const typeOfPaymentAmount = period.TypeOfPaymentAmount || period.typeOfPaymentAmount || 0;
-                const startDate = period.StartDate || period.startDate;
-                const endDate = period.EndDate || period.endDate;
-                const isPermanent = period.IsPermanentUntilGraduation || period.isPermanentUntilGraduation;
-                const appStartDate = period.ApplicationStartDate || period.applicationStartDate;
-                const appEndDate = period.ApplicationEndDate || period.applicationEndDate;
-                const appliesUniversally = period.AppliesUniversally || period.appliesUniversally;
+                const strObj = (obj, keys) => !obj ? null : (typeof obj==='object' ? keys.reduce((acc,k)=>acc||obj[k],null) : obj);
+                const school  = strObj(g('School','school'),   ['SchoolName','Name','name','schoolName']);
+                const prog    = strObj(g('Programme','programme'), ['ProgrammeName','Name','name']);
+                const mode    = strObj(g('ModeOfStudy','modeOfStudy'), ['ModeName','Name','name','modeName']);
+                const level   = strObj(g('ProgramLevel','programLevel'), ['LevelName','Name','name']);
+                const yearOS  = g('YearOfStudy','yearOfStudy');
+                const createdBy=g('CreatedBy','createdBy'), createdAt=g('CreatedAt','createdAt');
+                const updatedBy=g('UpdatedBy','updatedBy'), updatedAt=g('UpdatedAt','updatedAt');
 
-                // Handle School object or string
-                let school = null;
-                if (period.School) {
-                    school = typeof period.School === 'object' ? (period.School.SchoolName || period.School.Name || period.School.name) : period.School;
-                } else if (period.school) {
-                    school = typeof period.school === 'object' ? (period.school.schoolName || period.school.name) : period.school;
-                }
-
-                // Handle Programme object or string
-                let programme = null;
-                if (period.Programme) {
-                    programme = typeof period.Programme === 'object' ? (period.Programme.ProgrammeName || period.Programme.Name || period.Programme.name) : period.Programme;
-                } else if (period.programme) {
-                    programme = typeof period.programme === 'object' ? (period.programme.programmeName || period.programme.name) : period.programme;
-                }
-
-                // Handle ModeOfStudy object or string
-                let modeOfStudy = null;
-                if (period.ModeOfStudy) {
-                    modeOfStudy = typeof period.ModeOfStudy === 'object' ? (period.ModeOfStudy.ModeName || period.ModeOfStudy.Name || period.ModeOfStudy.modeName) : period.ModeOfStudy;
-                } else if (period.modeOfStudy) {
-                    modeOfStudy = typeof period.modeOfStudy === 'object' ? (period.modeOfStudy.modeName || period.modeOfStudy.name) : period.modeOfStudy;
-                }
-
-                const yearOfStudy = period.YearOfStudy || period.yearOfStudy;
-
-                // Handle ProgramLevel object or string
-                let programLevel = null;
-                if (period.ProgramLevel) {
-                    programLevel = typeof period.ProgramLevel === 'object' ? (period.ProgramLevel.LevelName || period.ProgramLevel.Name || period.ProgramLevel.name) : period.ProgramLevel;
-                } else if (period.programLevel) {
-                    programLevel = typeof period.programLevel === 'object' ? (period.programLevel.levelName || period.programLevel.name) : period.programLevel;
-                }
-
-                const createdBy = period.CreatedBy || period.createdBy;
-                const createdAt = period.CreatedAt || period.createdAt;
-                const updatedBy = period.UpdatedBy || period.updatedBy;
-                const updatedAt = period.UpdatedAt || period.updatedAt;
-
-                const content = `
-                    <div>
-                        <h3 style="font-size: 1.5rem; font-weight: 700; color: #1f2937; margin: 0 0 0.5rem 0;">${periodType} Period</h3>
-                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                            <span class="status-badge ${statusClass}">
-                                <i class="material-icons">${status === 0 ? 'remove_circle' : status === 1 ? 'check_circle' : status === 2 ? 'schedule' : 'cancel'}</i>
-                                ${statusText}
-                            </span>
-                            <span class="payment-badge">
-                                <i class="material-icons">payments</i>
-                                ${typeOfPayment}
-                            </span>
+                document.getElementById('viewModalContent').innerHTML = `
+                    <div style="margin-bottom:1rem;">
+                        <h3 style="font-family:'DM Serif Display',serif;font-size:1.25rem;color:var(--ink);margin:0 0 .5rem;">${pType} Period</h3>
+                        <div style="display:flex;gap:.4rem;flex-wrap:wrap;">
+                            <span class="sp ${sCls}"><i class="material-icons">${sIcon}</i>${sTxt}</span>
+                            <span class="sp sp-payment"><i class="material-icons">payments</i>${pyType}</span>
                         </div>
                     </div>
 
-                    <div style="margin-top: 1.5rem;">
-                        <h6 class="section-heading">
-                            <i class="material-icons">payments</i>
-                            Payment Information
-                        </h6>
-                        <div class="info-item" style="background: linear-gradient(to bottom right, #fef3c7, #fde68a); border-color: #fcd34d;">
-                            <p class="info-label">TYPE OF PAYMENT</p>
-                            <p class="info-value" style="color: #92400e;">${typeOfPayment}</p>
-                        </div>
-                        <div class="info-item" style="background: linear-gradient(to bottom right, #fef3c7, #fde68a); border-color: #fcd34d;">
-                            <p class="info-label">PAYMENT AMOUNT</p>
-                            <p class="info-value" style="color: #92400e;">K ${parseFloat(typeOfPaymentAmount).toFixed(2)}</p>
-                        </div>
+                    <p class="vsec-title"><i class="material-icons">payments</i>Payment Information</p>
+                    <div class="vdc-grid">
+                        <div class="vdc amber-vdc"><p class="vdc-lbl">Type of Payment</p><p class="vdc-val">${pyType}</p></div>
+                        <div class="vdc amber-vdc"><p class="vdc-lbl">Amount</p><p class="vdc-val">K ${parseFloat(pyAmt).toFixed(2)}</p></div>
                     </div>
 
-                    <div style="margin-top: 1.5rem;">
-                        <h6 class="section-heading">
-                            <i class="material-icons">info</i>
-                            Period Information
-                        </h6>
-                        <div class="info-item">
-                            <p class="info-label">TYPE</p>
-                            <p class="info-value">${periodType}</p>
-                        </div>
-                        <div class="info-item">
-                            <p class="info-label">PERIOD</p>
-                            <p class="info-value">${formatDate(startDate)} - ${isPermanent ? 'Graduation' : formatDate(endDate)}</p>
-                        </div>
-                        <div class="info-item">
-                            <p class="info-label">APPLICATION START</p>
-                            <p class="info-value">${formatDate(appStartDate)}</p>
-                        </div>
-                        <div class="info-item">
-                            <p class="info-label">APPLICATION END</p>
-                            <p class="info-value">${formatDate(appEndDate)}</p>
-                        </div>
+                    <p class="vsec-title"><i class="material-icons">info</i>Period Information</p>
+                    <div class="vdc-grid">
+                        <div class="vdc"><p class="vdc-lbl">Type</p><p class="vdc-val">${pType}</p></div>
+                        <div class="vdc"><p class="vdc-lbl">Status</p><p class="vdc-val">${sTxt}</p></div>
+                        <div class="vdc full"><p class="vdc-lbl">Period</p><p class="vdc-val">${fmtDate(g('StartDate','startDate'))} — ${isPerm?'Until Graduation':fmtDate(g('EndDate','endDate'))}</p></div>
+                        <div class="vdc"><p class="vdc-lbl">Application Start</p><p class="vdc-val">${fmtDate(g('ApplicationStartDate','applicationStartDate'))}</p></div>
+                        <div class="vdc"><p class="vdc-lbl">Application End</p><p class="vdc-val">${fmtDate(g('ApplicationEndDate','applicationEndDate'))}</p></div>
                     </div>
 
-                    <div style="margin-top: 1.5rem;">
-                        <h6 class="section-heading">
+                    <p class="vsec-title"><i class="material-icons">filter_alt</i>Eligibility</p>
+                    ${univ ? `
+                        <div class="elig-tag elig-universal" style="margin-bottom:.75rem;">
+                            <i class="material-icons">public</i>
+                            <span><strong>Universal</strong> — applies to all students</span>
+                        </div>
+                    ` : `
+                        <div class="elig-tag elig-restricted" style="margin-bottom:.75rem;">
                             <i class="material-icons">filter_alt</i>
-                            Eligibility Criteria
-                        </h6>
-                        ${appliesUniversally ? `
-                            <div class="eligibility-badge universal">
-                                <i class="material-icons">public</i>
-                                <span><strong>Universal</strong> - Applies to all students</span>
-                            </div>
-                        ` : `
-                            <div class="eligibility-badge restricted">
-                                <i class="material-icons">filter_alt</i>
-                                <span><strong>Restricted</strong> - Specific eligibility criteria</span>
-                            </div>
-                            <div class="info-item">
-                                <p class="info-label">SCHOOL</p>
-                                <p class="info-value">${school || 'All Schools'}</p>
-                            </div>
-                            <div class="info-item">
-                                <p class="info-label">PROGRAMME</p>
-                                <p class="info-value">${programme || 'All Programmes'}</p>
-                            </div>
-                            <div class="info-item">
-                                <p class="info-label">MODE OF STUDY</p>
-                                <p class="info-value">${modeOfStudy || 'All Modes'}</p>
-                            </div>
-                            <div class="info-item">
-                                <p class="info-label">YEAR OF STUDY</p>
-                                <p class="info-value">${yearOfStudy || 'All Years'}</p>
-                            </div>
-                            <div class="info-item">
-                                <p class="info-label">PROGRAMME LEVEL</p>
-                                <p class="info-value">${programLevel || 'All Levels'}</p>
-                            </div>
-                        `}
-                    </div>
+                            <span><strong>Restricted</strong> — specific eligibility criteria</span>
+                        </div>
+                        <div class="vdc-grid">
+                            <div class="vdc"><p class="vdc-lbl">School</p><p class="vdc-val">${school||'All Schools'}</p></div>
+                            <div class="vdc"><p class="vdc-lbl">Programme</p><p class="vdc-val">${prog||'All Programmes'}</p></div>
+                            <div class="vdc"><p class="vdc-lbl">Mode of Study</p><p class="vdc-val">${mode||'All Modes'}</p></div>
+                            <div class="vdc"><p class="vdc-lbl">Year of Study</p><p class="vdc-val">${yearOS||'All Years'}</p></div>
+                            <div class="vdc full"><p class="vdc-lbl">Programme Level</p><p class="vdc-val">${level||'All Levels'}</p></div>
+                        </div>
+                    `}
 
-                    <div style="margin-top: 1.5rem;">
-                        <h6 class="section-heading">
-                            <i class="material-icons">info</i>
-                            Audit Information
-                        </h6>
-                        <div class="info-item">
-                            <p class="info-label">CREATED BY</p>
-                            <p class="info-value">${createdBy || 'N/A'}</p>
-                        </div>
-                        <div class="info-item">
-                            <p class="info-label">CREATED AT</p>
-                            <p class="info-value">${formatDate(createdAt)}</p>
-                        </div>
-                        <div class="info-item">
-                            <p class="info-label">UPDATED BY</p>
-                            <p class="info-value">${updatedBy || 'N/A'}</p>
-                        </div>
-                        <div class="info-item">
-                            <p class="info-label">UPDATED AT</p>
-                            <p class="info-value">${formatDate(updatedAt)}</p>
-                        </div>
+                    <p class="vsec-title"><i class="material-icons">history</i>Audit</p>
+                    <div class="vdc-grid">
+                        <div class="vdc"><p class="vdc-lbl">Created By</p><p class="vdc-val">${createdBy||'—'}</p></div>
+                        <div class="vdc"><p class="vdc-lbl">Created At</p><p class="vdc-val">${fmtDate(createdAt)}</p></div>
+                        <div class="vdc"><p class="vdc-lbl">Updated By</p><p class="vdc-val">${updatedBy||'—'}</p></div>
+                        <div class="vdc"><p class="vdc-lbl">Updated At</p><p class="vdc-val">${fmtDate(updatedAt)}</p></div>
                     </div>
                 `;
-
-                document.getElementById('viewModalContent').innerHTML = content;
                 document.getElementById('viewModal').classList.remove('hidden');
-            } catch (error) {
-                console.error('Error loading period details:', error);
-                showNotification(`Error loading period details: ${error.message}`, 'error');
-            } finally {
-                loadingIndicator.style.display = 'none';
-            }
+            } catch (e) { showToast(`Error: ${e.message}`, 'error'); }
+            finally { hideLoader(); }
         }
 
-        function editFromView() {
-            hideViewModal();
-            setTimeout(() => showEditModal(currentPeriodId), 300);
-        }
+        function editFromView() { hideViewModal(); setTimeout(() => showEditModal(currentPeriodId), 280); }
 
-        // Delete modal
-        function showDeleteModal(periodId, periodName) {
+        /* ── Delete ── */
+        function showDeleteModal(periodId, name) {
             Swal.fire({
                 title: 'Confirm Deletion',
-                html: `Are you sure you want to delete the accommodation period "<strong>${periodName}</strong>"?<br><br>This action cannot be undone.`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#ef4444',
-                cancelButtonColor: '#6b7280',
-                confirmButtonText: '<i class="material-icons" style="font-size: 16px; vertical-align: middle;">delete</i> Delete',
-                cancelButtonText: '<i class="material-icons" style="font-size: 16px; vertical-align: middle;">close</i> Cancel',
-                reverseButtons: true,
-                customClass: {
-                    confirmButton: 'btn-danger-outline',
-                    cancelButton: 'btn-secondary'
-                }
-            }).then(async (result) => {
-                if (result.isConfirmed) {
-                    await performDelete(periodId);
-                }
-            });
+                html: `Delete the period <strong>${name}</strong>?<br><small style="color:#6b7280;">This action cannot be undone.</small>`,
+                icon: 'warning', showCancelButton: true,
+                confirmButtonColor: '#e85c5c', cancelButtonColor: '#94a3b8',
+                confirmButtonText: '<i class="material-icons" style="font-size:15px;vertical-align:middle;">delete</i> Delete',
+                cancelButtonText: 'Cancel', reverseButtons: true
+            }).then(r => { if (r.isConfirmed) performDelete(periodId); });
         }
 
-        // Perform delete
         async function performDelete(periodId) {
-            const loadingIndicator = document.getElementById('loadingIndicator');
-            loadingIndicator.style.display = 'flex';
-
+            showLoader();
             try {
-                const formData = new FormData();
-                formData.append('__RequestVerificationToken', getAntiForgeryToken());
-
-                const response = await fetch(`/AccommodationPeriod/Delete/${periodId}`, {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (response.ok) {
-                    showNotification('Period deleted successfully!', 'success');
-                    setTimeout(() => location.reload(), 1500);
-                } else {
-                    const error = await response.text();
-                    showNotification(error || 'Error deleting period', 'error');
-                }
-            } catch (error) {
-                console.error('Error deleting period:', error);
-                showNotification('Error deleting period', 'error');
-            } finally {
-                loadingIndicator.style.display = 'none';
-            }
+                const fd = new FormData();
+                fd.append('__RequestVerificationToken', getToken());
+                const r = await fetch(`/AccommodationPeriod/Delete/${periodId}`, { method: 'POST', body: fd });
+                if (r.ok) { showToast('Period deleted!', 'success'); setTimeout(() => location.reload(), 1500); }
+                else showToast(await r.text() || 'Error deleting', 'error');
+            } catch { showToast('Error deleting period', 'error'); }
+            finally { hideLoader(); }
         }
 
-        // Hide modals
-        function hideModal() {
-            document.getElementById('periodModal').classList.add('hidden');
-        }
+        /* ── Hide modals ── */
+        function hideModal()     { document.getElementById('periodModal').classList.add('hidden'); }
+        function hideViewModal() { document.getElementById('viewModal').classList.add('hidden');   }
 
-        function hideViewModal() {
-            document.getElementById('viewModal').classList.add('hidden');
-        }
-
-        // Toggle functions
+        /* ── Toggles ── */
         function toggleEndDate() {
-            const isPermanent = document.getElementById('isPermanent').checked;
-            const endDateInput = document.getElementById('endDate');
-            endDateInput.disabled = isPermanent;
-            if (isPermanent) {
-                endDateInput.value = '';
-                endDateInput.classList.remove('border-danger');
-            }
+            const perm = document.getElementById('isPermanent').checked;
+            const ed   = document.getElementById('endDate');
+            ed.disabled = perm;
+            if (perm) ed.value = '';
         }
 
         function toggleEligibilityCriteria() {
-            const appliesUniversally = document.getElementById('appliesUniversally').checked;
-            const criteriaDiv = document.getElementById('eligibilityCriteria');
-
-            if (appliesUniversally) {
-                criteriaDiv.style.opacity = '0.5';
-                criteriaDiv.style.pointerEvents = 'none';
-                // Clear all eligibility fields
-                document.getElementById('schoolId').value = '';
-                document.getElementById('programmeId').value = '';
-                document.getElementById('modeOfStudyId').value = '';
-                document.getElementById('yearOfStudy').value = '';
-                document.getElementById('programLevelId').value = '';
-            } else {
-                criteriaDiv.style.opacity = '1';
-                criteriaDiv.style.pointerEvents = 'auto';
-            }
+            setEligibilityState(document.getElementById('appliesUniversally').checked);
         }
 
-        // Form validation
+        function setEligibilityState(disabled) {
+            const div = document.getElementById('eligibilityCriteria');
+            div.style.opacity       = disabled ? '.4'   : '1';
+            div.style.pointerEvents = disabled ? 'none' : 'auto';
+            if (disabled) ['schoolId','programmeId','modeOfStudyId','yearOfStudy','programLevelId'].forEach(id => document.getElementById(id).value = '');
+        }
+
+        /* ── Validation ── */
         function validateForm(event) {
-            let isValid = true;
+            let ok = true;
+            document.querySelectorAll('.ferr').forEach(e => e.classList.remove('show'));
+            document.querySelectorAll('.ff input.err,.ff select.err').forEach(e => e.classList.remove('err'));
 
-            // Hide all error messages first
-            document.querySelectorAll('[id$="Error"]').forEach(el => el.classList.add('hidden'));
-
-            // Remove red borders
-            document.querySelectorAll('.border-red-500').forEach(el => {
-                el.classList.remove('border-red-500');
-                el.classList.add('border-gray-300');
+            ['type','typeOfPayment','typeOfPaymentAmount','startDate','applicationStartDate','applicationEndDate','status'].forEach(id => {
+                const el = document.getElementById(id);
+                if (!el.value && el.value !== '0') {
+                    el.classList.add('err');
+                    document.getElementById(id+'Error')?.classList.add('show');
+                    ok = false;
+                }
             });
 
-            // Validate Type
-            const type = document.getElementById('type');
-            if (!type.value) {
-                showFieldError('type', 'typeError');
-                isValid = false;
+            const perm = document.getElementById('isPermanent').checked;
+            const ed   = document.getElementById('endDate');
+            if (!perm && !ed.value) {
+                ed.classList.add('err');
+                showToast('Provide an End Date or check "Permanent until graduation"', 'error');
+                ok = false;
             }
 
-            // Validate Type of Payment
-            const typeOfPayment = document.getElementById('typeOfPayment');
-            if (!typeOfPayment.value) {
-                showFieldError('typeOfPayment', 'typeOfPaymentError');
-                isValid = false;
+            const sd = document.getElementById('startDate').value;
+            if (ok && sd && ed.value && !perm && new Date(ed.value) <= new Date(sd)) {
+                showToast('End date must be after start date', 'error'); ok = false;
+            }
+            const asd = document.getElementById('applicationStartDate').value;
+            const aed = document.getElementById('applicationEndDate').value;
+            if (ok && asd && aed && new Date(aed) <= new Date(asd)) {
+                showToast('Application end date must be after start date', 'error'); ok = false;
             }
 
-            // Validate Type of Payment Amount
-            const typeOfPaymentAmount = document.getElementById('typeOfPaymentAmount');
-            if (!typeOfPaymentAmount.value || parseFloat(typeOfPaymentAmount.value) < 0) {
-                showFieldError('typeOfPaymentAmount', 'typeOfPaymentAmountError');
-                isValid = false;
-            }
-
-            // Validate Start Date
-            const startDate = document.getElementById('startDate');
-            if (!startDate.value) {
-                showFieldError('startDate', 'startDateError');
-                isValid = false;
-            }
-
-            // Validate End Date if not permanent
-            const isPermanent = document.getElementById('isPermanent').checked;
-            const endDate = document.getElementById('endDate');
-            if (!isPermanent && !endDate.value) {
-                endDate.classList.add('border-red-500');
-                endDate.classList.remove('border-gray-300');
-                showNotification('Please provide an End Date or check "Permanent until graduation"', 'error');
-                isValid = false;
-            }
-
-            // Validate Application Start Date
-            const applicationStartDate = document.getElementById('applicationStartDate');
-            if (!applicationStartDate.value) {
-                showFieldError('applicationStartDate', 'applicationStartDateError');
-                isValid = false;
-            }
-
-            // Validate Application End Date
-            const applicationEndDate = document.getElementById('applicationEndDate');
-            if (!applicationEndDate.value) {
-                showFieldError('applicationEndDate', 'applicationEndDateError');
-                isValid = false;
-            }
-
-            // Validate Status
-            const status = document.getElementById('status');
-            if (!status.value && status.value !== '0') {
-                showFieldError('status', 'statusError');
-                isValid = false;
-            }
-
-            // Validate date logic
-            if (isValid && startDate.value && endDate.value && !isPermanent) {
-                if (new Date(endDate.value) <= new Date(startDate.value)) {
-                    showNotification('End date must be after start date', 'error');
-                    showFieldError('endDate', null);
-                    isValid = false;
-                }
-            }
-
-            if (isValid && applicationStartDate.value && applicationEndDate.value) {
-                if (new Date(applicationEndDate.value) <= new Date(applicationStartDate.value)) {
-                    showNotification('Application end date must be after application start date', 'error');
-                    showFieldError('applicationEndDate', null);
-                    isValid = false;
-                }
-            }
-
-            if (!isValid) {
-                event.preventDefault();
-                showNotification('Please fill in all required fields correctly', 'error');
-                return false;
-            }
-
-            // Show loader when form is valid and about to submit
-            const loadingIndicator = document.getElementById('loadingIndicator');
-            loadingIndicator.style.display = 'flex';
-
-            // Disable submit button to prevent double submission
-            const submitBtn = event.target.querySelector('button[type="submit"]');
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="material-icons text-lg">hourglass_empty</i><span>Saving...</span>';
-            }
-
+            if (!ok) { event.preventDefault(); return false; }
+            showLoader();
+            event.target.disabled = true;
+            event.target.innerHTML = '<i class="material-icons">hourglass_empty</i><span>Saving…</span>';
             return true;
         }
 
-        function showFieldError(fieldId, errorId) {
-            const field = document.getElementById(fieldId);
-            field.classList.add('border-red-500');
-            field.classList.remove('border-gray-300');
-            field.focus();
-
-            if (errorId) {
-                const error = document.getElementById(errorId);
-                if (error) {
-                    error.classList.remove('hidden');
-                }
-            }
-        }
-
-        // Helper functions
-        function formatDate(dateString) {
-            if (!dateString) return 'N/A';
-            const date = new Date(dateString);
-            return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-        }
-
-        function formatDateForInput(dateString) {
-            if (!dateString) return '';
-            const date = new Date(dateString);
-            return date.toISOString().split('T')[0];
-        }
-
-        function getAntiForgeryToken() {
-            return document.querySelector('input[name="__RequestVerificationToken"]').value;
-        }
-
-        function showNotification(message, type) {
-            type = type || 'success';
-
-            const config = {
-                toast: true,
-                position: 'top-end',
-                showConfirmButton: false,
-                timer: 3000,
-                timerProgressBar: true,
-                didOpen: (toast) => {
-                    toast.addEventListener('mouseenter', Swal.stopTimer);
-                    toast.addEventListener('mouseleave', Swal.resumeTimer);
-                }
-            };
-
-            if (type === 'success') {
-                Swal.fire({
-                    ...config,
-                    icon: 'success',
-                    title: message
-                });
-            } else if (type === 'error') {
-                Swal.fire({
-                    ...config,
-                    icon: 'error',
-                    title: message
-                });
-            } else if (type === 'warning') {
-                Swal.fire({
-                    ...config,
-                    icon: 'warning',
-                    title: message
-                });
-            } else {
-                Swal.fire({
-                    ...config,
-                    icon: 'info',
-                    title: message
-                });
-            }
+        /* ── Helpers ── */
+        function fmtDate(s)  { return s ? new Date(s).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'}) : '—'; }
+        function fmtDateIn(s){ return s ? new Date(s).toISOString().split('T')[0] : ''; }
+        function getToken()  { return document.querySelector('input[name="__RequestVerificationToken"]').value; }
+        function showLoader(){ document.getElementById('loadingIndicator').style.display = 'flex'; }
+        function hideLoader(){ document.getElementById('loadingIndicator').style.display = 'none';  }
+        function showToast(msg, type='success') {
+            Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:3000, timerProgressBar:true, icon:type, title:msg,
+                didOpen:t=>{ t.addEventListener('mouseenter',Swal.stopTimer); t.addEventListener('mouseleave',Swal.resumeTimer); } });
         }
     </script>
 }
