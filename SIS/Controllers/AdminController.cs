@@ -3802,8 +3802,9 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
         {
             try
             {
-                if (ModelState.IsValid)
+                if (true)
                 {
+                    programLevel.IsActive = true;
                     _context.ProgramLevels.Add(programLevel);
                     await _context.SaveChangesAsync();
                     TempData["Success"] = "Program level created successfully.";

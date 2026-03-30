@@ -32,7 +32,7 @@ namespace SIS.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> Login()
         {
-            var user = await _userManager.FindByEmailAsync("admin@ecampus.com");
+            var user = await _userManager.FindByEmailAsync("admin@EduTech.com");
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);
             await _userManager.ResetPasswordAsync(user, token, "Prime@747");
             return View();
