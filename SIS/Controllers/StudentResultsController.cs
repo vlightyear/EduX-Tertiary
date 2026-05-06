@@ -757,7 +757,7 @@ namespace SIS.Controllers
         private async Task<ProgressionRule?> GetApplicableProgressionRule(
             Student student,
             int totalFailedCourses,
-            int? semester = null,
+            int? period = null,
             int? attempt = null)
         {
             var studentSchoolId = await _context.Students
@@ -773,8 +773,8 @@ namespace SIS.Controllers
                             r.PercentFailedOfCourseLoad >= totalFailedCourses);
 
             // Apply optional filters
-            if (semester.HasValue)
-                baseQuery = baseQuery.Where(r => r.Semester == semester.Value);
+            if (period.HasValue)
+                baseQuery = baseQuery.Where(r => r.AcademicPeriodId == period.Value);
 
             if (attempt.HasValue)
                 baseQuery = baseQuery.Where(r => r.Attempt == attempt.Value);

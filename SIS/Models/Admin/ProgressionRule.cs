@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using SIS.Models.Registration;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SIS.Models.Admin
@@ -30,8 +31,9 @@ namespace SIS.Models.Admin
         [ForeignKey("SchoolId")]
         public virtual School? School { get; set; }
 
-        [Display(Name = "Semester (Leave empty for global rule)")]
-        public int? Semester { get; set; }
+        [Display(Name = "Period (Leave empty for global rule)")]
+        public int? AcademicPeriodId { get; set; }
+        public virtual AcademicPeriod AcademicPeriod { get; set; }
 
         [Display(Name = "Attempt (Leave empty for global rule)")]
         public int? Attempt { get; set; }

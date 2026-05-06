@@ -474,7 +474,7 @@ namespace SIS.Services
         public async Task<ProgressionRule?> GetApplicableProgressionRuleAsync(
             Student student,
             int failedPercentage,  // Renamed for clarity - this is a percentage (0-100), not a count
-            int? semester = null,
+            int? period = null,
             int? attempt = null)
         {
             var studentSchoolId = await _context.Students.AsNoTracking()
@@ -491,8 +491,8 @@ namespace SIS.Services
                             failedPercentage >= r.PercentFailedOfCourseLoad && r.Attempt == attempt);  // FIXED: reversed condition
 
             // Apply optional filters
-            if (semester.HasValue)
-                baseQuery = baseQuery.Where(r => r.Semester == semester.Value);
+            if (period.HasValue)
+                baseQuery = baseQuery.Where(r => r.AcademicPeriodId == period.Value);
 
             if (attempt.HasValue)
                 baseQuery = baseQuery.Where(r => r.Attempt == attempt.Value);

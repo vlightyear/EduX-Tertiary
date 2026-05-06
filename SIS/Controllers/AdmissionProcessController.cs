@@ -450,6 +450,8 @@ namespace SIS.Controllers
                 // Step 1: Fetch and validate the applicant BEFORE the transaction
                 var applicant = await _context.Applicants
                     .Include(a => a.SubjectGrades)
+                    .Include(a => a.AcademicYear)
+                        .ThenInclude(ay => ay.YearPeriods)
                     .FirstOrDefaultAsync(a => a.ApplicantId == applicantId);
 
                 if (applicant == null)

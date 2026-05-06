@@ -4033,7 +4033,7 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
                 rule.IsActive,
                 rule.SchoolId,
                 SchoolName = rule.School?.Name,
-                rule.Semester,
+                rule.AcademicPeriodId,
                 rule.Attempt
             };
 
@@ -4071,7 +4071,7 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
                 existingRule.Description = progressionRule.Description;
                 existingRule.IsActive = progressionRule.IsActive;
                 existingRule.Action = progressionRule.Action;
-                existingRule.Semester = progressionRule.Semester;
+                existingRule.AcademicPeriodId = progressionRule.AcademicPeriodId;
                 existingRule.Attempt = progressionRule.Attempt;
                 existingRule.SchoolId = progressionRule.SchoolId; // Add SchoolId update
                 existingRule.UpdatedBy = User.Identity.Name;
