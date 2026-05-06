@@ -133,9 +133,6 @@ namespace SIS.Controllers
             }
         }
 
-        // Add this action to your ReportsController (or whichever controller you prefer)
-        // Requires: using SIS.Models.ViewModels;
-
         [HttpGet]
         public async Task<IActionResult> SchoolBillingMonthly(
             string? selectedSchool = null,

@@ -1,336 +1,708 @@
 ﻿@model IEnumerable<SIS.Models.Registration.ModeOfStudy>
 
-<div class="h-[90vh] p-4">
-    <!-- Header Section -->
-    <div class="flex justify-between items-center mb-4">
-        <h1 class="text-2xl font-bold text-secondary-800 flex items-center">
-            <i class="material-icons mr-2">school</i>
-            Mode of Study
-        </h1>
-        <button type="button"
-                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
-                onclick="showCreateModeModal()">
-            <i class="material-icons mr-2">add</i>
-            Create Mode
-        </button>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+    :root {
+        --navy: #1e2d5e;
+        --navy-dark: #141c3a;
+        --navy-mid: #2e3f7a;
+        --coral: #e85c5c;
+        --coral-lt: rgba(232,92,92,.1);
+        --green: #22c55e;
+        --green-lt: rgba(34,197,94,.1);
+        --amber: #f59e0b;
+        --amber-lt: rgba(245,158,11,.1);
+        --blue-lt: rgba(59,130,246,.08);
+        --mist: #f0f4f8;
+        --border: #e8ecf2;
+        --txt: #1e2d5e;
+        --sub: #64748b;
+        --lbl: #94a3b8;
+    }
+
+    .bgs-wrap {
+        font-family: 'DM Sans',sans-serif;
+        padding: 0 .25rem 2rem;
+    }
+
+    /* Hero */
+    .bgs-hero {
+        background: linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 55%,var(--navy-mid) 100%);
+        border-radius: 1.25rem;
+        padding: 1.5rem 2rem;
+        margin-bottom: 1.5rem;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 8px 32px rgba(20,28,58,.25);
+    }
+
+        .bgs-hero::after {
+            content: '';
+            position: absolute;
+            bottom: -60px;
+            right: 80px;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: rgba(232,92,92,.07);
+            pointer-events: none;
+        }
+
+    .hero-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .hero-left {
+        display: flex;
+        align-items: center;
+        gap: .875rem;
+    }
+
+    .hero-icon {
+        width: 46px;
+        height: 46px;
+        border-radius: .875rem;
+        background: rgba(255,255,255,.1);
+        backdrop-filter: blur(8px);
+        border: 1.5px solid rgba(255,255,255,.18);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        color: white;
+        flex-shrink: 0;
+    }
+
+    .hero-title {
+        font-family: 'DM Serif Display',serif;
+        font-size: 1.5rem;
+        color: white;
+        margin: 0;
+        line-height: 1.1;
+    }
+
+    .hero-sub {
+        font-size: .78rem;
+        color: rgba(255,255,255,.55);
+        margin: .2rem 0 0;
+    }
+
+    /* Buttons */
+    .bbtn {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        padding: .48rem 1.1rem;
+        border-radius: 2rem;
+        font-size: .8rem;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        transition: all .2s;
+        white-space: nowrap;
+        font-family: 'DM Sans',sans-serif;
+    }
+
+    .bbtn-coral {
+        background: var(--coral);
+        color: white;
+        box-shadow: 0 3px 12px rgba(232,92,92,.4);
+    }
+
+        .bbtn-coral:hover {
+            background: #d44f4f;
+            transform: translateY(-1px);
+        }
+
+    .bbtn-mist {
+        background: var(--mist);
+        color: var(--txt);
+        border: 1px solid var(--border);
+    }
+
+        .bbtn-mist:hover {
+            background: #e2e8f0;
+        }
+
+    .bbtn-navy {
+        background: var(--navy);
+        color: white;
+    }
+
+        .bbtn-navy:hover {
+            background: var(--navy-dark);
+            transform: translateY(-1px);
+        }
+
+    .bbtn-red {
+        background: #dc2626;
+        color: white;
+        box-shadow: 0 3px 12px rgba(220,38,38,.35);
+    }
+
+        .bbtn-red:hover {
+            background: #b91c1c;
+            transform: translateY(-1px);
+        }
+
+    .bbtn-sm {
+        padding: .32rem .8rem;
+        font-size: .74rem;
+    }
+
+    /* Card */
+    .bgs-card {
+        background: white;
+        border: 1.5px solid var(--border);
+        border-radius: 1.1rem;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(30,45,94,.05);
+    }
+
+    /* Table */
+    .bgs-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: .83rem;
+    }
+
+        .bgs-table thead tr {
+            background: white;
+        }
+
+        .bgs-table th {
+            padding: .65rem 1rem;
+            text-align: left;
+            font-size: .65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: var(--lbl);
+            border-bottom: 2px solid var(--border);
+            white-space: nowrap;
+            background: white;
+        }
+
+            .bgs-table th:first-child {
+                border-radius: .6rem 0 0 0;
+                width: 60px;
+            }
+
+            .bgs-table th:last-child {
+                border-radius: 0 .6rem 0 0;
+            }
+
+        .bgs-table td {
+            padding: .75rem 1rem;
+            border-bottom: 1px solid var(--border);
+            color: var(--sub);
+            vertical-align: middle;
+            background: white;
+        }
+
+        .bgs-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .bgs-table tbody tr {
+            transition: background .15s;
+        }
+
+            .bgs-table tbody tr:hover td {
+                background: #f8faff;
+            }
+
+        .bgs-table td.td-name {
+            font-weight: 600;
+            color: var(--txt);
+        }
+
+    /* Index number */
+    .row-idx {
+        width: 28px;
+        height: 28px;
+        border-radius: .45rem;
+        background: var(--navy);
+        color: white;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: .72rem;
+        font-weight: 700;
+    }
+
+    /* Code badge */
+    .code-badge {
+        display: inline-flex;
+        align-items: center;
+        background: rgba(59,130,246,.08);
+        border: 1px solid rgba(59,130,246,.2);
+        color: #1d4ed8;
+        border-radius: 2rem;
+        padding: .2rem .65rem;
+        font-size: .72rem;
+        font-weight: 700;
+        letter-spacing: .04em;
+    }
+
+    /* Action buttons */
+    .act-edit {
+        display: inline-flex;
+        align-items: center;
+        gap: .3rem;
+        padding: .3rem .75rem;
+        border-radius: 2rem;
+        border: none;
+        cursor: pointer;
+        font-size: .74rem;
+        font-weight: 600;
+        font-family: 'DM Sans',sans-serif;
+        background: rgba(30,45,94,.08);
+        color: var(--navy);
+        transition: all .15s;
+    }
+
+        .act-edit:hover {
+            background: rgba(30,45,94,.16);
+        }
+
+    .act-del {
+        display: inline-flex;
+        align-items: center;
+        gap: .3rem;
+        padding: .3rem .75rem;
+        border-radius: 2rem;
+        border: none;
+        cursor: pointer;
+        font-size: .74rem;
+        font-weight: 600;
+        font-family: 'DM Sans',sans-serif;
+        background: var(--coral-lt);
+        color: var(--coral);
+        transition: all .15s;
+    }
+
+        .act-del:hover {
+            background: rgba(232,92,92,.2);
+        }
+
+    /* Empty state */
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: var(--sub);
+    }
+
+    .empty-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 1rem;
+        background: linear-gradient(135deg,var(--navy-dark),var(--navy));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.4rem;
+        margin: 0 auto .875rem;
+    }
+
+    /* ── MODALS ── */
+    .bgs-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 9998;
+        background: rgba(15,20,40,.55);
+        backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+    }
+
+        .bgs-overlay.hidden {
+            display: none !important;
+        }
+
+    .bgs-modal {
+        background: white;
+        border-radius: 1.2rem;
+        overflow: hidden;
+        width: 100%;
+        max-height: 92vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 25px 60px rgba(10,15,30,.3);
+        animation: mUp .22s ease both;
+    }
+    @@keyframes mUp {
+        from {
+            opacity: 0;
+            transform: translateY(16px) scale(.98);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    .modal-head {
+        padding: 1rem 1.4rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-shrink: 0;
+    }
+
+        .modal-head.navy {
+            background: linear-gradient(135deg,var(--navy-dark),var(--navy));
+        }
+
+        .modal-head.coral {
+            background: linear-gradient(135deg,#991b1b,var(--coral));
+        }
+
+    .modal-title {
+        font-family: 'DM Serif Display',serif;
+        font-size: 1.05rem;
+        color: white;
+        display: flex;
+        align-items: center;
+        gap: .45rem;
+    }
+
+    .modal-x {
+        width: 28px;
+        height: 28px;
+        border-radius: .45rem;
+        background: rgba(255,255,255,.15);
+        border: none;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: .82rem;
+        transition: background .2s;
+    }
+
+        .modal-x:hover {
+            background: rgba(255,255,255,.25);
+        }
+
+    .modal-body {
+        padding: 1.4rem;
+        overflow-y: auto;
+        flex: 1;
+    }
+
+    .modal-footer {
+        padding: .8rem 1.4rem;
+        background: var(--mist);
+        border-top: 1px solid var(--border);
+        display: flex;
+        justify-content: flex-end;
+        gap: .5rem;
+        flex-shrink: 0;
+    }
+
+    /* Form fields */
+    .fg {
+        display: flex;
+        flex-direction: column;
+        gap: .3rem;
+    }
+
+        .fg + .fg {
+            margin-top: .875rem;
+        }
+
+    .fg-label {
+        font-size: .67rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        color: var(--lbl);
+    }
+
+    .fg-input {
+        padding: .55rem .8rem;
+        border: 1.5px solid var(--border);
+        border-radius: .6rem;
+        font-size: .87rem;
+        color: var(--txt);
+        background: var(--mist);
+        outline: none;
+        transition: all .2s;
+        font-family: 'DM Sans',sans-serif;
+    }
+
+        .fg-input:focus {
+            border-color: var(--navy);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(30,45,94,.08);
+        }
+
+    /* Delete detail card */
+    .del-detail {
+        background: var(--amber-lt);
+        border: 1px solid rgba(245,158,11,.25);
+        border-radius: .75rem;
+        padding: .875rem 1rem;
+    }
+
+        .del-detail .dd-row {
+            display: flex;
+            gap: .4rem;
+            align-items: center;
+            font-size: .84rem;
+            margin-bottom: .3rem;
+        }
+
+            .del-detail .dd-row:last-child {
+                margin-bottom: 0;
+            }
+
+        .del-detail .dd-lbl {
+            font-weight: 700;
+            color: var(--txt);
+            min-width: 48px;
+        }
+
+        .del-detail .dd-val {
+            color: var(--sub);
+        }
+
+    .del-warn {
+        background: var(--coral-lt);
+        border: 1px solid rgba(232,92,92,.2);
+        border-radius: .6rem;
+        padding: .65rem .875rem;
+        font-size: .77rem;
+        color: #991b1b;
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        margin-top: .875rem;
+    }
+</style>
+
+<div class="bgs-wrap">
+
+    <!-- ══ HERO ══ -->
+    <div class="bgs-hero">
+        <div class="hero-row">
+            <div class="hero-left">
+                <div class="hero-icon"><i class="fas fa-book-open"></i></div>
+                <div>
+                    <h1 class="hero-title">Modes of Study</h1>
+                    <p class="hero-sub">Configure study mode options for academic programmes</p>
+                </div>
+            </div>
+            <button class="bbtn bbtn-coral" onclick="showCreateModeModal()">
+                <i class="fas fa-plus"></i> Create Mode
+            </button>
+        </div>
     </div>
 
-    <!-- Main Content Layout -->
-    <div class="flex gap-4 h-[calc(90vh-80px)]">
-        <!-- Main Table Section (3/4 width) -->
-        <div class="w-3/4">
-            <div class="bg-white rounded-lg shadow-md h-full overflow-hidden">
-                <div class="p-4">
-                    <table id="modesTable" class="w-full text-sm text-secondary-600">
-                        <thead>
+    <!-- ══ TABLE CARD ══ -->
+    <div class="bgs-card">
+        <div style="overflow-x:auto;">
+            <table class="bgs-table" id="modeOfStudyTable">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Mode Name</th>
+                        <th>Code</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        int index = 1;
+                        foreach (var mode in Model)
+                        {
                             <tr>
-                                <th class="px-6 py-4">
-                                    <span class="flex items-center">
-                                        #
-                                        <svg class="w-4 h-4 ms-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 15 4 4 4-4m0-6-4-4-4 4" />
-                                        </svg>
-                                    </span>
-                                </th>
-                                <th class="px-6 py-4">
-                                    <span class="flex items-center">
-                                        Mode Name
-                                        <svg class="w-4 h-4 ms-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 15 4 4 4-4m0-6-4-4-4 4" />
-                                        </svg>
-                                    </span>
-                                </th>
-                                <th class="px-6 py-4">
-                                    <span class="flex items-center">
-                                        Code
-                                        <svg class="w-4 h-4 ms-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 15 4 4 4-4m0-6-4-4-4 4" />
-                                        </svg>
-                                    </span>
-                                </th>
-                                <th class="px-6 py-4">Actions</th>
+                                <td><span class="row-idx">@index</span></td>
+                                <td class="td-name">@mode.ModeName</td>
+                                <td><span class="code-badge">@mode.Code</span></td>
+                                <td>
+                                    <div style="display:flex;gap:.4rem;">
+                                        <button class="act-edit" onclick="showUpdateModeModal('@mode.ModeId','@mode.ModeName','@mode.Code')">
+                                            <i class="fas fa-pen"></i> Edit
+                                        </button>
+                                        <button class="act-del" onclick="showDeleteModeModal('@mode.ModeId','@mode.ModeName','@mode.Code')">
+                                            <i class="fas fa-trash"></i> Delete
+                                        </button>
+                                    </div>
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            @if (Model != null && Model.Any())
-                            {
-                                int index = 1;
-                                foreach (var mode in Model)
-                                {
-                                    <tr class="border-b hover:bg-gray-50 transition-colors">
-                                        <td class="px-6 py-4">@index</td>
-                                        <td class="px-6 py-4 font-medium text-gray-900">@mode.ModeName</td>
-                                        <td class="px-6 py-4">@mode.Code</td>
-                                        <td class="px-6 py-4">
-                                            <div class="flex space-x-2">
-                                                <button onclick="showUpdateModeModal('@mode.ModeId', '@mode.ModeName', '@mode.Code')"
-                                                        class="inline-flex items-center px-3 py-1 text-sm text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
-                                                    <i class="material-icons text-sm mr-1">edit</i> Edit
-                                                </button>
-                                                <button onclick="showDeleteModeModal('@mode.ModeId', '@mode.ModeName')"
-                                                        class="inline-flex items-center px-3 py-1 text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
-                                                    <i class="material-icons text-sm mr-1">delete</i> Delete
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    index++;
-                                }
-                            }
-                            else
-                            {
-                                <tr>
-                                    <td colspan="4" class="px-6 py-4 text-center text-gray-500">No modes found.</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Statistics Sidebar (1/4 width) -->
-        <div class="w-1/4 space-y-4">
-            <!-- Statistics Cards -->
-            <div class="grid grid-cols-1 gap-4">
-                <!-- Total Modes -->
-                <div class="bg-white rounded-lg shadow p-4">
-                    <div class="flex items-center">
-                        <div class="p-3 bg-blue-100 rounded-lg">
-                            <i class="material-icons text-blue-600 text-xl">school</i>
-                        </div>
-                        <div class="ml-4">
-                            <p class="text-gray-500 text-sm">Total Modes</p>
-                            <p class="text-xl font-semibold">@Model.Count()</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Most Used Mode -->
-                <div class="bg-white rounded-lg shadow p-4">
-                    <div class="flex items-center">
-                        <div class="p-3 bg-green-100 rounded-lg">
-                            <i class="material-icons text-green-600 text-xl">trending_up</i>
-                        </div>
-                        <div class="ml-4">
-                            <p class="text-gray-500 text-sm">Most Used Mode</p>
-                            <p class="text-xl font-semibold text-green-600">Full Time</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Active Students -->
-                <div class="bg-white rounded-lg shadow p-4">
-                    <div class="flex items-center">
-                        <div class="p-3 bg-purple-100 rounded-lg">
-                            <i class="material-icons text-purple-600 text-xl">groups</i>
-                        </div>
-                        <div class="ml-4">
-                            <p class="text-gray-500 text-sm">Active Students</p>
-                            <p class="text-xl font-semibold text-purple-600">2,451</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Mode Distribution Chart -->
-            <div class="bg-white rounded-lg shadow p-4">
-                <h3 class="text-lg font-semibold text-secondary-800 mb-4">Mode Distribution</h3>
-                <div id="modeStatsChart" class="min-h-64"></div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Create Mode Modal -->
-<div id="createModeModal" class="hidden fixed inset-0 z-50">
-    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
-
-    <div class="fixed inset-0 z-10 overflow-y-auto">
-        <div class="flex min-h-full items-center justify-center p-4">
-            <div class="relative bg-white rounded-lg shadow-xl w-full max-w-2xl">
-                <!-- Modal Header -->
-                <div class="bg-blue-600 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
-                    <h3 class="text-lg font-semibold flex items-center">
-                        <i class="material-icons mr-2">add</i>
-                        Create New Mode of Study
-                    </h3>
-                    <button type="button" class="text-white hover:text-gray-200" data-bs-dismiss="modal">
-                        <i class="material-icons">close</i>
-                    </button>
-                </div>
-
-                <!-- Modal Body -->
-                <div class="p-6">
-                    <form id="createModeForm" method="post" asp-controller="Admin" asp-action="CreateModeOfStudy">
-                        @Html.AntiForgeryToken()
-
-                        <div class="space-y-6">
-                            <!-- Mode Name -->
-                            <div class="relative z-0 w-full group">
-                                <input type="text" name="ModeName" id="modeName"
-                                       class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
-                                       placeholder=" " required />
-                                <label for="modeName"
-                                       class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                                    Mode Name (like Full-Time)
-                                </label>
-                            </div>
-
-                            <!-- Mode Code -->
-                            <div class="relative z-0 w-full group">
-                                <input type="text" name="Code" id="code"
-                                       class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
-                                       placeholder=" " required />
-                                <label for="code"
-                                       class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                                    Mode Code (like FT)
-                                </label>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-
-                <!-- Modal Footer -->
-                <div class="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-end space-x-2">
-                    <button type="button" class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center" data-bs-dismiss="modal">
-                        <i class="material-icons mr-1">close</i>Cancel
-                    </button>
-                    <button type="button" id="confirmCreate" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center">
-                        <i class="material-icons mr-1">add</i>Create
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Update Mode Modal -->
-<div id="updateModeModal" class="hidden fixed inset-0 z-50">
-    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
-
-    <div class="fixed inset-0 z-10 overflow-y-auto">
-        <div class="flex min-h-full items-center justify-center p-4">
-            <div class="relative bg-white rounded-lg shadow-xl w-full max-w-2xl">
-                <!-- Modal Header -->
-                <div class="bg-gray-700 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
-                    <h3 class="text-lg font-semibold flex items-center">
-                        <i class="material-icons mr-2">edit</i>
-                        Update Mode of Study
-                    </h3>
-                    <button type="button" class="text-white hover:text-gray-200" data-bs-dismiss="modal">
-                        <i class="material-icons">close</i>
-                    </button>
-                </div>
-
-                <!-- Modal Body -->
-                <div class="p-6">
-                    <form id="updateModeForm" method="post" asp-controller="Admin" asp-action="UpdateModeOfStudy">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" id="updateModeId" name="ModeId" />
-
-                        <div class="space-y-6">
-                            <!-- Mode Name -->
-                            <div class="relative z-0 w-full group">
-                                <input type="text" name="ModeName" id="updateModeName"
-                                       class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
-                                       placeholder=" " required />
-                                <label for="updateModeName"
-                                       class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                                    Mode Name
-                                </label>
-                            </div>
-
-                            <!-- Mode Code -->
-                            <div class="relative z-0 w-full group">
-                                <input type="text" name="Code" id="updateCode"
-                                       class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
-                                       placeholder=" " required />
-                                <label for="updateCode"
-                                       class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                                    Mode Code
-                                </label>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-
-                <!-- Modal Footer -->
-                <div class="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-end space-x-2">
-                    <button type="button" class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center" data-bs-dismiss="modal">
-                        <i class="material-icons mr-1">close</i>Cancel
-                    </button>
-                    <button type="button" id="confirmUpdate" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center">
-                        <i class="material-icons mr-1">save</i>Update
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Delete Mode Modal -->
-<div id="deleteModeModal" class="hidden fixed inset-0 z-50">
-    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
-
-    <div class="fixed inset-0 z-10 overflow-y-auto">
-        <div class="flex min-h-full items-center justify-center p-4">
-            <div class="relative bg-white rounded-lg shadow-xl w-full max-w-lg">
-                <!-- Modal Header -->
-                <div class="bg-red-600 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
-                    <h3 class="text-lg font-semibold flex items-center">
-                        <i class="material-icons mr-2">warning</i>
-                        Confirm Delete
-                    </h3>
-                    <button type="button" class="text-white hover:text-gray-200" data-bs-dismiss="modal">
-                        <i class="material-icons">close</i>
-                    </button>
-                </div>
-
-                <!-- Modal Body -->
-                <div class="p-6">
-                    <form id="deleteModeForm" method="post" asp-controller="Admin" asp-action="DeleteModeOfStudy">
-                        <input type="hidden" id="deleteModeId" name="ModeId" />
-                        @Html.AntiForgeryToken()
-
-                        <div class="space-y-4">
-                            <div class="flex items-center text-red-600 mb-4">
-                                <i class="material-icons mr-2">error_outline</i>
-                                <p class="text-lg font-medium">Delete Mode of Study</p>
-                            </div>
-
-                            <p class="text-gray-700">Are you sure you want to delete this mode of study? This action cannot be undone.</p>
-
-                            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-4">
-                                <p class="text-gray-700 font-medium mb-2">Mode Details:</p>
-                                <p class="text-secondary-600">
-                                    <span class="font-medium">Mode Name:</span>
-                                    <span id="deleteModeName" class="ml-2"></span>
-                                </p>
-                            </div>
-
-                            <div class="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                                <div class="flex items-center text-red-800">
-                                    <i class="material-icons text-red-600 mr-2 text-sm">info</i>
-                                    <p class="text-sm">This action cannot be undone. All associated data will be permanently deleted.</p>
+                            index++;
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="4">
+                                <div class="empty-state">
+                                    <div class="empty-icon"><i class="fas fa-book-open"></i></div>
+                                    <div style="font-weight:700;font-size:.95rem;color:var(--txt);">No Modes of Study Found</div>
+                                    <p style="font-size:.8rem;margin:.3rem 0 1rem;">Get started by creating the first study mode</p>
+                                    <button class="bbtn bbtn-coral" onclick="showCreateModeModal()">
+                                        <i class="fas fa-plus"></i> Create Mode
+                                    </button>
                                 </div>
-                            </div>
-                        </div>
-                    </form>
-                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
 
-                <!-- Modal Footer -->
-                <div class="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-end space-x-2">
-                    <button type="button" class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center" data-bs-dismiss="modal">
-                        <i class="material-icons mr-1">close</i>Cancel
-                    </button>
-                    <button type="button" id="confirmDelete" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center">
-                        <i class="material-icons mr-1">delete</i>Delete
-                    </button>
-                </div>
+    <!-- ══ CREATE MODAL ══ -->
+    <div id="createModeModal" class="bgs-overlay hidden">
+        <div class="bgs-modal" style="max-width:480px;">
+            <div class="modal-head navy">
+                <span class="modal-title"><i class="fas fa-plus-circle"></i> Create Mode of Study</span>
+                <button class="modal-x" onclick="hideCreateModeModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="createModeForm" method="post" asp-controller="Admin" asp-action="CreateModeOfStudy">
+                    @Html.AntiForgeryToken()
+                    <div class="fg">
+                        <label class="fg-label">Mode Name *</label>
+                        <input type="text" name="ModeName" id="modeName" class="fg-input"
+                               placeholder="e.g. Full-Time, Part-Time" required>
+                    </div>
+                    <div class="fg">
+                        <label class="fg-label">Code *</label>
+                        <input type="text" name="Code" id="modeCode" class="fg-input"
+                               placeholder="e.g. FT, PT" maxlength="10" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="bbtn bbtn-mist" onclick="hideCreateModeModal()">Cancel</button>
+                <button class="bbtn bbtn-coral" id="confirmCreate"><i class="fas fa-save"></i> Create</button>
             </div>
         </div>
     </div>
+
+    <!-- ══ UPDATE MODAL ══ -->
+    <div id="updateModeModal" class="bgs-overlay hidden">
+        <div class="bgs-modal" style="max-width:480px;">
+            <div class="modal-head navy">
+                <span class="modal-title"><i class="fas fa-pen"></i> Update Mode of Study</span>
+                <button class="modal-x" onclick="hideUpdateModeModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="updateModeForm" method="post" asp-controller="Admin" asp-action="UpdateModeOfStudy">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="updateModeId" name="ModeId">
+                    <div class="fg">
+                        <label class="fg-label">Mode Name *</label>
+                        <input type="text" name="ModeName" id="updateModeName" class="fg-input" required>
+                    </div>
+                    <div class="fg">
+                        <label class="fg-label">Code *</label>
+                        <input type="text" name="Code" id="updateModeCode" class="fg-input" maxlength="10" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="bbtn bbtn-mist" onclick="hideUpdateModeModal()">Cancel</button>
+                <button class="bbtn bbtn-navy" id="confirmUpdate"><i class="fas fa-save"></i> Update</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ DELETE MODAL ══ -->
+    <div id="deleteModeModal" class="bgs-overlay hidden">
+        <div class="bgs-modal" style="max-width:420px;">
+            <div class="modal-head coral">
+                <span class="modal-title"><i class="fas fa-exclamation-triangle"></i> Confirm Delete</span>
+                <button class="modal-x" onclick="hideDeleteModeModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="deleteModeForm" method="post" asp-controller="Admin" asp-action="DeleteModeOfStudy">
+                    <input type="hidden" id="deleteModeId" name="ModeId">
+                    @Html.AntiForgeryToken()
+                    <p style="font-size:.87rem;color:var(--sub);margin-bottom:.875rem;">
+                        Are you sure you want to delete this mode of study?
+                    </p>
+                    <div class="del-detail">
+                        <div class="dd-row"><span class="dd-lbl">Name</span><span class="dd-val" id="deleteModeName"></span></div>
+                        <div class="dd-row"><span class="dd-lbl">Code</span><span class="dd-val" id="deleteModeCode"></span></div>
+                    </div>
+                    <div class="del-warn">
+                        <i class="fas fa-info-circle"></i>
+                        This action cannot be undone. Associated programmes may be affected.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="bbtn bbtn-mist" onclick="hideDeleteModeModal()">Cancel</button>
+                <button class="bbtn bbtn-red" id="confirmDelete"><i class="fas fa-trash"></i> Delete</button>
+            </div>
+        </div>
+    </div>
+
 </div>
 
-<script type="module" src="~/js/modes.js"></script>
+@section Scripts {
+    <script type="module">
+        const show = id => document.getElementById(id).classList.remove('hidden');
+        const hide = id => document.getElementById(id).classList.add('hidden');
+
+        window.showCreateModeModal = () => { document.getElementById('createModeForm').reset(); show('createModeModal'); };
+        window.hideCreateModeModal = () => hide('createModeModal');
+        window.hideUpdateModeModal = () => hide('updateModeModal');
+        window.hideDeleteModeModal = () => hide('deleteModeModal');
+
+        document.getElementById('confirmCreate').addEventListener('click', () => {
+            const f = document.getElementById('createModeForm');
+            if (!f.checkValidity()) { f.reportValidity(); return; }
+            f.submit();
+        });
+
+        window.showUpdateModeModal = (id, modeName, code) => {
+            document.getElementById('updateModeId').value   = id;
+            document.getElementById('updateModeName').value = modeName;
+            document.getElementById('updateModeCode').value = code;
+            show('updateModeModal');
+        };
+        document.getElementById('confirmUpdate').addEventListener('click', () => {
+            const f = document.getElementById('updateModeForm');
+            if (!f.checkValidity()) { f.reportValidity(); return; }
+            f.submit();
+        });
+
+        window.showDeleteModeModal = (id, modeName, code) => {
+            document.getElementById('deleteModeId').value            = id;
+            document.getElementById('deleteModeName').textContent    = modeName;
+            document.getElementById('deleteModeCode').textContent    = code;
+            show('deleteModeModal');
+        };
+        document.getElementById('confirmDelete').addEventListener('click', () => {
+            document.getElementById('deleteModeForm').submit();
+        });
+
+        ['createModeModal','updateModeModal','deleteModeModal'].forEach(id => {
+            document.getElementById(id).addEventListener('click', function(e) {
+                if (e.target === this) hide(id);
+            });
+        });
+
+        if (typeof $ !== 'undefined' && $.fn.DataTable) {
+            $('#modeOfStudyTable').DataTable({ responsive: true, columnDefs: [{ orderable: false, targets: -1 }] });
+        }
+    </script>
+}

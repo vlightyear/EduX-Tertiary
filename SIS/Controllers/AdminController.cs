@@ -4585,6 +4585,38 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
             return RedirectToAction(nameof(ModeOfStudy));
         }
 
+        // GET: Admin/ModeOfStudy
+        [Authorize(Roles = "Admin, Registrar")]
+        public async Task<IActionResult> ModeOfStudy()
+        {
+            var modesOfStudy = await _context.ModesOfStudy
+                .OrderBy(m => m.ModeName)
+                .ToListAsync();
+
+            return View(modesOfStudy);
+        }
+
+        // GET: Admin/GetModeOfStudy/5
+        [HttpGet]
+        [Authorize(Roles = "Admin, Registrar")]
+        public async Task<IActionResult> GetModeOfStudy(int id)
+        {
+            var mode = await _context.ModesOfStudy.FindAsync(id);
+            if (mode == null)
+            {
+                return NotFound();
+            }
+
+            var modeDto = new
+            {
+                modeId = mode.ModeId,
+                modeName = mode.ModeName,
+                code = mode.Code
+            };
+
+            return Json(modeDto);
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin, Registrar")]
