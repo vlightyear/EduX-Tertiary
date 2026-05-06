@@ -99,7 +99,7 @@ namespace SIS.Controllers
                         ModeOfStudyId = student.ModeOfStudyId,
                         ModeOfStudyName = student.ModeOfStudy?.ModeName,
                         StudentYear = student.StudentCurrentYear,
-                        Semester = student.CurrentSemester
+                        Semester = student.CurrentYearPeriodId
                     };
                 }
             }
@@ -186,7 +186,7 @@ namespace SIS.Controllers
                         (e.ProgrammeLevelId == null || e.ProgrammeLevelId == student.ProgrammeLevelId) &&
                         (e.ModeOfStudyId == null || e.ModeOfStudyId == student.ModeOfStudyId) &&
                         (e.StudentYear == null || e.StudentYear == student.StudentCurrentYear) &&
-                        (e.Semester == null || e.Semester == student.CurrentSemester)
+                        (e.Semester == null || e.Semester == student.CurrentYearPeriodId)
                     );
                 }
             }

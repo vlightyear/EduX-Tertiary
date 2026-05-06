@@ -109,7 +109,7 @@ namespace SIS.Controllers
                             .CountAsync(s => s.StudentId == result.StudentId &&
                                             s.CourseId == result.CourseId &&
                                             s.AcademicYearId == result.AcademicYearId &&
-                                            s.Semester == result.Semester &&
+                                            s.YearPeriodId == result.Semester &&
                                             s.IsActive &&
                                             s.Score > 0);
 
@@ -166,7 +166,7 @@ namespace SIS.Controllers
                                     .Where(s => s.CourseId == course.Id &&
                                                s.AssessmentId == courseAssessment.AssessmentId &&
                                                s.AcademicYearId == currentAcademicYearId.Value &&
-                                               s.Semester == currentSemester.Value &&
+                                               s.YearPeriodId == currentSemester.Value &&
                                                s.IsActive &&
                                                s.Score > 0)
                                     .Select(s => s.Score)
@@ -213,7 +213,7 @@ namespace SIS.Controllers
                     var enrolledCount = await _context.StudentCourseRegistrations
                         .CountAsync(scr => scr.CourseId == course.Id &&
                                           scr.AcademicYearId == currentAcademicYearId.Value &&
-                                          scr.Semester == currentSemester.Value);
+                                          scr.YearPeriodId == currentSemester.Value);
 
                     // Get average performance from published results
                     var publishedResults = await _context.StudentCourseResults
@@ -2229,13 +2229,13 @@ namespace SIS.Controllers
 
             // Organize students by academic year and semester for tabbed display
             var studentsByYearAndSemester = enrolledStudents
-                .GroupBy(s => new { YearId = s.AcademicYearId, Semester = s.Semester })
+                .GroupBy(s => new { YearId = s.AcademicYearId, YearPeriodId = s.YearPeriodId })
                 .Select(g => new CourseStudentGroupModel
                 {
                     AcademicYearId = g.Key.YearId,
-                    SemesterId = g.Key.Semester,
+                    SemesterId = g.Key.YearPeriodId,
                     AcademicYear = g.First().AcademicYear.YearValue,
-                    Semester = $"Semester {g.Key.Semester}",
+                    Semester = $"Semester {g.Key.YearPeriodId}",
                     Students = g.Select(s => new CourseStudentProgressModel
                     {
                         StudentId = s.StudentId.ToString(),
@@ -2383,8 +2383,8 @@ namespace SIS.Controllers
                     StudentNumber = scr.Student.StudentId_Number, // Use StudentId_Number from your Student model
                     AcademicYearId = scr.AcademicYearId,
                     AcademicYear = scr.AcademicYear.YearValue,
-                    SemesterId = scr.Semester, // This is directly from StudentCourseRegistration
-                    Semester = scr.Semester.ToString(),
+                    YearPeriodId = scr.YearPeriodId, // This is directly from StudentCourseRegistration
+                    YearPeriod = scr.YearPeriodId.ToString(),
                     ModeOfStudy = scr.Student.ModeOfStudy.ModeName, // Get from Student's ModeOfStudy
                     EnrollmentDate = scr.RegistrationDate // Use RegistrationDate from StudentCourseRegistration
                 })
@@ -2452,7 +2452,7 @@ namespace SIS.Controllers
             // CORRECTED: Group students by academic year and mode of study (from Student table)
             var studentGroups = new List<StudentRatingGroup>();
             var groupedStudents = studentsData
-                .GroupBy(s => new { s.AcademicYearId, s.AcademicYear, s.SemesterId, s.Semester, s.ModeOfStudy })
+                .GroupBy(s => new { s.AcademicYearId, s.AcademicYear, s.YearPeriodId, s.YearPeriod, s.ModeOfStudy })
                 .OrderByDescending(g => g.Key.AcademicYear)
                 .ThenBy(g => g.Key.ModeOfStudy);
 
@@ -2504,8 +2504,8 @@ namespace SIS.Controllers
                 {
                     AcademicYearId = group.Key.AcademicYearId,
                     AcademicYear = group.Key.AcademicYear,
-                    SemesterId = group.Key.SemesterId,
-                    Semester = group.Key.Semester,
+                    SemesterId = group.Key.YearPeriodId,
+                    Semester = group.Key.YearPeriod,
                     ModeOfStudy = group.Key.ModeOfStudy,
                     Students = maskedStudents
                 });

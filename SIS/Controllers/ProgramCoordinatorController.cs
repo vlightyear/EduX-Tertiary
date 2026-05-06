@@ -288,7 +288,7 @@ namespace SIS.Controllers
                     {
                         Course = pc.Course,
                         IsMandatory = pc.Course.IsMandatory,
-                        Semester = pc.Course.SemesterTaken
+                        Semester = pc.Course.PeriodTakenId
                     }).OrderBy(c => c.Semester).ThenBy(c => c.Course.CourseName).ToList()
                 );
 

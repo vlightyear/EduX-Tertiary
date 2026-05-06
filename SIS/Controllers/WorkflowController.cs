@@ -305,7 +305,7 @@ public class WorkflowController : Controller
                     {
                         rsb.Id,
                         rsb.AcademicYearId,
-                        rsb.Semester
+                        rsb.YearPeriodId
                     })
                     .ToListAsync();
 
@@ -315,7 +315,7 @@ public class WorkflowController : Controller
                     if (batch != null)
                     {
                         dto.AcademicYearId = batch.AcademicYearId;
-                        dto.Semester = batch.Semester;
+                        dto.Semester = batch.YearPeriodId;
                     }
                 }
             }
@@ -371,7 +371,7 @@ public class WorkflowController : Controller
                         .Where(sec =>
                             sec.CourseId == rsb.CourseId &&
                             sec.AcademicYearId == rsb.AcademicYearId &&
-                            sec.Semester == rsb.Semester)
+                            sec.YearPeriodId == rsb.YearPeriodId)
                         .Join(_context.Students,
                             sec => sec.StudentId,
                             s => s.Id,
@@ -393,7 +393,7 @@ public class WorkflowController : Controller
                     ModeOfStudy = b.Batch.Course.Programme.ModeOfStudy.ModeName,
                     AcademicYearId = b.Batch.AcademicYearId,
                     AcademicYear = b.Batch.AcademicYear.YearValue,
-                    Semester = b.Batch.Semester,
+                    Semester = b.Batch.YearPeriodId,
                     YearOfStudy = b.StudentYear
                 })
                 .Select(g => new PendingProgrammeGradingOverviewDto
@@ -679,10 +679,10 @@ public class WorkflowController : Controller
                                             CalculatedTotal = g.Sum(x => x.Score /* / x.MaxScore * x.WeightPercentage */),
                                             Scores = g.ToList(),
                                             Programme = g.FirstOrDefault().Student.Programme.Name,
-                                            StudentStudyPeriod = "Y" + g.FirstOrDefault().Student.StudentCurrentYear + "S" + g.FirstOrDefault().Student.CurrentSemester,
+                                            StudentStudyPeriod = g.FirstOrDefault().Student.CurrentYearPeriodLabel,
                                             Course = g.FirstOrDefault().Course.CourseCode + " - " + g.FirstOrDefault().Course.CourseName,
                                             Year = g.FirstOrDefault().AcademicYear.YearValue,
-                                            Semester = g.FirstOrDefault().Semester,
+                                            Semester = g.FirstOrDefault().YearPeriodId,
                                             PassMark = g.FirstOrDefault().Course.PassMark
                                         })
                                         .ToListAsync();

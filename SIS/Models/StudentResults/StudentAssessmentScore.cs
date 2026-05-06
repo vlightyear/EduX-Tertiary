@@ -98,8 +98,7 @@ namespace SIS.Models.StudentResults
         /// Semester in which this assessment was taken (1 or 2)
         /// </summary>
         [Required]
-        [Range(1, 2)]
-        public int Semester { get; set; }
+        public int YearPeriodId { get; set; }
         
         public int? rsbId { get; set; }
         [ForeignKey("rsbId")]

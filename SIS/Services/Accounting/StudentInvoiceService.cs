@@ -76,7 +76,7 @@ namespace SIS.Services.Accounting
                         .FirstOrDefaultAsync(si => si.StudentId == student.Id &&
                                                  si.AcademicYearId == student.AcademicYearId &&
                                                  si.DeletedAt == null &&
-                                                 (student.Programme.IsSemesterBased == false || si.Semester == student.CurrentSemester));
+                                                 (student.Programme.IsSemesterBased == false || si.YearPeriodId == student.CurrentYearPeriodId));
 
                     if (existingInvoice != null)
                     {
@@ -137,8 +137,8 @@ namespace SIS.Services.Accounting
 
                     // Generate unique invoice reference
                     var today = DateTime.Now.Date;
-                    var semesterSuffix = student.Programme?.IsSemesterBased == true && student.CurrentSemester.HasValue
-                        ? $"-S{student.CurrentSemester}"
+                    var semesterSuffix = student.Programme?.IsSemesterBased == true && student.CurrentYearPeriodId.HasValue
+                        ? $"-S{student.CurrentYearPeriodId}"
                         : "";
                     var baseInvoiceReference = $"INV-{today:yyyyMMdd}-{student.StudentId_Number}{semesterSuffix}";
 
@@ -201,7 +201,7 @@ namespace SIS.Services.Accounting
                             TotalAmount = totalAmount,
                             CreatedDate = DateTime.Now,
                             AcademicYearId = student.AcademicYearId,
-                            Semester = student.Programme?.IsSemesterBased == true ? student.CurrentSemester : null,
+                            YearPeriodId = student.Programme?.IsSemesterBased == true ? student.CurrentYearPeriodId : null,
                             Status = Status.Pending,
                             AccountingSystemPostStatus = accountingPostStatus // ✅ Track the status
                         };
@@ -295,17 +295,17 @@ namespace SIS.Services.Accounting
                 .ToListAsync();
 
             // Filter by semester if the student's programme is semester-based
-            if (student.Programme?.IsSemesterBased == true && student.CurrentSemester.HasValue)
+            if (student.CurrentYearPeriodId.HasValue)
             {
                 fees = fees.Where(f =>
                     //f.Semester == null ||  // Fee applies to whole year (both semesters)
-                    f.Semester == student.CurrentSemester.Value  // Fee applies to current semester
+                    f.YearPeriodId == student.CurrentYearPeriodId.Value  // Fee applies to current year period
                 ).ToList();
             }
             else
             {
-                // For yearly programmes, only include fees that are yearly (Semester is null)
-                fees = fees.Where(f => f.Semester == null).ToList();
+                // For yearly programmes, only include fees that are yearly (YearPeriodId is null)
+                fees = fees.Where(f => f.YearPeriodId == null).ToList();
             }
 
             // Filter fees based on various criteria
@@ -322,7 +322,7 @@ namespace SIS.Services.Accounting
 
                 // Then check other criteria
                 ((
-                    (f.Semester == null || f.Semester == student.CurrentSemester) &&
+                    (f.YearPeriodId == null || f.YearPeriodId == student.CurrentYearPeriodId) &&
                     (f.ProgrammeId == null || f.ProgrammeId == student.ProgrammeId) &&
                     (f.ModeOfStudyId == null || f.ModeOfStudyId == student.ModeOfStudyId) &&
                     (f.YearOfStudy == null || f.YearOfStudy == student.StudentCurrentYear) &&
@@ -372,7 +372,7 @@ namespace SIS.Services.Accounting
 
             // More specific criteria get higher scores
             if (fee.ProgrammeId != null) score += 10000;  // Programme-specific is highest priority
-            if (fee.Semester != null) score += 1000;      // Semester-specific is high priority
+            if (fee.YearPeriodId != null) score += 1000;  // Year period-specific is high priority
             if (fee.YearOfStudy != null) score += 100;    // Year-specific
             if (fee.SchoolId != null) score += 10;        // School-specific
             if (fee.ModeOfStudyId != null) score += 5;    // Mode of study specific

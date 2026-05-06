@@ -58,7 +58,8 @@ namespace SIS.Models.ViewModels
         public string ModeOfStudyName { get; set; } = string.Empty;
         public string AcademicYear { get; set; } = string.Empty;
         public int CurrentYear { get; set; }
-        public int CurrentSemester { get; set; }
+        public int CurrentPeriodId { get; set; }
+        public string CurrentPeriodLabel { get; set; } = string.Empty;
 
         // Status Information
         public string StudentStatus { get; set; } = string.Empty;

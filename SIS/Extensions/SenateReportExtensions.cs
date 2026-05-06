@@ -89,7 +89,7 @@ namespace SIS.Extensions
                 $"P:{filters.ProgrammeId ?? 0}",
                 $"M:{filters.ModeOfStudyId ?? 0}",
                 $"Y:{filters.YearOfStudy ?? 0}",
-                $"Sem:{filters.Semester ?? 0}",
+                $"Sem:{filters.AcademicPeriod ?? 0}",
                 $"L:{filters.ReportLevel}",
                 $"Per:{filters.Period ?? "Current"}"
             };
@@ -115,7 +115,7 @@ namespace SIS.Extensions
                 AcademicYearId = baseFilters.AcademicYearId,
                 ModeOfStudyId = baseFilters.ModeOfStudyId,
                 YearOfStudy = baseFilters.YearOfStudy,
-                Semester = baseFilters.Semester,
+                AcademicPeriod = baseFilters.AcademicPeriod,
                 Period = baseFilters.Period,
                 ReportLevel = newLevel
             };

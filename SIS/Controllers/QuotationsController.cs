@@ -89,7 +89,7 @@ namespace SIS.Controllers
                         f.ModeOfStudyId,
                         f.ProgramLevelId,
                         f.YearOfStudy,
-                        f.Semester,
+                        f.YearPeriodId,
                         f.FeeTypeId,
                         f.AppliesOnlyToForeignStudents,
                         f.AppliesOnlyToLocalStudents,
@@ -117,7 +117,7 @@ namespace SIS.Controllers
                         ModeId = f.ModeOfStudyId,
                         LevelId = f.ProgramLevelId,
                         YearOfStudy = f.YearOfStudy,
-                        Semester = f.Semester,
+                        Semester = f.YearPeriodId,
                         AppliesOnlyToForeignStudents = f.AppliesOnlyToForeignStudents,
                         AppliesOnlyToLocalStudents = f.AppliesOnlyToLocalStudents,
                         Source = "FeeConfiguration"

@@ -286,23 +286,10 @@ namespace SIS.Services.Payment
 
         private async Task ProcessStudentReconciliation(OnlinePayments payment, SIS.Models.StudentApplication.Student student)
         {
-            // Create financial statement
-            var financialStatement = new FinancialStatement
-            {
-                StudentId = student.Id,
-                AmountPaid = payment.Amount ?? 0,
-                PaymentDate = payment.CreatedAt,
-                PaymentMethod = payment.PaymentMethod,
-                TransactionReference = payment.MerchantTransactionId,
-                AcademicYearId = student.AcademicYearId,
-                OutstandingAmount = student.OutstandingFees - (payment.Amount ?? 0),
-                Semester = student.CurrentSemester ?? 1
-            };
 
             // Update student's outstanding balance
             student.OutstandingFees = Math.Max(0, student.OutstandingFees - (payment.Amount ?? 0));
 
-            _context.FinancialStatements.Add(financialStatement);
             _context.Entry(student).State = EntityState.Modified;
 
             // Post to accounting system if available

@@ -11,7 +11,7 @@ namespace SIS.Models.TimeTabling
         public Dictionary<string, Dictionary<int, List<StudentTimetableSessionViewModel>>> WeeklyTimetable { get; set; }
         public string AcademicYearValue { get; set; }
         public string ModeOfStudyName { get; set; }
-        public string Semester { get; set; }
+        public string Period { get; set; }
     }
 
     public class StudentTimetableSessionViewModel

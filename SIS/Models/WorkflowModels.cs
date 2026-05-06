@@ -335,8 +335,7 @@ public class ResultSubmissionBatch : AuditClass
     public virtual AcademicYear AcademicYear { get; set; }
 
     [Required]
-    [Range(1, 2)]
-    public int Semester { get; set; }
+    public int YearPeriodId { get; set; }
 
     /// <summary>
     /// Total number of students/records in this batch

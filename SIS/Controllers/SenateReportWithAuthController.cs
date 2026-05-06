@@ -198,7 +198,7 @@ namespace SIS.Controllers
             {
                 int programmeId = filters.ProgrammeId ?? 0;
                 int academicYearId = filters.AcademicYearId ?? 0;
-                int semester = filters.Semester ?? 0;
+                int semester = filters.AcademicPeriod ?? 0;
                 int yearOfStudy = filters.YearOfStudy ?? 0;
 
                 var students = await _senateReportService.GetEntityStudentDetailsAsync(
@@ -403,7 +403,7 @@ namespace SIS.Controllers
                 // Use the SAME logic as GenerateReport method
                 int programmeId = filters.ProgrammeId ?? 0;
                 int academicYearId = filters.AcademicYearId ?? 0;
-                int semester = filters.Semester ?? 0;
+                int semester = filters.AcademicPeriod ?? 0;
                 int yearOfStudy = filters.YearOfStudy ?? 0;
 
                 // Get data using your existing service calls
@@ -460,7 +460,7 @@ namespace SIS.Controllers
                 // Use the SAME logic as GenerateReport method
                 int programmeId = filters.ProgrammeId ?? 0;
                 int academicYearId = filters.AcademicYearId ?? 0;
-                int semester = filters.Semester ?? 0;
+                int semester = filters.AcademicPeriod ?? 0;
                 int yearOfStudy = filters.YearOfStudy ?? 0;
 
                 // Get data using your existing service calls
@@ -705,7 +705,7 @@ namespace SIS.Controllers
                 sb.Append("<td colspan='2'></td>");
             }
 
-            sb.Append($"<td>Semester:</td><td><strong>{(filters.Semester.HasValue ? $"Semester {filters.Semester}" : "All Semesters")}</strong></td>");
+            sb.Append($"<td>Semester:</td><td><strong>{(filters.AcademicPeriod.HasValue ? $"Semester {filters.AcademicPeriod}" : "All Semesters")}</strong></td>");
             sb.Append("</tr><tr>");
 
             if (filters.ReportLevel == "Department" || filters.ReportLevel == "Programme")
@@ -1018,7 +1018,7 @@ namespace SIS.Controllers
 
             row++;
             ws.Cell(row, 1).Value = "Semester:";
-            ws.Cell(row, 2).Value = filters.Semester.HasValue ? $"Semester {filters.Semester}" : "All Semesters";
+            ws.Cell(row, 2).Value = filters.AcademicPeriod.HasValue ? $"Semester {filters.AcademicPeriod}" : "All Semesters";
             ws.Cell(row, 1).Style.Font.Bold = true;
             ws.Cell(row, 4).Value = "Year of Study:";
             ws.Cell(row, 5).Value = filters.YearOfStudy.HasValue ? $"Year {filters.YearOfStudy}" : "All Years";
@@ -1564,7 +1564,7 @@ namespace SIS.Controllers
                 AcademicYearId = baseFilters.AcademicYearId,
                 ModeOfStudyId = baseFilters.ModeOfStudyId,
                 YearOfStudy = baseFilters.YearOfStudy,
-                Semester = baseFilters.Semester,
+                AcademicPeriod = baseFilters.AcademicPeriod,
                 Period = baseFilters.Period
             };
 
@@ -1790,7 +1790,7 @@ namespace SIS.Controllers
                     .Where(sec =>
                         sec.CourseId == courseId &&
                         sec.AcademicYearId == academicYearId &&
-                        sec.Semester == semester)
+                        sec.YearPeriodId == semester)
                     .Select(sec => sec.StudentId)
                     .Distinct()
                     .GroupJoin(
@@ -1799,7 +1799,7 @@ namespace SIS.Controllers
                             .Where(s =>
                                 s.CourseId == courseId &&
                                 s.AcademicYearId == academicYearId &&
-                                s.Semester == semester &&
+                                s.YearPeriodId == semester &&
                                 s.IsActive &&
                                 context1.ResultSubmissionBatches
                                     .Any(rsb => rsb.Id == s.rsbId &&
@@ -1820,7 +1820,7 @@ namespace SIS.Controllers
                     .AnyAsync(rsb =>
                         rsb.CourseId == courseId &&
                         rsb.AcademicYearId == academicYearId &&
-                        rsb.Semester == semester &&
+                        rsb.YearPeriodId == semester &&
                         rsb.ApprovalStatus == WorkflowStatus.Approved);
 
                 await Task.WhenAll(gradeConfigsTask, studentScoresTask, hasPublishedBatchTask);

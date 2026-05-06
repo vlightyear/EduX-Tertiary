@@ -52,7 +52,7 @@ namespace SIS.Controllers
 
                 // Add academic year information to ViewBag
                 ViewBag.AcademicYear = student.AcademicYear?.YearValue;
-                ViewBag.Semester = student.CurrentSemester;
+                ViewBag.AcademicPeriod = student.CurrentPeriodLabel;
                 ViewBag.RegistrationStatus = student.RegistrationStatus;
 
                 // Check if registration status is Pending
@@ -76,7 +76,7 @@ namespace SIS.Controllers
                             CourseName = c.CourseName,
                             CourseDescription = c.CourseDescription,
                             IsMandatory = c.IsMandatory,
-                            Semester = scr.Semester
+                            Semester = scr.YearPeriodId
                         })
                     .ToListAsync();
 

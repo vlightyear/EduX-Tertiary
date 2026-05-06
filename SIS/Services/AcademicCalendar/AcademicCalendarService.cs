@@ -76,46 +76,48 @@ namespace SIS.Services
                 });
             }
 
-            // Final exam period
-            if (academicYear.FinalExamStartDate.HasValue && academicYear.FinalExamEndDate.HasValue)
+            foreach(var yearPeriod in academicYear.YearPeriods)
             {
-                systemEvents.Add(new AcademicCalendarEvent
+                // Final exam period
+                if (yearPeriod.ExamStartDate.HasValue && yearPeriod.ExamEndDate.HasValue)
                 {
-                    Title = "Final Examination Period",
-                    Description = "Final examination period for the academic year",
-                    StartDateTime = academicYear.FinalExamStartDate.Value,
-                    EndDateTime = academicYear.FinalExamEndDate.Value,
-                    IsAllDay = true,
-                    EventTypeId = examEventType.Id,
-                    AcademicYearId = academicYearId,
-                    IsSystemEvent = true,
-                    IsPublished = true,
-                    Color = examEventType.DefaultColor,
-                    CreatedBy = "System",
-                    CreatedAt = DateTime.Now
-                });
-            }
+                    systemEvents.Add(new AcademicCalendarEvent
+                    {
+                        Title = "Final Examination Period",
+                        Description = "Final examination period for the academic year",
+                        StartDateTime = yearPeriod.ExamStartDate.Value,
+                        EndDateTime = yearPeriod.ExamEndDate.Value,
+                        IsAllDay = true,
+                        EventTypeId = examEventType.Id,
+                        AcademicYearId = academicYearId,
+                        IsSystemEvent = true,
+                        IsPublished = true,
+                        Color = examEventType.DefaultColor,
+                        CreatedBy = "System",
+                        CreatedAt = DateTime.Now
+                    });
+                }
 
-            // Grade submission period
-            if (academicYear.GradeSubmissionStartDate.HasValue && academicYear.GradeSubmissionEndDate.HasValue)
-            {
-                systemEvents.Add(new AcademicCalendarEvent
+                // Grade submission period
+                if (yearPeriod.GradeSubmissionStartDate.HasValue && yearPeriod.GradeSubmissionEndDate.HasValue)
                 {
-                    Title = "Grade Submission Period",
-                    Description = "Period for instructors to submit final grades",
-                    StartDateTime = academicYear.GradeSubmissionStartDate.Value,
-                    EndDateTime = academicYear.GradeSubmissionEndDate.Value,
-                    IsAllDay = true,
-                    EventTypeId = deadlineEventType.Id,
-                    AcademicYearId = academicYearId,
-                    IsSystemEvent = true,
-                    IsPublished = true,
-                    Color = deadlineEventType.DefaultColor,
-                    CreatedBy = "System",
-                    CreatedAt = DateTime.Now
-                });
+                    systemEvents.Add(new AcademicCalendarEvent
+                    {
+                        Title = "Grade Submission Period",
+                        Description = "Period for instructors to submit final grades",
+                        StartDateTime = yearPeriod.GradeSubmissionStartDate.Value,
+                        EndDateTime = yearPeriod.GradeSubmissionEndDate.Value,
+                        IsAllDay = true,
+                        EventTypeId = deadlineEventType.Id,
+                        AcademicYearId = academicYearId,
+                        IsSystemEvent = true,
+                        IsPublished = true,
+                        Color = deadlineEventType.DefaultColor,
+                        CreatedBy = "System",
+                        CreatedAt = DateTime.Now
+                    });
+                }
             }
-
             // Academic year start and end
             systemEvents.Add(new AcademicCalendarEvent
             {

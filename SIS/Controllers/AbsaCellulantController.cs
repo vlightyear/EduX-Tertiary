@@ -820,19 +820,6 @@ public class AbsaPaymentProcessor
                 _logger.LogInformation("Creating new Absa financial statement for amount {Amount}",
                     transaction.Amount ?? 0);
 
-                // Create financial statement
-                var financialStatement = new FinancialStatement
-                {
-                    StudentId = student.Id,
-                    AmountPaid = transaction.Amount ?? 0,
-                    PaymentDate = DateTime.Now,
-                    PaymentMethod = $"Absa ({transaction.PaymentMethod})",
-                    TransactionReference = transaction.MerchantTransactionId,
-                    AcademicYearId = student.AcademicYearId,
-                    OutstandingAmount = student.OutstandingFees - (transaction.Amount ?? 0),
-                    Semester = student.CurrentSemester ?? 1
-                };
-
                 // Update student outstanding fees
                 var originalFees = student.OutstandingFees;
                 student.OutstandingFees = StudentTools.GetStudentOutstandingBalance(student.Id);
@@ -840,7 +827,6 @@ public class AbsaPaymentProcessor
                 _logger.LogInformation("Updating student fees from {Original} to {New} via Absa",
                     originalFees, student.OutstandingFees);
 
-                _context.FinancialStatements.Add(financialStatement);
                 _context.Students.Update(student);
 
                 var changes = await _context.SaveChangesAsync();

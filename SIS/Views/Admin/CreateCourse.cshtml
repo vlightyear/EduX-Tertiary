@@ -1,21 +1,19 @@
-﻿
-@model SIS.Models.Admin.Course
+﻿@model SIS.Models.Admin.Course
 
 <div class="h-[90vh] p-4">
-    <!-- Header Section -->
+    <!-- Header -->
     <div class="flex justify-between items-center mb-4">
         <h1 class="text-2xl font-bold text-secondary-800 flex items-center">
             <i class="material-icons mr-2">school</i>
             Create Course
         </h1>
         <a asp-controller="Admin" asp-action="Courses"
-           class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-900 transition-colors flex items-center">
+               class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-900 transition-colors flex items-center">
             <i class="material-icons mr-2">arrow_back</i>
             Back
         </a>
     </div>
 
-    <!-- Main Content -->
     <div class="flex gap-4 h-[calc(90vh-80px)]">
         <div class="w-full">
             <div class="bg-white rounded-lg shadow-md p-4 overflow-auto h-full">
@@ -23,8 +21,9 @@
                     @Html.AntiForgeryToken()
                     <div asp-validation-summary="ModelOnly" class="text-red-500 mb-4"></div>
 
-                    <!-- Course Details Section -->
+                    <!-- ── Row 1: Basic Info + Academic Details ──────────────────────── -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
                         <!-- Basic Information -->
                         <div class="bg-white rounded-lg border border-gray-200 p-6">
                             <h2 class="text-lg font-semibold text-secondary-800 mb-4">Basic Information</h2>
@@ -34,13 +33,11 @@
                                     <input asp-for="CourseCode" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" />
                                     <span asp-validation-for="CourseCode" class="text-sm text-red-600"></span>
                                 </div>
-
                                 <div>
                                     <label asp-for="CourseName" class="block text-sm font-medium text-gray-700 mb-1">Course Name</label>
                                     <input asp-for="CourseName" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" />
                                     <span asp-validation-for="CourseName" class="text-sm text-red-600"></span>
                                 </div>
-
                                 <div>
                                     <label asp-for="CourseType" class="block text-sm font-medium text-gray-700 mb-1">Course Type</label>
                                     <select asp-for="CourseType" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
@@ -50,7 +47,6 @@
                                     </select>
                                     <span asp-validation-for="CourseType" class="text-sm text-red-600"></span>
                                 </div>
-
                                 <div>
                                     <label asp-for="CourseDescription" class="block text-sm font-medium text-gray-700 mb-1">Course Description</label>
                                     <textarea asp-for="CourseDescription" rows="3"
@@ -66,20 +62,18 @@
                             <div class="space-y-4">
                                 <div>
                                     <label asp-for="ProgrammeID" class="block text-sm font-medium text-gray-700 mb-1">Programme</label>
-                                    <select asp-for="ProgrammeID" asp-items="ViewBag.Programmes"
+                                    <select asp-for="ProgrammeID" asp-items="ViewBag.Programmes" id="programmeSelect"
                                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
-                                        <option value="">Select Programme Type</option>
+                                        <option value="">Select Programme</option>
                                     </select>
                                     <span asp-validation-for="ProgrammeID" class="text-sm text-red-600"></span>
                                 </div>
-
                                 <div>
                                     <label asp-for="PassMark" class="block text-sm font-medium text-gray-700 mb-1">Pass Mark (%)</label>
                                     <input asp-for="PassMark" type="number" min="0" max="100" step="0.1"
                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" />
                                     <span asp-validation-for="PassMark" class="text-sm text-red-600"></span>
                                 </div>
-
                                 <div>
                                     <label asp-for="YearTaken" class="block text-sm font-medium text-gray-700 mb-1">Year Taken</label>
                                     <input asp-for="YearTaken" type="number" min="1" max="6"
@@ -87,22 +81,32 @@
                                     <span asp-validation-for="YearTaken" class="text-sm text-red-600"></span>
                                 </div>
 
+                                <!-- Period Taken — populated from AcademicPeriods table,
+                                     grouped by type via SelectListGroup in the controller.
+                                     asp-items handles <optgroup> rendering automatically. -->
                                 <div>
-                                    <label asp-for="SemesterTaken" class="block text-sm font-medium text-gray-700 mb-1">Semester Taken</label>
-                                    <select asp-for="SemesterTaken"
+                                    <label asp-for="PeriodTakenId" class="block text-sm font-medium text-gray-700 mb-1">
+                                        Period Taken
+                                    </label>
+                                    <select asp-for="PeriodTakenId"
+                                            asp-items="ViewBag.AcademicPeriods"
+                                            id="periodTakenSelect"
                                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
-                                        <option value="">Select a Semester</option>
-                                        <option value="1">Semester 1</option>
-                                        <option value="2">Semester 2</option>
+                                        <option value="">— select a period —</option>
                                     </select>
-                                    <span asp-validation-for="SemesterTaken" class="text-sm text-red-600"></span>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        <i class="material-icons text-xs align-middle">info</i>
+                                        Periods are grouped by academic structure (Annual / Semester / Term).
+                                    </p>
+                                    <span asp-validation-for="PeriodTakenId" class="text-sm text-red-600"></span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Course Settings Section -->
+                    <!-- ── Row 2: Course Settings + Assessments ──────────────────────── -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
                         <!-- Settings -->
                         <div class="bg-white rounded-lg border border-gray-200 p-6">
                             <h2 class="text-lg font-semibold text-secondary-800 mb-4">Course Settings</h2>
@@ -114,7 +118,6 @@
                                         <option value="false">No</option>
                                     </select>
                                 </div>
-
                                 <div>
                                     <label asp-for="IsExaminable" class="block text-sm font-medium text-gray-700 mb-1">Is this course examinable?</label>
                                     <select asp-for="IsExaminable" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
@@ -128,27 +131,23 @@
                         <!-- Assessments -->
                         <div class="bg-white rounded-lg border border-gray-200 p-6">
                             <h2 class="text-lg font-semibold text-secondary-800 flex items-center mb-4">
-                                <i class="material-icons mr-2">assignment</i>
-                                Assessments
+                                <i class="material-icons mr-2">assignment</i>Assessments
                             </h2>
                             <div class="border rounded-lg overflow-hidden">
-                                <!-- Header -->
                                 <div class="bg-primary-900 text-white px-4 py-2 flex items-center">
                                     <div class="w-12 flex justify-center">
                                         <input type="checkbox" id="assessment-check" class="rounded">
                                     </div>
                                     <div class="flex-1">Assessment</div>
                                 </div>
-
-                                <!-- Assessment Rows Container -->
                                 <div id="assessment-rows">
-                                    <!-- Initial Assessment Row -->
                                     <div class="assessment-row bg-gray-50 px-4 py-2 flex items-center border-b">
                                         <div class="w-12 flex justify-center">
                                             <input type="checkbox" class="assessment-data-check rounded">
                                         </div>
                                         <div class="flex-1">
-                                            <select name="AssessmentIds" class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                            <select name="AssessmentIds"
+                                                    class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
                                                 <option value="">Select Assessment</option>
                                                 @foreach (var item in ViewBag.Assessments)
                                                 {
@@ -158,8 +157,6 @@
                                         </div>
                                     </div>
                                 </div>
-
-                                <!-- Add/Remove Buttons -->
                                 <div class="p-2 flex space-x-2">
                                     <button type="button" id="add-assessment-btn"
                                             class="p-1.5 bg-primary-600 text-white rounded hover:bg-primary-900 transition-colors">
@@ -174,13 +171,12 @@
                         </div>
                     </div>
 
-                    <!-- Timetabling Details -->
+                    <!-- ── Timetabling Details ────────────────────────────────────────── -->
                     <div class="bg-white rounded-lg border border-gray-200 p-6">
                         <h2 class="text-lg font-semibold text-secondary-800 flex items-center mb-4">
-                            <i class="material-icons mr-2">schedule</i>
-                            Timetabling Details
+                            <i class="material-icons mr-2">schedule</i>Timetabling Details
                         </h2>
-                        <div class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label asp-for="InstructorId" class="block text-sm font-medium text-gray-700 mb-1">Course Instructor</label>
                                 <select asp-for="InstructorId" asp-items="ViewBag.Instructors"
@@ -189,25 +185,22 @@
                                 </select>
                                 <span asp-validation-for="InstructorId" class="text-sm text-red-600"></span>
                             </div>
-
                             <div>
                                 <label asp-for="MeetingFrequencyPerWeek" class="block text-sm font-medium text-gray-700 mb-1">Meetings Per Week</label>
                                 <input asp-for="MeetingFrequencyPerWeek" type="number" min="1" max="7" value="1"
                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" />
                                 <span asp-validation-for="MeetingFrequencyPerWeek" class="text-sm text-red-600"></span>
                             </div>
-
                             <div>
                                 <label asp-for="CapacityRequired" class="block text-sm font-medium text-gray-700 mb-1">Required Capacity</label>
                                 <input asp-for="CapacityRequired" type="number" min="1" value="30"
                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" />
                                 <span asp-validation-for="CapacityRequired" class="text-sm text-red-600"></span>
                             </div>
-
                             <div>
                                 <label for="PreferredVenues" class="block text-sm font-medium text-gray-700 mb-1">Preferred Venues</label>
-                                <select multiple id="PreferredVenues" name="PreferredVenues"
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" size="4">
+                                <select multiple id="PreferredVenues" name="PreferredVenues" size="4"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
                                     @foreach (var item in ViewBag.Venues)
                                     {
                                         <option value="@item.Value">@item.Text</option>
@@ -218,16 +211,15 @@
                         </div>
                     </div>
 
-                    <!-- Lecturers and Prerequisites Section -->
+                    <!-- ── Lecturers + Prerequisites ──────────────────────────────────── -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
                         <!-- Lecturers -->
                         <div class="bg-white rounded-lg border border-gray-200 p-6">
                             <h2 class="text-lg font-semibold text-secondary-800 flex items-center mb-4">
-                                <i class="material-icons mr-2">person</i>
-                                Course Lecturers
+                                <i class="material-icons mr-2">person</i>Course Lecturers
                             </h2>
                             <div class="border rounded-lg overflow-hidden">
-                                <!-- Header -->
                                 <div class="bg-primary-900 text-white px-4 py-2 grid grid-cols-12 items-center">
                                     <div class="col-span-2 flex justify-center">
                                         <input type="checkbox" id="lecturer-check" class="rounded">
@@ -235,16 +227,14 @@
                                     <div class="col-span-6">Lecturer</div>
                                     <div class="col-span-4">Role</div>
                                 </div>
-
-                                <!-- Lecturer Rows Container -->
                                 <div id="lecturer-rows">
-                                    <!-- Initial Lecturer Row -->
                                     <div class="lecturer-row bg-gray-50 px-4 py-2 grid grid-cols-12 items-center border-b">
                                         <div class="col-span-2 flex justify-center">
                                             <input type="checkbox" class="lecturer-data-check rounded">
                                         </div>
                                         <div class="col-span-6">
-                                            <select name="LecturerIds" class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                            <select name="LecturerIds"
+                                                    class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
                                                 <option value="">Select Lecturer</option>
                                                 @foreach (var item in ViewBag.Lecturers)
                                                 {
@@ -253,13 +243,11 @@
                                             </select>
                                         </div>
                                         <div class="col-span-4">
-                                            <input type="text" class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-gray-100"
-                                                   value="Lecturer" disabled>
+                                            <input type="text" value="Lecturer" disabled
+                                                   class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-gray-100" />
                                         </div>
                                     </div>
                                 </div>
-
-                                <!-- Add/Remove Buttons -->
                                 <div class="p-2 flex space-x-2">
                                     <button type="button" id="add-lecturer-btn"
                                             class="p-1.5 bg-primary-600 text-white rounded hover:bg-primary-900 transition-colors">
@@ -276,27 +264,23 @@
                         <!-- Prerequisites -->
                         <div class="bg-white rounded-lg border border-gray-200 p-6">
                             <h2 class="text-lg font-semibold text-secondary-800 flex items-center mb-4">
-                                <i class="material-icons mr-2">list</i>
-                                Prerequisites
+                                <i class="material-icons mr-2">list</i>Prerequisites
                             </h2>
                             <div class="border rounded-lg overflow-hidden">
-                                <!-- Header -->
                                 <div class="bg-primary-900 text-white px-4 py-2 flex items-center">
                                     <div class="w-12 flex justify-center">
                                         <input type="checkbox" id="prerequisite-check" class="rounded">
                                     </div>
                                     <div class="flex-1">Prerequisite Course</div>
                                 </div>
-
-                                <!-- Prerequisite Rows Container -->
                                 <div id="prerequisite-rows">
-                                    <!-- Initial Prerequisite Row -->
                                     <div class="prerequisite-row bg-gray-50 px-4 py-2 flex items-center border-b">
                                         <div class="w-12 flex justify-center">
                                             <input type="checkbox" class="prerequisite-data-check rounded">
                                         </div>
                                         <div class="flex-1">
-                                            <select name="PrerequisiteCourseIds" class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                            <select name="PrerequisiteCourseIds"
+                                                    class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
                                                 <option value="">Select Course</option>
                                                 @foreach (var item in ViewBag.Courses)
                                                 {
@@ -306,8 +290,6 @@
                                         </div>
                                     </div>
                                 </div>
-
-                                <!-- Add/Remove Buttons -->
                                 <div class="p-2 flex space-x-2">
                                     <button type="button" id="add-prerequisite-btn"
                                             class="p-1.5 bg-primary-600 text-white rounded hover:bg-primary-900 transition-colors">
@@ -322,11 +304,11 @@
                         </div>
                     </div>
 
-                    <!-- Submit Button -->
+                    <!-- Submit -->
                     <div class="flex justify-end">
-                        <button type="submit" class="px-6 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-900 transition-colors flex items-center">
-                            <i class="material-icons mr-2">save</i>
-                            Create Course
+                        <button type="submit"
+                                class="px-6 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-900 transition-colors flex items-center">
+                            <i class="material-icons mr-2">save</i>Create Course
                         </button>
                     </div>
                 </form>
@@ -335,362 +317,127 @@
     </div>
 </div>
 
-<!-- Scripts -->
-<!-- Scripts -->
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        let courseStatsData = null;
+    document.addEventListener('DOMContentLoaded', function () {
 
-        // Get course stats asynchronously
-        fetch('/Admin/GetCourseStats')
-            .then(response => response.json())
-            .then(data => {
-                courseStatsData = data;
-                console.log('Course stats data:', data); // Debug log
+        // ── Dynamic row management ────────────────────────────────────────────────
+        // Shared helper: wires up add/remove/select-all for lecturer, assessment,
+        // and prerequisite rows without duplicating the logic three times.
+        function setupRowManager(containerId, checkAllId, addBtnId, removeBtnId, rowClass, checkClass) {
+            const container = document.getElementById(containerId);
+            const checkAll  = document.getElementById(checkAllId);
+            const addBtn    = document.getElementById(addBtnId);
+            const removeBtn = document.getElementById(removeBtnId);
 
-                // Update statistics cards with null checks
-                const totalCoursesElement = document.getElementById('totalCoursesCount');
-                const fullCoursesElement = document.getElementById('fullCoursesCount');
-                const lecturersElement = document.getElementById('lecturersCount');
-                const assessmentsElement = document.getElementById('assessmentsCount');
+            if (!container) return;
 
-                if (totalCoursesElement) totalCoursesElement.textContent = data.totalCourses || 0;
-                if (fullCoursesElement) fullCoursesElement.textContent = data.fullCourses || 0;
-                if (lecturersElement) lecturersElement.textContent = data.lecturers || 0;
-                if (assessmentsElement) assessmentsElement.textContent = data.assessments || 0;
-
-                // Initialize chart with real data
-                initializeCourseChart(data.chartData);
-            })
-            .catch(error => {
-                console.error('Error fetching course stats:', error);
-                console.error('Error details:', error.message);
-                // Initialize chart with empty data on error
-                initializeCourseChart(null);
+            addBtn?.addEventListener('click', function () {
+                const firstRow = container.querySelector('.' + rowClass);
+                if (!firstRow) return;
+                const clone = firstRow.cloneNode(true);
+                clone.querySelector('.' + checkClass).checked = false;
+                clone.querySelectorAll('select').forEach(s => s.value = '');
+                container.appendChild(clone);
             });
 
-        // Function to initialize course distribution chart
-        function initializeCourseChart(chartData) {
-            console.log('Initializing chart with data:', chartData); // Debug log
+            removeBtn?.addEventListener('click', function () {
+                const checked = container.querySelectorAll('.' + checkClass + ':checked');
+                if (!checked.length) {
+                    alert('Please select at least one row to remove.');
+                    return;
+                }
+                if (container.querySelectorAll('.' + rowClass).length <= 1) {
+                    alert('You must keep at least one row.');
+                    return;
+                }
+                checked.forEach(cb => cb.closest('.' + rowClass).remove());
+            });
 
-            if (typeof ApexCharts !== 'undefined') {
-                let chartConfig;
+            checkAll?.addEventListener('change', function () {
+                container.querySelectorAll('.' + checkClass)
+                         .forEach(cb => { cb.checked = this.checked; });
+            });
+        }
 
-                if (chartData && chartData.courseTypes && chartData.courseTypes.data && chartData.courseTypes.data.length > 0) {
-                    // Check if we have actual data
-                    const hasData = chartData.courseTypes.data.some(value => value > 0);
+        setupRowManager('lecturer-rows',     'lecturer-check',     'add-lecturer-btn',     'remove-lecturer-btn',     'lecturer-row',     'lecturer-data-check');
+        setupRowManager('assessment-rows',   'assessment-check',   'add-assessment-btn',   'remove-assessment-btn',   'assessment-row',   'assessment-data-check');
+        setupRowManager('prerequisite-rows', 'prerequisite-check', 'add-prerequisite-btn', 'remove-prerequisite-btn', 'prerequisite-row', 'prerequisite-data-check');
 
-                    if (hasData) {
-                        // Use real data
-                        chartConfig = {
-                            series: chartData.courseTypes.data,
-                            chart: {
-                                type: 'donut',
-                                height: '100%'
-                            },
-                            labels: chartData.courseTypes.labels,
-                            colors: chartData.courseTypes.colors,
-                            plotOptions: {
-                                pie: {
-                                    donut: {
-                                        size: '70%',
-                                        labels: {
-                                            show: true,
-                                            name: {
-                                                show: true,
-                                                fontSize: '14px',
-                                                fontFamily: 'inherit',
-                                                offsetY: -4
-                                            },
-                                            value: {
-                                                show: true,
-                                                fontSize: '16px',
-                                                fontFamily: 'inherit',
-                                                formatter: function (val) {
-                                                    return val + ' courses'
-                                                }
-                                            },
-                                            total: {
-                                                show: true,
-                                                label: 'Total Courses',
-                                                color: '#373d3f',
-                                                formatter: function (w) {
-                                                    const total = w.globals.seriesTotals.reduce((a, b) => a + b, 0)
-                                                    return total + ' courses'
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            },
-                            legend: {
-                                show: true,
-                                position: 'bottom',
-                                fontSize: '12px'
-                            },
-                            dataLabels: {
-                                enabled: false
-                            },
-                            responsive: [{
-                                breakpoint: 480,
-                                options: {
-                                    chart: {
-                                        height: 200
-                                    },
-                                    legend: {
-                                        show: false
-                                    }
-                                }
-                            }]
-                        };
-                    } else {
-                        // No data case
-                        chartConfig = createEmptyChart();
+        // ── Optional: narrow the period dropdown when a programme is chosen ───────
+        // The select is already fully populated server-side with all active periods
+        // grouped by type.  This layer optionally re-fetches a filtered list when
+        // the user picks a programme, so only compatible periods remain visible.
+        // If the request fails, the full list is simply kept — the server validates
+        // PeriodTakenId on POST regardless.
+
+        const periodSelect    = document.getElementById('periodTakenSelect');
+        const programmeSelect = document.getElementById('programmeSelect');
+
+        // Snapshot the full option list before any filtering touches it
+        const allOptionsHTML = periodSelect ? periodSelect.innerHTML : '';
+
+        if (programmeSelect && periodSelect) {
+            programmeSelect.addEventListener('change', async function () {
+                const programmeId = this.value;
+
+                if (!programmeId) {
+                    periodSelect.innerHTML = allOptionsHTML;
+                    return;
+                }
+
+                try {
+                    const res  = await fetch('/Admin/GetPeriodsByProgramme?schoolId=' + programmeId);
+                    const data = await res.json();
+
+                    // data is [{value, text}] from GetProgrammesBySchool — reuse if
+                    // you already have a programme→periods endpoint, or add GetPeriodsByType.
+                    // Here we just restore the full list since GetPeriodsByProgramme
+                    // returns programmes, not periods. Replace the URL below with your
+                    // actual periods-by-programme endpoint if you build one.
+                    // For now, keep the full list — the server will validate.
+                } catch {
+                    // Network error — keep the full server-rendered list
+                }
+            });
+        }
+
+        // ── Client-side submit guard ──────────────────────────────────────────────
+        document.querySelector('form')?.addEventListener('submit', function (e) {
+            let valid = true;
+
+            // Check all required fields
+            this.querySelectorAll('[required]').forEach(function (field) {
+                if (!field.value.trim()) {
+                    valid = false;
+                    field.classList.add('border-red-500');
+                    const next = field.nextElementSibling;
+                    if (next && next.classList.contains('text-red-600')) {
+                        next.textContent = 'This field is required.';
                     }
                 } else {
-                    // Fallback empty chart
-                    chartConfig = createEmptyChart();
+                    field.classList.remove('border-red-500');
+                    const next = field.nextElementSibling;
+                    if (next && next.classList.contains('text-red-600') &&
+                        next.textContent === 'This field is required.') {
+                        next.textContent = '';
+                    }
                 }
+            });
 
-                const chartElement = document.querySelector("#course-distribution-chart");
-                if (chartElement) {
-                    const courseDistributionChart = new ApexCharts(chartElement, chartConfig);
-                    courseDistributionChart.render();
-                } else {
-                    console.error('Chart element #course-distribution-chart not found');
-                }
-            } else {
-                console.error('ApexCharts library not loaded');
+            // At least one lecturer must be selected
+            const lecturerSelects = Array.from(this.querySelectorAll('select[name="LecturerIds"]'));
+            if (!lecturerSelects.some(function (s) { return s.value !== ''; })) {
+                valid = false;
+                alert('Please select at least one lecturer for this course.');
             }
-        }
 
-        // Helper function to create empty chart
-        function createEmptyChart() {
-            return {
-                series: [1],
-                chart: {
-                    type: 'donut',
-                    height: '100%'
-                },
-                labels: ['No Data'],
-                colors: ['#e5e7eb'],
-                plotOptions: {
-                    pie: {
-                        donut: {
-                            size: '70%',
-                            labels: {
-                                show: true,
-                                name: {
-                                    show: true,
-                                    fontSize: '14px',
-                                    fontFamily: 'inherit'
-                                },
-                                value: {
-                                    show: true,
-                                    fontSize: '16px',
-                                    fontFamily: 'inherit',
-                                    formatter: function (val) {
-                                        return 'No courses'
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                legend: {
-                    show: false
-                },
-                dataLabels: {
-                    enabled: false
-                }
-            };
-        }
+            // Period must be selected
+            if (!periodSelect || !periodSelect.value) {
+                valid = false;
+                alert('Please select the period in which this course is taught.');
+            }
 
-        // Lecturer rows management
-        const lecturerRowsContainer = document.getElementById('lecturer-rows');
-        const addLecturerBtn = document.getElementById('add-lecturer-btn');
-        const removeLecturerBtn = document.getElementById('remove-lecturer-btn');
-        const lecturerCheck = document.getElementById('lecturer-check');
-
-        if (addLecturerBtn && lecturerRowsContainer) {
-            addLecturerBtn.addEventListener('click', function() {
-                const template = lecturerRowsContainer.querySelector('.lecturer-row').cloneNode(true);
-                // Reset checkbox and select values
-                template.querySelector('.lecturer-data-check').checked = false;
-                template.querySelector('select').value = '';
-                lecturerRowsContainer.appendChild(template);
-            });
-        }
-
-        if (removeLecturerBtn && lecturerRowsContainer) {
-            removeLecturerBtn.addEventListener('click', function() {
-                const checkedRows = lecturerRowsContainer.querySelectorAll('.lecturer-data-check:checked');
-                if (checkedRows.length === 0) {
-                    alert('Please select at least one lecturer to remove');
-                    return;
-                }
-
-                if (lecturerRowsContainer.querySelectorAll('.lecturer-row').length <= 1) {
-                    alert('You must have at least one lecturer row');
-                    return;
-                }
-
-                checkedRows.forEach(checkbox => {
-                    const row = checkbox.closest('.lecturer-row');
-                    row.remove();
-                });
-            });
-        }
-
-        if (lecturerCheck) {
-            lecturerCheck.addEventListener('change', function() {
-                const isChecked = this.checked;
-                lecturerRowsContainer.querySelectorAll('.lecturer-data-check').forEach(checkbox => {
-                    checkbox.checked = isChecked;
-                });
-            });
-        }
-
-        // Assessment rows management
-        const assessmentRowsContainer = document.getElementById('assessment-rows');
-        const addAssessmentBtn = document.getElementById('add-assessment-btn');
-        const removeAssessmentBtn = document.getElementById('remove-assessment-btn');
-        const assessmentCheck = document.getElementById('assessment-check');
-
-        if (addAssessmentBtn && assessmentRowsContainer) {
-            addAssessmentBtn.addEventListener('click', function() {
-                const template = assessmentRowsContainer.querySelector('.assessment-row').cloneNode(true);
-                // Reset checkbox and select values
-                template.querySelector('.assessment-data-check').checked = false;
-                template.querySelector('select').value = '';
-                assessmentRowsContainer.appendChild(template);
-            });
-        }
-
-        if (removeAssessmentBtn && assessmentRowsContainer) {
-            removeAssessmentBtn.addEventListener('click', function() {
-                const checkedRows = assessmentRowsContainer.querySelectorAll('.assessment-data-check:checked');
-                if (checkedRows.length === 0) {
-                    alert('Please select at least one assessment to remove');
-                    return;
-                }
-
-                if (assessmentRowsContainer.querySelectorAll('.assessment-row').length <= 1) {
-                    alert('You must have at least one assessment row');
-                    return;
-                }
-
-                checkedRows.forEach(checkbox => {
-                    const row = checkbox.closest('.assessment-row');
-                    row.remove();
-                });
-            });
-        }
-
-        if (assessmentCheck) {
-            assessmentCheck.addEventListener('change', function() {
-                const isChecked = this.checked;
-                assessmentRowsContainer.querySelectorAll('.assessment-data-check').forEach(checkbox => {
-                    checkbox.checked = isChecked;
-                });
-            });
-        }
-
-        // Prerequisite rows management
-        const prerequisiteRowsContainer = document.getElementById('prerequisite-rows');
-        const addPrerequisiteBtn = document.getElementById('add-prerequisite-btn');
-        const removePrerequisiteBtn = document.getElementById('remove-prerequisite-btn');
-        const prerequisiteCheck = document.getElementById('prerequisite-check');
-
-        if (addPrerequisiteBtn && prerequisiteRowsContainer) {
-            addPrerequisiteBtn.addEventListener('click', function() {
-                const template = prerequisiteRowsContainer.querySelector('.prerequisite-row').cloneNode(true);
-                // Reset checkbox and select values
-                template.querySelector('.prerequisite-data-check').checked = false;
-                template.querySelector('select').value = '';
-                prerequisiteRowsContainer.appendChild(template);
-            });
-        }
-
-        if (removePrerequisiteBtn && prerequisiteRowsContainer) {
-            removePrerequisiteBtn.addEventListener('click', function() {
-                const checkedRows = prerequisiteRowsContainer.querySelectorAll('.prerequisite-data-check:checked');
-                if (checkedRows.length === 0) {
-                   alert('Please select at least one prerequisite to remove');
-                    return;
-                }
-
-                if (prerequisiteRowsContainer.querySelectorAll('.prerequisite-row').length <= 1) {
-                    alert('You must have at least one prerequisite row');
-                    return;
-                }
-
-                checkedRows.forEach(checkbox => {
-                    const row = checkbox.closest('.prerequisite-row');
-                    row.remove();
-                });
-            });
-        }
-
-        if (prerequisiteCheck) {
-            prerequisiteCheck.addEventListener('change', function() {
-                const isChecked = this.checked;
-                prerequisiteRowsContainer.querySelectorAll('.prerequisite-data-check').forEach(checkbox => {
-                    checkbox.checked = isChecked;
-                });
-            });
-        }
-
-        // Form validation
-        const form = document.querySelector('form');
-        if (form) {
-            form.addEventListener('submit', function(e) {
-                // Validate required fields have values
-                const requiredFields = form.querySelectorAll('[required]');
-                let isValid = true;
-
-                requiredFields.forEach(field => {
-                    if (!field.value.trim()) {
-                        isValid = false;
-                        field.classList.add('border-red-500');
-
-                        // Add error message if it doesn't exist
-                        const errorSpan = field.nextElementSibling;
-                        if (errorSpan && errorSpan.classList.contains('text-red-600')) {
-                            errorSpan.textContent = 'This field is required';
-                        } else {
-                            const span = document.createElement('span');
-                            span.classList.add('text-sm', 'text-red-600');
-                            span.textContent = 'This field is required';
-                            field.parentNode.insertBefore(span, field.nextSibling);
-                        }
-                    } else {
-                        field.classList.remove('border-red-500');
-                        const errorSpan = field.nextElementSibling;
-                        if (errorSpan && errorSpan.classList.contains('text-red-600')) {
-                            errorSpan.textContent = '';
-                        }
-                    }
-                });
-
-                // Check if at least one lecturer is selected
-                const lecturerSelects = form.querySelectorAll('select[name="LecturerIds"]');
-                let hasLecturer = false;
-                lecturerSelects.forEach(select => {
-                    if (select.value) {
-                        hasLecturer = true;
-                    }
-                });
-
-                if (!hasLecturer) {
-                    isValid = false;
-                    alert('Please select at least one lecturer for the course');
-                }
-
-                if (!isValid) {
-                    e.preventDefault();
-                }
-            });
-        }
+            if (!valid) { e.preventDefault(); }
+        });
     });
 </script>

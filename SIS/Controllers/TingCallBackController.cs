@@ -177,22 +177,9 @@ namespace SIS.Controllers
                         _logger.LogError(ex, "Error posting to accounting system");
                     }
 
-                    var financialStatement = new FinancialStatement
-                    {
-                        StudentId = student.Id,
-                        AmountPaid = transaction.Amount ?? 0,
-                        PaymentDate = DateTime.Now,
-                        PaymentMethod = $"Mobile Money ({transaction.PaymentMethod})",
-                        TransactionReference = transaction.MerchantTransactionId,
-                        AcademicYearId = student.AcademicYearId,
-                        OutstandingAmount = student.OutstandingFees - (transaction.Amount ?? 0),
-                        Semester = student.CurrentSemester ?? 1
-                    };
-
                     student.OutstandingFees -= transaction.Amount ?? 0;
                     _context.Students.Update(student);
                     
-                    await _context.FinancialStatements.AddAsync(financialStatement);
                     await _context.SaveChangesAsync();
                     await transactionScope.CommitAsync();
 

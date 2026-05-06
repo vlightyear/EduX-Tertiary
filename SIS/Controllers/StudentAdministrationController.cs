@@ -77,7 +77,7 @@ namespace SIS.Controllers
 
                 // Get registered courses count
                 var registeredCoursesCount = await _context.StudentCourseRegistrations
-                    .Where(scr => scr.StudentId == studentId && scr.AcademicYearId == student.AcademicYearId && scr.Semester == student.CurrentSemester)
+                    .Where(scr => scr.StudentId == studentId && scr.AcademicYearId == student.AcademicYearId && scr.YearPeriodId == student.CurrentYearPeriodId)
                     .CountAsync();
 
                 var viewModel = new StudentAdministrationViewModel
@@ -94,7 +94,8 @@ namespace SIS.Controllers
                     ProgrammeLevelName = student.ProgrammeLevel?.Name ?? "N/A",
                     AcademicYear = student.AcademicYear?.YearValue ?? "N/A",
                     CurrentYear = student.StudentCurrentYear ?? 0,
-                    CurrentSemester = student.CurrentSemester ?? 0,
+                    CurrentPeriodLabel = student.CurrentYearPeriod.FullLabel,
+                    CurrentPeriodId = student.CurrentYearPeriodId,
                     StudentStatus = student.StudentStatus.ToString(),
                     RegistrationStatus = student.RegistrationStatus.ToString(),
                     IsRegistered = student.IsRegistered,
@@ -157,7 +158,8 @@ namespace SIS.Controllers
                     programmeLevelId = student.ProgrammeLevelId,
                     academicYearId = student.AcademicYearId,
                     currentYear = student.StudentCurrentYear ?? 1,
-                    currentSemester = student.CurrentSemester ?? 1,
+                    currentPeriodId = student.CurrentYearPeriodId,
+                    currentPeriodLabel = student.CurrentYearPeriod?.FullLabel,
                     outstandingFees = student.OutstandingFees,
                     passportPhotoPath = student.PassportPhotoPath,
                     IsForeigner = student.IsForeigner,
@@ -574,7 +576,7 @@ namespace SIS.Controllers
                         student.ProgrammeLevelId = model.ProgrammeLevelId;
                         student.AcademicYearId = model.AcademicYearId;
                         student.StudentCurrentYear = model.CurrentYear;
-                        student.CurrentSemester = model.CurrentSemester;
+                        student.CurrentYearPeriodId = model.CurrentPeriodId;
 
                         // Update audit fields
                         student.UpdatedBy = adminUser?.FullName ?? "System";
@@ -817,7 +819,7 @@ namespace SIS.Controllers
                     RegistrationDate = student.RegistrationDate,
                     RegisteredCoursesCount = registeredCourses.Count,
                     AcademicYear = student.AcademicYear?.YearValue ?? "N/A",
-                    CurrentSemester = student.CurrentSemester ?? 0,
+                    CurrentYearPeriodId = student.CurrentYearPeriodId ?? 0,
                     OutstandingFees = student.OutstandingFees,
                     RegisteredCourses = registeredCourses
                 };
@@ -1011,7 +1013,8 @@ namespace SIS.Controllers
                         studentInfo = new
                         {
                             currentYear = student.StudentCurrentYear,
-                            currentSemester = student.CurrentSemester,
+                            currentYearPeriodId = student.CurrentYearPeriodId,
+                            currentYearPeriodLabel = student.CurrentYearPeriod?.FullLabel,
                             programmeName = student.Programme?.Name,
                             isSemesterBased = student.Programme?.IsSemesterBased ?? false,
                             academicYear = student.AcademicYear?.YearValue
@@ -1061,7 +1064,8 @@ namespace SIS.Controllers
                         courseName = c.CourseName,
                         courseDescription = c.CourseDescription,
                         yearTaken = c.YearTaken,
-                        semesterTaken = c.SemesterTaken,
+                        periodTaken = c.PeriodTakenId,
+                        periodTakenLabel = c.PeriodTakenLabel,
                         isMandatory = c.IsMandatory,
                         isExaminable = c.IsExaminable,
                         programmeId = c.ProgrammeID,
@@ -1152,7 +1156,7 @@ namespace SIS.Controllers
                                 StudentId = student.Id,
                                 CourseId = course.Id,
                                 AcademicYearId = student.AcademicYearId,
-                                Semester = student.CurrentSemester ?? 1,
+                                YearPeriodId = student.CurrentYearPeriodId ?? 1,
                                 RegistrationDate = DateTime.Now
                             };
                             _context.StudentCourseRegistrations.Add(registration);
@@ -1183,7 +1187,7 @@ namespace SIS.Controllers
                                     StudentId = student.Id,
                                     CourseId = course.Id,
                                     AcademicYearId = student.AcademicYearId,
-                                    Semester = student.CurrentSemester ?? 1,
+                                    YearPeriodId = student.CurrentYearPeriodId ?? 1,
                                     RegistrationDate = DateTime.Now,
                                     AssessmentScores = assessmentJson.Any()
                                         ? System.Text.Json.JsonSerializer.Serialize(assessmentJson)
@@ -1227,7 +1231,7 @@ namespace SIS.Controllers
 
                         // Generate invoice with proper error handling
                         var periodText = student.Programme?.IsSemesterBased == true ?
-                            $" for semester {student.CurrentSemester}" : "";
+                            $" for period {student.CurrentPeriodLabel}" : "";
 
                         /*var carryoverText = carryoverCourses.Any() ?
                             $" (including {carryoverCourses.Count} carryover course{(carryoverCourses.Count != 1 ? "s" : "")})" : "";*/
@@ -1320,7 +1324,8 @@ namespace SIS.Controllers
                     IsSelected = true,
                     IsCarryover = true,
                     YearTaken = scc.Course.YearTaken,
-                    SemesterTaken = scc.Course.SemesterTaken,
+                    PeriodTakenId = scc.Course.PeriodTakenId,
+                    PeriodTakenLabel = scc.Course.PeriodTakenLabel,
                     CarryoverReason = scc.Reason
                 })
                 .ToListAsync();
@@ -1333,12 +1338,9 @@ namespace SIS.Controllers
             var courseQuery = _context.Courses
                 .Where(c => c.ProgrammeID == student.ProgrammeId &&
                            c.YearTaken == student.StudentCurrentYear &&
+                           c.PeriodTakenId == student.CurrentYearPeriod.AcademicPeriod.Id &&
                            !carryoverCourseIds.Contains(c.Id));
 
-            if (student.Programme?.IsSemesterBased == true)
-            {
-                courseQuery = courseQuery.Where(c => c.SemesterTaken == student.CurrentSemester);
-            }
 
             var courses = await courseQuery
                 .Select(c => new AdminCourseViewModel
@@ -1352,7 +1354,8 @@ namespace SIS.Controllers
                     IsSelected = c.IsMandatory,
                     IsCarryover = false,
                     YearTaken = c.YearTaken,
-                    SemesterTaken = c.SemesterTaken
+                    PeriodTakenId = c.PeriodTakenId,
+                    PeriodTakenLabel = c.PeriodTakenLabel,
                 })
                 .ToListAsync();
 
@@ -1376,7 +1379,7 @@ namespace SIS.Controllers
 
             if (student.Programme?.IsSemesterBased == true)
             {
-                courseQuery = courseQuery.Where(c => c.SemesterTaken == student.CurrentSemester);
+                courseQuery = courseQuery.Where(c => c.PeriodTakenId == student.CurrentYearPeriod.AcademicPeriod.Id);
             }
 
             var courses = await courseQuery
@@ -1391,7 +1394,8 @@ namespace SIS.Controllers
                     IsSelected = c.IsMandatory,
                     IsCarryover = false,
                     YearTaken = c.YearTaken,
-                    SemesterTaken = c.SemesterTaken
+                    PeriodTakenId = c.PeriodTakenId,
+                    PeriodTakenLabel = c.PeriodTakenLabel
                 })
                 .ToListAsync();
 
@@ -1430,12 +1434,12 @@ namespace SIS.Controllers
 
                         if (programme.IsSemesterBased)
                         {
-                            var currentSemester = student.CurrentSemester ?? 1;
-                            if (currentSemester == 1 && requirement.Semester1.HasValue)
+                            var currentPeriod = student.CurrentYearPeriod?.AcademicPeriod?.Id ?? 1;
+                            if (currentPeriod == 1 && requirement.Semester1.HasValue)
                             {
                                 totalRequiredCourses = requirement.Semester1.Value;
                             }
-                            else if (currentSemester == 2 && requirement.Semester2.HasValue)
+                            else if (currentPeriod == 2 && requirement.Semester2.HasValue)
                             {
                                 totalRequiredCourses = requirement.Semester2.Value;
                             }
@@ -1465,7 +1469,7 @@ namespace SIS.Controllers
 
                         if (programme.IsSemesterBased)
                         {
-                            mandatoryCoursesQuery = mandatoryCoursesQuery.Where(c => c.SemesterTaken == student.CurrentSemester);
+                            mandatoryCoursesQuery = mandatoryCoursesQuery.Where(c => c.PeriodTakenId == student.CurrentYearPeriod.AcademicPeriod.Id);
                         }
 
                         var mandatoryCount = await mandatoryCoursesQuery.CountAsync();
@@ -1481,7 +1485,7 @@ namespace SIS.Controllers
 
                         if (programme.IsSemesterBased)
                         {
-                            electiveCoursesQuery = electiveCoursesQuery.Where(c => c.SemesterTaken == student.CurrentSemester);
+                            electiveCoursesQuery = electiveCoursesQuery.Where(c => c.PeriodTakenId == student.CurrentYearPeriod.AcademicPeriod.Id);
                         }
 
                         var availableElectives = await electiveCoursesQuery.CountAsync();

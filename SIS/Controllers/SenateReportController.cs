@@ -123,14 +123,14 @@ namespace SIS.Controllers
                 PerformanceSummaryDto performanceSummary = null;
                 if (filters.ProgrammeId.HasValue &&
                     filters.AcademicYearId.HasValue &&
-                    filters.Semester.HasValue)
+                    filters.AcademicPeriod.HasValue)
                 {
                     try
                     {
                         performanceSummary = await _senateReportService.GetPerformanceSummaryAsync(
                             filters.ProgrammeId.Value,
                             filters.AcademicYearId.Value,
-                            filters.Semester.Value,
+                            filters.AcademicPeriod.Value,
                             filters.YearOfStudy.Value
                         );
 
@@ -558,7 +558,7 @@ namespace SIS.Controllers
                 AcademicYearId = baseFilters.AcademicYearId,
                 ModeOfStudyId = baseFilters.ModeOfStudyId,
                 YearOfStudy = baseFilters.YearOfStudy,
-                Semester = baseFilters.Semester,
+                AcademicPeriod = baseFilters.AcademicPeriod,
                 Period = baseFilters.Period
             };
 
@@ -796,7 +796,7 @@ namespace SIS.Controllers
                     .Where(sec =>
                         sec.CourseId == courseId &&
                         sec.AcademicYearId == academicYearId &&
-                        sec.Semester == semester)
+                        sec.YearPeriodId == semester)
                     .Select(sec => sec.StudentId)
                     .Distinct()
                     .ToListAsync();
@@ -854,7 +854,7 @@ namespace SIS.Controllers
                         .AnyAsync(rsb =>
                             rsb.CourseId == courseId &&
                             rsb.AcademicYearId == academicYearId &&
-                            rsb.Semester == semester &&
+                            rsb.YearPeriodId == semester &&
                             rsb.ApprovalStatus == WorkflowStatus.Approved);
 
                     if (!hasPublishedBatch)
@@ -869,7 +869,7 @@ namespace SIS.Controllers
                             s.StudentId == studentId &&
                             s.CourseId == courseId &&
                             s.AcademicYearId == academicYearId &&
-                            s.Semester == semester &&
+                            s.YearPeriodId == semester &&
                             s.IsActive &&
                             _context.ResultSubmissionBatches.Any(rsb =>
                                 rsb.Id == s.rsbId &&

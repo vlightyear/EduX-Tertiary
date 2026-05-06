@@ -6,93 +6,120 @@ namespace SIS.Models.Registration
 {
     public enum AcademicType
     {
+        /// <summary>One period spanning the full academic year.</summary>
         Annual,
-        Semester
+
+        /// <summary>Two periods — Semester 1 and Semester 2.</summary>
+        Semester,
+
+        /// <summary>Three periods — Term 1, Term 2, and Term 3.</summary>
+        Term
+    }
+
+    public static class AcademicTypeExtensions
+    {
+        /// <summary>Returns how many periods this academic type produces.</summary>
+        public static int PeriodCount(this AcademicType type) => type switch
+        {
+            AcademicType.Annual => 1,
+            AcademicType.Semester => 2,
+            AcademicType.Term => 3,
+            _ => throw new ArgumentOutOfRangeException(nameof(type))
+        };
+
+        /// <summary>Returns the label for a given 1-based period number.</summary>
+        public static string PeriodLabel(this AcademicType type, int periodNumber) => type switch
+        {
+            AcademicType.Annual => "Year",
+            AcademicType.Semester => $"Semester {periodNumber}",
+            AcademicType.Term => $"Term {periodNumber}",
+            _ => throw new ArgumentOutOfRangeException(nameof(type))
+        };
     }
 
     public class AcademicYear
     {
         [Key]
-        public int YearId { get; set; } // Primary Key
+        public int YearId { get; set; }
 
         [Required]
-        public string YearValue { get; set; } // e.g., 2024 or 2024/2025
+        public string YearValue { get; set; } = string.Empty; // e.g. "2024" or "2024/2025"
 
         [NotMapped]
         public string YearName => YearValue;
 
         [Required]
-        public AcademicType AcademicType { get; set; } = AcademicType.Annual;
+        public AcademicType AcademicType { get; set; } = AcademicType.Semester;
 
         [Required]
-        public DateTime StartDate { get; set; } // Overall start date of the academic year
+        [Display(Name = "Start Date")]
+        public DateTime StartDate { get; set; }
 
         [Required]
-        public DateTime EndDate { get; set; } // Overall end date of the academic year
+        [Display(Name = "End Date")]
+        public DateTime EndDate { get; set; }
 
         public bool IsActive { get; set; }
 
-        [Range(0, 100, ErrorMessage = "Registration payment percentage must be between 0 and 100")]
+        // ── Payment thresholds ────────────────────────────────────────────────
+
+        [Range(0, 100)]
         [Display(Name = "Minimum Payment % for Registration")]
         [Column(TypeName = "decimal(5,2)")]
         public decimal MinRegistrationPaymentPercentage { get; set; }
 
-        [Range(0, 100, ErrorMessage = "Exam payment percentage must be between 0 and 100")]
+        [Range(0, 100)]
         [Display(Name = "Minimum Payment % for Exams")]
         [Column(TypeName = "decimal(5,2)")]
         public decimal MinExamPaymentPercentage { get; set; }
 
-        // Semester 1 dates (required when AcademicType = Semester)
-        [Display(Name = "Semester 1 Start Date")]
-        public DateTime? Semester1StartDate { get; set; }
+        // ── Optional year-level registration window ───────────────────────────
 
-        [Display(Name = "Semester 1 End Date")]
-        public DateTime? Semester1EndDate { get; set; }
-
-        // Semester 2 dates (required when AcademicType = Semester)
-        [Display(Name = "Semester 2 Start Date")]
-        public DateTime? Semester2StartDate { get; set; }
-
-        [Display(Name = "Semester 2 End Date")]
-        public DateTime? Semester2EndDate { get; set; }
-
-        // Optional registration period dates
         [Display(Name = "Registration Start Date")]
         public DateTime? RegistrationStartDate { get; set; }
 
         [Display(Name = "Registration End Date")]
         public DateTime? RegistrationEndDate { get; set; }
 
-        // Optional final exam period dates
-        [Display(Name = "Final Exam Start Date")]
-        public DateTime? FinalExamStartDate { get; set; }
+        // ── Progression chain ─────────────────────────────────────────────────
 
-        [Display(Name = "Final Exam End Date")]
-        public DateTime? FinalExamEndDate { get; set; }
-
-        // Optional grade submission period dates
-        [Display(Name = "Grade Submission Start Date")]
-        public DateTime? GradeSubmissionStartDate { get; set; }
-
-        [Display(Name = "Grade Submission End Date")]
-        public DateTime? GradeSubmissionEndDate { get; set; }
-
-        // Next Academic Year for student progression
         [Display(Name = "Next Academic Year")]
         public int? NextAcademicYearId { get; set; }
 
-        [ForeignKey("NextAcademicYearId")]
+        [ForeignKey(nameof(NextAcademicYearId))]
         public AcademicYear? NextAcademicYear { get; set; }
 
-        // Inverse navigation - academic years that point to this one as their next year
-        [InverseProperty("NextAcademicYear")]
+        [InverseProperty(nameof(NextAcademicYear))]
         public ICollection<AcademicYear> PreviousAcademicYears { get; set; } = new HashSet<AcademicYear>();
 
-        // Deprecated fields - keeping for backward compatibility during migration
-        public int? SemesterId { get; set; } // Will be removed in future version
-        public int? ModeId { get; set; } // Will be removed in future version
+        // ── Periods (via join table) ──────────────────────────────────────────
 
-        // Navigation properties
+        /// <summary>
+        /// The scheduled periods for this academic year.
+        /// Each entry links to a reusable <see cref="AcademicPeriod"/> definition
+        /// and carries the year-specific date windows.
+        /// </summary>
+        public virtual ICollection<AcademicYearPeriod> YearPeriods { get; set; } = new List<AcademicYearPeriod>();
+
+        // ── Navigation ────────────────────────────────────────────────────────
+
         public ICollection<FinancialStatement> FinancialStatements { get; set; } = new HashSet<FinancialStatement>();
+
+        // ── Computed helpers ──────────────────────────────────────────────────
+
+        [NotMapped]
+        public AcademicYearPeriod? ActiveYearPeriod =>
+            YearPeriods.FirstOrDefault(yp => yp.IsActive);
+
+        [NotMapped]
+        public int ExpectedPeriodCount => AcademicType.PeriodCount();
+
+        // ── Deprecated — remove after migration is complete ───────────────────
+
+        [Obsolete("Use YearPeriods collection. Will be removed after migration.")]
+        public int? SemesterId { get; set; }
+
+        [Obsolete("Use YearPeriods collection. Will be removed after migration.")]
+        public int? ModeId { get; set; }
     }
 }

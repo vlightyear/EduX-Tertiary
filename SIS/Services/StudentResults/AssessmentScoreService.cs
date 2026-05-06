@@ -74,7 +74,7 @@ namespace SIS.Services
                         s.CourseId == courseId &&
                         s.AssessmentId == assessmentId &&
                         s.AcademicYearId == academicYearId &&
-                        s.Semester == semester &&
+                        s.YearPeriodId == semester &&
                         s.Attempt == attempt &&
                         s.IsActive);
 
@@ -84,7 +84,7 @@ namespace SIS.Services
                     existingScore.CourseId = courseId;
                     existingScore.AcademicYearId = academicYearId;
                     existingScore.AssessmentId = assessmentId;
-                    existingScore.Semester = semester;
+                    existingScore.YearPeriodId = semester;
                     existingScore.Score = score;
                     existingScore.MaxScore = 100;
                     //existingScore.WeightPercentage = assessment.WeightPercentage;
@@ -117,7 +117,7 @@ namespace SIS.Services
                     CourseId = courseId,
                     AcademicYearId = academicYearId,
                     AssessmentId = assessmentId,
-                    Semester = semester,
+                    YearPeriodId = semester,
                     Score = score,
                     MaxScore = 100,
                     WeightPercentage = assessment.WeightPercentage,
@@ -281,7 +281,7 @@ namespace SIS.Services
                         s.CourseId == courseId &&
                         s.AcademicYearId == academicYearId &&
                         s.IsActive)
-                    .OrderBy(s => s.Semester)
+                    .OrderBy(s => s.YearPeriodId)
                     .ThenBy(s => s.Assessment.Name)
                     .ToListAsync();
 
@@ -323,7 +323,7 @@ namespace SIS.Services
                     .Where(s =>
                         s.CourseId == courseId &&
                         s.AcademicYearId == academicYearId &&
-                        s.Semester == semester &&
+                        s.YearPeriodId == semester &&
                         s.IsActive)
                     .OrderBy(s => s.Student.StudentId_Number)
                     .ThenBy(s => s.Assessment.Name)
@@ -504,7 +504,7 @@ namespace SIS.Services
                     s.CourseId == courseId &&
                     s.AssessmentId == assessmentId &&
                     s.AcademicYearId == academicYearId &&
-                    s.Semester == semester &&
+                    s.YearPeriodId == semester &&
                     s.IsActive);
         }
     }

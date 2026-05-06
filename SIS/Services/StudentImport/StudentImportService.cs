@@ -434,7 +434,7 @@ namespace SIS.Services.StudentImport
                                 ModeOfStudyId = studentData.ModeOfStudyId,
                                 AcademicYearId = studentData.AcademicYearId,
                                 StudentCurrentYear = studentData.StudentCurrentYear,
-                                CurrentSemester = studentData.CurrentSemester,
+                                CurrentYearPeriodId = studentData.CurrentSemester,
 
                                 // Status fields
                                 StudentStatus = Status.Admitted,

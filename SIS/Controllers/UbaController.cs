@@ -422,27 +422,13 @@ public class UBAPaymentProcessor
                 _logger.LogInformation("Creating new UBA financial statement for amount {Amount}",
                     transaction.Amount ?? 0);
 
-                // Create financial statement
-                var financialStatement = new FinancialStatement
-                {
-                    StudentId = student.Id,
-                    AmountPaid = transaction.Amount ?? 0,
-                    PaymentDate = DateTime.Now,
-                    PaymentMethod = $"UBA ({transaction.PaymentMethod})",
-                    TransactionReference = transaction.MerchantTransactionId,
-                    AcademicYearId = student.AcademicYearId,
-                    OutstandingAmount = student.OutstandingFees - (transaction.Amount ?? 0),
-                    Semester = student.CurrentSemester ?? 1
-                };
 
                 // Update student outstanding fees
                 var originalFees = student.OutstandingFees;
-                student.OutstandingFees = financialStatement.OutstandingAmount;
 
                 _logger.LogInformation("Updating student fees from {Original} to {New} via UBA",
                     originalFees, student.OutstandingFees);
 
-                _context.FinancialStatements.Add(financialStatement);
                 _context.Students.Update(student);
 
                 var changes = await _context.SaveChangesAsync();

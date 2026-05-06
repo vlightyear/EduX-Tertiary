@@ -86,11 +86,11 @@ namespace SIS.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> DocketLookup(string semester, string year, string programme, string docket, string? studentNumber)
+        public async Task<IActionResult> DocketLookup(string currentYearPeriod, string year, string programme, string docket, string? studentNumber)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(semester) || string.IsNullOrWhiteSpace(year) || string.IsNullOrWhiteSpace(programme))
+                if (string.IsNullOrWhiteSpace(currentYearPeriod) || string.IsNullOrWhiteSpace(year) || string.IsNullOrWhiteSpace(programme))
                 {
                     return Json(new { success = false, message = "Search terms are required" });
                 }
@@ -112,7 +112,7 @@ namespace SIS.Controllers
                 Student student = null;
                 if (string.IsNullOrEmpty(studentNumber))
                 {
-                    student = await _context.Students.Where(s => s.CurrentSemester == Int32.Parse(semester)
+                    student = await _context.Students.Where(s => s.CurrentYearPeriodId == Int32.Parse(currentYearPeriod)
                                                             && s.StudentCurrentYear == Int32.Parse(year)
                                                             && s.ProgrammeId == Int32.Parse(programme))
                                                             .FirstOrDefaultAsync();
@@ -157,7 +157,7 @@ namespace SIS.Controllers
                     SenateReportFilters filters = new();
                     filters.ReportLevel = "Programme";
                     filters.AcademicYearId = academicYear.YearId;
-                    filters.Semester = student.CurrentSemester;
+                    filters.AcademicPeriod = student.CurrentYearPeriod.AcademicPeriod.Id;
                     filters.YearOfStudy = student.StudentCurrentYear;
                     var stdsTmp = await _senateReportService.GetEntityStudentDetailsAsync(
                         student.ProgrammeId,
@@ -198,7 +198,7 @@ namespace SIS.Controllers
 
                 if (string.IsNullOrEmpty(studentNumber))
                 {
-                    studentsQuery = studentsQuery.Where(s => s.SemesterOfStudy == Int32.Parse(semester) && s.StudentCurrentYear == Int32.Parse(year)
+                    studentsQuery = studentsQuery.Where(s => s.CurrentYearPeriodId == Int32.Parse(currentYearPeriod) && s.StudentCurrentYear == Int32.Parse(year)
                                                     && s.ProgrammeId == Int32.Parse(programme) && s.PercentPaid >= threshold
                                                     && s.RegistrationStatus == true && s.PermitValid == 1);
                 }
@@ -257,7 +257,7 @@ namespace SIS.Controllers
 
                     // Save temporarily to disk or memory cache
                     DocketType = DocketType.Replace("/", "_");
-                    var pdfFileName = $"{DocketType}_SEMESTER_{semester}_{students.FirstOrDefault().Programme}.pdf";
+                    var pdfFileName = $"{DocketType}_{students.FirstOrDefault().CurrentYearPeriodId}_{students.FirstOrDefault().Programme}.pdf";
                     var folderPath = Path.Combine(_webHostEnvironment.WebRootPath, "Dockets");
                     var filePath = Path.Combine(folderPath, pdfFileName);
 
@@ -403,7 +403,7 @@ namespace SIS.Controllers
                     float currentY = 0;
 
                     // Create a text element with the text and font
-                    var element = new PdfTextElement($"Eden University\n{docket} DOCKET\n{DateTime.Today.Year} - SEMESTER {student.SemesterOfStudy}");
+                    var element = new PdfTextElement($"Eden University\n{docket} DOCKET\n{DateTime.Today.Year} - SEMESTER {student.CurrentYearPeriodId}");
                     element.Font = new PdfStandardFont(PdfFontFamily.TimesRoman, 12, PdfFontStyle.Bold);
                     //element.Brush = new PdfSolidBrush(new PdfColor(89, 89, 93));
                     element.Brush = PdfBrushes.Black;
@@ -545,7 +545,7 @@ namespace SIS.Controllers
 
                     // Registration message
                     string regString = "Student is Registered under: ";
-                    string registrationMsg = $"{student.Programme} Y-{student.StudentCurrentYear}-S-{student.SemesterOfStudy}";
+                    string registrationMsg = $"{student.Programme} Y-{student.StudentCurrentYear}-S-{student.CurrentYearPeriodId}";
                     string regString3 = $"Candidate has been {status} authorized to write {docket} in the following courses:\n";
 
                     PdfTextElement regElement = new PdfTextElement(regString, bodyFont);

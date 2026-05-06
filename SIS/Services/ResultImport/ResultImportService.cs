@@ -49,15 +49,15 @@ namespace SIS.Services.ResultImport
         public async Task<byte[]> GenerateImportTemplateAsync(
             int courseId,
             int academicYearId,
-            int semester,
+            int period,
             bool includeExistingScores = false,
             CancellationToken cancellationToken = default)
         {
             try
             {
                 _logger.LogInformation(
-                    "Generating import template for CourseId={CourseId}, AcademicYearId={AcademicYearId}, Semester={Semester}",
-                    courseId, academicYearId, semester);
+                    "Generating import template for CourseId={CourseId}, AcademicYearId={AcademicYearId}, Period={Period}",
+                    courseId, academicYearId, period);
 
                 // Get course information
                 var course = await _context.Courses
@@ -82,15 +82,15 @@ namespace SIS.Services.ResultImport
                     .Where(scr =>
                         scr.CourseId == courseId &&
                         scr.AcademicYearId == academicYearId &&
-                        scr.Semester == semester)
+                        scr.YearPeriodId == period)
                     .OrderBy(scr => scr.Student.StudentId_Number)
                     .ToListAsync(cancellationToken);
 
                 if (!enrolledStudents.Any())
                 {
                     _logger.LogWarning(
-                        "No enrolled students found for CourseId={CourseId}, AcademicYearId={AcademicYearId}, Semester={Semester}",
-                        courseId, academicYearId, semester);
+                        "No enrolled students found for CourseId={CourseId}, AcademicYearId={AcademicYearId}, Period={Period}",
+                        courseId, academicYearId, period);
                 }
 
                 // Get assessments for this course
@@ -113,7 +113,7 @@ namespace SIS.Services.ResultImport
                 if (includeExistingScores)
                 {
                     existingScores = await GetExistingScoresAsync(
-                        courseId, academicYearId, semester, cancellationToken);
+                        courseId, academicYearId, period, cancellationToken);
                 }
 
                 // Generate Excel workbook
@@ -122,7 +122,7 @@ namespace SIS.Services.ResultImport
                 // Main data sheet
                 var worksheet = workbook.Worksheets.Add("Results Import");
                 await PopulateMainWorksheet(
-                    worksheet, course, academicYear, semester,
+                    worksheet, course, academicYear, period,
                     assessments, enrolledStudents, existingScores);
 
                 // Instructions sheet
@@ -438,14 +438,14 @@ namespace SIS.Services.ResultImport
         private async Task<Dictionary<int, Dictionary<int, decimal>>> GetExistingScoresAsync(
             int courseId,
             int academicYearId,
-            int semester,
+            int period,
             CancellationToken cancellationToken)
         {
             var scores = await _context.StudentAssessmentScores
                 .Where(s =>
                     s.CourseId == courseId &&
                     s.AcademicYearId == academicYearId &&
-                    s.Semester == semester &&
+                    s.YearPeriodId == period &&
                     s.IsActive)
                 .ToListAsync(cancellationToken);
 
@@ -979,6 +979,8 @@ namespace SIS.Services.ResultImport
 
                 // Get all students with their programme information AND FULL NAME
                 var students = await _context.Students
+                    .Include(s => s.CurrentYearPeriod)
+                        .ThenInclude(cyp => cyp.AcademicPeriod)
                     .Where(s => studentIdsInFile.Contains(s.StudentId_Number))
                     .Select(s => new
                     {
@@ -986,15 +988,17 @@ namespace SIS.Services.ResultImport
                         s.StudentId_Number,
                         s.ProgrammeId,
                         s.FullName,
-                        s.CurrentSemester,
+                        s.CurrentYearPeriodId,
                         s.StudentCurrentYear,
-                        s.AcademicYearId
+                        s.AcademicYearId,
+                        s.CurrentYearPeriod,
+                        AcademicPeriodId = s.CurrentYearPeriod.AcademicPeriod.Id
                     })
                     .ToListAsync(cancellationToken);
 
                 var studentLookup = students.ToDictionary(
                     s => s.StudentId_Number,
-                    s => new { s.Id, s.ProgrammeId, s.FullName, s.CurrentSemester, s.StudentCurrentYear, s.AcademicYearId },
+                    s => new { s.Id, s.ProgrammeId, s.FullName, s.CurrentYearPeriodId, s.StudentCurrentYear, s.AcademicYearId, s.AcademicPeriodId },
                     StringComparer.OrdinalIgnoreCase);
 
                 _logger.LogInformation("Found {StudentCount} students in database", students.Count);
@@ -1034,7 +1038,7 @@ namespace SIS.Services.ResultImport
                         c.CourseCode.Replace(" ", "").Equals(row.CourseCode.Replace(" ", ""), StringComparison.OrdinalIgnoreCase) &&
                         c.ProgrammeID == studentInfo.ProgrammeId &&
                         c.YearTaken == studentInfo.StudentCurrentYear &&
-                        c.SemesterTaken == studentInfo.CurrentSemester &&
+                        c.PeriodTakenId == studentInfo.AcademicPeriodId &&
                         c.IsExaminable);
 
                     if (course == null)
@@ -1044,7 +1048,7 @@ namespace SIS.Services.ResultImport
                                 c.CourseCode.Replace(" ", "")
                                     .Equals(row.CourseCode.Replace(" ", ""), StringComparison.OrdinalIgnoreCase)
                                 && c.ProgrammeID == studentInfo.ProgrammeId
-                                && c.SemesterTaken == studentInfo.CurrentSemester
+                                && c.PeriodTakenId == studentInfo.AcademicPeriodId
                                 && c.IsExaminable
                                 && _context.StudentCourseRegistrations.Any(scr =>
                                     scr.CourseId == c.Id
@@ -1119,7 +1123,7 @@ namespace SIS.Services.ResultImport
                             IsValid = false,
                             Errors = new List<string>
                     {
-                        $"Course '{row.CourseCode}' not found for student's programme (ProgrammeID: {studentInfo.ProgrammeId}) & student's year: {studentInfo.StudentCurrentYear} & student's semester: {studentInfo.CurrentSemester}"
+                        $"Course '{row.CourseCode}' not found for student's programme (ProgrammeID: {studentInfo.ProgrammeId}) & student's year: {studentInfo.StudentCurrentYear} & student's period: {studentInfo.AcademicPeriodId}"
                     }
                         };
                     }
@@ -1292,6 +1296,8 @@ namespace SIS.Services.ResultImport
 
                 // Get all students with their programme information AND FULL NAME
                 var students = await _context.Students
+                    .Include(s => s.CurrentYearPeriod)
+                        .ThenInclude(cyp => cyp.AcademicPeriod)
                     .Where(s => studentIdsInFile.Contains(s.StudentId_Number))
                     .Select(s => new
                     {
@@ -1299,15 +1305,16 @@ namespace SIS.Services.ResultImport
                         s.StudentId_Number,
                         s.ProgrammeId,
                         s.FullName,
-                        s.CurrentSemester,
+                        s.CurrentYearPeriodId,
                         s.StudentCurrentYear,
-                        s.AcademicYearId
+                        s.AcademicYearId,
+                        AcademicPeriodId = s.CurrentYearPeriod.AcademicPeriod.Id
                     })
                     .ToListAsync(cancellationToken);
 
                 var studentLookup = students.ToDictionary(
                     s => s.StudentId_Number,
-                    s => new { s.Id, s.ProgrammeId, s.FullName, s.CurrentSemester, s.StudentCurrentYear, s.AcademicYearId },
+                    s => new { s.Id, s.ProgrammeId, s.FullName, s.CurrentYearPeriodId, s.StudentCurrentYear, s.AcademicYearId, s.AcademicPeriodId },
                     StringComparer.OrdinalIgnoreCase);
 
                 _logger.LogInformation("Found {StudentCount} students in database", students.Count);
@@ -1347,7 +1354,7 @@ namespace SIS.Services.ResultImport
                         c.CourseCode.Replace(" ", "").Equals(row.CourseCode.Replace(" ", ""), StringComparison.OrdinalIgnoreCase) &&
                         c.ProgrammeID == studentInfo.ProgrammeId &&
                         c.YearTaken == studentInfo.StudentCurrentYear &&
-                        c.SemesterTaken == studentInfo.CurrentSemester &&
+                        c.PeriodTakenId == studentInfo.AcademicPeriodId &&
                         c.IsExaminable);
 
                     if (course == null)
@@ -1357,7 +1364,7 @@ namespace SIS.Services.ResultImport
                                 c.CourseCode.Replace(" ", "")
                                     .Equals(row.CourseCode.Replace(" ", ""), StringComparison.OrdinalIgnoreCase)
                                 && c.ProgrammeID == studentInfo.ProgrammeId
-                                && c.SemesterTaken == studentInfo.CurrentSemester
+                                && c.PeriodTakenId == studentInfo.AcademicPeriodId
                                 && c.IsExaminable
                                 && _context.StudentCourseRegistrations.Any(scr =>
                                     scr.CourseId == c.Id
@@ -1432,7 +1439,7 @@ namespace SIS.Services.ResultImport
                             IsValid = false,
                             Errors = new List<string>
                     {
-                        $"Course '{row.CourseCode}' not found for student's programme (ProgrammeID: {studentInfo.ProgrammeId}) & student's year: {studentInfo.StudentCurrentYear} & student's semester: {studentInfo.CurrentSemester}"
+                        $"Course '{row.CourseCode}' not found for student's programme (ProgrammeID: {studentInfo.ProgrammeId}) & student's year: {studentInfo.StudentCurrentYear} & student's period: {studentInfo.AcademicPeriodId}"
                     }
                         };
                     }
@@ -1765,7 +1772,7 @@ namespace SIS.Services.ResultImport
         private async Task<ResultImportValidationContext> BuildValidationContextAsync(
              int courseId,
              int academicYearId,
-             int semester,
+             int period,
              int? programmeId,
              CancellationToken cancellationToken)
         {
@@ -1773,7 +1780,7 @@ namespace SIS.Services.ResultImport
             {
                 CourseId = courseId,
                 AcademicYearId = academicYearId,
-                Semester = semester
+                Semester = period
             };
 
             // Get enrolled students
@@ -1781,7 +1788,7 @@ namespace SIS.Services.ResultImport
                 .Where(scr =>
                     scr.CourseId == courseId &&
                     scr.AcademicYearId == academicYearId &&
-                    scr.Semester == semester &&
+                    scr.YearPeriodId == period &&
                     (!programmeId.HasValue || scr.Student.ProgrammeId == programmeId))
                 .Select(scr => new
                 {
@@ -1822,7 +1829,7 @@ namespace SIS.Services.ResultImport
                 .Where(s =>
                     s.CourseId == courseId &&
                     s.AcademicYearId == academicYearId &&
-                    s.Semester == semester &&
+                    s.YearPeriodId == period &&
                     s.IsActive)
                 .Select(s => new
                 {
@@ -2747,7 +2754,7 @@ namespace SIS.Services.ResultImport
             int courseId,
             int assessmentId,
             int academicYearId,
-            int semester,
+            int period,
             decimal score,
             string importedBy,
             int rsbId,
@@ -2755,7 +2762,7 @@ namespace SIS.Services.ResultImport
             CancellationToken cancellationToken)
         {
             bool exists = await _assessmentScoreService.ScoreExistsAsync(
-                studentId, courseId, assessmentId, academicYearId, semester);
+                studentId, courseId, assessmentId, academicYearId, period);
 
             if (exists)
             {
@@ -2765,7 +2772,7 @@ namespace SIS.Services.ResultImport
                         s.CourseId == courseId &&
                         s.AssessmentId == assessmentId &&
                         s.AcademicYearId == academicYearId &&
-                        s.Semester == semester &&
+                        s.YearPeriodId == period &&
                         s.IsActive,
                         cancellationToken);
 
@@ -2790,7 +2797,7 @@ namespace SIS.Services.ResultImport
                     courseId,
                     academicYearId,
                     assessmentId,
-                    semester,
+                    period,
                     score,
                     importedBy,
                     rsbId,
@@ -2807,7 +2814,7 @@ namespace SIS.Services.ResultImport
             int courseId,
             int assessmentId,
             int academicYearId,
-            int semester,
+            int period,
             decimal score,
             string importedBy,
             int rsbId,
@@ -2815,7 +2822,7 @@ namespace SIS.Services.ResultImport
             CancellationToken cancellationToken)
         {
             bool exists = await _assessmentScoreService.ScoreExistsAsync(
-                studentId, courseId, assessmentId, academicYearId, semester);
+                studentId, courseId, assessmentId, academicYearId, period);
 
             if(!exists)
             {
@@ -2824,7 +2831,7 @@ namespace SIS.Services.ResultImport
                     courseId,
                     academicYearId,
                     assessmentId,
-                    semester,
+                    period,
                     score,
                     importedBy,
                     rsbId,
@@ -2843,7 +2850,7 @@ namespace SIS.Services.ResultImport
                         s.CourseId == courseId &&
                         s.AssessmentId == assessmentId &&
                         s.AcademicYearId == academicYearId &&
-                        s.Semester == semester &&
+                        s.YearPeriodId == period &&
                         s.IsActive)
                     .OrderByDescending(s => s.Attempt)
                     .FirstOrDefaultAsync(cancellationToken);
@@ -2878,7 +2885,7 @@ namespace SIS.Services.ResultImport
                         courseId,
                         academicYearId,
                         assessmentId,
-                        semester,
+                        period,
                         score,
                         importedBy,
                         rsbId,
@@ -2910,7 +2917,7 @@ namespace SIS.Services.ResultImport
             List<ResultImportDto> batch,
             int courseId,
             int academicYearId,
-            int semester,
+            int period,
             string importedBy,
             ResultImportProcessResult result,
             int rsbId,
@@ -2939,7 +2946,7 @@ namespace SIS.Services.ResultImport
                                 courseId,
                                 assessmentId,
                                 academicYearId,
-                                semester);
+                                period);
 
                             if (exists)
                             {
@@ -2950,7 +2957,7 @@ namespace SIS.Services.ResultImport
                                         s.CourseId == courseId &&
                                         s.AssessmentId == assessmentId &&
                                         s.AcademicYearId == academicYearId &&
-                                        s.Semester == semester &&
+                                        s.YearPeriodId == period &&
                                         s.IsActive,
                                         cancellationToken);
 
@@ -2987,7 +2994,7 @@ namespace SIS.Services.ResultImport
                                     courseId,
                                     academicYearId,
                                     assessmentId,
-                                    semester,
+                                    period,
                                     score,
                                     importedBy,
                                     rsbId,
@@ -3016,7 +3023,7 @@ namespace SIS.Services.ResultImport
                             studentResult.StudentId,
                             courseId,
                             academicYearId,
-                            semester,
+                            period,
                             importedBy);
                     }
                     catch (Exception ex)
@@ -3076,7 +3083,7 @@ namespace SIS.Services.ResultImport
             int courseId,
             int assessmentId,
             int academicYearId,
-            int semester,
+            int period,
             string uploadedById)
         {
             var batch = new ResultSubmissionBatch
@@ -3085,7 +3092,7 @@ namespace SIS.Services.ResultImport
                 AssessmentId = assessmentId,
                 SubmissionType = "AssessmentScores",
                 AcademicYearId = academicYearId,
-                Semester = semester,
+                YearPeriodId = period,
                 UploadedById = uploadedById,
                 UploadedAt = DateTime.Now,
                 ApprovalStatus = WorkflowStatus.Draft,
@@ -3258,7 +3265,7 @@ namespace SIS.Services.ResultImport
         public async Task<CourseImportValidationResult> ValidateCourseContextAsync(
             int courseId,
             int academicYearId,
-            int semester,
+            int period,
             CancellationToken cancellationToken = default)
         {
             var result = new CourseImportValidationResult
@@ -3323,7 +3330,7 @@ namespace SIS.Services.ResultImport
                     .CountAsync(scr =>
                         scr.CourseId == courseId &&
                         scr.AcademicYearId == academicYearId &&
-                        scr.Semester == semester,
+                        scr.YearPeriodId == period,
                         cancellationToken);
 
                 if (enrolledCount == 0)
@@ -3342,7 +3349,7 @@ namespace SIS.Services.ResultImport
                     .CountAsync(r =>
                         r.CourseId == courseId &&
                         r.AcademicYearId == academicYearId &&
-                        r.Semester == semester &&
+                        r.Semester == period &&
                         r.Status == Enums.Status.Published,
                         cancellationToken);
 
@@ -3368,7 +3375,7 @@ namespace SIS.Services.ResultImport
         public async Task<CourseImportStatistics> GetImportStatisticsAsync(
       int courseId,
       int academicYearId,
-      int semester,
+      int period,
       CancellationToken cancellationToken = default)
         {
             try
@@ -3382,7 +3389,7 @@ namespace SIS.Services.ResultImport
                     CourseId = courseId,
                     CourseName = course?.CourseName ?? "Unknown",
                     AcademicYearId = academicYearId,
-                    Semester = semester
+                    Semester = period
                 };
 
                 // Get total enrolled
@@ -3390,7 +3397,7 @@ namespace SIS.Services.ResultImport
                     .CountAsync(scr =>
                         scr.CourseId == courseId &&
                         scr.AcademicYearId == academicYearId &&
-                        scr.Semester == semester,
+                        scr.YearPeriodId == period,
                         cancellationToken);
 
                 // Get assessment count for this course
@@ -3401,7 +3408,7 @@ namespace SIS.Services.ResultImport
                     .Where(s =>
                         s.CourseId == courseId &&
                         s.AcademicYearId == academicYearId &&
-                        s.Semester == semester &&
+                        s.YearPeriodId == period &&
                         s.IsActive)
                     .GroupBy(s => s.StudentId)
                     .Select(g => new

@@ -675,8 +675,8 @@ namespace SIS.Services.Reports
             if (filters.AcademicYearId.HasValue)
                 query = query.Where(x => x.StudentExaminableCourse.AcademicYearId == filters.AcademicYearId.Value);
 
-            if (filters.Semester.HasValue)
-                query = query.Where(x => x.StudentExaminableCourse.Semester == filters.Semester.Value);
+            if (filters.AcademicPeriod.HasValue)
+                query = query.Where(x => x.StudentExaminableCourse.YearPeriodId == filters.AcademicPeriod.Value);
 
             if (filters.SchoolId.HasValue)
                 query = query.Where(x => x.School.Id == filters.SchoolId.Value);
@@ -706,7 +706,7 @@ namespace SIS.Services.Reports
                     where sas.StudentId == item.Student.Id
                        && sas.CourseId == item.Course.Id
                        && sas.AcademicYearId == item.StudentExaminableCourse.AcademicYearId
-                       && sas.Semester == item.StudentExaminableCourse.Semester
+                       && sas.YearPeriodId == item.StudentExaminableCourse.YearPeriodId
                        && sas.IsActive
                        && (rsb.ApprovalStatus == WorkflowStatus.Approved || rsb.ApprovalStatus == WorkflowStatus.Published)
                     group sas by sas.AssessmentId into g
@@ -1453,7 +1453,7 @@ namespace SIS.Services.Reports
                             WHERE rn = 1",
                             entityId,
                             filters.AcademicYearId,
-                            filters.Semester ?? 0,
+                            filters.AcademicPeriod ?? 0,
                             filters.YearOfStudy ?? 0)
                         .AsNoTracking()
                         .ToListAsync();
@@ -1482,7 +1482,7 @@ namespace SIS.Services.Reports
                             WHERE rn = 1",
                             entityId,
                             filters.AcademicYearId,
-                            filters.Semester ?? 0,
+                            filters.AcademicPeriod ?? 0,
                             filters.YearOfStudy ?? 0,
                             studentNumber)
                         .AsNoTracking()
@@ -1663,7 +1663,7 @@ namespace SIS.Services.Reports
                         WHERE rn = 1",
                         student.StudentId_Number,
                         filters.AcademicYearId,
-                        filters.Semester ?? 0,
+                        filters.AcademicPeriod ?? 0,
                         filters.YearOfStudy ?? student.StudentCurrentYear ?? 0)
                     .AsNoTracking()
                     .ToListAsync();
@@ -1737,7 +1737,7 @@ namespace SIS.Services.Reports
                 var progressionRule = await _studentProgressionService.GetApplicableProgressionRuleAsync(
                     student,
                     failedPercentage,
-                    filters.Semester ?? 0,
+                    filters.AcademicPeriod ?? 0,
                     highestAttempt
                 );
 
@@ -1749,7 +1749,7 @@ namespace SIS.Services.Reports
                     School = student.Programme.Department.School.Name,
                     Department = student.Programme.Department.Name,
                     YearOfStudy = student.StudentCurrentYear ?? 0,
-                    Semester = filters.Semester ?? 0,
+                    Semester = filters.AcademicPeriod ?? 0,
                     GPA = gpa,
                     FailedCourses = totalFailedCourses,
                     TotalCourses = totalCourses,
@@ -1810,7 +1810,7 @@ namespace SIS.Services.Reports
                     join uploader in _context.Users on rsb.UploadedById equals uploader.Id
                     where programmeCourses.Contains(rsb.CourseId)
                        && rsb.AcademicYearId == academicYearId
-                       && rsb.Semester == semester
+                       && rsb.YearPeriodId == semester
                     orderby rsb.CourseId descending
                     select new ResultSubmissionBatchSummary
                     {

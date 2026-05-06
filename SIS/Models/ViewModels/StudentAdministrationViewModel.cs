@@ -17,7 +17,8 @@ namespace SIS.Models.ViewModels
         public string ProgrammeLevelName { get; set; }
         public string AcademicYear { get; set; }
         public int CurrentYear { get; set; }
-        public int CurrentSemester { get; set; }
+        public int? CurrentPeriodId { get; set; }
+        public string? CurrentPeriodLabel { get; set; }
         public string StudentStatus { get; set; }
         public string RegistrationStatus { get; set; }
         public bool IsRegistered { get; set; }
@@ -106,7 +107,7 @@ namespace SIS.Models.ViewModels
         public int CurrentYear { get; set; }
 
         [Range(1, 2)]
-        public int CurrentSemester { get; set; }
+        public int CurrentPeriodId { get; set; }
 
         public string ChangeReason { get; set; }
     }
@@ -140,7 +141,7 @@ namespace SIS.Models.ViewModels
         public DateTime? RegistrationDate { get; set; }
         public int RegisteredCoursesCount { get; set; }
         public string AcademicYear { get; set; }
-        public int CurrentSemester { get; set; }
+        public int CurrentYearPeriodId { get; set; }
         public decimal OutstandingFees { get; set; }
         public List<RegisteredCourseInfo> RegisteredCourses { get; set; } = new List<RegisteredCourseInfo>();
     }

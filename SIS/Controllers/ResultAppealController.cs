@@ -101,7 +101,7 @@ namespace SIS.Controllers
         // Student: Get their registered courses for appeal
         [HttpGet]
         [Authorize(Roles = "Student")]
-        public async Task<IActionResult> GetMyCourses(int? academicYearId = null, int? semester = null)
+        public async Task<IActionResult> GetMyCourses(int? academicYearId = null, int? period = null)
         {
             try
             {
@@ -116,21 +116,21 @@ namespace SIS.Controllers
                 }
 
                 var targetAcademicYearId = academicYearId ?? student.AcademicYearId;
-                var targetSemester = semester ?? student.CurrentSemester;
+                var targetPeriod = period ?? student.CurrentYearPeriodId;
 
                 // Get registered courses with grades
                 var courses = await _context.StudentCourseRegistrations
                     .Include(cr => cr.Course)
                     .Where(cr => cr.StudentId == student.Id &&
                                  cr.AcademicYearId == targetAcademicYearId &&
-                                 (targetSemester == null || cr.Semester == targetSemester))
+                                 (targetPeriod == null || cr.YearPeriodId == targetPeriod))
                     .Select(cr => new
                     {
                         cr.Course.Id,
                         cr.Course.CourseCode,
                         cr.Course.CourseName,
                         cr.Course.CourseType,
-                        cr.Semester,
+                        cr.YearPeriodId,
                         cr.AcademicYearId
                     })
                     .Distinct()
@@ -142,14 +142,14 @@ namespace SIS.Controllers
                 {
                     courses = await _context.Courses
                         .Where(c => c.ProgrammeID == student.ProgrammeId &&
-                                    (targetSemester == null || c.SemesterTaken == targetSemester))
+                                    (targetPeriod == null || c.PeriodTakenId == student.CurrentYearPeriod.AcademicPeriod.Id))
                         .Select(c => new
                         {
                             c.Id,
                             c.CourseCode,
                             c.CourseName,
                             c.CourseType,
-                            Semester = c.SemesterTaken,
+                            YearPeriodId = c.PeriodTakenId,
                             AcademicYearId = targetAcademicYearId
                         })
                         .OrderBy(c => c.CourseCode)

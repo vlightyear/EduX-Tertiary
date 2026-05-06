@@ -65,8 +65,8 @@ namespace SIS.Data
         public DbSet<RegistrationFees> RegistrationFees { get; set; }
         public DbSet<ApplicationFees> ApplicationFees { get; set; }
         public DbSet<CourseFees> CourseFees { get; set; }
-         public DbSet<Quotation> Quotations { get; set; }
-          public DbSet<QuotationItem> QuotationItems { get; set; }
+        public DbSet<Quotation> Quotations { get; set; }
+        public DbSet<QuotationItem> QuotationItems { get; set; }
 
 
         // DBset for Payment models
@@ -214,6 +214,10 @@ namespace SIS.Data
         public DbSet<Permission> Permissions { get; set; }
         public DbSet<RolePermission> RolePermissions { get; set; }
 
+        //Academic Records
+        public DbSet<AcademicPeriod> AcademicPeriods { get; set; }
+        public DbSet<AcademicYearPeriod> AcademicYearPeriods { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -303,15 +307,15 @@ namespace SIS.Data
             builder.Entity<StudentExaminableCourse>(entity =>
             {
                 // Primary composite index for report queries
-                entity.HasIndex(sec => new { sec.CourseId, sec.AcademicYearId, sec.Semester })
+                entity.HasIndex(sec => new { sec.CourseId, sec.AcademicYearId, sec.YearPeriodId })
                     .HasDatabaseName("IX_StudentExaminableCourses_Course_Year_Semester");
 
                 // Index for student-based queries
-                entity.HasIndex(sec => new { sec.StudentId, sec.AcademicYearId, sec.Semester })
+                entity.HasIndex(sec => new { sec.StudentId, sec.AcademicYearId, sec.YearPeriodId })
                     .HasDatabaseName("IX_StudentExaminableCourses_Student_Year_Semester");
 
                 // Full composite for unique lookups
-                entity.HasIndex(sec => new { sec.StudentId, sec.CourseId, sec.AcademicYearId, sec.Semester })
+                entity.HasIndex(sec => new { sec.StudentId, sec.CourseId, sec.AcademicYearId, sec.YearPeriodId })
                     .HasDatabaseName("IX_StudentExaminableCourses_Full_Composite");
 
                 // Index for filtering by student
@@ -337,7 +341,7 @@ namespace SIS.Data
                 entity.ToTable("StudentAssessmentScores");
 
                 // Primary composite index for score lookups
-                entity.HasIndex(e => new { e.CourseId, e.AcademicYearId, e.Semester, e.StudentId })
+                entity.HasIndex(e => new { e.CourseId, e.AcademicYearId, e.YearPeriodId, e.StudentId })
                     .HasDatabaseName("IX_StudentAssessmentScores_Course_Year_Semester_Student");
 
                 // Index for batch-based queries
@@ -362,7 +366,7 @@ namespace SIS.Data
                     .HasDatabaseName("IX_StudentAssessmentScores_Course_Assessment");
 
                 // Unique constraint to prevent duplicate scores
-                entity.HasIndex(e => new { e.StudentId, e.CourseId, e.AssessmentId, e.AcademicYearId, e.Semester })
+                entity.HasIndex(e => new { e.StudentId, e.CourseId, e.AssessmentId, e.AcademicYearId, e.YearPeriodId })
                     .IsUnique()
                     .HasFilter("[IsActive] = 1")
                     .HasDatabaseName("UX_StudentAssessmentScores_Unique");
@@ -412,7 +416,7 @@ namespace SIS.Data
             // ResultSubmissionBatch indexes - for workflow and publishing
             builder.Entity<ResultSubmissionBatch>(entity =>
             {
-                entity.HasIndex(rsb => new { rsb.CourseId, rsb.AcademicYearId, rsb.Semester })
+                entity.HasIndex(rsb => new { rsb.CourseId, rsb.AcademicYearId, rsb.YearPeriodId })
                     .HasDatabaseName("IX_ResultSubmissionBatches_Course_Year_Semester");
 
                 entity.HasIndex(rsb => rsb.ApprovalStatus)
@@ -442,7 +446,7 @@ namespace SIS.Data
                 entity.HasIndex(c => c.ProgrammeID)
                     .HasDatabaseName("IX_Courses_ProgrammeID");
 
-                entity.HasIndex(c => new { c.ProgrammeID, c.YearTaken, c.SemesterTaken })
+                entity.HasIndex(c => new { c.ProgrammeID, c.YearTaken, c.PeriodTakenId })
                     .HasDatabaseName("IX_Courses_Programme_Year_Semester");
             });
 
@@ -602,7 +606,7 @@ namespace SIS.Data
                 .HasOne(fc => fc.AcademicYear)
                 .WithMany()
                 .HasForeignKey(fc => fc.AcademicYearId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.NoAction);
 
             builder.Entity<FeeConfiguration>()
                 .HasOne(fc => fc.School)
@@ -911,8 +915,8 @@ namespace SIS.Data
                     .HasForeignKey(si => si.AcademicYearId)
                     .OnDelete(DeleteBehavior.NoAction);
 
-                entity.HasIndex(e => new { e.StudentId, e.AcademicYearId, e.Semester })
-                    .HasDatabaseName("IX_StudentInvoice_Student_AcademicYear_Semester");
+                entity.HasIndex(e => new { e.StudentId, e.AcademicYearId, e.YearPeriodId })
+                    .HasDatabaseName("IX_StudentInvoice_Student_AcademicYear_YearPeriod");
 
                 entity.HasIndex(e => e.InvoiceReference)
                     .IsUnique()
@@ -1169,8 +1173,8 @@ namespace SIS.Data
                     .HasForeignKey(sd => sd.AcademicYearId)
                     .OnDelete(DeleteBehavior.Restrict);
 
-                entity.HasIndex(sd => new { sd.StudentId, sd.CourseId, sd.AcademicYearId, sd.Semester })
-                    .HasDatabaseName("IX_StudentDisqualifications_Student_Course_Year_Semester");
+                entity.HasIndex(sd => new { sd.StudentId, sd.CourseId, sd.AcademicYearId, sd.YearPeriodId })
+                    .HasDatabaseName("IX_StudentDisqualifications_Student_Course_Year_Period");
 
                 entity.HasIndex(sd => sd.Status)
                     .HasDatabaseName("IX_StudentDisqualifications_Status");
@@ -1388,6 +1392,53 @@ namespace SIS.Data
 
             builder.Entity<PaymentAllocation>()
                 .HasIndex(pa => pa.StudentInvoiceId);
+
+            // Unique: one period template per year
+            builder.Entity<AcademicYearPeriod>()
+                .HasIndex(yp => new { yp.AcademicYearId, yp.AcademicPeriodId })
+                .IsUnique();
+
+            // AcademicYear → YearPeriods
+            builder.Entity<AcademicYearPeriod>()
+                .HasOne(yp => yp.AcademicYear)
+                .WithMany(y => y.YearPeriods)
+                .HasForeignKey(yp => yp.AcademicYearId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // AcademicPeriod → YearPeriods (Restrict — don't cascade delete a template)
+            builder.Entity<AcademicYearPeriod>()
+                .HasOne(yp => yp.AcademicPeriod)
+                .WithMany(p => p.YearPeriods)
+                .HasForeignKey(yp => yp.AcademicPeriodId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Student → CurrentYearPeriod
+            builder.Entity<Student>()
+                .HasOne(s => s.CurrentYearPeriod)
+                .WithMany()
+                .HasForeignKey(s => s.CurrentYearPeriodId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // StudentDisqualification → YearPeriod
+            builder.Entity<StudentDisqualification>()
+                .HasOne(d => d.YearPeriod)
+                .WithMany()
+                .HasForeignKey(d => d.YearPeriodId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // FeeConfiguration → YearPeriod
+            builder.Entity<FeeConfiguration>()
+                .HasOne(f => f.YearPeriod)
+                .WithMany()
+                .HasForeignKey(f => f.YearPeriodId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // Course → PeriodTaken
+            builder.Entity<Course>()
+                .HasOne(c => c.PeriodTaken)
+                .WithMany()
+                .HasForeignKey(c => c.PeriodTakenId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             // Seed default permissions
             //SeedPermissions(builder);

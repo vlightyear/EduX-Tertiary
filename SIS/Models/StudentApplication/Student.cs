@@ -17,7 +17,8 @@ namespace SIS.Models.StudentApplication
     {
         public int Id { get; set; }
 
-        // Personal details
+        // ── Personal details ──────────────────────────────────────────────────
+
         public bool IsForeigner { get; set; }
         public required string ApplicationReferenceNumber { get; set; }
         public required string FullName { get; set; }
@@ -31,9 +32,10 @@ namespace SIS.Models.StudentApplication
         public required string NrcOrPassportNumber { get; set; }
         public required string NrcOrPassportCopy { get; set; }
 
-        // Student Identity Details
-        public string? StudyPermission { get; set; }  // Study Permit for International Students
-        public required string StudentId_Number { get; set; } // Unique student ID
+        // ── Identity & status ─────────────────────────────────────────────────
+
+        public string? StudyPermission { get; set; }
+        public required string StudentId_Number { get; set; }
         public required string Username { get; set; }
         public required Status StudentStatus { get; set; }
         public bool IsAdmitted { get; set; } = false;
@@ -41,10 +43,38 @@ namespace SIS.Models.StudentApplication
         public bool IsRegistered { get; set; }
         public Status RegistrationStatus { get; set; }
         public DateTime? RegistrationDate { get; set; }
-        public int? StudentCurrentYear { get; set; }
-        public int? CurrentSemester { get; set; }
 
-        // Foreign Key Properties - Relationships to other tables
+        /// <summary>Year of study the student is currently in (1st year, 2nd year, etc.).</summary>
+        public int? StudentCurrentYear { get; set; }
+
+        // ── Current period ────────────────────────────────────────────────────
+
+        /// <summary>
+        /// FK to the <see cref="AcademicYearPeriod"/> the student is currently enrolled in.
+        /// This is a year+period combination (e.g. "2025/2026 – Semester 1"), not just a
+        /// period template — so it already implies the academic year.
+        /// Null = not currently assigned to an active period.
+        /// </summary>
+        [Display(Name = "Current Period")]
+        public int? CurrentYearPeriodId { get; set; }
+
+        [ForeignKey(nameof(CurrentYearPeriodId))]
+        public virtual AcademicYearPeriod? CurrentYearPeriod { get; set; }
+
+        /// <summary>Convenience accessor — returns the period number (1, 2, 3) or null.</summary>
+        [NotMapped]
+        public int? CurrentPeriodNumber => CurrentYearPeriod?.PeriodNumber;
+
+        /// <summary>Returns a label such as "Semester 1" or "Term 2".</summary>
+        [NotMapped]
+        public string CurrentPeriodLabel => CurrentYearPeriod?.PeriodName ?? "—";
+
+        /// <summary>Returns the full label, e.g. "2025/2026 – Semester 1".</summary>
+        [NotMapped]
+        public string CurrentYearPeriodLabel => CurrentYearPeriod?.FullLabel ?? "—";
+
+        // ── Programme / enrolment FKs ─────────────────────────────────────────
+
         public int ProgrammeLevelId { get; set; }
         public ProgramLevel ProgrammeLevel { get; set; } = null!;
 
@@ -60,6 +90,8 @@ namespace SIS.Models.StudentApplication
         public int AcademicYearId { get; set; }
         public AcademicYear AcademicYear { get; set; } = null!;
 
+        // ── Address / kin / former school ─────────────────────────────────────
+
         public int? AddressId { get; set; }
         public StudentAddress? StudentAddress { get; set; }
 
@@ -69,41 +101,49 @@ namespace SIS.Models.StudentApplication
         public int? FormerSchoolId { get; set; }
         public StudFormerSchool? FormerSchool { get; set; }
 
-        // Navigation properties for SubjectGrades
+        // ── Grades ────────────────────────────────────────────────────────────
+
         public ICollection<CourseGrades> CourseGrades { get; set; } = new List<CourseGrades>();
         public ICollection<StudentGceSubjects> SubjectGrades { get; set; } = new List<StudentGceSubjects>();
 
-        // Financial Management
+        // ── Finance ───────────────────────────────────────────────────────────
+
         [Column(TypeName = "decimal(18,2)")]
-        public decimal OutstandingFees { get; set; }  // Track outstanding fees
+        public decimal OutstandingFees { get; set; }
         public ICollection<FinancialStatement> FinancialStatements { get; set; } = new List<FinancialStatement>();
 
-        // Requests
+        // ── Requests ──────────────────────────────────────────────────────────
+
         public ICollection<AcademicRequest> AcademicRequests { get; set; } = new List<AcademicRequest>();
 
-        // Foreign students specific
-        public bool HasAccommodationClearance { get; set; } = false;  // Track accommodation clearance status
+        // ── Accommodation ─────────────────────────────────────────────────────
+
+        public bool HasAccommodationClearance { get; set; } = false;
         public int? BedId { get; set; }
         [ForeignKey(nameof(BedId))]
-        public BedSpace BedSpace { get; set; }
-        public DateTime? BedAllocationEndDate {  get; set; }
-        public bool IsBlackListedFromAccommodation {  get; set; }
+        public BedSpace BedSpace { get; set; } = null!;
+        public DateTime? BedAllocationEndDate { get; set; }
+        public bool IsBlackListedFromAccommodation { get; set; }
         public string? BlackListedFromAccommodationReason { get; set; }
 
-        // Payment Statuses and Conditions
+        // ── Payment statuses ──────────────────────────────────────────────────
+
         public bool HasPaidFullFees { get; set; } = false;
         public bool HasPaid75PercentFees { get; set; } = false;
 
+        // ── Documents & access ────────────────────────────────────────────────
+
         public string? PassportPhotoPath { get; set; }
         public DateTime? IdCardPrintedDate { get; set; }
+        public string? ClassPass { get; set; }
 
-        // Registration-related process
-        public string? ClassPass { get; set; }  // Class pass for the student
+        // ── Collections ───────────────────────────────────────────────────────
+
         public ICollection<Course> RegisteredCourses { get; set; } = new List<Course>();
-        public virtual ICollection<ChapterProgress> ChapterProgresses { get; set; }
-        public virtual List<StudyPermit> StudyPermits { get; set; }
+        public virtual ICollection<ChapterProgress> ChapterProgresses { get; set; } = new List<ChapterProgress>();
+        public virtual List<StudyPermit> StudyPermits { get; set; } = new();
         public virtual List<OnlinePayments> OnlinePayments { get; set; } = new();
-        public List<StudentDisqualification> DisQulifications { get; set; }= new();
+        public List<StudentDisqualification> DisQulifications { get; set; } = new();
         public List<ResultAppeal> ResultAppeals { get; set; } = new();
     }
 
@@ -114,31 +154,43 @@ namespace SIS.Models.StudentApplication
 
         [Required(ErrorMessage = "Student is required.")]
         public int StudentId { get; set; }
-
-        [ForeignKey("StudentId")]
+        [ForeignKey(nameof(StudentId))]
         public Student? Student { get; set; }
 
         [Required(ErrorMessage = "Course is required.")]
         public int CourseId { get; set; }
-
-        [ForeignKey("CourseId")]
+        [ForeignKey(nameof(CourseId))]
         public Course? Course { get; set; }
 
         [Required(ErrorMessage = "Academic Year is required.")]
         public int AcademicYearId { get; set; }
-
-        [ForeignKey("AcademicYearId")]
+        [ForeignKey(nameof(AcademicYearId))]
         public AcademicYear? AcademicYear { get; set; }
 
-        [Required(ErrorMessage = "Semester is required.")]
-        [Range(1, 2, ErrorMessage = "Semester must be 1 or 2.")]
-        public int Semester { get; set; }
+        // ── Period reference ──────────────────────────────────────────────────
 
-        [Required(ErrorMessage = "Disqualification type is required.")]
+        /// <summary>
+        /// FK to the specific <see cref="AcademicYearPeriod"/> in which the incident occurred.
+        /// Using the year+period combination gives us both the period name and the exact
+        /// date range, which is useful for audit trails.
+        /// </summary>
+        [Required(ErrorMessage = "Academic period is required.")]
+        [Display(Name = "Academic Period")]
+        public int YearPeriodId { get; set; }
+
+        [ForeignKey(nameof(YearPeriodId))]
+        public virtual AcademicYearPeriod? YearPeriod { get; set; }
+
+        [NotMapped]
+        public string PeriodLabel => YearPeriod?.FullLabel ?? "—";
+
+        // ── Disqualification details ──────────────────────────────────────────
+
+        [Required]
         [StringLength(100)]
         public string DisqualificationType { get; set; } = "Malpractice";
 
-        [Required(ErrorMessage = "Description is required.")]
+        [Required]
         [StringLength(2000)]
         public string Description { get; set; } = string.Empty;
 
@@ -151,49 +203,31 @@ namespace SIS.Models.StudentApplication
         [Required]
         public DateTime DisqualificationDate { get; set; } = DateTime.Now.AddHours(2);
 
-        // Status: Pending, Confirmed, Appealed, Overturned, Completed
         [Required]
         [StringLength(50)]
         public string Status { get; set; } = "Pending";
 
-        // Penalty details
+        // ── Penalty ───────────────────────────────────────────────────────────
+
         [StringLength(500)]
         public string? PenaltyDescription { get; set; }
-
-        // Duration of penalty in semesters (if applicable)
         public int? PenaltyDurationSemesters { get; set; }
-
-        // If the student is banned from the course
         public bool IsBannedFromCourse { get; set; } = false;
-
-        // If the student is suspended from the institution
         public bool IsSuspended { get; set; } = false;
-
-        // Number of years a student is suspended
         public int YearsSuspended { get; set; } = 2;
 
-        // Appeal information
+        // ── Appeal ────────────────────────────────────────────────────────────
+
         public DateTime? AppealDate { get; set; }
-
-        [StringLength(2000)]
-        public string? AppealDescription { get; set; }
-
-        [StringLength(50)]
-        public string? AppealStatus { get; set; } // Pending, Approved, Rejected
-
-        [StringLength(2000)]
-        public string? AppealDecision { get; set; }
-
+        [StringLength(2000)] public string? AppealDescription { get; set; }
+        [StringLength(50)] public string? AppealStatus { get; set; }
+        [StringLength(2000)] public string? AppealDecision { get; set; }
         public DateTime? AppealDecisionDate { get; set; }
 
-        // Resolution
+        // ── Resolution ────────────────────────────────────────────────────────
+
         public DateTime? ResolvedDate { get; set; }
-
-        [StringLength(2000)]
-        public string? ResolutionNotes { get; set; }
-
-        // Soft delete
+        [StringLength(2000)] public string? ResolutionNotes { get; set; }
         public DateTime? DeletedAt { get; set; }
     }
 }
-

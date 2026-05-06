@@ -11,7 +11,8 @@
         public bool IsSelected { get; set; }
         public bool IsCarryover { get; set; }
         public int YearTaken { get; set; }
-        public int SemesterTaken { get; set; }
+        public int PeriodTakenId { get; set; }
+        public string PeriodTakenLabel { get; set; }
         public string? CarryoverReason { get; set; }
     }
 

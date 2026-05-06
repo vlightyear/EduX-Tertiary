@@ -25,7 +25,8 @@
         public string CourseDescription { get; set; } = string.Empty;
         public string CourseType { get; set; } = string.Empty;
         public int YearTaken { get; set; }
-        public int SemesterTaken { get; set; }
+        public int PeriodTakenId { get; set; }
+        public string PeriodTakenLabel { get; set; }
         public bool IsMandatory { get; set; }
         public bool IsExaminable { get; set; }
         public int PassMark { get; set; }

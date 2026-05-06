@@ -184,7 +184,7 @@ public static class StudentTools
         var student = _context.Students.AsNoTracking().FirstOrDefault(s => s.Id == studentId);
         // Get student invoices (debits)
         var invoices = _context.StudentInvoices
-            .Where(si => si.StudentId == studentId && si.DeletedAt == null && si.AcademicYearId == student.AcademicYearId && si.Semester == student.CurrentSemester)
+            .Where(si => si.StudentId == studentId && si.DeletedAt == null && si.AcademicYearId == student.AcademicYearId && si.YearPeriodId == student.CurrentYearPeriodId)
             .ToList();
 
         decimal balance = 0;

@@ -163,7 +163,7 @@ namespace SIS.Controllers.AccommodationControllers
                     status = b.Status.ToString(),
                     isSpecialReservation = b.IsSpecialReservation,
                     currentStudentYear = b.CurrentStudentYear,
-                    currentStudentSemister = b.CurrentStudentSemister,
+                    currentStudentPeriodId = b.CurrentStudentPeriodId,
                     studentId = activeAllocations.ContainsKey(b.BedId)
                         ? activeAllocations[b.BedId].Application.StudentId
                         : (int?)null,
@@ -344,7 +344,7 @@ namespace SIS.Controllers.AccommodationControllers
         // POST: Room/AddBedSpace
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AddBedSpace(int RoomId, string BedIdentifier, int Status, bool IsSpecialReservation, int CurrentStudentYear, int CurrentStudentSemister)
+        public async Task<IActionResult> AddBedSpace(int RoomId, string BedIdentifier, int Status, bool IsSpecialReservation, int CurrentStudentYear, int CurrentStudentPeriodId)
         {
             try
             {
@@ -366,7 +366,7 @@ namespace SIS.Controllers.AccommodationControllers
                     Status = (Status)Status,
                     IsSpecialReservation = IsSpecialReservation,
                     CurrentStudentYear = CurrentStudentYear,
-                    CurrentStudentSemister = CurrentStudentSemister,
+                    CurrentStudentPeriodId = CurrentStudentPeriodId,
                     CreatedBy = User.Identity?.Name ?? "System",
                     CreatedAt = DateTime.Now,
                     UpdatedBy = User.Identity?.Name ?? "System",
@@ -387,7 +387,7 @@ namespace SIS.Controllers.AccommodationControllers
         // POST: Room/EditBedSpace/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditBedSpace(int BedId, string BedIdentifier, int Status, bool IsSpecialReservation, int CurrentStudentYear, int CurrentStudentSemister)
+        public async Task<IActionResult> EditBedSpace(int BedId, string BedIdentifier, int Status, bool IsSpecialReservation, int CurrentStudentYear, int CurrentStudentPeriodId)
         {
             try
             {
@@ -406,7 +406,7 @@ namespace SIS.Controllers.AccommodationControllers
                 bedSpace.Status = (Status)Status;
                 bedSpace.IsSpecialReservation = IsSpecialReservation;
                 bedSpace.CurrentStudentYear = CurrentStudentYear;
-                bedSpace.CurrentStudentSemister = CurrentStudentSemister;
+                bedSpace.CurrentStudentPeriodId = CurrentStudentPeriodId;
                 bedSpace.UpdatedBy = User.Identity?.Name ?? "System";
                 bedSpace.UpdatedAt = DateTime.Now;
 
@@ -454,7 +454,7 @@ namespace SIS.Controllers.AccommodationControllers
                         Status = bed.Status,
                         IsSpecialReservation = bed.IsSpecialReservation,
                         CurrentStudentYear = bed.CurrentStudentYear,
-                        CurrentStudentSemister = bed.CurrentStudentSemister,
+                        CurrentStudentPeriodId = bed.CurrentStudentPeriodId,
                         CreatedBy = User.Identity?.Name ?? "System",
                         CreatedAt = DateTime.Now,
                         UpdatedBy = User.Identity?.Name ?? "System",
@@ -1022,6 +1022,6 @@ namespace SIS.Controllers.AccommodationControllers
         public Status Status { get; set; }
         public bool IsSpecialReservation { get; set; }
         public int CurrentStudentYear { get; set; }
-        public int CurrentStudentSemister { get; set; }
+        public int CurrentStudentPeriodId { get; set; }
     }
 }

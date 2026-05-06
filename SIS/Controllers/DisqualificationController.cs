@@ -67,7 +67,7 @@ namespace SIS.Controllers
                         ProgrammeName = s.Programme != null ? s.Programme.Name : "N/A",
                         SchoolName = s.School != null ? s.School.Name : "N/A",
                         AcademicYear = s.AcademicYear != null ? s.AcademicYear.YearValue : "N/A",
-                        s.CurrentSemester,
+                        s.CurrentYearPeriodId,
                         s.AcademicYearId,
                         s.ProgrammeId,
                         s.StudentCurrentYear
@@ -92,7 +92,7 @@ namespace SIS.Controllers
 
         // Get student's registered courses
         [HttpGet]
-        public async Task<IActionResult> GetStudentCourses(int studentId, int? academicYearId = null, int? semester = null)
+        public async Task<IActionResult> GetStudentCourses(int studentId, int? academicYearId = null, int? period = null)
         {
             try
             {
@@ -107,7 +107,7 @@ namespace SIS.Controllers
 
                 // Get the target academic year and semester
                 var targetAcademicYearId = academicYearId ?? student.AcademicYearId;
-                var targetSemester = semester ?? student.CurrentSemester;
+                var targetPeriod = period ?? student.CurrentYearPeriod.AcademicPeriod.Id;
 
                 // Get registered courses for the student
                 var registeredCourses = await _context.StudentCourseRegistrations
@@ -115,7 +115,7 @@ namespace SIS.Controllers
                     .ThenInclude(c => c.Programme)
                     .Where(cr => cr.StudentId == studentId &&
                                  cr.AcademicYearId == targetAcademicYearId &&
-                                 (targetSemester == null || cr.Semester == targetSemester))
+                                 (targetPeriod == null || cr.YearPeriodId == targetPeriod))
                     .Select(cr => new
                     {
                         cr.Course.Id,
@@ -123,9 +123,9 @@ namespace SIS.Controllers
                         cr.Course.CourseName,
                         cr.Course.CourseType,
                         cr.Course.YearTaken,
-                        cr.Course.SemesterTaken,
+                        cr.Course.PeriodTakenId,
                         ProgrammeName = cr.Course.Programme != null ? cr.Course.Programme.Name : "N/A",
-                        cr.Semester,
+                        cr.YearPeriodId,
                         cr.AcademicYearId
                     })
                     .Distinct()
@@ -138,7 +138,7 @@ namespace SIS.Controllers
                     var programmeCourses = await _context.Courses
                         .Include(c => c.Programme)
                         .Where(c => c.ProgrammeID == student.ProgrammeId &&
-                                    (targetSemester == null || c.SemesterTaken == targetSemester))
+                                    (targetPeriod == null || c.PeriodTakenId == targetPeriod))
                         .Select(c => new
                         {
                             c.Id,
@@ -146,9 +146,9 @@ namespace SIS.Controllers
                             c.CourseName,
                             c.CourseType,
                             c.YearTaken,
-                            c.SemesterTaken,
+                            c.PeriodTakenId,
                             ProgrammeName = c.Programme != null ? c.Programme.Name : "N/A",
-                            Semester = c.SemesterTaken,
+                            Period = c.PeriodTakenId,
                             AcademicYearId = targetAcademicYearId
                         })
                         .OrderBy(c => c.CourseCode)
@@ -182,7 +182,7 @@ namespace SIS.Controllers
                         c.CourseType,
                         c.CourseDescription,
                         c.YearTaken,
-                        c.SemesterTaken,
+                        c.PeriodTakenId,
                         ProgrammeName = c.Programme != null ? c.Programme.Name : "N/A"
                     })
                     .FirstOrDefaultAsync();
@@ -218,7 +218,7 @@ namespace SIS.Controllers
                         CourseCode = d.Course != null ? d.Course.CourseCode : "N/A",
                         CourseName = d.Course != null ? d.Course.CourseName : "N/A",
                         AcademicYear = d.AcademicYear != null ? d.AcademicYear.YearValue : "N/A",
-                        d.Semester,
+                        d.YearPeriodId,
                         d.DisqualificationType,
                         d.Description,
                         d.IncidentDate,
@@ -260,7 +260,7 @@ namespace SIS.Controllers
                         CourseCode = d.Course != null ? d.Course.CourseCode : "N/A",
                         CourseName = d.Course != null ? d.Course.CourseName : "N/A",
                         d.AcademicYearId,
-                        d.Semester,
+                        d.YearPeriodId,
                         d.DisqualificationType,
                         d.Description,
                         d.EvidenceReference,
@@ -310,7 +310,7 @@ namespace SIS.Controllers
                         d.StudentId == model.StudentId &&
                         d.CourseId == model.CourseId &&
                         d.AcademicYearId == model.AcademicYearId &&
-                        d.Semester == model.Semester &&
+                        d.YearPeriodId == model.YearPeriodId &&
                         d.DeletedAt == null);
 
                 if (existingDisqualification != null)
@@ -374,7 +374,7 @@ namespace SIS.Controllers
                 // Update properties
                 disqualification.CourseId = model.CourseId;
                 disqualification.AcademicYearId = model.AcademicYearId;
-                disqualification.Semester = model.Semester;
+                disqualification.YearPeriodId = model.YearPeriodId;
                 disqualification.DisqualificationType = model.DisqualificationType;
                 disqualification.Description = model.Description;
                 disqualification.EvidenceReference = model.EvidenceReference;
@@ -540,7 +540,7 @@ namespace SIS.Controllers
 
         // Get statistics for dashboard
         [HttpGet]
-        public async Task<IActionResult> GetStatistics(int? academicYearId = null, int? semester = null, string? status = null)
+        public async Task<IActionResult> GetStatistics(int? academicYearId = null, int? yearPeriod = null, string? status = null)
         {
             try
             {
@@ -553,9 +553,9 @@ namespace SIS.Controllers
                     query = query.Where(d => d.AcademicYearId == academicYearId.Value);
                 }
 
-                if (semester.HasValue)
+                if (yearPeriod.HasValue)
                 {
-                    query = query.Where(d => d.Semester == semester.Value);
+                    query = query.Where(d => d.YearPeriodId == yearPeriod.Value);
                 }
 
                 var total = await query.CountAsync();
@@ -604,7 +604,7 @@ namespace SIS.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAllDisqualifications(
             int? academicYearId = null,
-            int? semester = null,
+            int? yearPeriod = null,
             string? status = null,
             string? type = null,
             string? searchTerm = null,
@@ -625,9 +625,9 @@ namespace SIS.Controllers
                     query = query.Where(d => d.AcademicYearId == academicYearId.Value);
                 }
 
-                if (semester.HasValue)
+                if (yearPeriod.HasValue)
                 {
-                    query = query.Where(d => d.Semester == semester.Value);
+                    query = query.Where(d => d.YearPeriodId == yearPeriod.Value);
                 }
 
                 if (!string.IsNullOrEmpty(status))
@@ -664,7 +664,7 @@ namespace SIS.Controllers
                         CourseCode = d.Course != null ? d.Course.CourseCode : "N/A",
                         CourseName = d.Course != null ? d.Course.CourseName : "N/A",
                         AcademicYear = d.AcademicYear != null ? d.AcademicYear.YearValue : "N/A",
-                        d.Semester,
+                        d.YearPeriodId,
                         d.DisqualificationType,
                         d.Status,
                         d.IsBannedFromCourse,
@@ -784,7 +784,7 @@ namespace SIS.Controllers
                         CourseCode = d.Course != null ? d.Course.CourseCode : "N/A",
                         CourseName = d.Course != null ? d.Course.CourseName : "N/A",
                         AcademicYear = d.AcademicYear != null ? d.AcademicYear.YearValue : "N/A",
-                        d.Semester,
+                        d.YearPeriodId,
                         d.DisqualificationType,
                         d.YearsSuspended,
                         d.DisqualificationDate,

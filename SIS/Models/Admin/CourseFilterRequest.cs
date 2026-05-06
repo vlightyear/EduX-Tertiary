@@ -28,7 +28,7 @@
         public string CourseName { get; set; }
         public string CourseType { get; set; }
         public int YearTaken { get; set; }
-        public int SemesterTaken { get; set; }
+        public string PeriodTaken { get; set; }
         public bool IsMandatory { get; set; }
         public string ProgrammeName { get; set; }
         public string SchoolName { get; set; }

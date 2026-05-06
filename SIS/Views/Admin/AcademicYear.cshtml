@@ -24,7 +24,7 @@
                     <!-- Search and Filter Bar -->
                     <div class="mb-4 flex gap-4">
                         <div class="flex-1">
-                            <input type="text" id="yearSearch" placeholder="Search academic years..." 
+                            <input type="text" id="yearSearch" placeholder="Search academic years..."
                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
                         </div>
                         <select id="statusFilter" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
@@ -36,54 +36,20 @@
                             <option value="all">All Types</option>
                             <option value="Annual">Annual</option>
                             <option value="Semester">Semester</option>
+                            <option value="Term">Term</option>
                         </select>
                     </div>
 
                     <table id="academicYearTable" class="w-full text-sm text-secondary-600">
                         <thead>
                             <tr class="bg-gray-50 text-left border-b">
-                                <th class="px-6 py-4 cursor-pointer" data-sort="index">
-                                    <span class="flex items-center">
-                                        #
-                                        <svg class="w-4 h-4 ms-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 15 4 4 4-4m0-6-4-4-4 4" />
-                                        </svg>
-                                    </span>
-                                </th>
-                                <th class="px-6 py-4 cursor-pointer" data-sort="year">
-                                    <span class="flex items-center">
-                                        Academic Year
-                                        <svg class="w-4 h-4 ms-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 15 4 4 4-4m0-6-4-4-4 4" />
-                                        </svg>
-                                    </span>
-                                </th>
-                                <th class="px-6 py-4 cursor-pointer" data-sort="type">
-                                    <span class="flex items-center">
-                                        Type
-                                        <svg class="w-4 h-4 ms-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 15 4 4 4-4m0-6-4-4-4 4" />
-                                        </svg>
-                                    </span>
-                                </th>
-                                <th class="px-6 py-4 cursor-pointer" data-sort="status">
-                                    <span class="flex items-center">
-                                        Status
-                                        <svg class="w-4 h-4 ms-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 15 4 4 4-4m0-6-4-4-4 4" />
-                                        </svg>
-                                    </span>
-                                </th>
-                                <th class="px-6 py-4">Period</th>
-                                <th class="px-6 py-4 cursor-pointer" data-sort="nextYear">
-                                    <span class="flex items-center">
-                                        Next Year
-                                        <svg class="w-4 h-4 ms-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 15 4 4 4-4m0-6-4-4-4 4" />
-                                        </svg>
-                                    </span>
-                                </th>
-                                <th class="px-6 py-4">Actions</th>
+                                <th class="px-4 py-4 cursor-pointer" data-sort="index">#</th>
+                                <th class="px-4 py-4 cursor-pointer" data-sort="year">Academic Year</th>
+                                <th class="px-4 py-4 cursor-pointer" data-sort="type">Type</th>
+                                <th class="px-4 py-4 cursor-pointer" data-sort="status">Status</th>
+                                <th class="px-4 py-4">Periods</th>
+                                <th class="px-4 py-4 cursor-pointer" data-sort="nextYear">Next Year</th>
+                                <th class="px-4 py-4">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -92,51 +58,91 @@
                                 int index = 1;
                                 foreach (var academic in Model)
                                 {
+                                    var periods = academic.YearPeriods?
+                                        .OrderBy(yp => yp.AcademicPeriod?.PeriodNumber)
+                                        .ToList() ?? new List<SIS.Models.Registration.AcademicYearPeriod>();
+
                                     <tr class="border-b hover:bg-gray-50 transition-colors">
-                                        <td class="px-6 py-4">@index</td>
-                                        <td class="px-6 py-4 font-medium text-gray-900">@academic.YearValue</td>
-                                        <td class="px-6 py-4">
+                                        <td class="px-4 py-4">@index</td>
+
+                                        <td class="px-4 py-4 font-medium text-gray-900">@academic.YearValue</td>
+
+                                        <!-- Type badge -->
+                                        <td class="px-4 py-4">
                                             @if (academic.AcademicType == SIS.Models.Registration.AcademicType.Semester)
                                             {
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                    <i class="material-icons text-sm mr-1">calendar_view_week</i> Semester
+                                                    <i class="material-icons text-sm mr-1">calendar_view_week</i>Semester
+                                                </span>
+                                            }
+                                            else if (academic.AcademicType == SIS.Models.Registration.AcademicType.Term)
+                                            {
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                                    <i class="material-icons text-sm mr-1">date_range</i>Term
                                                 </span>
                                             }
                                             else
                                             {
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                    <i class="material-icons text-sm mr-1">calendar_view_month</i> Annual
+                                                    <i class="material-icons text-sm mr-1">calendar_view_month</i>Annual
                                                 </span>
                                             }
                                         </td>
-                                        <td class="px-6 py-4">
+
+                                        <!-- Status badge -->
+                                        <td class="px-4 py-4">
                                             @if (academic.IsActive)
                                             {
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary-100 text-secondary-800">
-                                                    <i class="material-icons text-sm mr-1">check_circle</i> Active
+                                                    <i class="material-icons text-sm mr-1">check_circle</i>Active
                                                 </span>
                                             }
                                             else
                                             {
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                                    <i class="material-icons text-sm mr-1">cancel</i> Inactive
+                                                    <i class="material-icons text-sm mr-1">cancel</i>Inactive
                                                 </span>
                                             }
                                         </td>
-                                        <td class="px-6 py-4 text-xs">
-                                            <div class="text-secondary-600">
-                                                @academic.StartDate.ToString("MMM dd, yyyy") - @academic.EndDate.ToString("MMM dd, yyyy")
+
+                                        <!-- Periods cell -->
+                                        <td class="px-4 py-4">
+                                            <div class="flex flex-col gap-1">
+                                                @if (periods.Any())
+                                                {
+                                                    @foreach (var yp in periods)
+                                                    {
+                                                        <span class="inline-flex items-center gap-1 text-xs @(yp.IsActive ? "text-primary-700 font-semibold" : "text-gray-500")">
+                                                            @if (yp.IsActive)
+                                                            {
+                                                                <i class="material-icons text-xs text-primary-600">radio_button_checked</i>
+                                                            }
+                                                            else
+                                                            {
+                                                                <i class="material-icons text-xs text-gray-400">radio_button_unchecked</i>
+                                                            }
+                                                            @yp.AcademicPeriod?.PeriodName
+                                                            <span class="text-gray-400 font-normal">
+                                                                (@yp.StartDate.ToString("MMM d") – @yp.EndDate.ToString("MMM d"))
+                                                            </span>
+                                                        </span>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-xs text-amber-600 italic flex items-center gap-1">
+                                                        <i class="material-icons text-xs">warning</i> No periods set
+                                                    </span>
+                                                }
+                                                <button onclick="showManagePeriodsModal('@academic.YearId', '@academic.YearValue', @((int)academic.AcademicType))"
+                                                        class="mt-1 inline-flex items-center px-2 py-0.5 text-xs text-primary-600 bg-primary-50 hover:bg-primary-100 rounded transition-colors w-fit">
+                                                    <i class="material-icons text-xs mr-1">tune</i>Manage
+                                                </button>
                                             </div>
-                                            @if (academic.AcademicType == SIS.Models.Registration.AcademicType.Semester && 
-                                                 academic.Semester1StartDate.HasValue && academic.Semester2EndDate.HasValue)
-                                            {
-                                                <div class="mt-1 text-gray-500">
-                                                    <div>Sem 1: @academic.Semester1StartDate.Value.ToString("MMM dd") - @academic.Semester1EndDate.Value.ToString("MMM dd")</div>
-                                                    <div>Sem 2: @academic.Semester2StartDate.Value.ToString("MMM dd") - @academic.Semester2EndDate.Value.ToString("MMM dd")</div>
-                                                </div>
-                                            }
                                         </td>
-                                        <td class="px-6 py-4 text-xs">
+
+                                        <!-- Next Year -->
+                                        <td class="px-4 py-4 text-xs">
                                             @if (academic.NextAcademicYear != null)
                                             {
                                                 <div class="flex items-center text-primary-600">
@@ -149,35 +155,29 @@
                                                 <span class="text-gray-400 italic">Not set</span>
                                             }
                                         </td>
-                                        <td class="px-6 py-4">
+
+                                        <!-- Actions -->
+                                        <td class="px-4 py-4">
                                             <div class="flex space-x-2">
                                                 <button onclick="showUpdateAcademicYearModal({
-                                                            yearId: '@academic.YearId',
-                                                            yearValue: '@academic.YearValue',
-                                                            academicType: '@((int)academic.AcademicType)',
-                                                            startDate: '@academic.StartDate.ToString("yyyy-MM-dd")',
-                                                            endDate: '@academic.EndDate.ToString("yyyy-MM-dd")',
-                                                            semester1StartDate: '@(academic.Semester1StartDate.HasValue ? academic.Semester1StartDate.Value.ToString("yyyy-MM-dd") : "")',
-                                                            semester1EndDate: '@(academic.Semester1EndDate.HasValue ? academic.Semester1EndDate.Value.ToString("yyyy-MM-dd") : "")',
-                                                            semester2StartDate: '@(academic.Semester2StartDate.HasValue ? academic.Semester2StartDate.Value.ToString("yyyy-MM-dd") : "")',
-                                                            semester2EndDate: '@(academic.Semester2EndDate.HasValue ? academic.Semester2EndDate.Value.ToString("yyyy-MM-dd") : "")',
-                                                            registrationStartDate: '@(academic.RegistrationStartDate.HasValue ? academic.RegistrationStartDate.Value.ToString("yyyy-MM-dd") : "")',
-                                                            registrationEndDate: '@(academic.RegistrationEndDate.HasValue ? academic.RegistrationEndDate.Value.ToString("yyyy-MM-dd") : "")',
-                                                            finalExamStartDate: '@(academic.FinalExamStartDate.HasValue ? academic.FinalExamStartDate.Value.ToString("yyyy-MM-dd") : "")',
-                                                            finalExamEndDate: '@(academic.FinalExamEndDate.HasValue ? academic.FinalExamEndDate.Value.ToString("yyyy-MM-dd") : "")',
-                                                            gradeSubmissionStartDate: '@(academic.GradeSubmissionStartDate.HasValue ? academic.GradeSubmissionStartDate.Value.ToString("yyyy-MM-dd") : "")',
-                                                            gradeSubmissionEndDate: '@(academic.GradeSubmissionEndDate.HasValue ? academic.GradeSubmissionEndDate.Value.ToString("yyyy-MM-dd") : "")',
-                                                            minRegistrationPaymentPercentage: '@academic.MinRegistrationPaymentPercentage',
-                                                            minExamPaymentPercentage: '@academic.MinExamPaymentPercentage',
-                                                            isActive: @academic.IsActive.ToString().ToLower(),
-                                                            nextAcademicYearId: '@(academic.NextAcademicYearId?.ToString() ?? "")'
-                                                        })"
+                                                    yearId: '@academic.YearId',
+                                                    yearValue: '@academic.YearValue',
+                                                    academicType: '@((int)academic.AcademicType)',
+                                                    startDate: '@academic.StartDate.ToString("yyyy-MM-dd")',
+                                                    endDate: '@academic.EndDate.ToString("yyyy-MM-dd")',
+                                                    registrationStartDate: '@(academic.RegistrationStartDate.HasValue ? academic.RegistrationStartDate.Value.ToString("yyyy-MM-dd") : "")',
+                                                    registrationEndDate: '@(academic.RegistrationEndDate.HasValue ? academic.RegistrationEndDate.Value.ToString("yyyy-MM-dd") : "")',
+                                                    minRegistrationPaymentPercentage: '@academic.MinRegistrationPaymentPercentage',
+                                                    minExamPaymentPercentage: '@academic.MinExamPaymentPercentage',
+                                                    isActive: @academic.IsActive.ToString().ToLower(),
+                                                    nextAcademicYearId: '@(academic.NextAcademicYearId?.ToString() ?? "")'
+                                                    })"
                                                         class="inline-flex items-center px-3 py-1 text-sm text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
-                                                    <i class="material-icons text-sm mr-1">edit</i> Edit
+                                                    <i class="material-icons text-sm mr-1">edit</i>Edit
                                                 </button>
                                                 <button onclick="showDeleteAcademicYearModal('@academic.YearId', '@academic.YearValue', '@academic.AcademicType')"
                                                         class="inline-flex items-center px-3 py-1 text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
-                                                    <i class="material-icons text-sm mr-1">delete</i> Delete
+                                                    <i class="material-icons text-sm mr-1">delete</i>Delete
                                                 </button>
                                             </div>
                                         </td>
@@ -193,6 +193,7 @@
                             }
                         </tbody>
                     </table>
+
                     <!-- Table Pagination -->
                     <div class="flex justify-between items-center mt-4">
                         <div class="text-sm text-gray-500">
@@ -200,9 +201,7 @@
                         </div>
                         <div class="flex space-x-1">
                             <button id="prevPage" class="px-3 py-1 text-sm text-secondary-600 hover:bg-gray-100 rounded-md disabled:opacity-50 disabled:cursor-not-allowed">Previous</button>
-                            <div id="paginationButtons" class="flex space-x-1">
-                                <!-- Pagination buttons will be inserted here by JS -->
-                            </div>
+                            <div id="paginationButtons" class="flex space-x-1"></div>
                             <button id="nextPage" class="px-3 py-1 text-sm text-secondary-600 hover:bg-gray-100 rounded-md disabled:opacity-50 disabled:cursor-not-allowed">Next</button>
                         </div>
                     </div>
@@ -212,9 +211,7 @@
 
         <!-- Statistics Sidebar (1/4 width) -->
         <div class="w-1/4 space-y-4">
-            <!-- Statistics Cards -->
             <div class="grid grid-cols-1 gap-4">
-                <!-- Total Academic Years -->
                 <div class="bg-white rounded-lg shadow p-4">
                     <div class="flex items-center">
                         <div class="p-3 bg-primary-100 rounded-lg">
@@ -229,7 +226,6 @@
                     </div>
                 </div>
 
-                <!-- Annual vs Semester Count -->
                 <div class="bg-white rounded-lg shadow p-4">
                     <div class="flex items-center">
                         <div class="p-3 bg-purple-100 rounded-lg">
@@ -237,16 +233,16 @@
                         </div>
                         <div class="ml-4">
                             <p class="text-gray-500 text-sm">Academic Types</p>
-                            <div class="text-sm">
+                            <div class="text-sm space-y-0.5">
                                 <div>Annual: @Model.Count(x => x.AcademicType == SIS.Models.Registration.AcademicType.Annual)</div>
                                 <div>Semester: @Model.Count(x => x.AcademicType == SIS.Models.Registration.AcademicType.Semester)</div>
+                                <div>Term: @Model.Count(x => x.AcademicType == SIS.Models.Registration.AcademicType.Term)</div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Academic Year Timeline -->
             <div class="bg-white rounded-lg shadow p-4">
                 <h3 class="text-lg font-semibold text-secondary-800 mb-4">Academic Calendar</h3>
                 <div class="space-y-3">
@@ -255,11 +251,26 @@
                         <div class="border-l-4 border-primary-500 pl-3">
                             <div class="font-medium text-sm">@academic.YearValue</div>
                             <div class="text-xs text-gray-500">
-                                @academic.StartDate.ToString("MMM dd") - @academic.EndDate.ToString("MMM dd, yyyy")
+                                @academic.StartDate.ToString("MMM dd") – @academic.EndDate.ToString("MMM dd, yyyy")
                             </div>
-                            @if (academic.AcademicType == SIS.Models.Registration.AcademicType.Semester)
+                            @{
+                                var typeLabel = academic.AcademicType switch
+                                {
+                                    SIS.Models.Registration.AcademicType.Semester => "Semester-based",
+                                    SIS.Models.Registration.AcademicType.Term => "Term-based",
+                                    _ => "Annual"
+                                };
+                                var typeColor = academic.AcademicType switch
+                                {
+                                    SIS.Models.Registration.AcademicType.Semester => "text-blue-600",
+                                    SIS.Models.Registration.AcademicType.Term => "text-purple-600",
+                                    _ => "text-green-600"
+                                };
+                            }
+                            <div class="text-xs @typeColor mt-1">@typeLabel</div>
+                            @if (academic.YearPeriods?.Any() == true)
                             {
-                                <div class="text-xs text-blue-600 mt-1">Semester-based</div>
+                                <div class="text-xs text-gray-400 mt-1">@academic.YearPeriods.Count() period(s) configured</div>
                             }
                         </div>
                     }
@@ -269,36 +280,233 @@
     </div>
 </div>
 
-<!-- Create Academic Year Modal -->
+<!-- ================================================================
+     MANAGE PERIODS MODAL
+     ================================================================ -->
+<div id="managePeriodsModal" class="hidden fixed inset-0 z-50">
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-lg shadow-xl w-full max-w-4xl">
+                <!-- Header -->
+                <div class="bg-primary-700 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
+                    <h3 class="text-lg font-semibold flex items-center">
+                        <i class="material-icons mr-2">tune</i>
+                        Manage Periods — <span id="mpYearLabel" class="ml-2 font-normal"></span>
+                    </h3>
+                    <button type="button" onclick="hideManagePeriodsModal()" class="text-white hover:text-gray-200">
+                        <i class="material-icons">close</i>
+                    </button>
+                </div>
+
+                <!-- Body -->
+                <div class="p-6 max-h-[78vh] overflow-y-auto space-y-6">
+
+                    <!-- Existing periods list -->
+                    <div>
+                        <h4 class="text-base font-semibold text-secondary-800 mb-3 flex items-center gap-2">
+                            <i class="material-icons text-sm">list</i> Configured Periods
+                        </h4>
+                        <div id="existingPeriodsList" class="space-y-2">
+                            <p class="text-gray-400 text-sm italic">Loading…</p>
+                        </div>
+                    </div>
+
+                    <hr class="border-gray-200">
+
+                    <!-- Add period form -->
+                    <div>
+                        <h4 class="text-base font-semibold text-secondary-800 mb-3 flex items-center gap-2">
+                            <i class="material-icons text-sm">add_circle_outline</i> Add a Period
+                        </h4>
+
+                        <form id="addPeriodForm">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="AcademicYearId" id="mpAcademicYearId" />
+
+                            <div class="grid grid-cols-2 gap-4 mb-4">
+                                <!-- Period template selector -->
+                                <div class="col-span-2">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Period</label>
+                                    <select name="AcademicPeriodId" id="mpPeriodSelect"
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary-500 focus:border-primary-500">
+                                        <option value="">— select a period —</option>
+                                    </select>
+                                </div>
+
+                                <!-- Start / End dates -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Start Date <span class="text-red-500">*</span></label>
+                                    <input type="date" name="StartDate" id="mpStartDate"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary-500 focus:border-primary-500" required />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">End Date <span class="text-red-500">*</span></label>
+                                    <input type="date" name="EndDate" id="mpEndDate"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary-500 focus:border-primary-500" required />
+                                </div>
+
+                                <!-- Exam window -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Exam Start</label>
+                                    <input type="date" name="ExamStartDate" id="mpExamStart"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Exam End</label>
+                                    <input type="date" name="ExamEndDate" id="mpExamEnd"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+                                </div>
+
+                                <!-- Registration window -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Registration Start</label>
+                                    <input type="date" name="RegistrationStartDate" id="mpRegStart"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Registration End</label>
+                                    <input type="date" name="RegistrationEndDate" id="mpRegEnd"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+                                </div>
+
+                                <!-- Grade submission window -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Grade Submission Start</label>
+                                    <input type="date" name="GradeSubmissionStartDate" id="mpGradeStart"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Grade Submission End</label>
+                                    <input type="date" name="GradeSubmissionEndDate" id="mpGradeEnd"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+                                </div>
+
+                                <!-- Active toggle -->
+                                <div class="col-span-2 flex items-center gap-3">
+                                    <input type="checkbox" name="IsActive" id="mpIsActive" value="true"
+                                           class="w-4 h-4 text-primary-600 rounded" />
+                                    <label for="mpIsActive" class="text-sm font-medium text-gray-700">
+                                        Set as the currently active period for this year
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div id="addPeriodError" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2 mb-3"></div>
+
+                            <button type="button" onclick="submitAddPeriod()"
+                                    class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm flex items-center gap-1">
+                                <i class="material-icons text-sm">add</i> Add Period
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-end">
+                    <button type="button" onclick="hideManagePeriodsModal()"
+                            class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Period Modal (inline, populated per-row) -->
+<div id="editPeriodModal" class="hidden fixed inset-0 z-[60]">
+    <div class="fixed inset-0 bg-black bg-opacity-40"></div>
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-lg shadow-xl w-full max-w-2xl">
+                <div class="bg-gray-700 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
+                    <h3 class="text-base font-semibold flex items-center gap-2">
+                        <i class="material-icons text-sm">edit</i> Edit Period — <span id="epPeriodName"></span>
+                    </h3>
+                    <button onclick="hideEditPeriodModal()" class="text-white hover:text-gray-200"><i class="material-icons">close</i></button>
+                </div>
+                <div class="p-6">
+                    <form id="editPeriodForm">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" id="epId" name="Id" />
+
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Start Date <span class="text-red-500">*</span></label>
+                                <input type="date" name="StartDate" id="epStartDate" class="w-full px-3 py-2 border rounded-lg text-sm" required />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">End Date <span class="text-red-500">*</span></label>
+                                <input type="date" name="EndDate" id="epEndDate" class="w-full px-3 py-2 border rounded-lg text-sm" required />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Exam Start</label>
+                                <input type="date" name="ExamStartDate" id="epExamStart" class="w-full px-3 py-2 border rounded-lg text-sm" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Exam End</label>
+                                <input type="date" name="ExamEndDate" id="epExamEnd" class="w-full px-3 py-2 border rounded-lg text-sm" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Registration Start</label>
+                                <input type="date" name="RegistrationStartDate" id="epRegStart" class="w-full px-3 py-2 border rounded-lg text-sm" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Registration End</label>
+                                <input type="date" name="RegistrationEndDate" id="epRegEnd" class="w-full px-3 py-2 border rounded-lg text-sm" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Grade Submission Start</label>
+                                <input type="date" name="GradeSubmissionStartDate" id="epGradeStart" class="w-full px-3 py-2 border rounded-lg text-sm" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Grade Submission End</label>
+                                <input type="date" name="GradeSubmissionEndDate" id="epGradeEnd" class="w-full px-3 py-2 border rounded-lg text-sm" />
+                            </div>
+                            <div class="col-span-2 flex items-center gap-3">
+                                <input type="checkbox" name="IsActive" id="epIsActive" value="true" class="w-4 h-4 text-primary-600 rounded" />
+                                <label for="epIsActive" class="text-sm font-medium text-gray-700">Set as active period</label>
+                            </div>
+                        </div>
+
+                        <div id="editPeriodError" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2 mb-3"></div>
+                    </form>
+                </div>
+                <div class="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-end gap-2">
+                    <button onclick="hideEditPeriodModal()" class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm">Cancel</button>
+                    <button onclick="submitEditPeriod()" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm flex items-center gap-1">
+                        <i class="material-icons text-sm">save</i> Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ================================================================
+     CREATE ACADEMIC YEAR MODAL
+     ================================================================ -->
 <div id="createAcademicYearModal" class="hidden fixed inset-0 z-50">
     <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
-
     <div class="fixed inset-0 z-10 overflow-y-auto">
         <div class="flex min-h-full items-center justify-center p-4">
             <div class="relative bg-white rounded-lg shadow-xl w-full max-w-3xl">
-                <!-- Modal Header -->
                 <div class="bg-primary-600 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
                     <h3 class="text-lg font-semibold flex items-center">
-                        <i class="material-icons mr-2">add</i>
-                        Create New Academic Year
+                        <i class="material-icons mr-2">add</i>Create New Academic Year
                     </h3>
                     <button type="button" class="text-white hover:text-gray-200" data-bs-dismiss="modal">
                         <i class="material-icons">close</i>
                     </button>
                 </div>
-
-                <!-- Modal Body -->
                 <div class="p-6 max-h-[70vh] overflow-y-auto">
-                    <!-- Create Academic Year Form -->
                     <form id="createAcademicYearForm" method="post" asp-controller="Admin" asp-action="CreateAcademicYear">
                         @Html.AntiForgeryToken()
-
                         <div class="space-y-6">
-                            <!-- Academic Year Basic Details Section -->
                             <div class="border-b border-gray-200 pb-4">
                                 <h4 class="text-lg font-medium text-secondary-800 mb-3">Basic Information</h4>
-                                
-                                <!-- Academic Type Selection -->
                                 <div class="mb-4">
                                     <label class="block text-sm font-medium text-gray-700 mb-2">Academic Year Type</label>
                                     <div class="flex space-x-4">
@@ -310,191 +518,75 @@
                                             <input type="radio" name="AcademicType" value="1" id="semesterType" class="mr-2">
                                             <span class="text-sm">Semester-based</span>
                                         </label>
+                                        <label class="flex items-center">
+                                            <input type="radio" name="AcademicType" value="2" id="termType" class="mr-2">
+                                            <span class="text-sm">Term-based</span>
+                                        </label>
                                     </div>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        <i class="material-icons text-xs">info</i>
+                                        After creating the year, use the <strong>Manage</strong> button in the table to attach and schedule its periods.
+                                    </p>
                                 </div>
-
-                                <!-- Year Value -->
                                 <div class="relative z-0 w-full group mb-4">
                                     <input type="text" name="YearValue" id="yearValue"
-                                        class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
-                                        placeholder=" " required />
+                                           class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
+                                           placeholder=" " required />
                                     <label for="yearValue"
-                                        class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                           class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
                                         Academic Year (e.g., 2024 or 2024/2025)
                                     </label>
                                 </div>
-
-                                <!-- Overall Academic Year Dates -->
                                 <div class="grid grid-cols-2 gap-6">
-                                    <!-- Start Date -->
                                     <div class="relative z-0 w-full group">
                                         <input type="date" name="StartDate" id="startDate"
-                                            class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
-                                            placeholder=" " required />
-                                        <label for="startDate"
-                                            class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                               class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
+                                               placeholder=" " required />
+                                        <label for="startDate" class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
                                             Academic Year Start Date
                                         </label>
                                     </div>
-
-                                    <!-- End Date -->
                                     <div class="relative z-0 w-full group">
                                         <input type="date" name="EndDate" id="endDate"
-                                            class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
-                                            placeholder=" " required />
-                                        <label for="endDate"
-                                            class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                               class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
+                                               placeholder=" " required />
+                                        <label for="endDate" class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
                                             Academic Year End Date
                                         </label>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Semester Dates Section (Hidden by default) -->
-                            <div id="semesterDatesSection" class="border-b border-gray-200 pb-4 hidden">
-                                <h4 class="text-lg font-medium text-secondary-800 mb-3">Semester Dates</h4>
-                                
-                                <!-- Semester 1 Dates -->
-                                <div class="mb-4">
-                                    <h5 class="font-medium text-gray-700 mb-2">Semester 1</h5>
-                                    <div class="grid grid-cols-2 gap-6">
-                                        <div class="relative z-0 w-full group">
-                                            <input type="date" name="Semester1StartDate" id="semester1StartDate"
-                                                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
-                                                placeholder=" " />
-                                            <label for="semester1StartDate"
-                                                class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                                                Semester 1 Start Date
-                                            </label>
-                                        </div>
-                                        <div class="relative z-0 w-full group">
-                                            <input type="date" name="Semester1EndDate" id="semester1EndDate"
-                                                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
-                                                placeholder=" " />
-                                            <label for="semester1EndDate"
-                                                class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                                                Semester 1 End Date
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Semester 2 Dates -->
-                                <div class="mb-4">
-                                    <h5 class="font-medium text-gray-700 mb-2">Semester 2</h5>
-                                    <div class="grid grid-cols-2 gap-6">
-                                        <div class="relative z-0 w-full group">
-                                            <input type="date" name="Semester2StartDate" id="semester2StartDate"
-                                                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
-                                                placeholder=" " />
-                                            <label for="semester2StartDate"
-                                                class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                                                Semester 2 Start Date
-                                            </label>
-                                        </div>
-                                        <div class="relative z-0 w-full group">
-                                            <input type="date" name="Semester2EndDate" id="semester2EndDate"
-                                                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
-                                                placeholder=" " />
-                                            <label for="semester2EndDate"
-                                                class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                                                Semester 2 End Date
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Registration Period Section -->
                             <div class="border-b border-gray-200 pb-4">
                                 <h4 class="text-lg font-medium text-secondary-800 mb-3">Registration Period (Optional)</h4>
-                                
                                 <div class="grid grid-cols-2 gap-6">
                                     <div class="relative z-0 w-full group">
                                         <input type="date" name="RegistrationStartDate" id="registrationStartDate"
-                                            class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
-                                            placeholder=" " />
-                                        <label for="registrationStartDate"
-                                            class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                               class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
+                                               placeholder=" " />
+                                        <label for="registrationStartDate" class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
                                             Registration Start Date
                                         </label>
                                     </div>
                                     <div class="relative z-0 w-full group">
                                         <input type="date" name="RegistrationEndDate" id="registrationEndDate"
-                                            class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
-                                            placeholder=" " />
-                                        <label for="registrationEndDate"
-                                            class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                               class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
+                                               placeholder=" " />
+                                        <label for="registrationEndDate" class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
                                             Registration End Date
                                         </label>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Exam Period Section -->
-                            <div class="border-b border-gray-200 pb-4">
-                                <h4 class="text-lg font-medium text-secondary-800 mb-3">Final Exams Period (Optional)</h4>
-                                
-                                <div class="grid grid-cols-2 gap-6">
-                                    <div class="relative z-0 w-full group">
-                                        <input type="date" name="FinalExamStartDate" id="finalExamStartDate"
-                                            class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
-                                            placeholder=" " />
-                                        <label for="finalExamStartDate"
-                                            class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                                            Final Exam Start Date
-                                        </label>
-                                    </div>
-                                    <div class="relative z-0 w-full group">
-                                        <input type="date" name="FinalExamEndDate" id="finalExamEndDate"
-                                            class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
-                                            placeholder=" " />
-                                        <label for="finalExamEndDate"
-                                            class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                                            Final Exam End Date
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Grade Submission Period Section -->
-                            <div class="border-b border-gray-200 pb-4">
-                                <h4 class="text-lg font-medium text-secondary-800 mb-3">Grade Submission Period (Optional)</h4>
-                                
-                                <div class="grid grid-cols-2 gap-6">
-                                    <div class="relative z-0 w-full group">
-                                        <input type="date" name="GradeSubmissionStartDate" id="gradeSubmissionStartDate"
-                                            class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
-                                            placeholder=" " />
-                                        <label for="gradeSubmissionStartDate"
-                                            class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                                            Grade Submission Start Date
-                                        </label>
-                                    </div>
-                                    <div class="relative z-0 w-full group">
-                                        <input type="date" name="GradeSubmissionEndDate" id="gradeSubmissionEndDate"
-                                            class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
-                                            placeholder=" " />
-                                        <label for="gradeSubmissionEndDate"
-                                            class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                                            Grade Submission End Date
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Additional Settings Section -->
                             <div>
                                 <h4 class="text-lg font-medium text-secondary-800 mb-3">Payment Settings</h4>
-                                
-                                <!-- Registration and Exam Payment - Side by Side -->
                                 <div class="grid grid-cols-2 gap-6 mb-4">
                                     <div class="relative z-0 w-full group">
                                         <input type="number" name="MinRegistrationPaymentPercentage" id="minRegistrationPayment"
-                                            class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
-                                            placeholder=" " required min="0" max="100" />
-                                        <label for="minRegistrationPayment"
-                                            class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                               class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
+                                               placeholder=" " required min="0" max="100" />
+                                        <label for="minRegistrationPayment" class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
                                             Min Registration Payment %
                                         </label>
                                     </div>
@@ -502,65 +594,31 @@
                                         <input type="number" name="MinExamPaymentPercentage" id="minExamPayment"
                                                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
                                                placeholder=" " required min="0" max="100" />
-                                        <label for="minExamPayment"
-                                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                        <label for="minExamPayment" class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
                                             Min Exam Payment %
                                         </label>
                                     </div>
                                 </div>
-
-                                <!-- Next Academic Year Section -->
                                 <div class="border-t border-gray-200 pt-4 mt-4">
                                     <h4 class="text-lg font-medium text-secondary-800 mb-3">Progression Settings</h4>
-
                                     <div class="relative z-0 w-full group">
                                         <select name="NextAcademicYearId" id="nextAcademicYearId"
                                                 class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer">
                                             <option value="">-- Select Next Academic Year (Optional) --</option>
                                             @foreach (var year in Model.OrderBy(y => y.StartDate))
                                             {
-                                                <option value="@year.YearId"
-                                                        data-start-date="@year.StartDate.ToString("yyyy-MM-dd")"
-                                                        data-year-value="@year.YearValue">
-                                                    @year.YearValue (@year.AcademicType)
-                                                </option>
+                                                <option value="@year.YearId">@year.YearValue (@year.AcademicType)</option>
                                             }
                                         </select>
-                                        <label for="nextAcademicYearId"
-                                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600">
+                                        <label for="nextAcademicYearId" class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600">
                                             Next Academic Year for Progression
                                         </label>
                                     </div>
-                                    <p class="text-xs text-gray-500 mt-2">
-                                        <i class="material-icons text-xs">info</i>
-                                        Select the academic year students should progress to after completing this year.
-                                    </p>
                                 </div>
-
-
-                                <!-- Is Active Switch -->
-                                <div class="flex items-center space-x-2">
+                                <div class="flex items-center space-x-2 mt-4">
                                     <label class="relative inline-flex items-center cursor-pointer">
-                                        <input type="checkbox"
-                                               name="IsActive"
-                                               id="isActive"
-                                               class="sr-only peer" />
-                                        <div class="w-11 h-6 bg-gray-200 rounded-full peer
-                                            peer-focus:ring-4 peer-focus:ring-primary-300
-                                            peer-checked:after:translate-x-full
-                                            peer-checked:after:border-white
-                                            after:content-['']
-                                            after:absolute
-                                            after:top-0.5
-                                            after:left-[2px]
-                                            after:bg-white
-                                            after:border-gray-300
-                                            after:border
-                                            after:rounded-full
-                                            after:h-5
-                                            after:w-5
-                                            after:transition-all
-                                            peer-checked:bg-primary-600"></div>
+                                        <input type="checkbox" name="IsActive" id="isActive" class="sr-only peer" />
+                                        <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-primary-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
                                         <span class="ml-3 text-sm font-medium text-gray-900">Set as Active Academic Year</span>
                                     </label>
                                 </div>
@@ -568,8 +626,6 @@
                         </div>
                     </form>
                 </div>
-
-                <!-- Modal Footer -->
                 <div class="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-end space-x-2">
                     <button type="button" class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center" data-bs-dismiss="modal">
                         <i class="material-icons mr-1">close</i>Cancel
@@ -583,36 +639,30 @@
     </div>
 </div>
 
-<!-- Update Academic Year Modal -->
+
+<!-- ================================================================
+     UPDATE ACADEMIC YEAR MODAL
+     ================================================================ -->
 <div id="updateAcademicYearModal" class="hidden fixed inset-0 z-50">
     <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
-
     <div class="fixed inset-0 z-10 overflow-y-auto">
         <div class="flex min-h-full items-center justify-center p-4">
             <div class="relative bg-white rounded-lg shadow-xl w-full max-w-3xl">
-                <!-- Modal Header -->
                 <div class="bg-gray-700 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
                     <h3 class="text-lg font-semibold flex items-center">
-                        <i class="material-icons mr-2">edit</i>
-                        Update Academic Year
+                        <i class="material-icons mr-2">edit</i>Update Academic Year
                     </h3>
                     <button type="button" class="text-white hover:text-gray-200" data-bs-dismiss="modal">
                         <i class="material-icons">close</i>
                     </button>
                 </div>
-
-                <!-- Modal Body -->
                 <div class="p-6 max-h-[70vh] overflow-y-auto">
                     <form id="updateAcademicYearForm" method="post" asp-controller="Admin" asp-action="UpdateAcademicYear">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="YearId" id="updateYearId" />
-
                         <div class="space-y-6">
-                            <!-- Academic Year Basic Details Section -->
                             <div class="border-b border-gray-200 pb-4">
                                 <h4 class="text-lg font-medium text-secondary-800 mb-3">Basic Information</h4>
-                                
-                                <!-- Academic Type Selection -->
                                 <div class="mb-4">
                                     <label class="block text-sm font-medium text-gray-700 mb-2">Academic Year Type</label>
                                     <div class="flex space-x-4">
@@ -624,28 +674,26 @@
                                             <input type="radio" name="AcademicType" value="1" id="updateSemesterType" class="mr-2">
                                             <span class="text-sm">Semester-based</span>
                                         </label>
+                                        <label class="flex items-center">
+                                            <input type="radio" name="AcademicType" value="2" id="updateTermType" class="mr-2">
+                                            <span class="text-sm">Term-based</span>
+                                        </label>
                                     </div>
                                 </div>
-
-                                <!-- Year Value -->
                                 <div class="relative z-0 w-full group mb-4">
                                     <input type="text" name="YearValue" id="updateYearValue"
-                                        class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
-                                        placeholder=" " required />
-                                    <label for="updateYearValue"
-                                        class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                           class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
+                                           placeholder=" " required />
+                                    <label for="updateYearValue" class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
                                         Academic Year (e.g., 2024 or 2024/2025)
                                     </label>
                                 </div>
-
-                                <!-- Overall Academic Year Dates -->
                                 <div class="grid grid-cols-2 gap-6">
                                     <div class="relative z-0 w-full group">
                                         <input type="date" name="StartDate" id="updateStartDate"
                                                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
                                                placeholder=" " required />
-                                        <label for="updateStartDate"
-                                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                        <label for="updateStartDate" class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
                                             Academic Year Start Date
                                         </label>
                                     </div>
@@ -653,80 +701,21 @@
                                         <input type="date" name="EndDate" id="updateEndDate"
                                                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
                                                placeholder=" " required />
-                                        <label for="updateEndDate"
-                                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                        <label for="updateEndDate" class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
                                             Academic Year End Date
                                         </label>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Semester Dates Section (Hidden by default) -->
-                            <div id="updateSemesterDatesSection" class="border-b border-gray-200 pb-4 hidden">
-                                <h4 class="text-lg font-medium text-secondary-800 mb-3">Semester Dates</h4>
-
-                                <!-- Semester 1 Dates -->
-                                <div class="mb-4">
-                                    <h5 class="font-medium text-gray-700 mb-2">Semester 1</h5>
-                                    <div class="grid grid-cols-2 gap-6">
-                                        <div class="relative z-0 w-full group">
-                                            <input type="date" name="Semester1StartDate" id="updateSemester1StartDate"
-                                                   class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
-                                                   placeholder=" " />
-                                            <label for="updateSemester1StartDate"
-                                                   class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                                                Semester 1 Start Date
-                                            </label>
-                                        </div>
-                                        <div class="relative z-0 w-full group">
-                                            <input type="date" name="Semester1EndDate" id="updateSemester1EndDate"
-                                                   class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
-                                                   placeholder=" " />
-                                            <label for="updateSemester1EndDate"
-                                                   class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                                                Semester 1 End Date
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Semester 2 Dates -->
-                                <div class="mb-4">
-                                    <h5 class="font-medium text-gray-700 mb-2">Semester 2</h5>
-                                    <div class="grid grid-cols-2 gap-6">
-                                        <div class="relative z-0 w-full group">
-                                            <input type="date" name="Semester2StartDate" id="updateSemester2StartDate"
-                                                   class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
-                                                   placeholder=" " />
-                                            <label for="updateSemester2StartDate"
-                                                   class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                                                Semester 2 Start Date
-                                            </label>
-                                        </div>
-                                        <div class="relative z-0 w-full group">
-                                            <input type="date" name="Semester2EndDate" id="updateSemester2EndDate"
-                                                   class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
-                                                   placeholder=" " />
-                                            <label for="updateSemester2EndDate"
-                                                   class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                                                Semester 2 End Date
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Registration Period Section -->
                             <div class="border-b border-gray-200 pb-4">
                                 <h4 class="text-lg font-medium text-secondary-800 mb-3">Registration Period (Optional)</h4>
-
                                 <div class="grid grid-cols-2 gap-6">
                                     <div class="relative z-0 w-full group">
                                         <input type="date" name="RegistrationStartDate" id="updateRegistrationStartDate"
                                                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
                                                placeholder=" " />
-                                        <label for="updateRegistrationStartDate"
-                                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                        <label for="updateRegistrationStartDate" class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
                                             Registration Start Date
                                         </label>
                                     </div>
@@ -734,78 +723,21 @@
                                         <input type="date" name="RegistrationEndDate" id="updateRegistrationEndDate"
                                                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
                                                placeholder=" " />
-                                        <label for="updateRegistrationEndDate"
-                                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                        <label for="updateRegistrationEndDate" class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
                                             Registration End Date
                                         </label>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Exam Period Section -->
-                            <div class="border-b border-gray-200 pb-4">
-                                <h4 class="text-lg font-medium text-secondary-800 mb-3">Final Exams Period (Optional)</h4>
-
-                                <div class="grid grid-cols-2 gap-6">
-                                    <div class="relative z-0 w-full group">
-                                        <input type="date" name="FinalExamStartDate" id="updateFinalExamStartDate"
-                                               class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
-                                               placeholder=" " />
-                                        <label for="updateFinalExamStartDate"
-                                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                                            Final Exam Start Date
-                                        </label>
-                                    </div>
-                                    <div class="relative z-0 w-full group">
-                                        <input type="date" name="FinalExamEndDate" id="updateFinalExamEndDate"
-                                               class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
-                                               placeholder=" " />
-                                        <label for="updateFinalExamEndDate"
-                                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                                            Final Exam End Date
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Grade Submission Period Section -->
-                            <div class="border-b border-gray-200 pb-4">
-                                <h4 class="text-lg font-medium text-secondary-800 mb-3">Grade Submission Period (Optional)</h4>
-
-                                <div class="grid grid-cols-2 gap-6">
-                                    <div class="relative z-0 w-full group">
-                                        <input type="date" name="GradeSubmissionStartDate" id="updateGradeSubmissionStartDate"
-                                               class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
-                                               placeholder=" " />
-                                        <label for="updateGradeSubmissionStartDate"
-                                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                                            Grade Submission Start Date
-                                        </label>
-                                    </div>
-                                    <div class="relative z-0 w-full group">
-                                        <input type="date" name="GradeSubmissionEndDate" id="updateGradeSubmissionEndDate"
-                                               class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
-                                               placeholder=" " />
-                                        <label for="updateGradeSubmissionEndDate"
-                                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                                            Grade Submission End Date
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Additional Settings Section -->
                             <div>
                                 <h4 class="text-lg font-medium text-secondary-800 mb-3">Payment Settings</h4>
-
-                                <!-- Registration and Exam Payment - Side by Side -->
                                 <div class="grid grid-cols-2 gap-6 mb-4">
                                     <div class="relative z-0 w-full group">
                                         <input type="number" name="MinRegistrationPaymentPercentage" id="updateMinRegistrationPayment"
                                                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
                                                placeholder=" " required min="0" max="100" />
-                                        <label for="updateMinRegistrationPayment"
-                                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                        <label for="updateMinRegistrationPayment" class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
                                             Min Registration Payment %
                                         </label>
                                     </div>
@@ -813,66 +745,31 @@
                                         <input type="number" name="MinExamPaymentPercentage" id="updateMinExamPayment"
                                                class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer"
                                                placeholder=" " required min="0" max="100" />
-                                        <label for="updateMinExamPayment"
-                                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
+                                        <label for="updateMinExamPayment" class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
                                             Min Exam Payment %
                                         </label>
                                     </div>
                                 </div>
-
-
-                                <!-- Next Academic Year Section -->
                                 <div class="border-t border-gray-200 pt-4 mt-4">
                                     <h4 class="text-lg font-medium text-secondary-800 mb-3">Progression Settings</h4>
-
                                     <div class="relative z-0 w-full group">
                                         <select name="NextAcademicYearId" id="updateNextAcademicYearId"
                                                 class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-primary-600 peer">
                                             <option value="">-- Select Next Academic Year (Optional) --</option>
                                             @foreach (var year in Model.OrderBy(y => y.StartDate))
                                             {
-                                                <option value="@year.YearId"
-                                                        data-start-date="@year.StartDate.ToString("yyyy-MM-dd")"
-                                                        data-year-value="@year.YearValue">
-                                                    @year.YearValue (@year.AcademicType)
-                                                </option>
+                                                <option value="@year.YearId">@year.YearValue (@year.AcademicType)</option>
                                             }
                                         </select>
-                                        <label for="updateNextAcademicYearId"
-                                               class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600">
+                                        <label for="updateNextAcademicYearId" class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-primary-600">
                                             Next Academic Year for Progression
                                         </label>
                                     </div>
-                                    <p class="text-xs text-gray-500 mt-2">
-                                        <i class="material-icons text-xs">info</i>
-                                        Select the academic year students should progress to after completing this year.
-                                    </p>
                                 </div>
-
-
-                                <!-- Is Active Switch -->
-                                <div class="flex items-center space-x-2">
+                                <div class="flex items-center space-x-2 mt-4">
                                     <label class="relative inline-flex items-center cursor-pointer">
-                                        <input type="checkbox"
-                                               name="IsActive"
-                                               id="updateIsActive"
-                                               class="sr-only peer" />
-                                        <div class="w-11 h-6 bg-gray-200 rounded-full peer
-                                            peer-focus:ring-4 peer-focus:ring-primary-300
-                                            peer-checked:after:translate-x-full
-                                            peer-checked:after:border-white
-                                            after:content-['']
-                                            after:absolute
-                                            after:top-0.5
-                                            after:left-[2px]
-                                            after:bg-white
-                                            after:border-gray-300
-                                            after:border
-                                            after:rounded-full
-                                            after:h-5
-                                            after:w-5
-                                            after:transition-all
-                                            peer-checked:bg-primary-600"></div>
+                                        <input type="checkbox" name="IsActive" id="updateIsActive" class="sr-only peer" />
+                                        <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-primary-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
                                         <span class="ml-3 text-sm font-medium text-gray-900">Set as Active Academic Year</span>
                                     </label>
                                 </div>
@@ -880,8 +777,6 @@
                         </div>
                     </form>
                 </div>
-
-                <!-- Modal Footer -->
                 <div class="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-end space-x-2">
                     <button type="button" class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center" data-bs-dismiss="modal">
                         <i class="material-icons mr-1">close</i>Cancel
@@ -895,61 +790,36 @@
     </div>
 </div>
 
-<!-- Delete Academic Year Modal -->
+
+<!-- ================================================================
+     DELETE ACADEMIC YEAR MODAL
+     ================================================================ -->
 <div id="deleteAcademicYearModal" class="hidden fixed inset-0 z-50">
     <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
-
     <div class="fixed inset-0 z-10 overflow-y-auto">
         <div class="flex min-h-full items-center justify-center p-4">
             <div class="relative bg-white rounded-lg shadow-xl w-full max-w-lg">
-                <!-- Modal Header -->
                 <div class="bg-red-600 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
                     <h3 class="text-lg font-semibold flex items-center">
-                        <i class="material-icons mr-2">warning</i>
-                        Confirm Delete
+                        <i class="material-icons mr-2">warning</i>Confirm Delete
                     </h3>
                     <button type="button" class="text-white hover:text-gray-200" data-bs-dismiss="modal">
                         <i class="material-icons">close</i>
                     </button>
                 </div>
-
-                <!-- Modal Body -->
                 <div class="p-6">
                     <form id="deleteAcademicYearForm" method="post" asp-controller="Admin" asp-action="DeleteAcademicYear">
                         <input type="hidden" id="deleteYearId" name="YearId" />
                         @Html.AntiForgeryToken()
-
                         <div class="space-y-4">
-                            <div class="flex items-center text-red-600 mb-4">
-                                <i class="material-icons mr-2">error_outline</i>
-                                <p class="text-lg font-medium">Delete Academic Year</p>
-                            </div>
-
-                            <p class="text-gray-700">Are you sure you want to delete this academic year? This action cannot be undone.</p>
-
-                            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-4">
-                                <p class="text-gray-700 font-medium mb-2">Academic Year Details:</p>
-                                <p class="text-secondary-600">
-                                    <span class="font-medium">Year:</span>
-                                    <span id="deleteYearValue" class="ml-2"></span>
-                                </p>
-                                <p class="text-secondary-600">
-                                    <span class="font-medium">Type:</span>
-                                    <span id="deleteAcademicType" class="ml-2"></span>
-                                </p>
-                            </div>
-
-                            <div class="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                                <div class="flex items-center text-red-800">
-                                    <i class="material-icons text-red-600 mr-2 text-sm">info</i>
-                                    <p class="text-sm">This action cannot be undone. All associated data will be permanently deleted.</p>
-                                </div>
+                            <p class="text-gray-700">Are you sure you want to delete this academic year? This will also remove all its configured periods.</p>
+                            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                <p class="font-medium text-gray-700 mb-1">Year: <span id="deleteYearValue" class="ml-1"></span></p>
+                                <p class="text-gray-600">Type: <span id="deleteAcademicType" class="ml-1"></span></p>
                             </div>
                         </div>
                     </form>
                 </div>
-
-                <!-- Modal Footer -->
                 <div class="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-end space-x-2">
                     <button type="button" class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center" data-bs-dismiss="modal">
                         <i class="material-icons mr-1">close</i>Cancel
@@ -962,5 +832,298 @@
         </div>
     </div>
 </div>
+
+
+<script>
+    // ================================================================
+    // STATE
+    // ================================================================
+    let _currentYearId   = null;
+    let _currentYearType = null; // 0=Annual, 1=Semester, 2=Term
+
+    // ================================================================
+    // MANAGE PERIODS MODAL
+    // ================================================================
+    async function showManagePeriodsModal(yearId, yearLabel, academicType) {
+        _currentYearId   = yearId;
+        _currentYearType = academicType;
+
+        document.getElementById('mpYearLabel').textContent   = yearLabel;
+        document.getElementById('mpAcademicYearId').value    = yearId;
+        document.getElementById('managePeriodsModal').classList.remove('hidden');
+
+        await loadPeriodTemplates(academicType);
+        await refreshExistingPeriods();
+    }
+
+    function hideManagePeriodsModal() {
+        document.getElementById('managePeriodsModal').classList.add('hidden');
+        _currentYearId   = null;
+        _currentYearType = null;
+        clearAddForm();
+    }
+
+    // Populate the "Add a Period" select with templates matching the year's academic type
+    async function loadPeriodTemplates(academicType) {
+        const select = document.getElementById('mpPeriodSelect');
+        select.innerHTML = '<option value="">— select a period —</option>';
+        try {
+            const res  = await fetch(`/Admin/GetAcademicPeriodTemplates?academicType=${academicType}`);
+            const data = await res.json();
+            data.forEach(p => {
+                const opt    = document.createElement('option');
+                opt.value    = p.id;
+                opt.textContent = p.periodName;
+                select.appendChild(opt);
+            });
+        } catch (e) {
+            console.error('Failed to load period templates', e);
+        }
+    }
+
+    // Render the list of already-configured periods for this year
+    async function refreshExistingPeriods() {
+        const container = document.getElementById('existingPeriodsList');
+        container.innerHTML = '<p class="text-gray-400 text-sm italic">Loading…</p>';
+        try {
+            const res     = await fetch(`/Admin/GetYearPeriods?yearId=${_currentYearId}`);
+            const periods = await res.json();
+
+            if (periods.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 text-sm italic">No periods configured yet.</p>';
+                return;
+            }
+
+            container.innerHTML = periods.map(p => `
+                <div class="flex items-start justify-between gap-4 p-3 rounded-lg border ${p.isActive ? 'border-primary-300 bg-primary-50' : 'border-gray-200 bg-gray-50'}">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="font-semibold text-sm text-gray-800">${p.periodName}</span>
+                            ${p.isActive ? '<span class="text-xs bg-primary-600 text-white px-2 py-0.5 rounded-full">Active</span>' : ''}
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1 space-y-0.5">
+                            <div><i class="material-icons text-xs align-middle">date_range</i> ${fmt(p.startDate)} – ${fmt(p.endDate)}</div>
+                            ${p.examStartDate    ? `<div><i class="material-icons text-xs align-middle">school</i> Exams: ${fmt(p.examStartDate)} – ${fmt(p.examEndDate)}</div>` : ''}
+                            ${p.registrationStartDate ? `<div><i class="material-icons text-xs align-middle">app_registration</i> Registration: ${fmt(p.registrationStartDate)} – ${fmt(p.registrationEndDate)}</div>` : ''}
+                            ${p.gradeSubmissionStartDate ? `<div><i class="material-icons text-xs align-middle">grading</i> Grades: ${fmt(p.gradeSubmissionStartDate)} – ${fmt(p.gradeSubmissionEndDate)}</div>` : ''}
+                        </div>
+                    </div>
+                    <div class="flex gap-1 shrink-0">
+                        <button onclick="openEditPeriod(${JSON.stringify(p).replace(/"/g, '&quot;')})"
+                                class="p-1.5 text-blue-600 hover:bg-blue-100 rounded transition-colors" title="Edit">
+                            <i class="material-icons text-sm">edit</i>
+                        </button>
+                        <button onclick="confirmRemovePeriod(${p.id}, '${p.periodName}')"
+                                class="p-1.5 text-red-600 hover:bg-red-100 rounded transition-colors" title="Remove">
+                            <i class="material-icons text-sm">delete</i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        } catch (e) {
+            container.innerHTML = '<p class="text-red-500 text-sm">Failed to load periods.</p>';
+        }
+    }
+
+    function fmt(dateStr) {
+        if (!dateStr) return '—';
+        const d = new Date(dateStr);
+        return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    // ================================================================
+    // ADD PERIOD
+    // ================================================================
+    async function submitAddPeriod() {
+        const errEl = document.getElementById('addPeriodError');
+        errEl.classList.add('hidden');
+
+        const form  = document.getElementById('addPeriodForm');
+        const token = form.querySelector('[name="__RequestVerificationToken"]').value;
+
+        const payload = {
+            AcademicYearId:           _currentYearId,
+            AcademicPeriodId:         document.getElementById('mpPeriodSelect').value,
+            StartDate:                document.getElementById('mpStartDate').value,
+            EndDate:                  document.getElementById('mpEndDate').value,
+            ExamStartDate:            document.getElementById('mpExamStart').value   || null,
+            ExamEndDate:              document.getElementById('mpExamEnd').value     || null,
+            RegistrationStartDate:    document.getElementById('mpRegStart').value    || null,
+            RegistrationEndDate:      document.getElementById('mpRegEnd').value      || null,
+            GradeSubmissionStartDate: document.getElementById('mpGradeStart').value  || null,
+            GradeSubmissionEndDate:   document.getElementById('mpGradeEnd').value    || null,
+            IsActive:                 document.getElementById('mpIsActive').checked
+        };
+
+        if (!payload.AcademicPeriodId) { showAddError('Please select a period.'); return; }
+        if (!payload.StartDate || !payload.EndDate) { showAddError('Start and end dates are required.'); return; }
+
+        const params = new URLSearchParams({ ...payload, __RequestVerificationToken: token });
+
+        try {
+            const res  = await fetch('/Admin/AddYearPeriod', { method: 'POST', body: params });
+            const data = await res.json();
+
+            if (data.success) {
+                clearAddForm();
+                await refreshExistingPeriods();
+            } else {
+                showAddError(data.message);
+            }
+        } catch (e) {
+            showAddError('Request failed. Please try again.');
+        }
+    }
+
+    function showAddError(msg) {
+        const el = document.getElementById('addPeriodError');
+        el.textContent = msg;
+        el.classList.remove('hidden');
+    }
+
+    function clearAddForm() {
+        ['mpPeriodSelect','mpStartDate','mpEndDate','mpExamStart','mpExamEnd',
+         'mpRegStart','mpRegEnd','mpGradeStart','mpGradeEnd'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+        });
+        document.getElementById('mpIsActive').checked = false;
+        document.getElementById('addPeriodError').classList.add('hidden');
+    }
+
+    // ================================================================
+    // EDIT PERIOD
+    // ================================================================
+    function openEditPeriod(p) {
+        document.getElementById('epId').value          = p.id;
+        document.getElementById('epPeriodName').textContent = p.periodName;
+        document.getElementById('epStartDate').value   = p.startDate  || '';
+        document.getElementById('epEndDate').value     = p.endDate    || '';
+        document.getElementById('epExamStart').value   = p.examStartDate || '';
+        document.getElementById('epExamEnd').value     = p.examEndDate   || '';
+        document.getElementById('epRegStart').value    = p.registrationStartDate || '';
+        document.getElementById('epRegEnd').value      = p.registrationEndDate   || '';
+        document.getElementById('epGradeStart').value  = p.gradeSubmissionStartDate || '';
+        document.getElementById('epGradeEnd').value    = p.gradeSubmissionEndDate   || '';
+        document.getElementById('epIsActive').checked  = p.isActive;
+        document.getElementById('editPeriodError').classList.add('hidden');
+        document.getElementById('editPeriodModal').classList.remove('hidden');
+    }
+
+    function hideEditPeriodModal() {
+        document.getElementById('editPeriodModal').classList.add('hidden');
+    }
+
+    async function submitEditPeriod() {
+        const errEl = document.getElementById('editPeriodError');
+        errEl.classList.add('hidden');
+
+        const form  = document.getElementById('editPeriodForm');
+        const token = form.querySelector('[name="__RequestVerificationToken"]').value;
+
+        const payload = {
+            Id:                       document.getElementById('epId').value,
+            StartDate:                document.getElementById('epStartDate').value,
+            EndDate:                  document.getElementById('epEndDate').value,
+            ExamStartDate:            document.getElementById('epExamStart').value   || null,
+            ExamEndDate:              document.getElementById('epExamEnd').value     || null,
+            RegistrationStartDate:    document.getElementById('epRegStart').value    || null,
+            RegistrationEndDate:      document.getElementById('epRegEnd').value      || null,
+            GradeSubmissionStartDate: document.getElementById('epGradeStart').value  || null,
+            GradeSubmissionEndDate:   document.getElementById('epGradeEnd').value    || null,
+            IsActive:                 document.getElementById('epIsActive').checked
+        };
+
+        if (!payload.StartDate || !payload.EndDate) {
+            errEl.textContent = 'Start and end dates are required.';
+            errEl.classList.remove('hidden');
+            return;
+        }
+
+        const params = new URLSearchParams({ ...payload, __RequestVerificationToken: token });
+
+        try {
+            const res  = await fetch('/Admin/UpdateYearPeriod', { method: 'POST', body: params });
+            const data = await res.json();
+
+            if (data.success) {
+                hideEditPeriodModal();
+                await refreshExistingPeriods();
+            } else {
+                errEl.textContent = data.message;
+                errEl.classList.remove('hidden');
+            }
+        } catch (e) {
+            errEl.textContent = 'Request failed. Please try again.';
+            errEl.classList.remove('hidden');
+        }
+    }
+
+    // ================================================================
+    // REMOVE PERIOD
+    // ================================================================
+    async function confirmRemovePeriod(yearPeriodId, periodName) {
+        if (!confirm(`Remove "${periodName}" from this academic year? This cannot be undone.`)) return;
+
+        const token = document.querySelector('#addPeriodForm [name="__RequestVerificationToken"]').value;
+        const params = new URLSearchParams({ yearPeriodId, __RequestVerificationToken: token });
+
+        try {
+            const res  = await fetch('/Admin/RemoveYearPeriod', { method: 'POST', body: params });
+            const data = await res.json();
+
+            if (data.success) {
+                await refreshExistingPeriods();
+            } else {
+                alert(data.message);
+            }
+        } catch (e) {
+            alert('Request failed. Please try again.');
+        }
+    }
+
+    // ================================================================
+    // CREATE / UPDATE / DELETE YEAR MODALS (existing logic preserved)
+    // ================================================================
+    function showCreateAcademicYearModal() {
+        document.getElementById('createAcademicYearModal').classList.remove('hidden');
+    }
+
+    function showUpdateAcademicYearModal(data) {
+        document.getElementById('updateYearId').value      = data.yearId;
+        document.getElementById('updateYearValue').value   = data.yearValue;
+        document.getElementById('updateStartDate').value   = data.startDate;
+        document.getElementById('updateEndDate').value     = data.endDate;
+        document.getElementById('updateRegistrationStartDate').value = data.registrationStartDate;
+        document.getElementById('updateRegistrationEndDate').value   = data.registrationEndDate;
+        document.getElementById('updateMinRegistrationPayment').value = data.minRegistrationPaymentPercentage;
+        document.getElementById('updateMinExamPayment').value        = data.minExamPaymentPercentage;
+        document.getElementById('updateIsActive').checked            = data.isActive;
+
+        const typeVal = parseInt(data.academicType);
+        document.getElementById('updateAnnualType').checked   = typeVal === 0;
+        document.getElementById('updateSemesterType').checked = typeVal === 1;
+        document.getElementById('updateTermType').checked     = typeVal === 2;
+
+        const nextSelect = document.getElementById('updateNextAcademicYearId');
+        if (nextSelect) nextSelect.value = data.nextAcademicYearId || '';
+
+        document.getElementById('updateAcademicYearModal').classList.remove('hidden');
+    }
+
+    function showDeleteAcademicYearModal(yearId, yearValue, academicType) {
+        document.getElementById('deleteYearId').value        = yearId;
+        document.getElementById('deleteYearValue').textContent = yearValue;
+        document.getElementById('deleteAcademicType').textContent = academicType;
+        document.getElementById('deleteAcademicYearModal').classList.remove('hidden');
+    }
+
+    // Close modals on backdrop click
+    document.querySelectorAll('[data-bs-dismiss="modal"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            btn.closest('.fixed').classList.add('hidden');
+        });
+    });
+</script>
 
 <script type="module" src="~/js/academic_years.js"></script>

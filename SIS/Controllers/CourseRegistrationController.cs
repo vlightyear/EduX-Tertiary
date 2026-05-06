@@ -83,7 +83,7 @@ namespace SIS.Controllers
                     // Add semester filter if programme is semester-based
                     if (student.Programme?.IsSemesterBased == true)
                     {
-                        baseQuery = baseQuery.Where(r => r.Semester == student.CurrentSemester);
+                        baseQuery = baseQuery.Where(r => r.YearPeriodId == student.CurrentYearPeriodId);
                     }
 
                     courses = await baseQuery
@@ -122,7 +122,7 @@ namespace SIS.Controllers
 
                 if (!courses.Any())
                 {
-                    var semesterInfo = student.Programme?.IsSemesterBased == true ? $" semester {student.CurrentSemester}" : "";
+                    var semesterInfo = student.Programme?.IsSemesterBased == true ? $" semester {student.CurrentYearPeriodId}" : "";
                     var message = $"No courses found for student {student.Id} in year {student.StudentCurrentYear}{semesterInfo}";
                     Console.WriteLine($"[WARNING] {DateTime.Now} - {message}");
                     TempData["Warning"] = $"No courses found for your current year{semesterInfo}.";
@@ -132,7 +132,7 @@ namespace SIS.Controllers
                     var mandatoryCount = courses.Count(c => c.IsMandatory);
                     var electiveCount = courses.Count(c => !c.IsMandatory);
                     var selectedCount = courses.Count(c => c.IsSelected);
-                    var semesterInfo = student.Programme?.IsSemesterBased == true ? $" for semester {student.CurrentSemester}" : "";
+                    var semesterInfo = student.Programme?.IsSemesterBased == true ? $" for semester {student.CurrentYearPeriodId}" : "";
                     var programmeInfo = programmeUsedForCourses.Id != student.ProgrammeId ? $" from NQ programme '{programmeUsedForCourses.Name}'" : "";
                     Console.WriteLine($"[INFO] {DateTime.Now} - Found {mandatoryCount} mandatory and {electiveCount} elective courses{semesterInfo}{programmeInfo}. {selectedCount} courses are pre-selected.");
                 }
@@ -143,7 +143,7 @@ namespace SIS.Controllers
                 // Add academic year information to ViewBag
                 ViewBag.RegistrationStatus = student.RegistrationStatus;
                 ViewBag.AcademicYear = student.AcademicYear?.YearValue;
-                ViewBag.Semester = student.CurrentSemester;
+                ViewBag.Semester = student.CurrentYearPeriodId;
                 ViewBag.IsSemesterBased = student.Programme?.IsSemesterBased ?? false;
                 @ViewBag.StudentNumber = student.StudentId_Number;
 
@@ -188,7 +188,7 @@ namespace SIS.Controllers
                 if (requirements.TotalRequiredCourses > 0)
                 {
                     var periodText = student.Programme?.IsSemesterBased == true ?
-                        $"this semester (Semester {student.CurrentSemester})" : "this year";
+                        $"this semester (Semester {student.CurrentYearPeriodId})" : "this year";
                     var mandatoryText = courses.Count(c => c.IsMandatory) > 0 ?
                         $"(including {courses.Count(c => c.IsMandatory)} mandatory courses and " : "(";
 
@@ -235,12 +235,12 @@ namespace SIS.Controllers
                     regularCourses = nqCourses.courses;
                     programmeUsed = nqCourses.nqProgramme;
 
-                    var semesterInfo = student.Programme?.IsSemesterBased == true ? $" semester {student.CurrentSemester}" : "";
+                    var semesterInfo = student.Programme?.IsSemesterBased == true ? $" semester {student.CurrentYearPeriodId}" : "";
                     Console.WriteLine($"[INFO] {DateTime.Now} - Found {regularCourses.Count} courses from NQ programme '{programmeUsed.Name}' for student {student.Id} in year {student.StudentCurrentYear}{semesterInfo}.");
                 }
                 else
                 {
-                    var semesterInfo = student.Programme?.IsSemesterBased == true ? $" semester {student.CurrentSemester}" : "";
+                    var semesterInfo = student.Programme?.IsSemesterBased == true ? $" semester {student.CurrentYearPeriodId}" : "";
                     Console.WriteLine($"[WARNING] {DateTime.Now} - No courses found in associated NQ programme for student {student.Id} in year {student.StudentCurrentYear}{semesterInfo}.");
                 }
             }
@@ -263,7 +263,7 @@ namespace SIS.Controllers
             // Add semester filter if programme is semester-based
             if (student.Programme?.IsSemesterBased == true)
             {
-                courseQuery = courseQuery.Where(c => c.SemesterTaken == student.CurrentSemester);
+                courseQuery = courseQuery.Where(c => c.PeriodTakenId == student.CurrentYearPeriod.AcademicPeriod.Id);
             }
 
             var courses = await courseQuery
@@ -304,7 +304,7 @@ namespace SIS.Controllers
             // (we use the student's current semester regardless of NQ programme settings)
             if (student.Programme?.IsSemesterBased == true)
             {
-                courseQuery = courseQuery.Where(c => c.SemesterTaken == student.CurrentSemester);
+                courseQuery = courseQuery.Where(c => c.PeriodTakenId == student.CurrentYearPeriod.AcademicPeriod.Id);
             }
 
             var courses = await courseQuery
@@ -360,18 +360,18 @@ namespace SIS.Controllers
                         if (programme.IsSemesterBased)
                         {
                             // For semester-based programmes, get semester-specific requirements
-                            var currentSemester = student.CurrentSemester ?? 1;
-                            if (currentSemester == 1 && requirement.Semester1.HasValue)
+                            var CurrentYearPeriodId = student.CurrentYearPeriodId ?? 1;
+                            if (CurrentYearPeriodId == 1 && requirement.Semester1.HasValue)
                             {
                                 totalRequiredCourses = requirement.Semester1.Value;
                             }
-                            else if (currentSemester == 2 && requirement.Semester2.HasValue)
+                            else if (CurrentYearPeriodId == 2 && requirement.Semester2.HasValue)
                             {
                                 totalRequiredCourses = requirement.Semester2.Value;
                             }
                             else
                             {
-                                Console.WriteLine($"[WARNING] {DateTime.Now} - No semester {currentSemester} requirements found for year {student.StudentCurrentYear} in programme {programme.Name}");
+                                Console.WriteLine($"[WARNING] {DateTime.Now} - No semester {CurrentYearPeriodId} requirements found for year {student.StudentCurrentYear} in programme {programme.Name}");
                                 // Fallback to total required divided by 2
                                 totalRequiredCourses = requirement.TotalRequired / 2;
                             }
@@ -410,7 +410,7 @@ namespace SIS.Controllers
 
                         if (programme.IsSemesterBased)
                         {
-                            mandatoryCoursesQuery = mandatoryCoursesQuery.Where(c => c.SemesterTaken == student.CurrentSemester);
+                            mandatoryCoursesQuery = mandatoryCoursesQuery.Where(c => c.PeriodTakenId == student.CurrentYearPeriod.AcademicPeriod.Id);
                         }
 
                         var mandatoryCount = await mandatoryCoursesQuery.CountAsync();
@@ -427,7 +427,7 @@ namespace SIS.Controllers
 
                         if (programme.IsSemesterBased)
                         {
-                            electiveCoursesQuery = electiveCoursesQuery.Where(c => c.SemesterTaken == student.CurrentSemester);
+                            electiveCoursesQuery = electiveCoursesQuery.Where(c => c.PeriodTakenId == student.CurrentYearPeriod.AcademicPeriod.Id);
                         }
 
                         var availableElectives = await electiveCoursesQuery.CountAsync();
@@ -435,7 +435,7 @@ namespace SIS.Controllers
                             ? Math.Min(availableElectives, totalRequiredCourses - totalMandatory)
                             : availableElectives;
 
-                        var periodText = programme.IsSemesterBased ? $"Semester {student.CurrentSemester}" : $"Year {student.StudentCurrentYear}";
+                        var periodText = programme.IsSemesterBased ? $"Semester {student.CurrentYearPeriodId}" : $"Year {student.StudentCurrentYear}";
                         var programmeText = programme.Id != student.ProgrammeId ? $" (using NQ programme: {programme.Name})" : "";
                         Console.WriteLine($"[INFO] {DateTime.Now} - {periodText} requires {totalRequiredCourses} total courses, " +
                                          $"minimum {minimumElectives} electives, maximum {maximumElectives} electives{programmeText}");
@@ -575,7 +575,7 @@ namespace SIS.Controllers
                         StudentId = student.Id,
                         CourseId = course.Id,
                         AcademicYearId = student.AcademicYearId,
-                        Semester = student.CurrentSemester ?? 1,
+                        YearPeriodId = student.CurrentYearPeriodId ?? 1,
                         RegistrationDate = DateTime.Now
                     };
                     _context.StudentCourseRegistrations.Add(registration);
@@ -606,7 +606,7 @@ namespace SIS.Controllers
                             StudentId = student.Id,
                             CourseId = course.Id,
                             AcademicYearId = student.AcademicYearId,
-                            Semester = student.CurrentSemester ?? 1,
+                            YearPeriodId = student.CurrentYearPeriodId ?? 1,
                             RegistrationDate = DateTime.Now,
                             AssessmentScores = assessmentJson.Any()
                                 ? System.Text.Json.JsonSerializer.Serialize(assessmentJson)
@@ -647,7 +647,7 @@ namespace SIS.Controllers
 
                 // Generate invoice with proper error handling
                 var periodText = student.Programme?.IsSemesterBased == true ?
-                    $" for semester {student.CurrentSemester}" : "";
+                    $" for semester {student.CurrentYearPeriodId}" : "";
 
                 var carryoverText = carryoverCourses.Any() ?
                     $" (including {carryoverCourses.Count} carryover course{(carryoverCourses.Count != 1 ? "s" : "")})" : "";
@@ -812,7 +812,7 @@ namespace SIS.Controllers
                     .Include(cr => cr.Course)
                     .Where(cr => cr.StudentId == student.Id)
                     .Where(cr => cr.AcademicYearId == student.AcademicYearId)
-                    .Where(cr => cr.Semester == examEvent.Semester || examEvent.Semester == null)
+                    .Where(cr => cr.YearPeriodId == examEvent.Semester || examEvent.Semester == null)
                     .Select(cr => new {
                         Code = cr.Course.CourseCode,
                         Name = cr.Course.CourseName,

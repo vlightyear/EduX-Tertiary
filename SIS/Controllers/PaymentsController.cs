@@ -367,13 +367,13 @@ namespace SIS.Controllers
                             f.FeeType.ApplicableFor == "Student")
                 .ToList();
 
-            if (student.Programme?.IsSemesterBased == true && student.CurrentSemester.HasValue)
+            if (student.Programme?.IsSemesterBased == true && student.CurrentYearPeriodId.HasValue)
             {
-                fees = fees.Where(f => f.Semester == null || f.Semester == student.CurrentSemester.Value).ToList();
+                fees = fees.Where(f => f.YearPeriodId == null || f.YearPeriodId == student.CurrentYearPeriodId.Value).ToList();
             }
             else
             {
-                fees = fees.Where(f => f.Semester == null).ToList();
+                fees = fees.Where(f => f.YearPeriodId == null).ToList();
             }
 
             var filteredFees = fees.Where(f =>
@@ -488,7 +488,7 @@ namespace SIS.Controllers
                     .Include(si => si.InvoiceItems)
                     .FirstOrDefaultAsync(si => si.StudentId == student.Id &&
                                              si.AcademicYearId == student.AcademicYearId &&
-                                             (student.Programme.IsSemesterBased == false || si.Semester == student.CurrentSemester));
+                                             (student.Programme.IsSemesterBased == false || si.YearPeriodId == student.CurrentYearPeriodId));
 
                 if (studentInvoice == null)
                 {
@@ -501,7 +501,7 @@ namespace SIS.Controllers
                                 .Include(si => si.InvoiceItems)
                                 .FirstOrDefaultAsync(si => si.StudentId == student.Id &&
                                                          si.AcademicYearId == student.AcademicYearId &&
-                                                         (student.Programme.IsSemesterBased == false || si.Semester == student.CurrentSemester));
+                                                         (student.Programme.IsSemesterBased == false || si.YearPeriodId == student.CurrentYearPeriodId));
                             TempData["Info"] = "Your invoice has been generated successfully.";
                         }
                     }
@@ -514,7 +514,7 @@ namespace SIS.Controllers
                 if (studentInvoice != null)
                 {
                     currentTotalFees = await _context.StudentInvoices
-                        .Where(si => si.StudentId == student.Id && si.AcademicYearId == student.AcademicYearId && si.Semester == student.CurrentSemester)
+                        .Where(si => si.StudentId == student.Id && si.AcademicYearId == student.AcademicYearId && si.YearPeriodId == student.CurrentYearPeriodId)
                         .SumAsync(si => si.TotalAmount);
                     feeBreakdown = CreateFeeBreakdownFromInvoice(studentInvoice.InvoiceItems.ToList(), totalPaidForAcademicYear);
                 }
@@ -1592,7 +1592,7 @@ namespace SIS.Controllers
 
                 // Calculate total payments
                 var currentTotalFees = await _context.StudentInvoices
-                        .Where(si => si.StudentId == student.Id && si.AcademicYearId == student.AcademicYearId && si.Semester == student.CurrentSemester)
+                        .Where(si => si.StudentId == student.Id && si.AcademicYearId == student.AcademicYearId && si.YearPeriodId == student.CurrentYearPeriodId)
                         .SumAsync(si => si.TotalAmount);
                 if(currentTotalFees <= 0)
                 {
@@ -1612,7 +1612,7 @@ namespace SIS.Controllers
                     .Include(si => si.InvoiceItems)
                     .FirstOrDefaultAsync(si => si.StudentId == student.Id &&
                                              si.AcademicYearId == student.AcademicYearId &&
-                                             (student.Programme.IsSemesterBased == false || si.Semester == student.CurrentSemester));
+                                             (student.Programme.IsSemesterBased == false || si.YearPeriodId == student.CurrentYearPeriodId));
 
                 if (studentInvoice == null && student.IsRegistered)
                 {
@@ -1628,7 +1628,7 @@ namespace SIS.Controllers
                                 .Include(si => si.InvoiceItems)
                                 .FirstOrDefaultAsync(si => si.StudentId == student.Id &&
                                                          si.AcademicYearId == student.AcademicYearId &&
-                                                         (student.Programme.IsSemesterBased == false || si.Semester == student.CurrentSemester));
+                                                         (student.Programme.IsSemesterBased == false || si.YearPeriodId == student.CurrentYearPeriodId));
 
                             TempData["Info"] = "Your invoice has been regenerated and reconciled with your payment history.";
                         }
@@ -1866,7 +1866,7 @@ namespace SIS.Controllers
 
                 // Generate unique invoice reference
                 var today = DateTime.Now.Date;
-                var semesterSuffix = student.Programme?.IsSemesterBased == true ? $"-S{student.CurrentSemester}" : "";
+                var semesterSuffix = student.Programme?.IsSemesterBased == true ? $"-S{student.CurrentYearPeriodId}" : "";
                 var invoiceReference = $"INV-{today:yyyyMMdd}-{student.StudentId_Number}{semesterSuffix}-RECON";
 
                 // Build address string
@@ -1899,7 +1899,7 @@ namespace SIS.Controllers
                             TotalAmount = adjustedTotalAmount,
                             CreatedDate = DateTime.Now,
                             AcademicYearId = student.AcademicYearId,
-                            Semester = student.Programme?.IsSemesterBased == true ? student.CurrentSemester : null,
+                            YearPeriodId = student.CurrentYearPeriodId,
                             Status = Status.Pending
                         };
 

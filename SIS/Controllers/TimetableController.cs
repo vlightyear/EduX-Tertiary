@@ -3677,7 +3677,7 @@ namespace SIS.Controllers
                 .Include(r => r.Course)
                 .Where(r => r.StudentId == student.Id &&
                            r.AcademicYearId == student.AcademicYearId &&
-                           r.Semester == student.CurrentSemester)
+                           r.YearPeriodId == student.CurrentYearPeriodId)
                 .Select(r => r.CourseId)
                 .ToListAsync();
 
@@ -3817,7 +3817,7 @@ namespace SIS.Controllers
                 WeeklyTimetable = weeklyTimetable,
                 AcademicYearValue = student.AcademicYear.YearValue,
                 ModeOfStudyName = student.ModeOfStudy.ModeName,
-                Semester = $"Semester {student.CurrentSemester}"
+                Period = $"Period {student.CurrentYearPeriodLabel}"
             };
 
             return View(viewModel);

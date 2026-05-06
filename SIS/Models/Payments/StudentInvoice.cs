@@ -19,7 +19,7 @@ namespace SIS.Models.Payments
         public string? BatchReference { get; set; }
          public string? Description { get; set; }
         public string? TransactionType { get; set; }
-        public int? Semester { get; set; } // For semester-based programs
+        public int? YearPeriodId { get; set; }
         public DateTime? DeletedAt {  get; set; }
         public DateTime? CreatedAt {  get; set; }
         public string? CreatedBy {  get; set; }

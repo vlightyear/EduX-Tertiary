@@ -490,7 +490,7 @@ namespace SIS.Controllers.AccommodationControllers
                             RoomId = room.RoomId,
                             BedIdentifier = bedIdentifier,
                             CurrentStudentYear = bedYear,
-                            CurrentStudentSemister = bedSemester,
+                            CurrentStudentPeriodId = bedSemester,
                             Status = Status.Available,
                             CreatedBy = hostel.UpdatedBy ?? hostel.CreatedBy,
                             CreatedAt = DateTime.Now
@@ -614,7 +614,7 @@ namespace SIS.Controllers.AccommodationControllers
                             RoomId = room.RoomId,
                             BedIdentifier = bedIdentifier,
                             CurrentStudentYear = bedYear,
-                            CurrentStudentSemister = bedSemester,
+                            CurrentStudentPeriodId = bedSemester,
                             Status = Status.Available,
                             CreatedBy = hostel.CreatedBy,
                             CreatedAt = DateTime.Now

@@ -713,7 +713,6 @@ namespace SIS.Controllers.AccomodationControllers
 
             var studentGender = student.Gender ?? gender;
             var studentYear = student.StudentCurrentYear ?? 0;
-            var studentSemester = student.CurrentSemester ?? 0;
 
             var query = _context.BedSpaces
                 .Include(b => b.Room)
@@ -726,7 +725,7 @@ namespace SIS.Controllers.AccomodationControllers
                 // Filter by year: bed must be for all years (0) OR match student's year
                 .Where(b => b.CurrentStudentYear == 0 || b.CurrentStudentYear == studentYear)
                 // Filter by semester: bed must be for all semesters (0) OR match student's semester
-                .Where(b => b.CurrentStudentSemister == 0 || b.CurrentStudentSemister == studentSemester);
+                .Where(b => b.AcademicPeriodId == 0 || b.AcademicPeriodId == student.CurrentYearPeriod.AcademicPeriodId);
 
             if (campusId.HasValue)
             {
@@ -752,7 +751,7 @@ namespace SIS.Controllers.AccomodationControllers
                     campusName = b.Room.Hostel.Campus.CampusName,
                     isSpecialReservation = b.IsSpecialReservation,
                     currentStudentYear = b.CurrentStudentYear,
-                    currentStudentSemister = b.CurrentStudentSemister
+                    AcademicPeriodId = b.AcademicPeriodId
                 })
                 .ToListAsync();
 
@@ -992,7 +991,6 @@ namespace SIS.Controllers.AccomodationControllers
             {
                 var student = await GetCurrentStudentAsync();
                 var studentYear = student?.StudentCurrentYear ?? 0;
-                var studentSemester = student?.CurrentSemester ?? 0;
 
                 var hostels = await _context.Hostels
                     .Where(h => h.CampusId == campusId && h.Status == Status.Active)
@@ -1007,7 +1005,7 @@ namespace SIS.Controllers.AccomodationControllers
                             .SelectMany(room => room.BedSpaces)
                             .Count(b => b.Status == Status.Available &&
                                        (b.CurrentStudentYear == 0 || b.CurrentStudentYear == studentYear) &&
-                                       (b.CurrentStudentSemister == 0 || b.CurrentStudentSemister == studentSemester))
+                                       (b.AcademicPeriodId == 0 || b.AcademicPeriodId == student.CurrentYearPeriod.AcademicPeriodId))
                     })
                     .Where(h => h.availableBeds > 0)
                     .OrderBy(h => h.name)

@@ -230,7 +230,7 @@ namespace SIS.Services
                     // Determine next academic year and semester
                     var nextAcademicYear = currentAcademicYear.NextAcademicYear;
                     int nextYearOfStudy = student.StudentCurrentYear ?? 1;
-                    int nextSemester = student.CurrentSemester ?? 1;
+                    int nextSemester = student.CurrentYearPeriodId ?? 1;
 
                     // Calculate progression based on action and academic type
                     CalculateNextYearAndSemester(
@@ -313,7 +313,7 @@ namespace SIS.Services
         {
             bool isSemesterBased = student.Programme.IsSemesterBased;
             int currentYearOfStudy = student.StudentCurrentYear ?? 1;
-            int currentSemester = student.CurrentSemester ?? 1;
+            int currentSemester = student.CurrentYearPeriodId ?? 1;
 
             switch (progressionAction)
             {
@@ -384,7 +384,7 @@ namespace SIS.Services
             // Update academic year (use NextAcademicYearId from the chain)
             student.AcademicYearId = nextAcademicYear.YearId;
             student.StudentCurrentYear = nextYearOfStudy;
-            student.CurrentSemester = nextSemester;
+            student.CurrentYearPeriodId = nextSemester;
 
             // Update registration status based on action
             switch (progressionAction)
@@ -601,7 +601,7 @@ namespace SIS.Services
                     progressionAction,
                     totalFailedCourses,
                     student.Programme.IsSemesterBased,
-                    student.CurrentSemester),
+                    student.CurrentYearPeriodId),
                 CourseResults = JsonSerializer.Serialize(new
                 {
                     Courses = studentResults.Select(r => new
@@ -617,7 +617,7 @@ namespace SIS.Services
                     YearGPA = yearGPA,
                     TotalFailedCourses = totalFailedCourses,
                     ProgrammeType = student.Programme.IsSemesterBased ? "Semester" : "Annual",
-                    CurrentSemester = student.CurrentSemester
+                    CurrentSemester = student.CurrentYearPeriodId
                 }),
                 CreatedBy = userId,
                 CreatedAt = DateTime.Now

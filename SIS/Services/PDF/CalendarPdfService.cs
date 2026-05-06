@@ -141,27 +141,14 @@ namespace SIS.Services.PDF
             yPosition += 20;
 
             // Add semester information if it's a semester-based academic year
-            if (academicYear.AcademicType == AcademicType.Semester)
+            foreach(var yearPeriod in academicYear.YearPeriods)
             {
-                if (academicYear.Semester1StartDate.HasValue && academicYear.Semester1EndDate.HasValue)
-                {
-                    graphics.DrawString("Semester 1:", boldFont, XBrushes.Black,
-                        new XPoint(margin + 15, yPosition));
-                    graphics.DrawString($"{academicYear.Semester1StartDate.Value:MMMM d, yyyy} - {academicYear.Semester1EndDate.Value:MMMM d, yyyy}",
-                        regularFont, XBrushes.Black,
-                        new XPoint(margin + 100, yPosition));
-                    yPosition += 20;
-                }
-
-                if (academicYear.Semester2StartDate.HasValue && academicYear.Semester2EndDate.HasValue)
-                {
-                    graphics.DrawString("Semester 2:", boldFont, XBrushes.Black,
-                        new XPoint(margin + 15, yPosition));
-                    graphics.DrawString($"{academicYear.Semester2StartDate.Value:MMMM d, yyyy} - {academicYear.Semester2EndDate.Value:MMMM d, yyyy}",
-                        regularFont, XBrushes.Black,
-                        new XPoint(margin + 100, yPosition));
-                    yPosition += 20;
-                }
+                graphics.DrawString("Semester 1:", boldFont, XBrushes.Black,
+                    new XPoint(margin + 15, yPosition));
+                graphics.DrawString($"{academicYear.StartDate:MMMM d, yyyy} - {academicYear.EndDate:MMMM d, yyyy}",
+                    regularFont, XBrushes.Black,
+                    new XPoint(margin + 100, yPosition));
+                yPosition += 20;
             }
 
             // Add registration period if available
@@ -176,11 +163,11 @@ namespace SIS.Services.PDF
             }
 
             // Add exam period if available
-            if (academicYear.FinalExamStartDate.HasValue && academicYear.FinalExamEndDate.HasValue)
+            foreach (var yearPeriod in academicYear.YearPeriods)
             {
                 graphics.DrawString("Final Exams:", boldFont, XBrushes.Black,
                     new XPoint(margin + 15, yPosition));
-                graphics.DrawString($"{academicYear.FinalExamStartDate.Value:MMMM d, yyyy} - {academicYear.FinalExamEndDate.Value:MMMM d, yyyy}",
+                graphics.DrawString($"{yearPeriod.ExamStartDate.Value:MMMM d, yyyy} - {yearPeriod.ExamEndDate.Value:MMMM d, yyyy}",
                     regularFont, XBrushes.Black,
                     new XPoint(margin + 100, yPosition));
             }

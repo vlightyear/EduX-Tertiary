@@ -30,7 +30,7 @@ namespace SIS.Models.ViewModels
         public int? ProgrammeLevelId { get; set; }
         public int? AcademicYearId { get; set; }
         public int? CurrentYear { get; set; }
-        public int? CurrentSemester { get; set; }
+        public int? CurrentPeriod { get; set; }
         public Status? RegistrationStatus { get; set; }
         public bool? IsRegistered { get; set; }
         public bool? HasOutstandingFees { get; set; }
@@ -56,7 +56,8 @@ namespace SIS.Models.ViewModels
         public string ProgrammeLevelName { get; set; } = string.Empty;
         public string AcademicYear { get; set; } = string.Empty;
         public int CurrentYear { get; set; }
-        public int CurrentSemester { get; set; }
+        public int CurrentPeriodId { get; set; }
+        public string CurrentPeriodLabel { get; set; } = string.Empty;
         public string StudentStatus { get; set; } = string.Empty;
         public string RegistrationStatus { get; set; } = string.Empty;
         public bool IsRegistered { get; set; }

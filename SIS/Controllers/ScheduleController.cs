@@ -61,7 +61,7 @@ namespace SIS.Controllers
                 var registrations = _context.StudentCourseRegistrations
                     .Where(scr => courseIds.Contains(scr.CourseId) &&
                                   scr.AcademicYearId == currentAcademicYear.YearId &&
-                                  scr.Semester == currentSemester)
+                                  scr.YearPeriodId == currentSemester)
                     .Select(scr => new { scr.CourseId, scr.StudentId })
                     .AsNoTracking()
                     .ToList();

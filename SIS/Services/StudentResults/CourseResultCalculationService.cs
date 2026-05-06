@@ -59,7 +59,7 @@ namespace SIS.Services
                         s.StudentId == studentId &&
                         s.CourseId == courseId &&
                         s.AcademicYearId == academicYearId &&
-                        s.Semester == semester &&
+                        s.YearPeriodId == semester &&
                         s.IsActive)
                     .ToListAsync();
 
@@ -297,7 +297,7 @@ namespace SIS.Services
                     .Where(s =>
                         s.CourseId == courseId &&
                         s.AcademicYearId == academicYearId &&
-                        s.Semester == semester &&
+                        s.YearPeriodId == semester &&
                         s.IsActive)
                     .Select(s => s.StudentId)
                     .Distinct()
@@ -544,7 +544,7 @@ namespace SIS.Services
                         s.StudentId == result.StudentId &&
                         s.CourseId == result.CourseId &&
                         s.AcademicYearId == result.AcademicYearId &&
-                        s.Semester == result.Semester &&
+                        s.YearPeriodId == result.Semester &&
                         s.IsActive)
                     .ToListAsync();
 

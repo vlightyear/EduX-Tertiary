@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SIS.Data;
 using SIS.Models.Payments;
+using SIS.Models.StudentApplication;
 
 namespace SIS.Controllers
 {
@@ -143,7 +144,7 @@ namespace SIS.Controllers
                         institution = "Eden University",
                         modeOfStudy = student.ModeOfStudy?.ModeName ?? "N/A",
                         modeOfStudyCode = student.ModeOfStudy?.Code ?? "N/A",
-                        currentSemester = student.CurrentSemester ?? 0,
+                        currentPeriod = student.CurrentYearPeriodLabel,
                         currentYear = student.StudentCurrentYear ?? 0,
                         registrationStatus = student.RegistrationStatus.ToString(),
                         programme = student.Programme?.Name ?? "N/A",
@@ -209,7 +210,7 @@ namespace SIS.Controllers
                         institution = "Eden University",
                         modeOfStudy = s.ModeOfStudy != null ? s.ModeOfStudy.ModeName : "N/A",
                         modeOfStudyCode = s.ModeOfStudy != null ? s.ModeOfStudy.Code : "N/A",
-                        currentSemester = s.CurrentSemester ?? 0,
+                        currentPeriod = s.CurrentYearPeriodLabel,
                         currentYear = s.StudentCurrentYear ?? 0,
                         registrationStatus = s.RegistrationStatus.ToString(),
                         programme = s.Programme != null ? s.Programme.Name : "N/A",
@@ -284,7 +285,7 @@ namespace SIS.Controllers
                         institution = "Eden University",
                         modeOfStudy = student.ModeOfStudy?.ModeName ?? "N/A",
                         modeOfStudyCode = student.ModeOfStudy?.Code ?? "N/A",
-                        currentSemester = student.CurrentSemester ?? 0,
+                        currentPeriod = student.CurrentYearPeriodLabel,
                         currentYear = student.StudentCurrentYear ?? 0,
                         registrationStatus = student.RegistrationStatus.ToString(),
                         isRegistered = student.IsRegistered,

@@ -206,7 +206,7 @@ public async Task<IActionResult> OtherFeesInvoices()
                     var existingInvoice = await _context.StudentInvoices
                         .AnyAsync(i => i.StudentId == student.Id
                                     && i.AcademicYearId == request.AcademicYearId
-                                    && i.Semester == request.Semester
+                                    && i.YearPeriodId == request.Semester
                                     && i.DeletedAt == null
                                     && (int)i.Status != 3);
 
@@ -231,7 +231,7 @@ public async Task<IActionResult> OtherFeesInvoices()
                         CreatedDate = DateTime.Now,
                         AcademicYearId = request.AcademicYearId,
                         Status = (Status)4,
-                        Semester = request.Semester,
+                        YearPeriodId = request.Semester,
                         AccountingSystemPostStatus = "Pending",
                         BatchReference = batchReference,
                         Description = request.InvoiceDescription,
@@ -321,7 +321,7 @@ public async Task<IActionResult> OtherFeesInvoices()
                 query = query.Where(i => i.AcademicYearId == request.AcademicYearId.Value);
 
             if (request.Semester.HasValue)
-                query = query.Where(i => i.Semester == request.Semester.Value);
+                query = query.Where(i => i.YearPeriodId == request.Semester.Value);
 
             if (!string.IsNullOrEmpty(request.Status))
             {
@@ -353,7 +353,7 @@ public async Task<IActionResult> OtherFeesInvoices()
                     i.TotalAmount,
                     i.CreatedDate,
                     AcademicYear = i.AcademicYear.YearValue,
-                    i.Semester,
+                    i.YearPeriodId,
                     Status = i.Status.ToString(),
                     i.AccountingSystemPostStatus,
                     ItemsCount = i.InvoiceItems.Count,
@@ -372,7 +372,7 @@ public async Task<IActionResult> OtherFeesInvoices()
                 inv.TotalAmount,
                 inv.CreatedDate,
                 inv.AcademicYear,
-                inv.Semester,
+                inv.YearPeriodId,
                 inv.Status,
                 inv.AccountingSystemPostStatus,
                 inv.ItemsCount,
@@ -415,7 +415,7 @@ public async Task<IActionResult> OtherFeesInvoices()
                 invoice.TotalAmount,
                 invoice.CreatedDate,
                 AcademicYear = invoice.AcademicYear.YearValue,
-                invoice.Semester,
+                invoice.YearPeriodId,
                 Status = invoice.Status.ToString(),
                 invoice.AccountingSystemPostStatus,
                 Items = invoice.InvoiceItems.Select(item => new

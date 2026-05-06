@@ -429,39 +429,14 @@ namespace SIS.Controllers
                     _logger.LogInformation("Creating new financial statement for amount {Amount}",
                         transaction.Amount ?? 0);
 
-                    var financialStatement = new FinancialStatement
-                    {
-                        StudentId = student.Id,
-                        AmountPaid = transaction.Amount ?? 0,
-                        PaymentDate = DateTime.Now,
-                        PaymentMethod = $"Bill Master ({transaction.PaymentMethod})",
-                        TransactionReference = transaction.MerchantTransactionId,
-                        AcademicYearId = student.AcademicYearId,
-                        OutstandingAmount = student.OutstandingFees - (transaction.Amount ?? 0),
-                        Semester = student.CurrentSemester ?? 1
-                    };
-
                     var originalFees = student.OutstandingFees;
-                    student.OutstandingFees = financialStatement.OutstandingAmount;
 
                     _logger.LogInformation("Updating student fees from {Original} to {New}",
                         originalFees, student.OutstandingFees);
 
-                    _context.FinancialStatements.Add(financialStatement);
                     _context.Students.Update(student);
 
                     var changes = await _context.SaveChangesAsync();
-                    _logger.LogInformation("Saved {Changes} database changes for financial records", changes);
-
-                    if (changes == 0)
-                    {
-                        _logger.LogError("No database changes were saved for financial statement");
-                    }
-                    else
-                    {
-                        _logger.LogInformation("Successfully created financial statement ID {StatementId}",
-                            financialStatement.Id);
-                    }
 
                     if (_accountingService != null)
                     {

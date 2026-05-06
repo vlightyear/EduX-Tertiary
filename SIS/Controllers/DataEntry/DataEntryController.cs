@@ -72,7 +72,7 @@ namespace SIS.Controllers.DataEntry
                         SchoolName = s.School.Name,
                         AcademicYear = s.AcademicYear.YearValue,
                         OutstandingFees = StudentTools.GetStudentOutstandingBalance(s.Id),
-                        s.CurrentSemester,
+                        s.CurrentYearPeriodId,
                         s.AcademicYearId,
                         s.SchoolId,
                         s.ProgrammeId,
@@ -120,7 +120,7 @@ namespace SIS.Controllers.DataEntry
                 }
 
                 // Use the semester parameter if provided, otherwise use student's current semester
-                var targetSemester = semester ?? student.CurrentSemester;
+                var targetSemester = semester ?? student.CurrentYearPeriodId;
 
                 // Query fee configurations
                 var feesQuery = _context.FeeConfigurations
@@ -158,7 +158,7 @@ namespace SIS.Controllers.DataEntry
                             (!f.ProgramLevelId.HasValue || f.ProgramLevelId == student.ProgrammeLevelId) &&
 
                             // Semester: Either not specified (yearly fee) OR matches target semester OR target semester is null
-                            (!f.Semester.HasValue || f.Semester == targetSemester || !targetSemester.HasValue) &&
+                            (!f.YearPeriodId.HasValue || f.YearPeriodId == targetSemester || !targetSemester.HasValue) &&
 
                             // Foreign Student: Either not restricted OR student is foreign
                             (!f.AppliesOnlyToForeignStudents || student.IsForeigner) &&
@@ -175,7 +175,7 @@ namespace SIS.Controllers.DataEntry
                     f.FeeTypeId,
                     FeeTypeName = f.FeeType.Name,
                     f.Amount,
-                    f.Semester,
+                    f.YearPeriodId,
                     f.YearOfStudy,
                     SchoolName = f.School != null ? f.School.Name : "All Schools",
                     ProgrammeName = f.Programme != null ? f.Programme.Name : "All Programmes",
@@ -193,7 +193,7 @@ namespace SIS.Controllers.DataEntry
                         f.ModeOfStudy != null ? f.ModeOfStudy.ModeName : "All Modes",
                         f.ProgramLevel != null ? f.ProgramLevel.Name : "All Levels",
                         f.YearOfStudy,
-                        f.Semester,
+                        f.YearPeriodId,
                         f.AppliesOnlyToForeignStudents,
                         f.AppliesOnlyToAccommodated
                     )
@@ -261,7 +261,7 @@ namespace SIS.Controllers.DataEntry
                         i.CreatedDate,
                         AcademicYear = i.AcademicYear.YearValue,
                         i.Status,
-                        i.Semester,
+                        i.YearPeriodId,
                         i.AccountingSystemPostStatus
                     })
                     .ToListAsync();
@@ -293,7 +293,7 @@ namespace SIS.Controllers.DataEntry
                         i.CreatedDate,
                         i.AcademicYearId,
                         i.Status,
-                        i.Semester,
+                        i.YearPeriodId,
                         i.AccountingSystemPostStatus
                     })
                     .FirstOrDefaultAsync();
@@ -425,7 +425,7 @@ namespace SIS.Controllers.DataEntry
                 invoice.TotalAmount = model.TotalAmount;
                 invoice.AcademicYearId = model.AcademicYearId;
                 invoice.Status = model.Status;
-                invoice.Semester = model.Semester;
+                invoice.YearPeriodId = model.YearPeriodId;
                 invoice.AccountingSystemPostStatus = model.AccountingSystemPostStatus ?? "Pending";
                 invoice.UpdatedAt = DateTime.Now;
                 invoice.UpdatedBy = user.Id;

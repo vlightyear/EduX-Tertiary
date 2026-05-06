@@ -239,7 +239,8 @@ namespace SIS.Controllers
                     ModeOfStudyName = student.ModeOfStudy?.ModeName ?? "N/A",
                     AcademicYear = student.AcademicYear?.YearValue ?? "N/A",
                     CurrentYear = student.StudentCurrentYear ?? 0,
-                    CurrentSemester = student.CurrentSemester ?? 0,
+                    CurrentPeriodId = student.CurrentYearPeriodId ?? 0,
+                    CurrentPeriodLabel = student.CurrentYearPeriod?.FullLabel ?? "N/A",
                     StudentStatus = student.StudentStatus.ToString(),
                     RegistrationStatus = student.RegistrationStatus.ToString(),
                     IsRegistered = student.IsRegistered,
@@ -326,7 +327,7 @@ namespace SIS.Controllers
                     .Include(si => si.InvoiceItems)
                     .FirstOrDefaultAsync(si => si.StudentId == studentId &&
                                              si.AcademicYearId == student.AcademicYearId &&
-                                             (student.Programme.IsSemesterBased == false || si.Semester == student.CurrentSemester));
+                                             (student.Programme.IsSemesterBased == false || si.YearPeriodId == student.CurrentYearPeriodId));
 
                 // Get total paid for current invoices
                 var totalFees = StudentTools.GetStudentTotalFees(studentId);
@@ -815,7 +816,7 @@ namespace SIS.Controllers
                     var course = allCourses.FirstOrDefault(c =>
                         c.CourseCode == pair.CourseCode &&
                         c.YearTaken == pair.YearOfStudy &&
-                        c.SemesterTaken == pair.Semester);
+                        c.PeriodTakenId == pair.Semester);
 
                     // Fallback to just course code
                     if (course == null)
@@ -1371,7 +1372,8 @@ namespace SIS.Controllers
                         ProgrammeLevelName = s.ProgrammeLevel.Name,
                         AcademicYear = s.AcademicYear.YearValue,
                         CurrentYear = s.StudentCurrentYear ?? 0,
-                        CurrentSemester = s.CurrentSemester ?? 0,
+                        CurrentPeriodId = s.CurrentYearPeriodId ?? 0,
+                        CurrentPeriodLabel = s.CurrentYearPeriodLabel ?? "N/A",
                         StudentStatus = s.StudentStatus.ToString(),
                         RegistrationStatus = s.RegistrationStatus.ToString(),
                         IsRegistered = s.IsRegistered,
@@ -1505,9 +1507,9 @@ namespace SIS.Controllers
                 query = query.Where(s => s.StudentCurrentYear == filters.CurrentYear.Value);
             }
 
-            if (filters.CurrentSemester.HasValue)
+            if (filters.CurrentPeriod.HasValue)
             {
-                query = query.Where(s => s.CurrentSemester == filters.CurrentSemester.Value);
+                query = query.Where(s => s.CurrentYearPeriod.AcademicPeriod.Id == filters.CurrentPeriod.Value);
             }
 
             if (filters.RegistrationStatus.HasValue)
@@ -1673,7 +1675,8 @@ namespace SIS.Controllers
                         ProgrammeLevelName = s.ProgrammeLevel.Name,
                         AcademicYear = s.AcademicYear.YearValue,
                         CurrentYear = s.StudentCurrentYear ?? 0,
-                        CurrentSemester = s.CurrentSemester ?? 0,
+                        CurrentPeriodId = s.CurrentYearPeriodId ?? 0,
+                        CurrentPeriodLabel = s.CurrentYearPeriodLabel ?? "N/A",
                         StudentStatus = s.StudentStatus.ToString(),
                         RegistrationStatus = s.RegistrationStatus.ToString(),
                         IsRegistered = s.IsRegistered,
@@ -1756,8 +1759,8 @@ namespace SIS.Controllers
                 if (filters.CurrentYear.HasValue)
                     summary["Year of Study"] = $"Year {filters.CurrentYear.Value}";
 
-                if (filters.CurrentSemester.HasValue)
-                    summary["Semester"] = $"Semester {filters.CurrentSemester.Value}";
+                if (filters.CurrentPeriod.HasValue)
+                    summary["Period"] = $"Semester {filters.CurrentPeriod.Value}";
 
                 if (filters.RegistrationStatus.HasValue)
                     summary["Registration Status"] = filters.RegistrationStatus.Value.ToString();
@@ -1821,7 +1824,8 @@ namespace SIS.Controllers
                         ProgrammeLevelName = s.ProgrammeLevel.Name,
                         AcademicYear = s.AcademicYear.YearValue,
                         CurrentYear = s.StudentCurrentYear ?? 0,
-                        CurrentSemester = s.CurrentSemester ?? 0,
+                        CurrentPeriodId = s.CurrentYearPeriodId ?? 0,
+                        CurrentPeriodLabel = s.CurrentYearPeriodLabel ?? "N/A",
                         StudentStatus = s.StudentStatus.ToString(),
                         RegistrationStatus = s.RegistrationStatus.ToString(),
                         IsRegistered = s.IsRegistered,
@@ -2715,7 +2719,7 @@ namespace SIS.Controllers
         }*/
 
         [HttpPost("StudentLookup/CardsLookup")]
-        public async Task<IActionResult> CardsLookup(string semester, string year, string programme)
+        public async Task<IActionResult> CardsLookup(string period, string year, string programme)
         {
             try
             {
@@ -2734,7 +2738,9 @@ namespace SIS.Controllers
                 var students = await _context.Students.Include(s => s.Programme)
                                                         .Include(s => s.School)
                                                         .Include(s => s.AcademicYear)
-                                                        .Where(s => s.CurrentSemester == Int32.Parse(semester) && s.StudentCurrentYear == Int32.Parse(year)
+                                                        .Include(s => s.CurrentYearPeriod)
+                                                        .ThenInclude(p => p.AcademicPeriod)
+                                                        .Where(s => s.CurrentYearPeriod.AcademicPeriod.Id == Int32.Parse(period) && s.StudentCurrentYear == Int32.Parse(year)
                                                         && s.ProgrammeId == Int32.Parse(programme) && s.IdCardPrintedDate == null)
                                                         .ToListAsync();
 
@@ -3517,7 +3523,7 @@ namespace SIS.Controllers
                     ModeOfStudyId = int.Parse(form["ModeOfStudyId"].ToString()),
                     AcademicYearId = int.Parse(form["AcademicYearId"].ToString()),
                     StudentCurrentYear = int.Parse(form["StudentCurrentYear"].ToString()),
-                    CurrentSemester = int.Parse(form["CurrentSemester"].ToString()),
+                    CurrentYearPeriodId = int.Parse(form["CurrentYearPeriodId"].ToString()),
 
                     // Status Fields
                     ApplicationReferenceNumber = "MANUAL-" + DateTime.Now.Ticks,

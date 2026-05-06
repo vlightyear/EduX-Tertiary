@@ -44,7 +44,7 @@ namespace SIS.Models.Compliance
         public string Programme { get; set; }
 
         [Column("semesterofstudy")]
-        public int SemesterOfStudy { get; set; }
+        public int CurrentYearPeriodId { get; set; }
 
         [Column("Delivery")]
         public string Delivery { get; set; }

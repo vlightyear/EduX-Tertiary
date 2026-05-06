@@ -170,7 +170,7 @@ namespace SIS.Services.StudentApplication
                     .Include(c => c.Programme)
                     .Where(c => c.ProgrammeID == programmeId)
                     .OrderBy(c => c.YearTaken)
-                    .ThenBy(c => c.SemesterTaken)
+                    .ThenBy(c => c.PeriodTakenId)
                     .ThenBy(c => c.CourseName)
                     .ToListAsync();
 
@@ -189,7 +189,7 @@ namespace SIS.Services.StudentApplication
                         ElectiveCourses = yearGroup.Count(c => !c.IsMandatory)
                     };
 
-                    foreach (var semesterGroup in yearGroup.GroupBy(c => c.SemesterTaken))
+                    foreach (var semesterGroup in yearGroup.GroupBy(c => c.PeriodTakenId))
                     {
                         var semesterViewModel = new CourseSemesterViewModel
                         {
@@ -210,7 +210,8 @@ namespace SIS.Services.StudentApplication
                                 CourseDescription = course.CourseDescription ?? "",
                                 CourseType = course.CourseType ?? "",
                                 YearTaken = course.YearTaken,
-                                SemesterTaken = course.SemesterTaken,
+                                PeriodTakenId = course.PeriodTakenId,
+                                PeriodTakenLabel = course.PeriodTakenLabel,
                                 IsMandatory = course.IsMandatory,
                                 IsExaminable = course.IsExaminable,
                                 PassMark = (int)course.PassMark,

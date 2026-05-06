@@ -174,7 +174,7 @@ namespace SIS.Controllers
                     var course = allCourses.FirstOrDefault(c =>
                         c.CourseCode == pair.CourseCode &&
                         c.YearTaken == pair.YearOfStudy &&
-                        c.SemesterTaken == pair.Semester);
+                        c.PeriodTakenId == pair.Semester);
 
                     // Fallback to just course code
                     if (course == null)
@@ -935,7 +935,7 @@ namespace SIS.Controllers
                             s.StudentId == result.StudentId &&
                             s.CourseId == result.CourseId &&
                             s.AcademicYearId == result.AcademicYearId &&
-                            s.Semester == result.Semester &&
+                            s.YearPeriodId == result.Semester &&
                             s.IsActive)
                         .ToListAsync();
                 }
@@ -961,7 +961,7 @@ namespace SIS.Controllers
                             r.Course.CourseCode,
                             r.Course.CourseName,
                             ProgrammeName = r.Course.Programme?.Name ?? "N/A",
-                            r.Semester
+                            r.YearPeriodId
                         })
                         .Select(cg =>
                         {
@@ -975,7 +975,7 @@ namespace SIS.Controllers
                             var existingResults = courseResults
                                 .Where(r => r.CourseId == cg.Key.CourseId &&
                                            r.AcademicYearId == academicYear.YearId &&
-                                           r.Semester == cg.Key.Semester)
+                                           r.Semester == cg.Key.YearPeriodId)
                                 .ToList();
 
                             var totalAssessed = 0;
@@ -1016,7 +1016,7 @@ namespace SIS.Controllers
                                 CourseCode = cg.Key.CourseCode,
                                 CourseName = cg.Key.CourseName,
                                 ProgrammeName = cg.Key.ProgrammeName,
-                                Semester = cg.Key.Semester,
+                                Semester = cg.Key.YearPeriodId,
                                 EnrolledStudentsCount = totalStudents,
                                 AssessmentsString = assessmentSummary,
                                 PendingAssessments = pendingAssessments,
@@ -1140,7 +1140,7 @@ namespace SIS.Controllers
                     .GroupBy(e => new
                     {
                         AcademicYearId = e.AcademicYearId,
-                        Semester = e.Semester,
+                        Semester = e.YearPeriodId,
                         AcademicYear = e.AcademicYear.YearValue,
                         ModeOfStudyId = e.Student.ModeOfStudyId,
                         ModeOfStudy = e.Student.ModeOfStudy.ModeName
@@ -1328,7 +1328,7 @@ namespace SIS.Controllers
                                             s.CourseId == student.CourseId &&
                                             s.AssessmentId == scoreData.Key &&
                                             s.AcademicYearId == academicYearId &&
-                                            s.Semester == semester &&
+                                            s.YearPeriodId == semester &&
                                             s.IsActive);
 
                                     if (existingScore != null && existingScore.Score != scoreData.Value.Score)
@@ -1604,20 +1604,20 @@ namespace SIS.Controllers
         {
             if (student.Programme.IsSemesterBased)
             {
-                if (student.CurrentSemester == 1)
+                if (student.CurrentYearPeriodId == 1)
                 {
-                    student.CurrentSemester = 2;
+                    student.CurrentYearPeriodId = 2;
                 }
                 else
                 {
                     student.StudentCurrentYear += 1;
-                    student.CurrentSemester = 1;
+                    student.CurrentYearPeriodId = 1;
                 }
             }
             else
             {
                 student.StudentCurrentYear += 1;
-                student.CurrentSemester = 1;
+                student.CurrentYearPeriodId = 1;
             }
 
             student.AcademicYearId = nextAcademicYear.YearId;

@@ -2199,8 +2199,8 @@ namespace SIS.Controllers
                         break;
                     case "semester":
                         query = request.SortDirection == "asc"
-                            ? query.OrderBy(c => c.SemesterTaken)
-                            : query.OrderByDescending(c => c.SemesterTaken);
+                            ? query.OrderBy(c => c.PeriodTaken.PeriodName)
+                            : query.OrderByDescending(c => c.PeriodTaken.PeriodName);
                         break;
                     case "mandatory":
                         query = request.SortDirection == "asc"
@@ -2224,7 +2224,7 @@ namespace SIS.Controllers
                         CourseName = c.CourseName,
                         CourseType = c.CourseType,
                         YearTaken = c.YearTaken,
-                        SemesterTaken = c.SemesterTaken,
+                        PeriodTaken = c.PeriodTaken.PeriodName,
                         IsMandatory = c.IsMandatory,
                         ProgrammeName = c.Programme.Name,
                         SchoolName = c.Programme.Department.School.Name
@@ -2298,7 +2298,6 @@ namespace SIS.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateCourse()
         {
-            // Populate all select lists with materialized data to ensure proper binding
             ViewBag.Programmes = new SelectList(await _context.Programmes.ToListAsync(), "Id", "Name");
 
             var lecturers = await _context.Users
@@ -2319,7 +2318,111 @@ namespace SIS.Controllers
             var venues = await _context.LearningRooms.ToListAsync();
             ViewBag.Venues = new MultiSelectList(venues, "Id", "Name");
 
+            ViewBag.AcademicPeriods = await BuildAcademicPeriodSelectList();
+
             return View();
+        }
+
+        private async Task<List<SelectListItem>> BuildAcademicPeriodSelectList(int? selectedId = null)
+        {
+            var periods = await _context.AcademicPeriods
+                .Where(p => p.IsActive)
+                .OrderBy(p => p.AcademicType)
+                .ThenBy(p => p.PeriodNumber)
+                .ToListAsync();
+
+            // One reusable SelectListGroup per AcademicType — the tag helper
+            // collects items sharing the same Group instance into one <optgroup>.
+            var groups = new Dictionary<string, SelectListGroup>();
+
+            return periods.Select(p =>
+            {
+                var typeName = p.AcademicType.ToString(); // "Annual" | "Semester" | "Term"
+
+                if (!groups.TryGetValue(typeName, out var group))
+                {
+                    group = new SelectListGroup { Name = typeName };
+                    groups[typeName] = group;
+                }
+
+                return new SelectListItem
+                {
+                    Value = p.Id.ToString(),
+                    Text = p.PeriodName,
+                    Group = group,
+                    Selected = selectedId.HasValue && p.Id == selectedId.Value
+                };
+            }).ToList();
+        }
+
+        [HttpGet]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateCourse(int? id)
+        {
+            if (id == null) return NotFound();
+
+            var course = await _context.Courses
+                .Include(c => c.CourseLecturers)
+                    .ThenInclude(cl => cl.Lecturer)
+                .Include(c => c.CourseAssessments)
+                    .ThenInclude(ca => ca.Assessment)
+                .Include(c => c.PeriodTaken)  // ← include so we can pre-select
+                .FirstOrDefaultAsync(c => c.Id == id);
+
+            if (course == null) return NotFound();
+
+            ViewBag.Programmes = new SelectList(await _context.Programmes.ToListAsync(), "Id", "Name", course.ProgrammeID);
+
+            var lecturers = await _context.Users
+                .Where(u => _context.UserRoles
+                    .Any(ur => ur.UserId == u.Id &&
+                        _context.Roles.Any(r => r.Id == ur.RoleId && r.Name == "Lecturer")))
+                .ToListAsync();
+            var selectedLecturerIds = course.CourseLecturers.Select(cl => cl.LecturerId).ToList();
+            ViewBag.Lecturers = new MultiSelectList(lecturers, "Id", "FullName", selectedLecturerIds);
+            ViewBag.Instructors = new SelectList(lecturers, "Id", "FullName", course.InstructorId);
+
+            List<int> selectedPrereqIds = new();
+            if (!string.IsNullOrEmpty(course.PrerequisiteCourseIds))
+            {
+                try { selectedPrereqIds = System.Text.Json.JsonSerializer.Deserialize<List<int>>(course.PrerequisiteCourseIds)!; }
+                catch { /* leave empty */ }
+            }
+            var availableCourses = await _context.Courses.Where(c => c.Id != id).ToListAsync();
+            ViewBag.Courses = new MultiSelectList(availableCourses, "Id", "CourseName", selectedPrereqIds);
+
+            var assessments = await _context.Assessments.ToListAsync();
+            var selectedAssessmentIds = course.CourseAssessments.Select(ca => ca.AssessmentId).ToList();
+            ViewBag.Assessments = new MultiSelectList(assessments, "Id", "Name", selectedAssessmentIds);
+
+            List<int> selectedVenueIds = new();
+            if (!string.IsNullOrEmpty(course.PreferredVenueIds))
+            {
+                try { selectedVenueIds = System.Text.Json.JsonSerializer.Deserialize<List<int>>(course.PreferredVenueIds)!; }
+                catch { /* leave empty */ }
+            }
+            var venues = await _context.LearningRooms.ToListAsync();
+            ViewBag.Venues = new MultiSelectList(venues, "Id", "Name", selectedVenueIds);
+
+            ViewBag.AcademicPeriods = await BuildAcademicPeriodSelectList();
+
+            return View(course);
+        }
+
+        [HttpGet]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetPeriodsByType(string academicType)
+        {
+            if (!Enum.TryParse<SIS.Models.Registration.AcademicType>(academicType, out var parsed))
+                return Json(Array.Empty<object>());
+
+            var periods = await _context.AcademicPeriods
+                .Where(p => p.IsActive && p.AcademicType == parsed)
+                .OrderBy(p => p.PeriodNumber)
+                .Select(p => new { id = p.Id, periodName = p.PeriodName })
+                .ToListAsync();
+
+            return Json(periods);
         }
 
         // POST: Admin/CreateCourse
@@ -2416,79 +2519,6 @@ namespace SIS.Controllers
             return View(course);
         }
 
-        [HttpGet]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> UpdateCourse(int? id)
-        {
-            if (id == null) return NotFound();
-
-            var course = await _context.Courses
-                .Include(c => c.CourseLecturers)
-                    .ThenInclude(cl => cl.Lecturer)
-                .Include(c => c.CourseAssessments)
-                    .ThenInclude(ca => ca.Assessment)
-                .FirstOrDefaultAsync(c => c.Id == id);
-
-            if (course == null) return NotFound();
-
-            // Populate ViewBag data for all dropdowns with materialized lists
-            ViewBag.Programmes = new SelectList(await _context.Programmes.ToListAsync(), "Id", "Name", course.ProgrammeID);
-
-            // Get lecturers and selected lecturer IDs
-            var lecturers = await _context.Users
-                .Where(u => _context.UserRoles
-                    .Any(ur => ur.UserId == u.Id &&
-                        _context.Roles.Any(r => r.Id == ur.RoleId && r.Name == "Lecturer")))
-                .ToListAsync();
-
-            var selectedLecturerIds = course.CourseLecturers.Select(cl => cl.LecturerId).ToList();
-            ViewBag.Lecturers = new MultiSelectList(lecturers, "Id", "FullName", selectedLecturerIds);
-            ViewBag.Instructors = new SelectList(lecturers, "Id", "FullName", course.InstructorId);
-
-            // Get prerequisite course IDs from JSON if available
-            List<int> selectedPrereqIds = new List<int>();
-            if (!string.IsNullOrEmpty(course.PrerequisiteCourseIds))
-            {
-                try
-                {
-                    selectedPrereqIds = System.Text.Json.JsonSerializer.Deserialize<List<int>>(course.PrerequisiteCourseIds);
-                }
-                catch
-                {
-                    // If deserialization fails, just use empty list
-                    selectedPrereqIds = new List<int>();
-                }
-            }
-
-            var availableCourses = await _context.Courses.Where(c => c.Id != id).ToListAsync();
-            ViewBag.Courses = new MultiSelectList(availableCourses, "Id", "CourseName", selectedPrereqIds);
-
-            // Get assessments and selected assessment IDs
-            var assessments = await _context.Assessments.ToListAsync();
-            var selectedAssessmentIds = course.CourseAssessments.Select(ca => ca.AssessmentId).ToList();
-            ViewBag.Assessments = new MultiSelectList(assessments, "Id", "Name", selectedAssessmentIds);
-
-            // Get venues and selected venue IDs
-            var venues = await _context.LearningRooms.ToListAsync();
-            List<int> selectedVenueIds = new List<int>();
-
-            if (!string.IsNullOrEmpty(course.PreferredVenueIds))
-            {
-                try
-                {
-                    selectedVenueIds = System.Text.Json.JsonSerializer.Deserialize<List<int>>(course.PreferredVenueIds);
-                }
-                catch
-                {
-                    selectedVenueIds = new List<int>();
-                }
-            }
-
-            ViewBag.Venues = new MultiSelectList(venues, "Id", "Name", selectedVenueIds);
-
-            return View(course);
-        }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin")]
@@ -2526,7 +2556,7 @@ namespace SIS.Controllers
                 existingCourse.CourseDescription = course.CourseDescription;
                 existingCourse.CourseType = course.CourseType;
                 existingCourse.YearTaken = course.YearTaken;
-                existingCourse.SemesterTaken = course.SemesterTaken;
+                existingCourse.PeriodTakenId = course.PeriodTakenId;
                 existingCourse.ProgrammeID = course.ProgrammeID;
                 existingCourse.PassMark = course.PassMark;
                 existingCourse.IsMandatory = course.IsMandatory;
@@ -3133,8 +3163,8 @@ public async Task<IActionResult> GetFeeConfigurationsData([FromBody] FeeConfigFi
         if (request.AcademicYearId.HasValue)
             query = query.Where(fc => fc.AcademicYearId == request.AcademicYearId.Value);
 
-        if (request.Semester.HasValue)
-            query = query.Where(fc => fc.Semester == request.Semester.Value);
+        if (request.YearPeriodId.HasValue)
+            query = query.Where(fc => fc.YearPeriodId == request.YearPeriodId.Value);
 
         if (request.SchoolId.HasValue)
             query = query.Where(fc => fc.SchoolId == request.SchoolId.Value);
@@ -3194,7 +3224,7 @@ public async Task<IActionResult> GetFeeConfigurationsData([FromBody] FeeConfigFi
                 FeeTypeName = fc.FeeType.Name,
                 fc.AcademicYearId,
                 AcademicYear = fc.AcademicYear != null ? fc.AcademicYear.YearValue + "/" + (fc.AcademicYear.SemesterId != null ? fc.AcademicYear.SemesterId.ToString() : "") : "N/A",
-                fc.Semester,
+                fc.YearPeriodId,
                 fc.SchoolId,
                 SchoolName = fc.School != null ? fc.School.Name : "All Schools",
                 fc.ProgrammeId,
@@ -3229,7 +3259,7 @@ public async Task<IActionResult> GetFeeConfigurationsData([FromBody] FeeConfigFi
                 fc.FeeTypeName,
                 fc.AcademicYearId,
                 fc.AcademicYear,
-                fc.Semester,
+                fc.YearPeriodId,
                 fc.SchoolId,
                 fc.SchoolName,
                 fc.ProgrammeId,
@@ -3384,7 +3414,7 @@ public async Task<IActionResult> CreateFeeConfiguration(FeeConfiguration feeConf
         Console.WriteLine($"Received FeeConfiguration - AcademicYearId: {feeConfiguration.AcademicYearId}, FeeTypeId: {feeConfiguration.FeeTypeId}");
         Console.WriteLine($"SchoolId: {feeConfiguration.SchoolId}, ProgrammeId: {feeConfiguration.ProgrammeId}");
         Console.WriteLine($"ModeOfStudyId: {feeConfiguration.ModeOfStudyId}, YearOfStudy: {feeConfiguration.YearOfStudy}");
-        Console.WriteLine($"ProgramLevelId: {feeConfiguration.ProgramLevelId}, Semester: {feeConfiguration.Semester}");
+        Console.WriteLine($"ProgramLevelId: {feeConfiguration.ProgramLevelId}, YearPeriod: {feeConfiguration.YearPeriodId}");
         Console.WriteLine($"Amount: {feeConfiguration.Amount}, AppliesUniversally: {feeConfiguration.AppliesUniversally}");
         Console.WriteLine($"AppliesOnlyToAccommodated: {feeConfiguration.AppliesOnlyToAccommodated}");
         Console.WriteLine($"AppliesOnlyToForeignStudents: {feeConfiguration.AppliesOnlyToForeignStudents}");
@@ -3456,7 +3486,7 @@ public async Task<IActionResult> CreateFeeConfiguration(FeeConfiguration feeConf
                         fc.ModeOfStudyId == feeConfiguration.ModeOfStudyId &&
                         fc.YearOfStudy == feeConfiguration.YearOfStudy &&
                         fc.ProgramLevelId == feeConfiguration.ProgramLevelId &&
-                        fc.Semester == feeConfiguration.Semester &&
+                        fc.YearPeriodId == feeConfiguration.YearPeriodId &&
                         fc.AppliesUniversally == feeConfiguration.AppliesUniversally &&
                         fc.AppliesOnlyToAccommodated == feeConfiguration.AppliesOnlyToAccommodated &&
                         fc.AppliesOnlyToForeignStudents == feeConfiguration.AppliesOnlyToForeignStudents &&
@@ -3572,7 +3602,7 @@ public async Task<IActionResult> UpdateFeeConfiguration(FeeConfiguration feeConf
                         fc.ModeOfStudyId == feeConfiguration.ModeOfStudyId &&
                         fc.YearOfStudy == feeConfiguration.YearOfStudy &&
                         fc.ProgramLevelId == feeConfiguration.ProgramLevelId &&
-                        fc.Semester == feeConfiguration.Semester &&
+                        fc.YearPeriodId == feeConfiguration.YearPeriodId &&
                         fc.AppliesUniversally == feeConfiguration.AppliesUniversally &&
                         fc.AppliesOnlyToAccommodated == feeConfiguration.AppliesOnlyToAccommodated &&
                         fc.AppliesOnlyToForeignStudents == feeConfiguration.AppliesOnlyToForeignStudents &&
@@ -4682,9 +4712,211 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
         public async Task<IActionResult> AcademicYear()
         {
             var academicYears = await _context.AcademicYears
+                .Include(a => a.YearPeriods)
+                    .ThenInclude(yp => yp.AcademicPeriod)
                 .Include(a => a.NextAcademicYear)
                 .ToListAsync();
             return View(academicYears);
+        }
+
+        // ============================================================
+        // ADD THESE ACTIONS TO AdminController
+        // ============================================================
+        // Also update the existing AcademicYear() action to include:
+        //
+        //   var academicYears = await _context.AcademicYears
+        //       .Include(a => a.NextAcademicYear)
+        //       .Include(a => a.YearPeriods)
+        //           .ThenInclude(yp => yp.AcademicPeriod)
+        //       .ToListAsync();
+        // ============================================================
+
+        // GET: Admin/GetAcademicPeriodTemplates?academicType=1
+        // Returns reusable AcademicPeriod templates filtered by type,
+        // so the UI can only offer valid periods for the year's structure.
+        [HttpGet]
+        [Authorize(Roles = "Admin, Registrar")]
+        public async Task<IActionResult> GetAcademicPeriodTemplates(int academicType)
+        {
+            var periods = await _context.AcademicPeriods
+                .Where(p => p.IsActive && (int)p.AcademicType == academicType)
+                .OrderBy(p => p.PeriodNumber)
+                .Select(p => new
+                {
+                    id = p.Id,
+                    periodName = p.PeriodName,
+                    periodNumber = p.PeriodNumber
+                })
+                .ToListAsync();
+
+            return Json(periods);
+        }
+
+        // GET: Admin/GetYearPeriods?yearId=3
+        // Returns all AcademicYearPeriod rows (with dates) for one academic year.
+        [HttpGet]
+        [Authorize(Roles = "Admin, Registrar")]
+        public async Task<IActionResult> GetYearPeriods(int yearId)
+        {
+            var yearPeriods = await _context.AcademicYearPeriods
+                .Include(yp => yp.AcademicPeriod)
+                .Where(yp => yp.AcademicYearId == yearId)
+                .OrderBy(yp => yp.AcademicPeriod.PeriodNumber)
+                .Select(yp => new
+                {
+                    id = yp.Id,
+                    academicPeriodId = yp.AcademicPeriodId,
+                    periodName = yp.AcademicPeriod.PeriodName,
+                    periodNumber = yp.AcademicPeriod.PeriodNumber,
+                    startDate = yp.StartDate.ToString("yyyy-MM-dd"),
+                    endDate = yp.EndDate.ToString("yyyy-MM-dd"),
+                    examStartDate = yp.ExamStartDate.HasValue ? yp.ExamStartDate.Value.ToString("yyyy-MM-dd") : (string)null,
+                    examEndDate = yp.ExamEndDate.HasValue ? yp.ExamEndDate.Value.ToString("yyyy-MM-dd") : (string)null,
+                    registrationStartDate = yp.RegistrationStartDate.HasValue ? yp.RegistrationStartDate.Value.ToString("yyyy-MM-dd") : (string)null,
+                    registrationEndDate = yp.RegistrationEndDate.HasValue ? yp.RegistrationEndDate.Value.ToString("yyyy-MM-dd") : (string)null,
+                    gradeSubmissionStartDate = yp.GradeSubmissionStartDate.HasValue ? yp.GradeSubmissionStartDate.Value.ToString("yyyy-MM-dd") : (string)null,
+                    gradeSubmissionEndDate = yp.GradeSubmissionEndDate.HasValue ? yp.GradeSubmissionEndDate.Value.ToString("yyyy-MM-dd") : (string)null,
+                    isActive = yp.IsActive
+                })
+                .ToListAsync();
+
+            return Json(yearPeriods);
+        }
+
+        // POST: Admin/AddYearPeriod
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin, Registrar")]
+        public async Task<IActionResult> AddYearPeriod(AcademicYearPeriod model)
+        {
+            try
+            {
+                // Validate the period template matches the year's academic type
+                var year = await _context.AcademicYears.FindAsync(model.AcademicYearId);
+                var period = await _context.AcademicPeriods.FindAsync(model.AcademicPeriodId);
+
+                if (year == null || period == null)
+                    return Json(new { success = false, message = "Academic year or period not found." });
+
+                if (year.AcademicType != period.AcademicType)
+                    return Json(new { success = false, message = $"Cannot attach a {period.AcademicType} period to a {year.AcademicType} academic year." });
+
+                if (model.StartDate >= model.EndDate)
+                    return Json(new { success = false, message = "Start date must be before end date." });
+
+                // Prevent duplicates
+                var exists = await _context.AcademicYearPeriods
+                    .AnyAsync(yp => yp.AcademicYearId == model.AcademicYearId
+                                 && yp.AcademicPeriodId == model.AcademicPeriodId);
+
+                if (exists)
+                    return Json(new { success = false, message = $"{period.PeriodName} is already attached to this academic year." });
+
+                // If this period is being set active, deactivate any current active period for the year
+                if (model.IsActive)
+                {
+                    var currentlyActive = await _context.AcademicYearPeriods
+                        .Where(yp => yp.AcademicYearId == model.AcademicYearId && yp.IsActive)
+                        .ToListAsync();
+                    currentlyActive.ForEach(yp => yp.IsActive = false);
+                }
+
+                _context.AcademicYearPeriods.Add(model);
+                await _context.SaveChangesAsync();
+
+                return Json(new { success = true, message = $"{period.PeriodName} added successfully." });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error adding year period: {ex}");
+                return Json(new { success = false, message = "An error occurred while adding the period." });
+            }
+        }
+
+        // POST: Admin/UpdateYearPeriod
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin, Registrar")]
+        public async Task<IActionResult> UpdateYearPeriod(AcademicYearPeriod model)
+        {
+            try
+            {
+                var existing = await _context.AcademicYearPeriods
+                    .Include(yp => yp.AcademicPeriod)
+                    .FirstOrDefaultAsync(yp => yp.Id == model.Id);
+
+                if (existing == null)
+                    return Json(new { success = false, message = "Period not found." });
+
+                if (model.StartDate >= model.EndDate)
+                    return Json(new { success = false, message = "Start date must be before end date." });
+
+                // If activating this period, deactivate others in the same year
+                if (model.IsActive && !existing.IsActive)
+                {
+                    var currentlyActive = await _context.AcademicYearPeriods
+                        .Where(yp => yp.AcademicYearId == existing.AcademicYearId
+                                  && yp.IsActive
+                                  && yp.Id != model.Id)
+                        .ToListAsync();
+                    currentlyActive.ForEach(yp => yp.IsActive = false);
+                }
+
+                existing.StartDate = model.StartDate;
+                existing.EndDate = model.EndDate;
+                existing.ExamStartDate = model.ExamStartDate;
+                existing.ExamEndDate = model.ExamEndDate;
+                existing.RegistrationStartDate = model.RegistrationStartDate;
+                existing.RegistrationEndDate = model.RegistrationEndDate;
+                existing.GradeSubmissionStartDate = model.GradeSubmissionStartDate;
+                existing.GradeSubmissionEndDate = model.GradeSubmissionEndDate;
+                existing.IsActive = model.IsActive;
+
+                await _context.SaveChangesAsync();
+
+                return Json(new { success = true, message = $"{existing.AcademicPeriod.PeriodName} updated successfully." });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error updating year period: {ex}");
+                return Json(new { success = false, message = "An error occurred while updating the period." });
+            }
+        }
+
+        // POST: Admin/RemoveYearPeriod
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin, Registrar")]
+        public async Task<IActionResult> RemoveYearPeriod(int yearPeriodId)
+        {
+            try
+            {
+                var yearPeriod = await _context.AcademicYearPeriods
+                    .Include(yp => yp.AcademicPeriod)
+                    .FirstOrDefaultAsync(yp => yp.Id == yearPeriodId);
+
+                if (yearPeriod == null)
+                    return Json(new { success = false, message = "Period not found." });
+
+                // Guard: block removal if students, fees, or disqualifications are pinned to it
+                bool hasStudents = await _context.Students
+                    .AnyAsync(s => s.CurrentYearPeriodId == yearPeriodId);
+                bool hasFees = await _context.FeeConfigurations
+                    .AnyAsync(f => f.YearPeriodId == yearPeriodId);
+
+                if (hasStudents || hasFees)
+                    return Json(new { success = false, message = "Cannot remove this period — students or fee configurations are currently linked to it." });
+
+                _context.AcademicYearPeriods.Remove(yearPeriod);
+                await _context.SaveChangesAsync();
+
+                return Json(new { success = true, message = $"{yearPeriod.AcademicPeriod.PeriodName} removed." });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error removing year period: {ex}");
+                return Json(new { success = false, message = "An error occurred while removing the period." });
+            }
         }
 
         [HttpPost]
@@ -4700,63 +4932,12 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
                     return Json(new { success = false, message = "Start Date must be earlier than End Date." });
                 }
 
-                // Validate based on academic type
-                if (model.AcademicType == AcademicType.Semester)
-                {
-                    // For semester-based, semester dates are required
-                    if (!model.Semester1StartDate.HasValue || !model.Semester1EndDate.HasValue ||
-                        !model.Semester2StartDate.HasValue || !model.Semester2EndDate.HasValue)
-                    {
-                        return Json(new { success = false, message = "All semester dates are required for semester-based academic years." });
-                    }
-
-                    // Validate semester date sequence
-                    if (model.Semester1StartDate >= model.Semester1EndDate)
-                    {
-                        return Json(new { success = false, message = "Semester 1 Start Date must be earlier than Semester 1 End Date." });
-                    }
-
-                    if (model.Semester2StartDate >= model.Semester2EndDate)
-                    {
-                        return Json(new { success = false, message = "Semester 2 Start Date must be earlier than Semester 2 End Date." });
-                    }
-
-                    if (model.Semester1EndDate >= model.Semester2StartDate)
-                    {
-                        return Json(new { success = false, message = "Semester 1 must end before Semester 2 starts." });
-                    }
-
-                    // Validate semester dates are within academic year bounds
-                    if (model.Semester1StartDate < model.StartDate || model.Semester2EndDate > model.EndDate)
-                    {
-                        return Json(new { success = false, message = "Semester dates must be within the academic year period." });
-                    }
-                }
-
                 // Validate registration dates if provided
                 if (model.RegistrationStartDate.HasValue && model.RegistrationEndDate.HasValue)
                 {
                     if (model.RegistrationStartDate >= model.RegistrationEndDate)
                     {
                         return Json(new { success = false, message = "Registration Start Date must be earlier than Registration End Date." });
-                    }
-                }
-
-                // Validate final exam dates if provided
-                if (model.FinalExamStartDate.HasValue && model.FinalExamEndDate.HasValue)
-                {
-                    if (model.FinalExamStartDate >= model.FinalExamEndDate)
-                    {
-                        return Json(new { success = false, message = "Final Exam Start Date must be earlier than Final Exam End Date." });
-                    }
-                }
-
-                // Validate grade submission dates if provided
-                if (model.GradeSubmissionStartDate.HasValue && model.GradeSubmissionEndDate.HasValue)
-                {
-                    if (model.GradeSubmissionStartDate >= model.GradeSubmissionEndDate)
-                    {
-                        return Json(new { success = false, message = "Grade Submission Start Date must be earlier than Grade Submission End Date." });
                     }
                 }
 
@@ -4829,63 +5010,12 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
                     return Json(new { success = false, message = "Start Date must be earlier than End Date." });
                 }
 
-                // Validate based on academic type
-                if (model.AcademicType == AcademicType.Semester)
-                {
-                    // For semester-based, semester dates are required
-                    if (!model.Semester1StartDate.HasValue || !model.Semester1EndDate.HasValue ||
-                        !model.Semester2StartDate.HasValue || !model.Semester2EndDate.HasValue)
-                    {
-                        return Json(new { success = false, message = "All semester dates are required for semester-based academic years." });
-                    }
-
-                    // Validate semester date sequence
-                    if (model.Semester1StartDate >= model.Semester1EndDate)
-                    {
-                        return Json(new { success = false, message = "Semester 1 Start Date must be earlier than Semester 1 End Date." });
-                    }
-
-                    if (model.Semester2StartDate >= model.Semester2EndDate)
-                    {
-                        return Json(new { success = false, message = "Semester 2 Start Date must be earlier than Semester 2 End Date." });
-                    }
-
-                    if (model.Semester1EndDate >= model.Semester2StartDate)
-                    {
-                        return Json(new { success = false, message = "Semester 1 must end before Semester 2 starts." });
-                    }
-
-                    // Validate semester dates are within academic year bounds
-                    if (model.Semester1StartDate < model.StartDate || model.Semester2EndDate > model.EndDate)
-                    {
-                        return Json(new { success = false, message = "Semester dates must be within the academic year period." });
-                    }
-                }
-
                 // Validate registration dates if provided
                 if (model.RegistrationStartDate.HasValue && model.RegistrationEndDate.HasValue)
                 {
                     if (model.RegistrationStartDate >= model.RegistrationEndDate)
                     {
                         return Json(new { success = false, message = "Registration Start Date must be earlier than Registration End Date." });
-                    }
-                }
-
-                // Validate final exam dates if provided
-                if (model.FinalExamStartDate.HasValue && model.FinalExamEndDate.HasValue)
-                {
-                    if (model.FinalExamStartDate >= model.FinalExamEndDate)
-                    {
-                        return Json(new { success = false, message = "Final Exam Start Date must be earlier than Final Exam End Date." });
-                    }
-                }
-
-                // Validate grade submission dates if provided
-                if (model.GradeSubmissionStartDate.HasValue && model.GradeSubmissionEndDate.HasValue)
-                {
-                    if (model.GradeSubmissionStartDate >= model.GradeSubmissionEndDate)
-                    {
-                        return Json(new { success = false, message = "Grade Submission Start Date must be earlier than Grade Submission End Date." });
                     }
                 }
 
@@ -4950,20 +5080,6 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
                 existingYear.MinRegistrationPaymentPercentage = model.MinRegistrationPaymentPercentage;
                 existingYear.MinExamPaymentPercentage = model.MinExamPaymentPercentage;
                 existingYear.IsActive = model.IsActive;
-
-                // Update semester dates
-                existingYear.Semester1StartDate = model.Semester1StartDate;
-                existingYear.Semester1EndDate = model.Semester1EndDate;
-                existingYear.Semester2StartDate = model.Semester2StartDate;
-                existingYear.Semester2EndDate = model.Semester2EndDate;
-
-                // Update optional period dates
-                existingYear.RegistrationStartDate = model.RegistrationStartDate;
-                existingYear.RegistrationEndDate = model.RegistrationEndDate;
-                existingYear.FinalExamStartDate = model.FinalExamStartDate;
-                existingYear.FinalExamEndDate = model.FinalExamEndDate;
-                existingYear.GradeSubmissionStartDate = model.GradeSubmissionStartDate;
-                existingYear.GradeSubmissionEndDate = model.GradeSubmissionEndDate;
 
                 // Update next academic year
                 existingYear.NextAcademicYearId = model.NextAcademicYearId;
@@ -6794,7 +6910,7 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
         // Filter properties
         public int? FeeTypeId { get; set; }
         public int? AcademicYearId { get; set; }
-        public int? Semester { get; set; }
+        public int? YearPeriodId { get; set; }
         public int? SchoolId { get; set; }
         public int? ProgrammeId { get; set; }
         public int? ModeOfStudyId { get; set; }

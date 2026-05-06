@@ -14,7 +14,7 @@ namespace SIS.Models.Reports
         public int? ProgrammeId { get; set; }
         public int? ModeOfStudyId { get; set; }
         public int? YearOfStudy { get; set; }
-        public int? Semester { get; set; }
+        public int? AcademicPeriod { get; set; }
         public string ReportLevel { get; set; } = "School";
         public string Period { get; set; } // "Current", "Previous", etc.
     }

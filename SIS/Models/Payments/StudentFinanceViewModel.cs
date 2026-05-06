@@ -14,6 +14,7 @@ namespace SIS.Models.Payments
         public List<FeeBreakdownItem> FeeBreakdown { get; set; }
         public string AcademicYear { get; set; }
         public string YearOfStudy { get; set; }
+        public string? CurrentPeriodLabel { get; set; }
     }
 
 
