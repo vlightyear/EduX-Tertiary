@@ -80,8 +80,8 @@ namespace SIS.Models.Registration
         [NotMapped]
         public bool IsInRegistrationWindow =>
             RegistrationStartDate.HasValue && RegistrationEndDate.HasValue &&
-            DateTime.UtcNow >= RegistrationStartDate.Value &&
-            DateTime.UtcNow <= RegistrationEndDate.Value;
+            DateTime.Now >= RegistrationStartDate.Value &&
+            DateTime.Now <= RegistrationEndDate.Value;
 
         [NotMapped]
         public bool IsInExamWindow =>

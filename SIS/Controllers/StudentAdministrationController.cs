@@ -63,6 +63,8 @@ namespace SIS.Controllers
                     .Include(s => s.Programme)
                         .ThenInclude(p => p.Department)
                             .ThenInclude(d => d.School)
+                    .Include(s => s.CurrentYearPeriod)
+                        .ThenInclude(cyp => cyp.AcademicPeriod)
                     .Include(s => s.School)
                     .Include(s => s.ModeOfStudy)
                     .Include(s => s.ProgrammeLevel)
@@ -986,6 +988,8 @@ namespace SIS.Controllers
                 var student = await _context.Students
                     .Include(s => s.Programme)
                     .Include(s => s.AcademicYear)
+                    .Include(s => s.CurrentYearPeriod)
+                        .ThenInclude(cyp => cyp.AcademicPeriod)
                     .FirstOrDefaultAsync(s => s.Id == studentId);
 
                 if (student == null)
