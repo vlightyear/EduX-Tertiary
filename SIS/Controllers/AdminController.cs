@@ -6917,6 +6917,5 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
         public int? YearOfStudy { get; set; }
         public int? ProgramLevelId { get; set; }
         public string StudentType { get; set; }
-
     }
 }
