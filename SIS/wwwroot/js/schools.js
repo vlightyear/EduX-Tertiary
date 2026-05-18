@@ -58,7 +58,7 @@
 
     // Make the table responsive
     window.addEventListener('resize', () => {
-        dataTable.columns().rebuild();
+        //dataTable.columns().rebuild();
     });
 
     // Modal elements
@@ -131,29 +131,150 @@
 
     // Show update modal
     window.showUpdateSchoolModal = async function (id) {
-        // Fetch school data
-        fetch(`/Admin/GetSchool/${id}`)
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('updateSchoolId').value = data.id;
-                document.getElementById('updateSchoolName').value = data.name;
-                document.getElementById('updateDescription').value = data.description;
 
-                // Set Dean and Assistant Dean dropdown values
-                if (data.deanId) {
-                    document.getElementById('updateDeanId').value = data.deanId;
-                }
+        try {
 
-                if (data.assistantDeanId) {
-                    document.getElementById('updateAssistantDeanId').value = data.assistantDeanId;
-                }
+            const response = await fetch(`/Admin/GetSchool/${id}`);
 
-                // Show the modal
-                document.getElementById('updateSchoolModal').classList.remove('hidden');
-            })
-            .catch(error => console.error('Error fetching school data:', error));
+            if (!response.ok) {
+                throw new Error('Failed to fetch school');
+            }
 
+            const data = await response.json();
 
+            // =========================================
+            // BASIC FIELDS
+            // =========================================
+
+            document.getElementById('updateSchoolId').value = data.id;
+            document.getElementById('updateSchoolName').value = data.name;
+            document.getElementById('updateDescription').value = data.description ?? '';
+
+            // =========================================
+            // USER SELECTS
+            // =========================================
+
+            $('#updateDeanId').val(data.deanId);
+            $('#updateAssistantDeanId').val(data.assistantDeanId);
+            $('#updateAssistantRegistrarId').val(data.assistantRegistrarId);
+
+            // =========================================
+            // LOCATION HIERARCHY
+            // =========================================
+
+            // Nation
+            $('#updateNationId').val(data.nationId);
+
+            // =========================================
+            // LOAD PROVINCES
+            // =========================================
+
+            await $.get('/Admin/GetProvinces',
+                { nationId: data.nationId },
+                function (provinces) {
+
+                    $('#updateProvinceId').empty();
+                    $('#updateProvinceId')
+                        .append('<option value="">Select Province</option>');
+
+                    provinces.forEach(p => {
+
+                        $('#updateProvinceId').append(
+                            `<option value="${p.id}">${p.name}</option>`
+                        );
+                    });
+
+                    $('#updateProvinceId').val(data.provinceId);
+                });
+
+            // =========================================
+            // LOAD DISTRICTS
+            // =========================================
+
+            await $.get('/Admin/GetDistricts',
+                { provinceId: data.provinceId },
+                function (districts) {
+
+                    $('#updateDistrictId').empty();
+
+                    $('#updateDistrictId')
+                        .append('<option value="">Select District</option>');
+
+                    districts.forEach(d => {
+
+                        $('#updateDistrictId').append(
+                            `<option value="${d.id}">${d.name}</option>`
+                        );
+                    });
+
+                    $('#updateDistrictId').val(data.districtId);
+                });
+
+            // =========================================
+            // LOAD CONSTITUENCIES
+            // =========================================
+
+            if (data.districtId) {
+
+                await $.get('/Admin/GetConstituencies',
+                    { districtId: data.districtId },
+                    function (constituencies) {
+
+                        $('#updateConstituencyId').empty();
+
+                        $('#updateConstituencyId')
+                            .append('<option value="">Select Constituency</option>');
+
+                        constituencies.forEach(c => {
+
+                            $('#updateConstituencyId').append(
+                                `<option value="${c.id}">${c.name}</option>`
+                            );
+                        });
+
+                        $('#updateConstituencyId').val(data.constituencyId);
+                    });
+            }
+
+            // =========================================
+            // LOAD WARDS
+            // =========================================
+
+            if (data.constituencyId) {
+
+                await $.get('/Admin/GetWards',
+                    { constituencyId: data.constituencyId },
+                    function (wards) {
+
+                        $('#updateWardId').empty();
+
+                        $('#updateWardId')
+                            .append('<option value="">Select Ward</option>');
+
+                        wards.forEach(w => {
+
+                            $('#updateWardId').append(
+                                `<option value="${w.id}">${w.name}</option>`
+                            );
+                        });
+
+                        $('#updateWardId').val(data.wardId);
+                    });
+            }
+
+            // =========================================
+            // SHOW MODAL
+            // =========================================
+
+            showModal(updateSchoolModal);
+
+        }
+        catch (error) {
+
+            console.error('Error loading school:', error);
+
+            alert('Failed to load school data.');
+        }
     };
 
     // Show delete modal
@@ -207,77 +328,69 @@
             }
         });
     }
+});
 
-    // Initialize School Statistics Chart with dynamic data
-    // Check if studentDistributionData exists (passed from server)
-    if (typeof studentDistributionData !== 'undefined' && studentDistributionData && studentDistributionData.length > 0) {
-        const chartData = {
-            series: studentDistributionData.map(item => item.studentCount),
-            labels: studentDistributionData.map(item => item.schoolName)
-        };
+document.addEventListener('DOMContentLoaded', function () {
 
-        const schoolStatsChart = new ApexCharts(document.querySelector("#schoolStatsChart"), {
-            series: chartData.series,
-            chart: {
-                type: 'donut',
-                height: '100%'
-            },
-            labels: chartData.labels,
-            colors: ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'],
-            legend: {
-                show: false  // This disables the legend
-            },
-            plotOptions: {
-                pie: {
-                    donut: {
-                        size: '70%',
-                        labels: {
-                            show: true,
-                            name: {
-                                show: true,
-                                fontSize: '14px',
-                                fontFamily: 'inherit',
-                                offsetY: -4
-                            },
-                            value: {
-                                show: true,
-                                fontSize: '16px',
-                                fontFamily: 'inherit',
-                                formatter: function (val) {
-                                    return val
-                                }
-                            },
-                            total: {
-                                show: true,
-                                label: 'Total Students',
-                                color: '#373d3f',
-                                formatter: function (w) {
-                                    return w.globals.seriesTotals.reduce((a, b) => a + b, 0)
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            dataLabels: {
-                enabled: false
-            },
-            responsive: [{
-                breakpoint: 480,
-                options: {
-                    chart: {
-                        height: 200
-                    },
-                    legend: {
-                        show: false
-                    }
-                }
-            }]
+    const api = {
+        provinces: '/Admin/GetProvinces',
+        districts: '/Admin/GetDistricts',
+        constituencies: '/Admin/GetConstituencies',
+        wards: '/Admin/GetWards'
+    };
+
+    function loadDropdown(url, param, value, target, placeholder) {
+        $(target).empty();
+
+        if (!value) return;
+
+        $.get(url, { [param]: value }, function (data) {
+            $(target).append(`<option value="">${placeholder}</option>`);
+            data.forEach(x => {
+                $(target).append(`<option value="${x.id}">${x.name}</option>`);
+            });
         });
-
-        schoolStatsChart.render();
-    } else {
-        // Show a message if no data is available
-        document.querySelector("#schoolStatsChart").innerHTML = '<div class="flex items-center justify-center h-32 text-gray-500"><p>No student data available</p></div>';
     }
+
+    // CREATE FLOW
+    $('#nationId').change(function () {
+        loadDropdown(api.provinces, 'nationId', this.value, '#provinceId', 'Select Province');
+        $('#districtId, #constituencyId, #wardId').empty();
+    });
+
+    $('#provinceId').change(function () {
+        loadDropdown(api.districts, 'provinceId', this.value, '#districtId', 'Select District');
+        $('#constituencyId, #wardId').empty();
+    });
+
+    $('#districtId').change(function () {
+        loadDropdown(api.constituencies, 'districtId', this.value, '#constituencyId', 'Select Constituency');
+        $('#wardId').empty();
+    });
+
+    $('#constituencyId').change(function () {
+        loadDropdown(api.wards, 'constituencyId', this.value, '#wardId', 'Select Ward');
+    });
+
+    // UPDATE FLOW (separate IDs)
+
+    $('#updateNationId').change(function () {
+        loadDropdown(api.provinces, 'nationId', this.value, '#updateProvinceId', 'Select Province');
+        $('#updateDistrictId, #updateConstituencyId, #updateWardId').empty();
+    });
+
+    $('#updateProvinceId').change(function () {
+        loadDropdown(api.districts, 'provinceId', this.value, '#updateDistrictId', 'Select District');
+        $('#updateConstituencyId, #updateWardId').empty();
+    });
+
+    $('#updateDistrictId').change(function () {
+        loadDropdown(api.constituencies, 'districtId', this.value, '#updateConstituencyId', 'Select Constituency');
+        $('#updateWardId').empty();
+    });
+
+    $('#updateConstituencyId').change(function () {
+        loadDropdown(api.wards, 'constituencyId', this.value, '#updateWardId', 'Select Ward');
+    });
+
 });

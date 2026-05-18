@@ -15,5 +15,9 @@ namespace SIS.Models.Admin
         public bool TwoFactorEnabled { get; set; }
         public bool LockoutEnabled { get; set; }
         public DateTime? LockoutEnd { get; set; }
+        public int? NationId { get; set; }
+        public int? ProvinceId { get; set; }
+        public int? DistrictId { get; set; }
+        public int? SchoolId { get; set; }
     }
 }

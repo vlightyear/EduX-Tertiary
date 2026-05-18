@@ -1,4 +1,6 @@
 using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
+using EduX.Data.Imports;
+using EduX.Models.GeoPolitical;
 using iTextSharp.text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -272,8 +274,38 @@ builder.Services.AddHttpClient("PayBoss");
 builder.Services.AddSingleton<IPayBossService, PayBossService>();
 
 builder.Services.AddAuthorization();
+builder.Services.AddScoped<WardImportService>();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+
+    try
+    {
+        var context = services.GetRequiredService<ApplicationDbContext>();
+
+        // Apply migrations automatically
+        context.Database.Migrate();
+
+        // Import wards
+        var wardImportService = services.GetRequiredService<WardImportService>();
+
+        // Ward data
+        //var wards = await wardImportService.LoadWardsFromCsv("Data/Imports/wards.csv");
+
+        // Only import if no wards exist
+        if (!context.Wards.Any())
+        {
+            //await wardImportService.ImportAsync(wards);
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine(ex.Message);
+    }
+}
 
 var scopeFactory = app.Services.GetRequiredService<IServiceScopeFactory>();
 StudentTools.Configure(scopeFactory);
@@ -334,7 +366,11 @@ using (var scope = app.Services.CreateScope())
         "Finance",
         "Compliance",
         "ISO",
-        "Assistant Registrar"
+        "Assistant Registrar",
+        "SA",
+        "DEBS",
+        "PEO",
+        "PS",
     };
 
     // Add roles if they don't exist

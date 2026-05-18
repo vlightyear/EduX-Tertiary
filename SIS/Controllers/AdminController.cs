@@ -133,7 +133,7 @@ namespace SIS.Controllers
         }
 
         // GET: Admin/Users
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> Users()
         {
             // Get all users for statistics
@@ -165,7 +165,10 @@ namespace SIS.Controllers
             var roleStats = new Dictionary<string, int>
             {
                 ["Admin"] = 0,
-                ["SuperAdmin"] = 0,
+                ["SA"] = 0,
+                ["PS"] = 0,
+                ["PEO"] = 0,
+                ["DEBS"] = 0,
                 ["Student"] = 0,
                 ["Candidate"] = 0,
                 ["Lecturer"] = 0,
@@ -191,7 +194,7 @@ namespace SIS.Controllers
             var actualStudentCount = await _context.Students.CountAsync();
 
             // Calculate totals for compatibility
-            var adminUserCount = roleStats["Admin"] + roleStats["SuperAdmin"];
+            var adminUserCount = roleStats["Admin"] + roleStats["SA"];
             var candidateUserCount = roleStats["Candidate"];
 
             // Create user roles dictionary for the view (now shows all roles)
@@ -210,39 +213,97 @@ namespace SIS.Controllers
             ViewBag.UserRoles = userRoles;
             ViewBag.RoleStats = roleStats;
 
+            // Dropdown data for scoped user assignment
+            ViewBag.Nations = new SelectList(
+                await _context.Nations.OrderBy(n => n.Name).ToListAsync(),
+                "Id",
+                "Name"
+            );
+
+            ViewBag.Schools = new SelectList(
+                await _context.Schools.OrderBy(s => s.Name).ToListAsync(),
+                "Id",
+                "Name"
+            );
+
             return View(adminUsers);
         }
 
         // GET: Admin/GetUser
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> GetUser(string id)
         {
-            var user = await _userManager.FindByIdAsync(id);
+            var user = await _userManager.Users
+                .Include(u => u.Nation)
+                .Include(u => u.Province)
+                .Include(u => u.District)
+                .Include(u => u.School)
+                .FirstOrDefaultAsync(u => u.Id == id);
+
             if (user == null)
-            {
                 return NotFound();
-            }
 
             var userRoles = await _userManager.GetRolesAsync(user);
+
             var model = new
             {
                 id = user.Id,
                 fullName = user.FullName,
                 email = user.Email,
                 phoneNumber = user.PhoneNumber,
-                role = userRoles.ToList(),
+
+                // IMPORTANT: users.js expects "roles", not "role"
+                roles = userRoles.ToList(),
+
                 emailConfirmed = user.EmailConfirmed,
                 phoneNumberConfirmed = user.PhoneNumberConfirmed,
                 twoFactorEnabled = user.TwoFactorEnabled,
                 lockoutEnabled = user.LockoutEnabled,
-                lockoutEnd = user.LockoutEnd
+                lockoutEnd = user.LockoutEnd,
+
+                nationId = user.NationId,
+                provinceId = user.ProvinceId,
+                districtId = user.DistrictId,
+                schoolId = user.SchoolId
             };
 
             return Json(model);
         }
 
+        private enum UserScopeType
+        {
+            National,
+            Provincial,
+            District,
+            School
+        }
+
+        private static UserScopeType ResolveUserScope(IEnumerable<string> roles)
+        {
+            var roleList = roles.Select(r => r.Trim()).ToList();
+
+            if (roleList.Contains("PS") || roleList.Contains("SA"))
+                return UserScopeType.National;
+
+            if (roleList.Contains("PEO"))
+                return UserScopeType.Provincial;
+
+            if (roleList.Contains("DEBS"))
+                return UserScopeType.District;
+
+            return UserScopeType.School;
+        }
+
+        private static int? ReadNullableInt(IFormCollection collection, string key)
+        {
+            return int.TryParse(collection[key], out var value) && value > 0
+                ? value
+                : null;
+        }
+
         // GET: Admin/GetRoles
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> GetRoles()
         {
             // Only return administrative roles, exclude Student and Candidate
@@ -257,7 +318,7 @@ namespace SIS.Controllers
         // POST: Admin/CreateUser
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> CreateUser(IFormCollection collection)
         {
             try
@@ -266,8 +327,6 @@ namespace SIS.Controllers
                 string email = collection["Email"];
                 string phoneNumber = collection["PhoneNumber"];
 
-
-                // Handle multiple roles - expect comma-separated values or array
                 var selectedRoles = collection["Roles"].ToString()
                     .Split(',', StringSplitOptions.RemoveEmptyEntries)
                     .Select(r => r.Trim())
@@ -275,33 +334,73 @@ namespace SIS.Controllers
                     .ToList();
 
                 if (!selectedRoles.Any())
-                {
                     return Json(new { success = false, message = "Please select at least one role." });
-                }
 
+                var scope = ResolveUserScope(selectedRoles);
+
+                int? nationId = ReadNullableInt(collection, "NationId");
+                int? provinceId = ReadNullableInt(collection, "ProvinceId");
+                int? districtId = ReadNullableInt(collection, "DistrictId");
+                int? schoolId = ReadNullableInt(collection, "SchoolId");
+
+                switch (scope)
+                {
+                    case UserScopeType.National:
+                        if (!nationId.HasValue)
+                            return Json(new { success = false, message = "Please select a nation for PS or SA." });
+
+                        provinceId = null;
+                        districtId = null;
+                        schoolId = null;
+                        break;
+
+                    case UserScopeType.Provincial:
+                        if (!nationId.HasValue || !provinceId.HasValue)
+                            return Json(new { success = false, message = "Please select a nation and province for PEO." });
+
+                        districtId = null;
+                        schoolId = null;
+                        break;
+
+                    case UserScopeType.District:
+                        if (!nationId.HasValue || !provinceId.HasValue || !districtId.HasValue)
+                            return Json(new { success = false, message = "Please select a nation, province, and district for DEBS." });
+
+                        schoolId = null;
+                        break;
+
+                    case UserScopeType.School:
+                        if (!schoolId.HasValue)
+                            return Json(new { success = false, message = "Please select a school for this role." });
+
+                        nationId = null;
+                        provinceId = null;
+                        districtId = null;
+                        break;
+                }
 
                 bool emailConfirmed = collection["EmailConfirmed"].ToString().Contains("true");
                 bool twoFactorEnabled = collection["TwoFactorEnabled"].ToString().Contains("true");
 
                 if (await _userManager.FindByEmailAsync(email) != null)
-                {
                     return Json(new { success = false, message = "Email address is already in use." });
-                }
 
-                // Generate a secure temporary password
                 string temporaryPassword = GenerateSecurePassword();
 
-                // Create new user
                 var user = new ApplicationUser
                 {
                     FullName = fullName,
                     Email = email,
-                    UserName = email, // Email as username
+                    UserName = email,
                     PhoneNumber = phoneNumber,
                     EmailConfirmed = emailConfirmed,
                     TwoFactorEnabled = twoFactorEnabled,
                     CreatedAt = DateTime.Now,
-                    //CreatedBy = User.Identity.Name
+
+                    NationId = nationId,
+                    ProvinceId = provinceId,
+                    DistrictId = districtId,
+                    SchoolId = schoolId
                 };
 
                 var result = await _userManager.CreateAsync(user, temporaryPassword);
@@ -309,32 +408,23 @@ namespace SIS.Controllers
                 if (result.Succeeded)
                 {
                     foreach (var role in selectedRoles)
-                    {
                         await _userManager.AddToRoleAsync(user, role);
-                    }
 
-                    // Send welcome email with temporary password
                     try
                     {
                         string rolesString = string.Join(", ", selectedRoles);
-                        bool emailSent = await _emailService.SendUserCreationEmailAsync(
+
+                        await _emailService.SendUserCreationEmailAsync(
                             fullName,
                             email,
                             rolesString,
                             temporaryPassword,
                             "Please change this password upon your first login for security."
                         );
-
-                        if (!emailSent)
-                        {
-                            Console.WriteLine($"Warning: Welcome email failed to send to {email}");
-                            // You could add a flag to the user record or log this for follow-up
-                        }
                     }
                     catch (Exception emailEx)
                     {
                         Console.WriteLine($"Error sending welcome email to {email}: {emailEx.Message}");
-                        // Don't fail the user creation if email fails - just log it
                     }
 
                     return RedirectToAction(nameof(Users));
@@ -353,7 +443,7 @@ namespace SIS.Controllers
         // POST: Admin/UpdateUser
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> UpdateUser(UpdateUserViewModel model)
         {
             try
@@ -378,6 +468,50 @@ namespace SIS.Controllers
                 // Update roles - remove all current roles and add new ones
                 var currentRoles = await _userManager.GetRolesAsync(user);
                 var newRoles = model.Roles ?? new List<string>();
+                var scope = ResolveUserScope(newRoles);
+
+                switch (scope)
+                {
+                    case UserScopeType.National:
+                        if (!model.NationId.HasValue)
+                            return Json(new { success = false, message = "Please select a nation for PS or SA." });
+
+                        user.NationId = model.NationId;
+                        user.ProvinceId = null;
+                        user.DistrictId = null;
+                        user.SchoolId = null;
+                        break;
+
+                    case UserScopeType.Provincial:
+                        if (!model.NationId.HasValue || !model.ProvinceId.HasValue)
+                            return Json(new { success = false, message = "Please select a nation and province for PEO." });
+
+                        user.NationId = model.NationId;
+                        user.ProvinceId = model.ProvinceId;
+                        user.DistrictId = null;
+                        user.SchoolId = null;
+                        break;
+
+                    case UserScopeType.District:
+                        if (!model.NationId.HasValue || !model.ProvinceId.HasValue || !model.DistrictId.HasValue)
+                            return Json(new { success = false, message = "Please select a nation, province, and district for DEBS." });
+
+                        user.NationId = model.NationId;
+                        user.ProvinceId = model.ProvinceId;
+                        user.DistrictId = model.DistrictId;
+                        user.SchoolId = null;
+                        break;
+
+                    case UserScopeType.School:
+                        if (!model.SchoolId.HasValue)
+                            return Json(new { success = false, message = "Please select a school for this role." });
+
+                        user.NationId = null;
+                        user.ProvinceId = null;
+                        user.DistrictId = null;
+                        user.SchoolId = model.SchoolId;
+                        break;
+                }
 
                 // Remove roles that are not in the new list
                 var rolesToRemove = currentRoles.Except(newRoles).ToList();
@@ -412,7 +546,7 @@ namespace SIS.Controllers
         // POST: Admin/DeleteUser
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> DeleteUser(string id)
         {
             try
@@ -475,68 +609,132 @@ namespace SIS.Controllers
 
 
         // GET: Admin/Schools
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> Schools()
         {
-            // Get all users with the Dean role for dropdown selection
-            var userManager = HttpContext.RequestServices.GetRequiredService<UserManager<ApplicationUser>>();
+            var userManager = HttpContext.RequestServices
+                .GetRequiredService<UserManager<ApplicationUser>>();
+
+            // Roles
             var deanUsers = await userManager.GetUsersInRoleAsync("Dean");
             var arUsers = await userManager.GetUsersInRoleAsync("Assistant Registrar");
 
-            // Convert to SelectList for dropdowns
             ViewBag.DeanUsers = new SelectList(deanUsers, "Id", "FullName");
             ViewBag.ArUsers = new SelectList(arUsers, "Id", "FullName");
+
+            // Load ONLY Nations initially
+            ViewBag.Nations = new SelectList(await _context.Nations.ToListAsync(), "Id", "Name");
 
             var schools = await _context.Schools
                 .Include(s => s.Dean)
                 .Include(s => s.AssistantDean)
                 .Include(s => s.AssistantRegistrar)
+                .Include(s => s.Nation)
+                .Include(s => s.Province)
+                .Include(s => s.District)
+                .Include(s => s.Constituency)
+                .Include(s => s.Ward)
                 .ToListAsync();
 
-            // Get statistics for the sidebar
-            var totalStudents = await _context.Students.CountAsync();
-            var totalLecturers = (await userManager.GetUsersInRoleAsync("Lecturer")).Count;
+            ViewBag.TotalStudents = await _context.Students.CountAsync();
 
-            // Get student distribution by school
-            var studentDistribution = await _context.Students
+            ViewBag.TotalLecturers =
+                (await userManager.GetUsersInRoleAsync("Lecturer")).Count;
+
+            ViewBag.StudentDistribution = await _context.Students
                 .Include(s => s.School)
                 .GroupBy(s => s.School.Name)
-                .Select(g => new {
+                .Select(g => new
+                {
                     SchoolName = g.Key,
                     StudentCount = g.Count()
                 })
                 .OrderByDescending(x => x.StudentCount)
-                .Take(5) // Get top 5 schools
+                .Take(5)
                 .ToListAsync();
-
-            // Pass statistics to the view
-            ViewBag.TotalStudents = totalStudents;
-            ViewBag.TotalLecturers = totalLecturers;
-            ViewBag.StudentDistribution = studentDistribution;
 
             return View(schools);
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetProvinces(int nationId)
+        {
+            var data = await _context.Provinces
+                .Where(p => p.NationId == nationId)
+                .Select(p => new { p.Id, p.Name })
+                .ToListAsync();
+
+            return Json(data);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetDistricts(int provinceId)
+        {
+            var data = await _context.Districts
+                .Where(d => d.ProvinceId == provinceId)
+                .Select(d => new { d.Id, d.Name })
+                .ToListAsync();
+
+            return Json(data);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetConstituencies(int districtId)
+        {
+            var data = await _context.Constituencies
+                .Where(c => c.DistrictId == districtId)
+                .Select(c => new { c.Id, c.Name })
+                .ToListAsync();
+
+            return Json(data);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetWards(int constituencyId)
+        {
+            var data = await _context.Wards
+                .Where(w => w.ConstituencyId == constituencyId)
+                .Select(w => new { w.Id, w.Name })
+                .ToListAsync();
+
+            return Json(data);
+        }
+
         // GET: Admin/GetSchool/5
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
+        [HttpGet]
         public async Task<IActionResult> GetSchool(int id)
         {
             var school = await _context.Schools
-                .Include(s => s.Dean)
-                .Include(s => s.AssistantDean)
-                .FirstOrDefaultAsync(s => s.Id == id);
+                .Where(s => s.Id == id)
+                .Select(s => new
+                {
+                    id = s.Id,
+                    name = s.Name,
+                    description = s.Description,
+
+                    deanId = s.DeanId,
+                    assistantDeanId = s.AssistantDeanId,
+                    assistantRegistrarId = s.AssistantRegistrarId,
+
+                    nationId = s.NationId,
+                    provinceId = s.ProvinceId,
+                    districtId = s.DistrictId,
+                    constituencyId = s.ConstituencyId,
+                    wardId = s.WardId
+                })
+                .FirstOrDefaultAsync();
 
             if (school == null)
-            {
                 return NotFound();
-            }
+
             return Json(school);
         }
 
         // POST: Admin/CreateSchool
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> CreateSchool(School school, IFormFile fileUpload, string mode)
         {
             try
@@ -613,26 +811,37 @@ namespace SIS.Controllers
         // POST: Admin/UpdateSchool
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> UpdateSchool(School school)
         {
             try
             {
                 var existingSchool = await _context.Schools.FindAsync(school.Id);
-                if (existingSchool == null)
-                {
-                    return NotFound();
-                }
 
+                if (existingSchool == null)
+                    return NotFound();
+
+                // Core fields
                 existingSchool.Name = school.Name;
                 existingSchool.Description = school.Description;
+
+                // Users
                 existingSchool.DeanId = school.DeanId;
                 existingSchool.AssistantDeanId = school.AssistantDeanId;
                 existingSchool.AssistantRegistrarId = school.AssistantRegistrarId;
+
+                // LOCATION HIERARCHY (NEW)
+                existingSchool.NationId = school.NationId;
+                existingSchool.ProvinceId = school.ProvinceId;
+                existingSchool.DistrictId = school.DistrictId;
+                existingSchool.ConstituencyId = school.ConstituencyId;
+                existingSchool.WardId = school.WardId;
+
                 existingSchool.UpdatedAt = DateTime.Now;
-                existingSchool.UpdatedBy = User.Identity.Name;
+                existingSchool.UpdatedBy = User.Identity?.Name;
 
                 await _context.SaveChangesAsync();
+
                 return RedirectToAction("Schools");
             }
             catch (Exception ex)
@@ -645,7 +854,7 @@ namespace SIS.Controllers
         // POST: Admin/DeleteSchool
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> DeleteSchool(int id)
         {
             try
@@ -668,7 +877,7 @@ namespace SIS.Controllers
         }
 
         // GET: Programmes
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public IActionResult Programmes()
         {
             try
@@ -745,7 +954,7 @@ namespace SIS.Controllers
 
         // GET: Programmes/Create
         [HttpGet]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public IActionResult CreateProgramme()
         {
             // Fetch users excluding those in the "Candidate" or "Student" roles
@@ -812,7 +1021,7 @@ namespace SIS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> CreateProgramme(Programme model)
         {
             try
@@ -922,7 +1131,7 @@ namespace SIS.Controllers
         }
 
         // GET: Programmes/Update/5
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public IActionResult UpdateProgramme(int id)
         {
             var programme = _context.Programmes
@@ -992,7 +1201,7 @@ namespace SIS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> UpdateProgramme(int id, Programme programme)
         {
             if (id != programme.Id)
@@ -1190,7 +1399,7 @@ namespace SIS.Controllers
         }
 
         // GET: Programmes/Delete/5
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public IActionResult DeleteProgramme(int id)
         {
             var programme = _context.Programmes
@@ -1230,7 +1439,7 @@ namespace SIS.Controllers
 
         // POST: Programmes/Delete/5
         [HttpPost, ActionName("DeleteProgramme")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteProgrammeConfirmed(int id)
         {
@@ -1336,7 +1545,7 @@ namespace SIS.Controllers
 
 
         // GET: Admin/Buildings
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> Buildings()
         {
             // Load buildings with their related schools
@@ -1353,7 +1562,7 @@ namespace SIS.Controllers
         // POST: Admin/CreateBuilding
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> CreateBuilding(Building building)
         {
             try
@@ -1385,7 +1594,7 @@ namespace SIS.Controllers
         // POST: Admin/UpdateBuilding
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> UpdateBuilding(Building building)
         {
             try
@@ -1416,7 +1625,7 @@ namespace SIS.Controllers
         // POST: Admin/DeleteBuilding
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> DeleteBuilding(int id)
         {
             try
@@ -1439,7 +1648,7 @@ namespace SIS.Controllers
         }
 
         // GET: LearningRooms
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> LearningRooms()
         {
             ViewBag.BuildingId = new SelectList(_context.Buildings, "Id", "Name");
@@ -1451,7 +1660,7 @@ namespace SIS.Controllers
         // POST: LearningRooms/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> CreateLearningRoom([Bind("Name,Description,BuildingId,RoomType,LearningCapacity,ExamCapacity,Area")] LearningRoom learningRoom)
         {
             learningRoom.Building = await _context.Buildings.FindAsync(learningRoom.BuildingId);
@@ -1470,7 +1679,7 @@ namespace SIS.Controllers
         // POST: LearningRooms/Update
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> UpdateLearningRoom([Bind("Id,Name,Description,BuildingId,RoomType,LearningCapacity,ExamCapacity,Area")] LearningRoom learningRoom)
         {
             if (ModelState.IsValid)
@@ -1503,7 +1712,7 @@ namespace SIS.Controllers
         // POST: LearningRooms/Delete
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> DeleteLearningRoom(int id)
         {
             var learningRoom = await _context.LearningRooms.FindAsync(id);
@@ -1528,7 +1737,7 @@ namespace SIS.Controllers
         }
 
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> TimeSlotConfigurations()
         {
             var configurations = await _context.TimeSlotConfigurations
@@ -1545,7 +1754,7 @@ namespace SIS.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> GetTimeSlotConfig(int id)
         {
             var config = await _context.TimeSlotConfigurations
@@ -1561,7 +1770,7 @@ namespace SIS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> CreateTimeSlotConfig(TimeSlotConfiguration config)
         {
             try
@@ -1584,14 +1793,14 @@ namespace SIS.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public IActionResult CreateTimeSlotConfig()
         {
             return View();
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> UpdateTimeSlotConfig(int id)
         {
             var config = await _context.TimeSlotConfigurations
@@ -1607,7 +1816,7 @@ namespace SIS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> UpdateTimeSlotConfig(TimeSlotConfiguration config)
         {
             try
@@ -1655,7 +1864,7 @@ namespace SIS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> DeleteTimeSlotConfig(int id)
         {
             var config = await _context.TimeSlotConfigurations.FindAsync(id);
@@ -1685,7 +1894,7 @@ namespace SIS.Controllers
             return _context.TimeSlotConfigurations.Any(e => e.Id == id);
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> WorkingDayConfigurations()
         {
             var configurations = await _context.WorkingDayConfigurations
@@ -1708,7 +1917,7 @@ namespace SIS.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> CreateWorkingDayConfig()
         {
             // Get time slot configurations for dropdowns
@@ -1745,7 +1954,7 @@ namespace SIS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> CreateWorkingDayConfig(WorkingDayConfiguration config)
         {
             try
@@ -1825,7 +2034,7 @@ namespace SIS.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> UpdateWorkingDayConfig(int id)
         {
             var config = await _context.WorkingDayConfigurations
@@ -1843,7 +2052,7 @@ namespace SIS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> UpdateWorkingDayConfig(int id, WorkingDayConfiguration config)
         {
             try
@@ -1933,7 +2142,7 @@ namespace SIS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> DeleteWorkingDayConfig(int id)
         {
             var config = await _context.WorkingDayConfigurations.FindAsync(id);
@@ -1959,7 +2168,7 @@ namespace SIS.Controllers
 
 
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> Departments()
         {
             var departments = await _context.Departments
@@ -1986,7 +2195,7 @@ namespace SIS.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> GetDepartment(int id)
         {
             var department = await _context.Departments
@@ -2015,7 +2224,7 @@ namespace SIS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> CreateDepartment(Department department)
         {
             
@@ -2040,7 +2249,7 @@ namespace SIS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> UpdateDepartment(Department department)
         {
             try
@@ -2084,7 +2293,7 @@ namespace SIS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> DeleteDepartment(int id)
         {
             var department = await _context.Departments.FindAsync(id);
@@ -2113,7 +2322,7 @@ namespace SIS.Controllers
         }
 
         // GET: Admin/Courses - Updated main method
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> Courses()
         {
             // Load only filter dropdown data
@@ -2136,7 +2345,7 @@ namespace SIS.Controllers
 
         // NEW: AJAX endpoint for course data
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<JsonResult> GetCoursesData([FromBody] CourseFilterRequest request)
         {
             try
@@ -2259,7 +2468,7 @@ namespace SIS.Controllers
 
         // NEW: AJAX endpoint for statistics
         [HttpGet]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<JsonResult> GetCourseStatistics()
         {
             try
@@ -2295,7 +2504,7 @@ namespace SIS.Controllers
         }
 
         // GET: Admin/CreateCourse
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> CreateCourse()
         {
             ViewBag.Programmes = new SelectList(await _context.Programmes.ToListAsync(), "Id", "Name");
@@ -2356,7 +2565,7 @@ namespace SIS.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> UpdateCourse(int? id)
         {
             if (id == null) return NotFound();
@@ -2410,7 +2619,7 @@ namespace SIS.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> GetPeriodsByType(string academicType)
         {
             if (!Enum.TryParse<SIS.Models.Registration.AcademicType>(academicType, out var parsed))
@@ -2428,7 +2637,7 @@ namespace SIS.Controllers
         // POST: Admin/CreateCourse
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> CreateCourse(Course course,
             [FromForm] string[] LecturerIds,
             [FromForm] int[] PrerequisiteCourseIds,
@@ -2521,7 +2730,7 @@ namespace SIS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> UpdateCourse(Course course,
             [FromForm] string[] LecturerIds,
             [FromForm] int[] PrerequisiteCourseIds,
@@ -2656,7 +2865,7 @@ namespace SIS.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> DeleteCourse(int? id)
         {
             if (id == null) return NotFound();
@@ -2676,7 +2885,7 @@ namespace SIS.Controllers
 
         [HttpPost, ActionName("DeleteCourse")]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> DeleteCourseConfirmed(int id)
         {
             try
@@ -2716,7 +2925,7 @@ namespace SIS.Controllers
         /// </summary>
         /// <returns>JSON object with course statistics</returns>
         [HttpGet]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> GetCourseStats()
         {
             try
@@ -2835,7 +3044,7 @@ namespace SIS.Controllers
             }
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> FeeTypes()
         {
             var feeTypes = await _context.FeeTypes.ToListAsync();
@@ -2843,7 +3052,7 @@ namespace SIS.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> GetFeeType(int id)
         {
             var feeType = await _context.FeeTypes.FindAsync(id);
@@ -2863,7 +3072,7 @@ namespace SIS.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> GetFeeTypeStatistics()
         {
             var feeTypes = await _context.FeeTypes.ToListAsync();
@@ -2892,7 +3101,7 @@ namespace SIS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> CreateFeeType(FeeType feeType)
         {
             try
@@ -2973,7 +3182,7 @@ namespace SIS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> UpdateFeeType(FeeType feeType)
         {
             try
@@ -3085,7 +3294,7 @@ namespace SIS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> DeleteFeeType(int id)
         {
             try
@@ -3126,7 +3335,7 @@ namespace SIS.Controllers
         }
 
 // GET: Admin/FeeConfigurations
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
 public async Task<IActionResult> FeeConfigurations()
 {
     try
@@ -3149,7 +3358,7 @@ public async Task<IActionResult> FeeConfigurations()
 
 // Get fee configurations data via AJAX
 [HttpPost]
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
 public async Task<IActionResult> GetFeeConfigurationsData([FromBody] FeeConfigFilterRequest request)
 {
     try
@@ -3300,7 +3509,7 @@ public async Task<IActionResult> GetFeeConfigurationsData([FromBody] FeeConfigFi
 
 // GET: Admin/GetProgrammesBySchool
 [HttpGet]
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
 public async Task<IActionResult> GetProgrammesBySchool(int schoolId)
 {
     try
@@ -3334,7 +3543,7 @@ public async Task<IActionResult> GetProgrammesBySchool(int schoolId)
 
 // GET: Admin/GetFeeConfigurationStatistics
 [HttpGet]
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
 public async Task<IActionResult> GetFeeConfigurationStatistics()
 {
     try
@@ -3404,7 +3613,7 @@ public async Task<IActionResult> GetFeeConfigurationStatistics()
 
 // POST: Admin/CreateFeeConfiguration
 [HttpPost]
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
 [ValidateAntiForgeryToken]
 public async Task<IActionResult> CreateFeeConfiguration(FeeConfiguration feeConfiguration)
 {
@@ -3572,7 +3781,7 @@ public async Task<IActionResult> CreateFeeConfiguration(FeeConfiguration feeConf
 
 // POST: Admin/UpdateFeeConfiguration
 [HttpPost]
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
 [ValidateAntiForgeryToken]
 public async Task<IActionResult> UpdateFeeConfiguration(FeeConfiguration feeConfiguration)
 {
@@ -3649,7 +3858,7 @@ public async Task<IActionResult> UpdateFeeConfiguration(FeeConfiguration feeConf
 
 // POST: Admin/DeleteFeeConfiguration
 [HttpPost]
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
 [ValidateAntiForgeryToken]
 public async Task<IActionResult> DeleteFeeConfiguration(int id)
 {
@@ -3814,7 +4023,7 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
 
 
         // GET: Admin/ProgramLevels
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> ProgramLevels()
         {
             var programLevels = await _context.ProgramLevels
@@ -3826,7 +4035,7 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
 
         // POST: Admin/CreateProgramLevel
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateProgramLevel(ProgramLevel programLevel)
         {
@@ -3855,7 +4064,7 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
 
         // POST: Admin/UpdateProgramLevel
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateProgramLevel(ProgramLevel programLevel)
         {
@@ -3882,7 +4091,7 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
 
         // POST: Admin/DeleteProgramLevel
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteProgramLevel(int id)
         {
@@ -3919,7 +4128,7 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
         }
 
         // GET: Admin/ProgressionRules
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> ProgressionRules()
         {
             var progressionRules = await _context.ProgressionRules
@@ -3951,7 +4160,7 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> CreateProgressionRule(ProgressionRule progressionRule)
         {
             try
@@ -4010,7 +4219,7 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
         }
 
         // GET: Admin/UpdateProgressionRule
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> GetProgressionRule(int id)
         {
             var rule = await _context.ProgressionRules
@@ -4041,7 +4250,7 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> UpdateProgressionRule(ProgressionRule progressionRule)
         {
             try
@@ -4095,7 +4304,7 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> DeleteProgressionRule(int id)
         {
             try
@@ -5167,7 +5376,7 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
         }
 
         // GET: Admin/GradeConfigurations
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> GradeConfigurations()
         {
             var gradeConfigs = await _context.GradeConfigurations
@@ -5207,7 +5416,7 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
         }
 
         // GET: Admin/GetGradeConfig/5
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> GetGradeConfig(int id)
         {
             var gradeConfig = await _context.GradeConfigurations.FindAsync(id);
@@ -5236,7 +5445,7 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
 
         // POST: Admin/CreateGradeConfig
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateGradeConfig(GradeConfiguration gradeConfig)
         {
@@ -5343,7 +5552,7 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateGradeConfig(GradeConfiguration gradeConfig)
         {
@@ -5467,7 +5676,7 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
 
         // POST: Admin/DeleteGradeConfig
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteGradeConfig(int id)
         {
@@ -5505,7 +5714,7 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
 
 
         // GET: Admin/Campuses
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> Campuses()
         {
             var campuses = await _context.Campuses
@@ -5518,7 +5727,7 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> GetCampus(int id)
         {
             var campus = await _context.Campuses
@@ -5543,7 +5752,7 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> CreateCampus(Campus campus)
         {
             try
@@ -5569,7 +5778,7 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> UpdateCampus(Campus campus)
         {
             try
@@ -5617,7 +5826,7 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> DeleteCampus(int id)
         {
             var campus = await _context.Campuses.FindAsync(id);
@@ -5652,7 +5861,7 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
 
 
         // GET: Admin/Hostels
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> Hostels()
         {
             var hostels = await _context.Hostels
@@ -5686,7 +5895,7 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> GetHostel(int id)
         {
             var hostel = await _context.Hostels
@@ -5743,7 +5952,7 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> CreateHostel(Hostel hostel)
         {
             try
@@ -5829,7 +6038,7 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> UpdateHostel(Hostel hostel)
         {
             try
@@ -5954,7 +6163,7 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> DeleteHostel(int id)
         {
             var hostel = await _context.Hostels.FindAsync(id);
@@ -5991,7 +6200,7 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> GetRooms(int hostelId)
         {
             var rooms = await _context.Rooms
@@ -6012,7 +6221,7 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> HostelDetails(int id)
         {
             var hostel = await _context.Hostels
@@ -6093,7 +6302,7 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
 
      
         // GET: Admin/Rooms
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> Rooms(int? hostelId)
         {
             IQueryable<Room> roomsQuery = _context.Rooms
@@ -6128,7 +6337,7 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
 
         // GET: Admin/GetRoom/5
         [HttpGet]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> GetRoom(int id)
         {
             var room = await _context.Rooms
@@ -6178,7 +6387,7 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
         }
 
         // GET: Admin/RoomDetails/5
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> RoomDetails(int id)
         {
             var room = await _context.Rooms
@@ -6209,7 +6418,7 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
         // POST: Admin/CreateRoom
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> CreateRoom(Room room, int[]? resourceTypeIds, int[]? resourceQuantities)
         {
             try
@@ -6296,7 +6505,7 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
         // POST: Admin/UpdateRoom
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> UpdateRoom(Room room, int[]? resourceTypeIds, int[]? resourceQuantities, int[]? resourceIds)
         {
             try
@@ -6459,7 +6668,7 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
         // POST: Admin/DeleteRoom/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> DeleteRoom(int id)
         {
             var room = await _context.Rooms
@@ -6519,7 +6728,7 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
 
         // GET: Admin/GetRoomsByHostel/5
         [HttpGet]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
         public async Task<IActionResult> GetRoomsByHostel(int hostelId)
         {
             var rooms = await _context.Rooms
@@ -6783,81 +6992,26 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
             return string.Format(pattern, floor + 1, roomIndexStr);
         }
 
-        // This method is already in your code, but included here for completeness
-        //private string ConvertToAlphabeticIdentifier(int index)
-        //{
-        //    // Convert numbers to alphabet identifiers (1 -> A, 2 -> B, etc.)
-        //    if (index <= 26)
-        //    {
-        //        // Single letter for 1-26
-        //        return ((char)(64 + index)).ToString();
-        //    }
-        //    else
-        //    {
-        //        // Double letters for higher numbers (27 -> AA, 28 -> AB, etc.)
-        //        int firstLetter = (index - 1) / 26;
-        //        int secondLetter = (index - 1) % 26 + 1;
-        //        return ((char)(64 + firstLetter)).ToString() + ((char)(64 + secondLetter)).ToString();
-        //    }
-        //}
+        [HttpGet]
+        [Authorize(Roles = "Admin, SA, DEBS, PEO, PS")]
+        public async Task<IActionResult> GetYearPeriodsByYear(int yearId)
+        {
+            // Returns AcademicYearPeriod rows for a given academic year,
+            // suitable for populating the period dropdown in fee configuration.
+            var periods = await _context.AcademicYearPeriods
+                .Include(yp => yp.AcademicPeriod)
+                .Where(yp => yp.AcademicYearId == yearId)
+                .OrderBy(yp => yp.AcademicPeriod.PeriodNumber)
+                .Select(yp => new
+                {
+                    id = yp.Id,
+                    label = yp.AcademicPeriod.PeriodName,   // e.g. "Semester 1"
+                    isActive = yp.IsActive
+                })
+                .ToListAsync();
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+            return Json(periods);
+        }
 
         // New action to test Tailwind CSS
         public IActionResult TailwindTest()
@@ -6867,35 +7021,13 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
         }
 
 
-
-
-
-
-
-
-
-
-
-
-
         private async Task HandleIdentityErrors(IdentityResult result)
         {
             foreach (var error in result.Errors)
             {
                 ModelState.AddModelError(string.Empty, error.Description);
             }
-        }
-
-
-
-
-
-
-
-
-
-        // UPDATED: AJAX endpoint for filtered fee configurations with Program Level filter
-      
+        }      
 
     }
 

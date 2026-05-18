@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SIS.Data;
 
@@ -11,9 +12,11 @@ using SIS.Data;
 namespace SIS.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260518070831_AddGeopliticalModels")]
+    partial class AddGeopliticalModels
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1038,14 +1041,8 @@ namespace SIS.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("ConstituencyId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<int?>("DistrictId")
-                        .HasColumnType("int");
 
                     b.Property<string>("Email")
                         .HasMaxLength(256)
@@ -1067,9 +1064,6 @@ namespace SIS.Migrations
                     b.Property<DateTimeOffset?>("LockoutEnd")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<int?>("NationId")
-                        .HasColumnType("int");
-
                     b.Property<string>("NormalizedEmail")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
@@ -1087,12 +1081,6 @@ namespace SIS.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
 
-                    b.Property<int?>("ProvinceId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("SchoolId")
-                        .HasColumnType("int");
-
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
 
@@ -1103,16 +1091,7 @@ namespace SIS.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
-                    b.Property<int?>("WardId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("ConstituencyId");
-
-                    b.HasIndex("DistrictId");
-
-                    b.HasIndex("NationId");
 
                     b.HasIndex("NormalizedEmail")
                         .HasDatabaseName("EmailIndex");
@@ -1121,12 +1100,6 @@ namespace SIS.Migrations
                         .IsUnique()
                         .HasDatabaseName("UserNameIndex")
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
-
-                    b.HasIndex("ProvinceId");
-
-                    b.HasIndex("SchoolId");
-
-                    b.HasIndex("WardId");
 
                     b.ToTable("AspNetUsers", (string)null);
                 });
@@ -2072,9 +2045,6 @@ namespace SIS.Migrations
                     b.Property<string>("AssistantRegistrarId")
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<int?>("ConstituencyId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -2090,28 +2060,16 @@ namespace SIS.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<int?>("DistrictId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
-
-                    b.Property<int?>("NationId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("ProvinceId")
-                        .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("UpdatedBy")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("WardId")
-                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -2120,18 +2078,8 @@ namespace SIS.Migrations
 
                     b.HasIndex("AssistantRegistrarId");
 
-                    b.HasIndex("ConstituencyId");
-
                     b.HasIndex("DeanId")
                         .HasDatabaseName("IX_Schools_DeanId");
-
-                    b.HasIndex("DistrictId");
-
-                    b.HasIndex("NationId");
-
-                    b.HasIndex("ProvinceId");
-
-                    b.HasIndex("WardId");
 
                     b.HasIndex("DeanId", "AssistantDeanId")
                         .HasDatabaseName("IX_Schools_Dean_AssistantDean");
@@ -7461,46 +7409,6 @@ namespace SIS.Migrations
                     b.Navigation("WorkflowInstance");
                 });
 
-            modelBuilder.Entity("SIS.Data.ApplicationUser", b =>
-                {
-                    b.HasOne("EduX.Models.GeoPolitical.Constituency", "Constituency")
-                        .WithMany()
-                        .HasForeignKey("ConstituencyId");
-
-                    b.HasOne("EduX.Models.GeoPolitical.District", "District")
-                        .WithMany()
-                        .HasForeignKey("DistrictId");
-
-                    b.HasOne("EduX.Models.GeoPolitical.Nation", "Nation")
-                        .WithMany()
-                        .HasForeignKey("NationId");
-
-                    b.HasOne("EduX.Models.GeoPolitical.Province", "Province")
-                        .WithMany()
-                        .HasForeignKey("ProvinceId");
-
-                    b.HasOne("SIS.Models.Admin.School", "School")
-                        .WithMany("Users")
-                        .HasForeignKey("SchoolId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("EduX.Models.GeoPolitical.Ward", "Ward")
-                        .WithMany()
-                        .HasForeignKey("WardId");
-
-                    b.Navigation("Constituency");
-
-                    b.Navigation("District");
-
-                    b.Navigation("Nation");
-
-                    b.Navigation("Province");
-
-                    b.Navigation("School");
-
-                    b.Navigation("Ward");
-                });
-
             modelBuilder.Entity("SIS.Models.Accounts.CreditTransactions", b =>
                 {
                     b.HasOne("SIS.Models.Payments.PaymentsDetails", "PaymentsDetails")
@@ -7789,45 +7697,15 @@ namespace SIS.Migrations
                         .WithMany()
                         .HasForeignKey("AssistantRegistrarId");
 
-                    b.HasOne("EduX.Models.GeoPolitical.Constituency", "Constituency")
-                        .WithMany()
-                        .HasForeignKey("ConstituencyId");
-
                     b.HasOne("SIS.Data.ApplicationUser", "Dean")
                         .WithMany()
                         .HasForeignKey("DeanId");
-
-                    b.HasOne("EduX.Models.GeoPolitical.District", "District")
-                        .WithMany()
-                        .HasForeignKey("DistrictId");
-
-                    b.HasOne("EduX.Models.GeoPolitical.Nation", "Nation")
-                        .WithMany()
-                        .HasForeignKey("NationId");
-
-                    b.HasOne("EduX.Models.GeoPolitical.Province", "Province")
-                        .WithMany()
-                        .HasForeignKey("ProvinceId");
-
-                    b.HasOne("EduX.Models.GeoPolitical.Ward", "Ward")
-                        .WithMany()
-                        .HasForeignKey("WardId");
 
                     b.Navigation("AssistantDean");
 
                     b.Navigation("AssistantRegistrar");
 
-                    b.Navigation("Constituency");
-
                     b.Navigation("Dean");
-
-                    b.Navigation("District");
-
-                    b.Navigation("Nation");
-
-                    b.Navigation("Province");
-
-                    b.Navigation("Ward");
                 });
 
             modelBuilder.Entity("SIS.Models.Admin.StudentCarryoverCourse", b =>
@@ -9410,8 +9288,6 @@ namespace SIS.Migrations
                     b.Navigation("Applicants");
 
                     b.Navigation("Departments");
-
-                    b.Navigation("Users");
                 });
 
             modelBuilder.Entity("SIS.Models.Applications.ApplicationPeriod", b =>

@@ -1,4 +1,38 @@
 ﻿document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('createNationId')?.addEventListener('change', async function () {
+        clearSelect('createProvinceId', 'Select Province');
+        clearSelect('createDistrictId', 'Select District');
+
+        if (this.value) {
+            await loadSelect('/Admin/GetProvinces', { nationId: this.value }, 'createProvinceId', 'Select Province');
+        }
+    });
+
+    document.getElementById('createProvinceId')?.addEventListener('change', async function () {
+        clearSelect('createDistrictId', 'Select District');
+
+        if (this.value) {
+            await loadSelect('/Admin/GetDistricts', { provinceId: this.value }, 'createDistrictId', 'Select District');
+        }
+    });
+
+    document.getElementById('updateNationId')?.addEventListener('change', async function () {
+        clearSelect('updateProvinceId', 'Select Province');
+        clearSelect('updateDistrictId', 'Select District');
+
+        if (this.value) {
+            await loadSelect('/Admin/GetProvinces', { nationId: this.value }, 'updateProvinceId', 'Select Province');
+        }
+    });
+
+    document.getElementById('updateProvinceId')?.addEventListener('change', async function () {
+        clearSelect('updateDistrictId', 'Select District');
+
+        if (this.value) {
+            await loadSelect('/Admin/GetDistricts', { provinceId: this.value }, 'updateDistrictId', 'Select District');
+        }
+    });
+
     // Modal elements
     const createUserModal = document.getElementById('createUserModal');
     const updateUserModal = document.getElementById('updateUserModal');
@@ -20,6 +54,126 @@
     const selectedRolesInput = document.getElementById('selectedRoles');
     const updateRoleCheckboxes = document.getElementById('updateRoleCheckboxes');
     const updateSelectedRolesInput = document.getElementById('updateSelectedRoles');
+
+    const createScopeSection = document.getElementById('createUserScopeSection');
+    const updateScopeSection = document.getElementById('updateUserScopeSection');
+
+    function resolveScopeFromRoles(roles) {
+        if (roles.includes('PS') || roles.includes('SA')) {
+            return 'national';
+        }
+
+        if (roles.includes('PEO')) {
+            return 'provincial';
+        }
+
+        if (roles.includes('DEBS')) {
+            return 'district';
+        }
+
+        return roles.length > 0 ? 'school' : '';
+    }
+
+    function clearSelect(selectId, placeholder) {
+        const el = document.getElementById(selectId);
+        if (!el) return;
+
+        el.innerHTML = `<option value="">${placeholder}</option>`;
+        el.value = '';
+    }
+
+    async function loadSelect(url, params, selectId, placeholder, selectedValue = '') {
+        const el = document.getElementById(selectId);
+        if (!el) return;
+
+        el.innerHTML = `<option value="">Loading...</option>`;
+
+        const query = new URLSearchParams(params).toString();
+        const response = await fetch(`${url}?${query}`);
+
+        if (!response.ok) {
+            el.innerHTML = `<option value="">${placeholder}</option>`;
+            return;
+        }
+
+        const data = await response.json();
+
+        el.innerHTML = `<option value="">${placeholder}</option>`;
+
+        data.forEach(item => {
+            const option = document.createElement('option');
+            option.value = item.id;
+            option.textContent = item.name;
+            el.appendChild(option);
+        });
+
+        if (selectedValue !== null && selectedValue !== undefined && selectedValue !== '') {
+            el.value = selectedValue;
+        }
+    }
+
+    function setRequired(id, isRequired) {
+        const el = document.getElementById(id);
+        if (!el) return;
+
+        if (isRequired) {
+            el.setAttribute('required', 'required');
+        } else {
+            el.removeAttribute('required');
+            el.value = '';
+        }
+    }
+
+    function toggleGroup(id, show) {
+        const el = document.getElementById(id);
+        if (!el) return;
+
+        if (show) {
+            el.classList.remove('hidden');
+        } else {
+            el.classList.add('hidden');
+        }
+    }
+
+    function applyScopeUi(prefix, roles) {
+        const scope = resolveScopeFromRoles(roles);
+
+        const section = prefix === 'create'
+            ? createScopeSection
+            : updateScopeSection;
+
+        if (!section) return;
+
+        section.classList.toggle('hidden', !scope);
+
+        const showNation = scope === 'national' || scope === 'provincial' || scope === 'district';
+        const showProvince = scope === 'provincial' || scope === 'district';
+        const showDistrict = scope === 'district';
+        const showSchool = scope === 'school';
+
+        toggleGroup(`${prefix}NationGroup`, showNation);
+        toggleGroup(`${prefix}ProvinceGroup`, showProvince);
+        toggleGroup(`${prefix}DistrictGroup`, showDistrict);
+        toggleGroup(`${prefix}SchoolGroup`, showSchool);
+
+        setRequired(`${prefix}NationId`, showNation);
+        setRequired(`${prefix}ProvinceId`, showProvince);
+        setRequired(`${prefix}DistrictId`, showDistrict);
+        setRequired(`${prefix}SchoolId`, showSchool);
+
+        if (!showProvince) clearSelect(`${prefix}ProvinceId`, 'Select Province');
+        if (!showDistrict) clearSelect(`${prefix}DistrictId`, 'Select District');
+
+        if (!showSchool) {
+            const school = document.getElementById(`${prefix}SchoolId`);
+            if (school) school.value = '';
+        }
+
+        if (!showNation) {
+            const nation = document.getElementById(`${prefix}NationId`);
+            if (nation) nation.value = '';
+        }
+    }
 
     // Modal handling functions
     function showModal(modalElement) {
@@ -244,6 +398,8 @@
                 selectedRolesInput.setCustomValidity('Please select at least one role.');
                 container.closest('.group').classList.add('form-error');
             }
+
+            applyScopeUi('create', selectedRoles);
         } else if (container.id === 'updateRoleCheckboxes') {
             updateSelectedRolesInput.value = selectedRoles.join(',');
 
@@ -255,6 +411,8 @@
                 updateSelectedRolesInput.setCustomValidity('Please select at least one role.');
                 container.closest('.group').classList.add('form-error');
             }
+
+            applyScopeUi('update', selectedRoles);
         }
     }
 
@@ -291,6 +449,10 @@
     window.showCreateUserModal = async function () {
         try {
             createUserForm.reset();
+            applyScopeUi('create', []);
+            clearSelect('createProvinceId', 'Select Province');
+            clearSelect('createDistrictId', 'Select District');
+
             const roles = await fetchRoles();
 
             if (roles.length > 0) {
@@ -337,6 +499,35 @@
             if (roles.length > 0) {
                 const userRoles = user.roles || [];
                 createRoleCheckboxes(updateRoleCheckboxes, roles, userRoles);
+            }
+
+            const userRoles = user.roles || [];
+            applyScopeUi('update', userRoles);
+
+            document.getElementById('updateNationId').value = user.nationId || '';
+            document.getElementById('updateSchoolId').value = user.schoolId || '';
+
+            clearSelect('updateProvinceId', 'Select Province');
+            clearSelect('updateDistrictId', 'Select District');
+
+            if (user.nationId) {
+                await loadSelect(
+                    '/Admin/GetProvinces',
+                    { nationId: user.nationId },
+                    'updateProvinceId',
+                    'Select Province',
+                    user.provinceId || ''
+                );
+            }
+
+            if (user.provinceId) {
+                await loadSelect(
+                    '/Admin/GetDistricts',
+                    { provinceId: user.provinceId },
+                    'updateDistrictId',
+                    'Select District',
+                    user.districtId || ''
+                );
             }
 
             // Set checkboxes
@@ -422,21 +613,29 @@
     // Custom form validation for multi-role
     function validateCreateForm() {
         const selectedRoles = getSelectedRoles(roleCheckboxes);
+
         if (selectedRoles.length === 0) {
             showNotification('Please select at least one role.', 'error');
             roleCheckboxes.scrollIntoView({ behavior: 'smooth', block: 'center' });
             return false;
         }
+
+        applyScopeUi('create', selectedRoles);
+
         return createUserForm.checkValidity();
     }
 
     function validateUpdateForm() {
         const selectedRoles = getSelectedRoles(updateRoleCheckboxes);
+
         if (selectedRoles.length === 0) {
             showNotification('Please select at least one role.', 'error');
             updateRoleCheckboxes.scrollIntoView({ behavior: 'smooth', block: 'center' });
             return false;
         }
+
+        applyScopeUi('update', selectedRoles);
+
         return updateUserForm.checkValidity();
     }
 

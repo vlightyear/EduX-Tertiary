@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using EduX.Data.Seeders;
+using EduX.Models.GeoPolitical;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using SIS.Enums;
@@ -24,15 +26,66 @@ using SIS.Models.StudyPermits;
 using SIS.Models.TimeTabling;
 using SIS.Models.Zoom;
 using SIS.Services.Reports;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Reflection.Emit;
 
 namespace SIS.Data
 {
     public class ApplicationUser : IdentityUser
     {
+        // =========================================================
+        // Basic Information
+        // =========================================================
+
         public required string FullName { get; set; }
+
         public DateTime CreatedAt { get; set; } = DateTime.Now;
+
         public bool HasChangedInitialPassword { get; set; } = false;
+
+        // =========================================================
+        // Administrative Location Hierarchy
+        // =========================================================
+
+        // Nation (Optional)
+        public int? NationId { get; set; }
+
+        [ForeignKey(nameof(NationId))]
+        public Nation? Nation { get; set; }
+
+        // Province (Optional)
+        public int? ProvinceId { get; set; }
+
+        [ForeignKey(nameof(ProvinceId))]
+        public Province? Province { get; set; }
+
+        // District (Optional)
+        public int? DistrictId { get; set; }
+
+        [ForeignKey(nameof(DistrictId))]
+        public District? District { get; set; }
+
+        // Constituency (Optional)
+        public int? ConstituencyId { get; set; }
+
+        [ForeignKey(nameof(ConstituencyId))]
+        public Constituency? Constituency { get; set; }
+
+        // Ward (Optional)
+        public int? WardId { get; set; }
+
+        [ForeignKey(nameof(WardId))]
+        public Ward? Ward { get; set; }
+
+        // =========================================================
+        // School Association
+        // =========================================================
+
+        // School (Optional)
+        public int? SchoolId { get; set; }
+
+        [ForeignKey(nameof(SchoolId))]
+        public School? School { get; set; }
     }
 
     public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
@@ -218,12 +271,25 @@ namespace SIS.Data
         public DbSet<AcademicPeriod> AcademicPeriods { get; set; }
         public DbSet<AcademicYearPeriod> AcademicYearPeriods { get; set; }
 
+        //GeoPolitical Data
+        public DbSet<Nation> Nations => Set<Nation>();
+        public DbSet<Province> Provinces => Set<Province>();
+        public DbSet<District> Districts => Set<District>();
+        public DbSet<Constituency> Constituencies => Set<Constituency>();
+        public DbSet<Ward> Wards => Set<Ward>();
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
 
             builder.Entity<StudentInvoiceItem>()
                 .ToTable(tb => tb.UseSqlOutputClause(false));
+
+            builder.Entity<ApplicationUser>()
+            .HasOne(u => u.School)
+            .WithMany(s => s.Users)
+            .HasForeignKey(u => u.SchoolId)
+            .OnDelete(DeleteBehavior.Restrict);
 
             // ===================================================================
             // PERFORMANCE INDEXES FOR SENATE REPORT QUERIES
@@ -1443,6 +1509,9 @@ namespace SIS.Data
             // Seed default permissions
             //SeedPermissions(builder);
             //SeedRolePermissions(builder);
+
+            //Seed GeoPolitical Data
+            ZambiaSeedData.Seed(builder);
         }
 
         private void SeedPermissions(ModelBuilder modelBuilder)
