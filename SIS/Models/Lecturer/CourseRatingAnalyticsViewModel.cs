@@ -19,7 +19,7 @@
     {
         public int AcademicYearId { get; set; }
         public string AcademicYear { get; set; }
-        public int SemesterId { get; set; }
+        public int? SemesterId { get; set; }
         public string Semester { get; set; }
         public string ModeOfStudy { get; set; }
         public List<MaskedStudentRating> Students { get; set; } = new List<MaskedStudentRating>();

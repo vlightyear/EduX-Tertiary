@@ -7,6 +7,6 @@
         public string CourseName { get; set; }
         public string CourseDescription { get; set; }
         public bool IsMandatory { get; set; }
-        public int Semester { get; set; }
+        public int? YearPeriodId { get; set; }
     }
 }

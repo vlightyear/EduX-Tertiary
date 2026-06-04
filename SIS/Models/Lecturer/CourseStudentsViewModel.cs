@@ -15,7 +15,7 @@
     public class CourseStudentGroupModel
     {
         public int AcademicYearId { get; set; }
-        public int SemesterId { get; set; }
+        public int? SemesterId { get; set; }
         public string AcademicYear { get; set; }
         public string Semester { get; set; }
         public List<CourseStudentProgressModel> Students { get; set; }

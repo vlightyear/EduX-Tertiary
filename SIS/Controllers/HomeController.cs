@@ -216,7 +216,7 @@ namespace SIS.Controllers
                                     s.StudentId == result.StudentId &&
                                     s.CourseId == result.CourseId &&
                                     s.AcademicYearId == result.AcademicYearId &&
-                                    s.YearPeriodId == result.Semester &&
+                                    s.YearPeriodId == result.YearPeriodId &&
                                     s.IsActive)
                                 .ToListAsync();
                         }

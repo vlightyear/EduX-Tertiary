@@ -158,7 +158,7 @@ namespace SIS.Services
                         r.StudentId == studentId &&
                         r.CourseId == courseId &&
                         r.AcademicYearId == academicYearId &&
-                        r.Semester == semester);
+                        r.YearPeriodId == semester);
 
                 StudentCourseResult result;
 
@@ -219,7 +219,7 @@ namespace SIS.Services
                         StudentId = studentId,
                         CourseId = courseId,
                         AcademicYearId = academicYearId,
-                        Semester = semester,
+                        YearPeriodId = semester,
                         WeightedTotal = weightedTotal,
                         NormalizedTotal = normalizedTotal,
                         GradeLetter = gradeConfig.GradeLetter,
@@ -368,7 +368,7 @@ namespace SIS.Services
                     existingResult.StudentId,
                     existingResult.CourseId,
                     existingResult.AcademicYearId,
-                    existingResult.Semester,
+                    existingResult.YearPeriodId ?? 0,
                     userId);
             }
             catch (Exception ex)
@@ -463,7 +463,7 @@ namespace SIS.Services
                     .Where(r =>
                         r.CourseId == courseId &&
                         r.AcademicYearId == academicYearId &&
-                        r.Semester == semester &&
+                        r.YearPeriodId == semester &&
                         r.Status != Status.Published)
                     .ToListAsync();
 
@@ -533,7 +533,7 @@ namespace SIS.Services
                     r.StudentId == studentId &&
                     r.CourseId == courseId &&
                     r.AcademicYearId == academicYearId &&
-                    r.Semester == semester);
+                    r.YearPeriodId == semester);
 
             // Manually load assessment scores if result exists
             if (result != null)
@@ -544,7 +544,7 @@ namespace SIS.Services
                         s.StudentId == result.StudentId &&
                         s.CourseId == result.CourseId &&
                         s.AcademicYearId == result.AcademicYearId &&
-                        s.YearPeriodId == result.Semester &&
+                        s.YearPeriodId == result.YearPeriodId &&
                         s.IsActive)
                     .ToListAsync();
 
@@ -575,7 +575,7 @@ namespace SIS.Services
                 .Where(r =>
                     r.StudentId == studentId &&
                     r.AcademicYearId == academicYearId)
-                .OrderBy(r => r.Semester)
+                .OrderBy(r => r.YearPeriodId)
                 .ThenBy(r => r.Course.CourseCode)
                 .ToListAsync();
         }

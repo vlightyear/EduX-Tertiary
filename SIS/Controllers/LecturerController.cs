@@ -57,40 +57,47 @@ namespace SIS.Controllers
                 .Distinct()
                 .CountAsync();
 
-            // ⭐ UPDATED: Get the most recent active academic year and semester
+            // Get the most recent active academic year and its active period
             var mostRecentAcademicYear = await _context.AcademicYears
                 .Where(ay => ay.IsActive)
                 .OrderByDescending(ay => ay.YearValue)
-                .ThenByDescending(ay => ay.SemesterId)
                 .FirstOrDefaultAsync();
 
             int? currentAcademicYearId = mostRecentAcademicYear?.YearId;
-            int? currentSemester = mostRecentAcademicYear?.SemesterId;
 
-            // ⭐ UPDATED: Count pending assessments from StudentCourseResults (unpublished results)
+            var activeYearPeriod = mostRecentAcademicYear != null
+                ? await _context.AcademicYearPeriods
+                    .Where(yp => yp.AcademicYearId == mostRecentAcademicYear.YearId && yp.IsActive)
+                    .FirstOrDefaultAsync()
+                : null;
+            int? currentYearPeriodId = activeYearPeriod?.Id;
+
+            // Count pending assessments from StudentCourseResults (unpublished results)
             var pendingAssessments = 0;
-            if (currentAcademicYearId.HasValue && currentSemester.HasValue)
+            if (currentAcademicYearId.HasValue)
             {
-                pendingAssessments = await _context.StudentCourseResults
+                var pendingQuery = _context.StudentCourseResults
                     .Where(r => courseIds.Contains(r.CourseId) &&
                                r.AcademicYearId == currentAcademicYearId.Value &&
-                               r.Semester == currentSemester.Value &&
-                               r.Status != Status.Published)
-                    .CountAsync();
+                               r.Status != Status.Published);
+                if (currentYearPeriodId.HasValue)
+                    pendingQuery = pendingQuery.Where(r => r.YearPeriodId == currentYearPeriodId.Value);
+                pendingAssessments = await pendingQuery.CountAsync();
             }
 
-            // ⭐ UPDATED: Calculate grading progress from StudentCourseResults and StudentAssessmentScores
+            // Calculate grading progress from StudentCourseResults and StudentAssessmentScores
             decimal gradingProgress = 0;
-            if (currentAcademicYearId.HasValue && currentSemester.HasValue)
+            if (currentAcademicYearId.HasValue)
             {
-                // Get all course results for lecturer's courses in current semester
-                var courseResults = await _context.StudentCourseResults
+                // Get all course results for lecturer's courses in the current period
+                var resultsQuery = _context.StudentCourseResults
                     .Include(r => r.Course)
                         .ThenInclude(c => c.CourseAssessments)
                     .Where(r => courseIds.Contains(r.CourseId) &&
-                               r.AcademicYearId == currentAcademicYearId.Value &&
-                               r.Semester == currentSemester.Value)
-                    .ToListAsync();
+                               r.AcademicYearId == currentAcademicYearId.Value);
+                if (currentYearPeriodId.HasValue)
+                    resultsQuery = resultsQuery.Where(r => r.YearPeriodId == currentYearPeriodId.Value);
+                var courseResults = await resultsQuery.ToListAsync();
 
                 if (courseResults.Any())
                 {
@@ -109,7 +116,7 @@ namespace SIS.Controllers
                             .CountAsync(s => s.StudentId == result.StudentId &&
                                             s.CourseId == result.CourseId &&
                                             s.AcademicYearId == result.AcademicYearId &&
-                                            s.YearPeriodId == result.Semester &&
+                                            s.YearPeriodId == result.YearPeriodId &&
                                             s.IsActive &&
                                             s.Score > 0);
 
@@ -126,7 +133,7 @@ namespace SIS.Controllers
             // ⭐ UPDATED: Get assessment trends from StudentCourseResults (most recent semester)
             var gradeTrends = new Dictionary<string, object>();
 
-            if (currentAcademicYearId.HasValue && currentSemester.HasValue)
+            if (currentAcademicYearId.HasValue && currentYearPeriodId.HasValue)
             {
                 foreach (var course in lecturerCourses.Take(5)) // Limit to 5 courses for performance
                 {
@@ -135,7 +142,7 @@ namespace SIS.Controllers
                         .Include(r => r.Course)
                         .Where(r => r.CourseId == course.Id &&
                                    r.AcademicYearId == currentAcademicYearId.Value &&
-                                   r.Semester == currentSemester.Value &&
+                                   r.YearPeriodId == currentYearPeriodId.Value &&
                                    r.Status == Status.Published &&
                                    r.NormalizedTotal > 0)
                         .ToListAsync();
@@ -166,7 +173,7 @@ namespace SIS.Controllers
                                     .Where(s => s.CourseId == course.Id &&
                                                s.AssessmentId == courseAssessment.AssessmentId &&
                                                s.AcademicYearId == currentAcademicYearId.Value &&
-                                               s.YearPeriodId == currentSemester.Value &&
+                                               s.YearPeriodId == currentYearPeriodId.Value &&
                                                s.IsActive &&
                                                s.Score > 0)
                                     .Select(s => s.Score)
@@ -191,7 +198,7 @@ namespace SIS.Controllers
                                 highestScores = highestScores,
                                 lowestScores = lowestScores,
                                 courseName = course.CourseName,
-                                semester = $"Semester {currentSemester}",
+                                semester = $"Semester {currentYearPeriodId}",
                                 academicYear = mostRecentAcademicYear?.YearValue ?? "N/A"
                             };
                         }
@@ -205,7 +212,7 @@ namespace SIS.Controllers
             // ⭐ UPDATED: Get course overview data from StudentCourseResults
             var courseOverview = new List<object>();
 
-            if (currentAcademicYearId.HasValue && currentSemester.HasValue)
+            if (currentAcademicYearId.HasValue && currentYearPeriodId.HasValue)
             {
                 foreach (var course in lecturerCourses.Take(10))
                 {
@@ -213,13 +220,13 @@ namespace SIS.Controllers
                     var enrolledCount = await _context.StudentCourseRegistrations
                         .CountAsync(scr => scr.CourseId == course.Id &&
                                           scr.AcademicYearId == currentAcademicYearId.Value &&
-                                          scr.YearPeriodId == currentSemester.Value);
+                                          scr.YearPeriodId == currentYearPeriodId.Value);
 
                     // Get average performance from published results
                     var publishedResults = await _context.StudentCourseResults
                         .Where(r => r.CourseId == course.Id &&
                                    r.AcademicYearId == currentAcademicYearId.Value &&
-                                   r.Semester == currentSemester.Value &&
+                                   r.YearPeriodId == currentYearPeriodId.Value &&
                                    r.Status == Status.Published &&
                                    r.NormalizedTotal > 0)
                         .ToListAsync();
@@ -234,7 +241,7 @@ namespace SIS.Controllers
                     var totalStudentsInCourse = await _context.StudentCourseResults
                         .CountAsync(r => r.CourseId == course.Id &&
                                         r.AcademicYearId == currentAcademicYearId.Value &&
-                                        r.Semester == currentSemester.Value);
+                                        r.YearPeriodId == currentYearPeriodId.Value);
 
                     var gradedStudents = publishedResults.Count;
 
@@ -256,14 +263,14 @@ namespace SIS.Controllers
             // ⭐ UPDATED: Get upcoming deadlines from StudentCourseResults (unpublished results needing attention)
             var upcomingDeadlines = new List<object>();
 
-            if (currentAcademicYearId.HasValue && currentSemester.HasValue)
+            if (currentAcademicYearId.HasValue && currentYearPeriodId.HasValue)
             {
                 // Find courses with incomplete grading
                 var coursesNeedingAttention = await _context.StudentCourseResults
                     .Include(r => r.Course)
                     .Where(r => courseIds.Contains(r.CourseId) &&
                                r.AcademicYearId == currentAcademicYearId.Value &&
-                               r.Semester == currentSemester.Value &&
+                               r.YearPeriodId == currentYearPeriodId.Value &&
                                r.Status != Status.Published)
                     .GroupBy(r => new { r.CourseId, r.Course.CourseCode, r.Course.CourseName })
                     .Select(g => new
@@ -296,7 +303,7 @@ namespace SIS.Controllers
             ViewBag.TotalStudents = totalStudents;
             ViewBag.PendingAssessments = pendingAssessments;
             ViewBag.GradingProgress = gradingProgress;
-            ViewBag.CurrentSemester = currentSemester;
+            ViewBag.CurrentSemester = currentYearPeriodId;
             ViewBag.CurrentAcademicYear = mostRecentAcademicYear?.YearValue;
 
             ViewBag.GradeTrends = JsonConvert.SerializeObject(gradeTrends);
@@ -2235,7 +2242,7 @@ namespace SIS.Controllers
                     AcademicYearId = g.Key.YearId,
                     SemesterId = g.Key.YearPeriodId,
                     AcademicYear = g.First().AcademicYear.YearValue,
-                    Semester = $"Semester {g.Key.YearPeriodId}",
+                    Semester = g.First().AcademicYear?.YearValue ?? "Unknown Period",
                     Students = g.Select(s => new CourseStudentProgressModel
                     {
                         StudentId = s.StudentId.ToString(),
@@ -2505,7 +2512,7 @@ namespace SIS.Controllers
                     AcademicYearId = group.Key.AcademicYearId,
                     AcademicYear = group.Key.AcademicYear,
                     SemesterId = group.Key.YearPeriodId,
-                    Semester = group.Key.YearPeriod,
+                    Semester = group.Key.YearPeriod?.ToString(),
                     ModeOfStudy = group.Key.ModeOfStudy,
                     Students = maskedStudents
                 });

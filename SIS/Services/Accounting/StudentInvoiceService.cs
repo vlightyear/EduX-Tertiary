@@ -4,6 +4,7 @@ using SIS.Data;
 using SIS.Models.Accounting;
 using SIS.Models.Fees;
 using SIS.Enums;
+using SIS.Models.Registration;
 using SIS.Models.StudentApplication;
 using SIS.Models.Payments;
 
@@ -76,7 +77,7 @@ namespace SIS.Services.Accounting
                         .FirstOrDefaultAsync(si => si.StudentId == student.Id &&
                                                  si.AcademicYearId == student.AcademicYearId &&
                                                  si.DeletedAt == null &&
-                                                 (student.Programme.IsSemesterBased == false || si.YearPeriodId == student.CurrentYearPeriodId));
+                                                 (student.Programme.AcademicType == AcademicType.Annual || si.YearPeriodId == student.CurrentYearPeriodId));
 
                     if (existingInvoice != null)
                     {
@@ -137,8 +138,8 @@ namespace SIS.Services.Accounting
 
                     // Generate unique invoice reference
                     var today = DateTime.Now.Date;
-                    var semesterSuffix = student.Programme?.IsSemesterBased == true && student.CurrentYearPeriodId.HasValue
-                        ? $"-S{student.CurrentYearPeriodId}"
+                    var semesterSuffix = student.Programme?.AcademicType != AcademicType.Annual && student.CurrentYearPeriodId.HasValue
+                        ? $"-P{student.CurrentYearPeriodId}"
                         : "";
                     var baseInvoiceReference = $"INV-{today:yyyyMMdd}-{student.StudentId_Number}{semesterSuffix}";
 
@@ -201,7 +202,7 @@ namespace SIS.Services.Accounting
                             TotalAmount = totalAmount,
                             CreatedDate = DateTime.Now,
                             AcademicYearId = student.AcademicYearId,
-                            YearPeriodId = student.Programme?.IsSemesterBased == true ? student.CurrentYearPeriodId : null,
+                            YearPeriodId = student.Programme?.AcademicType != AcademicType.Annual ? student.CurrentYearPeriodId : null,
                             Status = Status.Pending,
                             AccountingSystemPostStatus = accountingPostStatus // ✅ Track the status
                         };
@@ -289,24 +290,18 @@ namespace SIS.Services.Accounting
             var fees = await _context.FeeConfigurations
                 .AsNoTracking()
                 .Include(f => f.FeeType)
-                .Include(f => f.Programme) // Add this include to check IsSemesterBased
+                .Include(f => f.Programme)
                 .Where(f => (/*f.AcademicYearId == null ||*/ f.AcademicYearId == student.AcademicYearId) &&
                             f.FeeType.ApplicableFor == "Student")
                 .ToListAsync();
 
-            // Filter by semester if the student's programme is semester-based
-            if (student.CurrentYearPeriodId.HasValue)
-            {
-                fees = fees.Where(f =>
-                    //f.Semester == null ||  // Fee applies to whole year (both semesters)
-                    f.YearPeriodId == student.CurrentYearPeriodId.Value  // Fee applies to current year period
-                ).ToList();
-            }
-            else
-            {
-                // For yearly programmes, only include fees that are yearly (YearPeriodId is null)
-                fees = fees.Where(f => f.YearPeriodId == null).ToList();
-            }
+            // Pre-filter by period scope:
+            // Always include year-wide fees (YearPeriodId == null).
+            // When the student is in a specific period, also include fees scoped to that period.
+            fees = fees.Where(f =>
+                f.YearPeriodId == null ||                                          // year-wide fee
+                f.YearPeriodId == student.CurrentYearPeriodId                      // period-specific fee
+            ).ToList();
 
             // Filter fees based on various criteria
             var filteredFees = fees.Where(f =>

@@ -279,7 +279,7 @@ namespace SIS.Services
 
                     // Set success result
                     result.Success = true;
-                    result.Message = GetProgressionMessage(progressionAction, student.Programme.IsSemesterBased);
+                    result.Message = GetProgressionMessage(progressionAction, student.Programme.AcademicType);
                     result.NextAcademicYearId = nextAcademicYear.YearId;
                     result.NextYearOfStudy = nextYearOfStudy;
                     result.NextSemester = nextSemester;
@@ -311,55 +311,55 @@ namespace SIS.Services
             ref int nextYearOfStudy,
             ref int nextSemester)
         {
-            bool isSemesterBased = student.Programme.IsSemesterBased;
+            var academicType = student.Programme.AcademicType;
+            int periodCount = academicType.PeriodCount();
             int currentYearOfStudy = student.StudentCurrentYear ?? 1;
-            int currentSemester = student.CurrentYearPeriodId ?? 1;
+            // currentSemester holds the current period NUMBER (1-N), not a YearPeriodId FK
+            int currentSemester = student.CurrentYearPeriod?.AcademicPeriod?.PeriodNumber ?? 1;
 
             switch (progressionAction)
             {
                 case "Proceed":
                 case "ProceedWithRepeat":
                 case "ProceedOnProbation":
-                    if (isSemesterBased)
+                    if (academicType != AcademicType.Annual)
                     {
-                        // For semester-based programmes
-                        if (currentSemester == 1)
+                        if (currentSemester < periodCount)
                         {
-                            // Move to semester 2 of the same year
+                            // Advance to next period within the same year
                             nextYearOfStudy = currentYearOfStudy;
-                            nextSemester = 2;
+                            nextSemester = currentSemester + 1;
                         }
                         else
                         {
-                            // Move to semester 1 of next year
+                            // Last period reached — advance to period 1 of next year
                             nextYearOfStudy = currentYearOfStudy + 1;
                             nextSemester = 1;
                         }
                     }
                     else
                     {
-                        // For annual programmes
+                        // Annual programme — advance one year
                         nextYearOfStudy = currentYearOfStudy + 1;
                         nextSemester = 1;
                     }
                     break;
 
                 case "RepeatYear":
-                    // Stay in the same year, semester 1
                     nextYearOfStudy = currentYearOfStudy;
                     nextSemester = 1;
                     break;
 
                 case "RepeatSemester":
-                    if (isSemesterBased)
+                    if (academicType != AcademicType.Annual)
                     {
-                        // Stay in current semester
+                        // Stay in current period
                         nextYearOfStudy = currentYearOfStudy;
                         nextSemester = currentSemester;
                     }
                     else
                     {
-                        // For annual, treat as repeat year
+                        // Annual — treat as repeat year
                         nextYearOfStudy = currentYearOfStudy;
                         nextSemester = 1;
                     }
@@ -367,7 +367,6 @@ namespace SIS.Services
 
                 case "Exclude":
                 case "Withdraw":
-                    // Stay in current position
                     nextYearOfStudy = currentYearOfStudy;
                     nextSemester = currentSemester;
                     break;
@@ -553,7 +552,7 @@ namespace SIS.Services
                         StudentId = student.Id,
                         CourseId = failedCourseId,
                         OriginalAcademicYearId = failedResult.AcademicYearId,
-                        OriginalSemester = failedResult.Semester,
+                        OriginalSemester = failedResult.YearPeriodId,
                         Reason = "Failed",
                         IsActive = true,
                         CarryoverDate = DateTime.Now,
@@ -600,7 +599,7 @@ namespace SIS.Services
                 Remarks = GetProgressionRemarks(
                     progressionAction,
                     totalFailedCourses,
-                    student.Programme.IsSemesterBased,
+                    student.Programme.AcademicType != AcademicType.Annual,
                     student.CurrentYearPeriodId),
                 CourseResults = JsonSerializer.Serialize(new
                 {
@@ -616,7 +615,7 @@ namespace SIS.Services
                     }),
                     YearGPA = yearGPA,
                     TotalFailedCourses = totalFailedCourses,
-                    ProgrammeType = student.Programme.IsSemesterBased ? "Semester" : "Annual",
+                    ProgrammeType = student.Programme.AcademicType.ToString(),
                     CurrentSemester = student.CurrentYearPeriodId
                 }),
                 CreatedBy = userId,
@@ -626,13 +625,19 @@ namespace SIS.Services
             _context.StudentAcademicPerformanceArchives.Add(archive);
         }
 
-        private string GetProgressionMessage(string progressionAction, bool isSemesterBased) => progressionAction switch
+        private string GetProgressionMessage(string progressionAction, AcademicType academicType) => progressionAction switch
         {
-            "Proceed" => isSemesterBased ? "Successfully progressed to next semester/year" : "Successfully progressed to next academic year",
-            "ProceedWithRepeat" => isSemesterBased ? "Progressed to next semester/year with units to repeat" : "Progressed to next year with units to repeat",
-            "ProceedOnProbation" => isSemesterBased ? "Progressed to next semester/year on academic probation" : "Progressed to next year on academic probation",
+            "Proceed" => academicType == AcademicType.Annual
+                ? "Successfully progressed to next academic year"
+                : $"Successfully progressed to next {academicType.PeriodLabel(1).Split(' ')[0].ToLower()}/year",
+            "ProceedWithRepeat" => academicType == AcademicType.Annual
+                ? "Progressed to next year with units to repeat"
+                : "Progressed to next period/year with units to repeat",
+            "ProceedOnProbation" => academicType == AcademicType.Annual
+                ? "Progressed to next year on academic probation"
+                : "Progressed to next period/year on academic probation",
             "RepeatYear" => "Set to repeat current academic year",
-            "RepeatSemester" => "Set to repeat current semester",
+            "RepeatSemester" => academicType == AcademicType.Term ? "Set to repeat current term" : "Set to repeat current semester",
             "Exclude" => "Academic exclusion processed - please contact academic office",
             "Withdraw" => "Withdrawal processed - please contact academic office",
             _ => "Progression status updated"

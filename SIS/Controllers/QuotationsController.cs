@@ -71,7 +71,7 @@ namespace SIS.Controllers
                         ModeId = o.ModeOfStudyId,
                         LevelId = o.ProgramLevelId,
                         YearOfStudy = (int?)null,
-                        Semester = o.Semester,
+                        Semester = o.YearPeriodId,
                         AppliesOnlyToForeignStudents = o.AppliesOnlyToForeignStudents,
                         AppliesOnlyToLocalStudents = false,
                         Source = "OtherFees"

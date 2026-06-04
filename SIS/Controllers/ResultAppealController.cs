@@ -74,7 +74,7 @@ namespace SIS.Controllers
                         CourseCode = a.Course != null ? a.Course.CourseCode : "N/A",
                         CourseName = a.Course != null ? a.Course.CourseName : "N/A",
                         AcademicYear = a.AcademicYear != null ? a.AcademicYear.YearValue : "N/A",
-                        a.Semester,
+                        a.YearPeriodId,
                         a.AppealType,
                         a.Reason,
                         a.Status,
@@ -149,7 +149,7 @@ namespace SIS.Controllers
                             c.CourseCode,
                             c.CourseName,
                             c.CourseType,
-                            YearPeriodId = c.PeriodTakenId,
+                            YearPeriodId = (int?)c.PeriodTakenId,
                             AcademicYearId = targetAcademicYearId
                         })
                         .OrderBy(c => c.CourseCode)
@@ -187,7 +187,7 @@ namespace SIS.Controllers
                         a.StudentId == student.Id &&
                         a.CourseId == model.CourseId &&
                         a.AcademicYearId == model.AcademicYearId &&
-                        a.Semester == model.Semester &&
+                        a.YearPeriodId == model.YearPeriodId &&
                         a.Status != "Cancelled" &&
                         a.Status != "Rejected" &&
                         a.Status != "Completed" &&
@@ -356,7 +356,7 @@ namespace SIS.Controllers
 
                 if (semester.HasValue)
                 {
-                    query = query.Where(a => a.Semester == semester.Value);
+                    query = query.Where(a => a.YearPeriodId == semester.Value);
                 }
 
                 if (!string.IsNullOrEmpty(status))
@@ -388,7 +388,7 @@ namespace SIS.Controllers
                         CourseCode = a.Course != null ? a.Course.CourseCode : "N/A",
                         CourseName = a.Course != null ? a.Course.CourseName : "N/A",
                         AcademicYear = a.AcademicYear != null ? a.AcademicYear.YearValue : "N/A",
-                        a.Semester,
+                        a.YearPeriodId,
                         a.AppealType,
                         a.Reason,
                         a.Status,
@@ -447,7 +447,7 @@ namespace SIS.Controllers
                         CourseName = a.Course != null ? a.Course.CourseName : "N/A",
                         a.AcademicYearId,
                         AcademicYear = a.AcademicYear != null ? a.AcademicYear.YearValue : "N/A",
-                        a.Semester,
+                        a.YearPeriodId,
                         a.AppealType,
                         a.Reason,
                         a.SupportingDocuments,
@@ -819,7 +819,7 @@ namespace SIS.Controllers
                     worksheet.Cell(row, 5).Value = appeal.Course?.CourseCode ?? "N/A";
                     worksheet.Cell(row, 6).Value = appeal.Course?.CourseName ?? "N/A";
                     worksheet.Cell(row, 7).Value = appeal.AcademicYear?.YearValue ?? "N/A";
-                    worksheet.Cell(row, 8).Value = appeal.Semester;
+                    worksheet.Cell(row, 8).Value = appeal.YearPeriodId;
                     worksheet.Cell(row, 9).Value = FormatAppealType(appeal.AppealType);
                     worksheet.Cell(row, 10).Value = FormatStatus(appeal.Status);
                     worksheet.Cell(row, 11).Value = appeal.SubmissionDate.ToString("yyyy-MM-dd HH:mm");

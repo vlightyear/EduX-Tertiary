@@ -1339,10 +1339,13 @@ namespace SIS.Controllers
 
         private async Task<List<AdminCourseViewModel>> GetRegularProgrammeCoursesForAdmin(Student student, List<int> carryoverCourseIds)
         {
+            var currentPeriodId = student.CurrentYearPeriod.AcademicPeriod.Id;
+
             var courseQuery = _context.Courses
                 .Where(c => c.ProgrammeID == student.ProgrammeId &&
                            c.YearTaken == student.StudentCurrentYear &&
-                           c.PeriodTakenId == student.CurrentYearPeriod.AcademicPeriod.Id &&
+                           (c.PeriodTakenId == currentPeriodId ||
+                            c.PeriodTaken.AcademicType == AcademicType.Annual) &&
                            !carryoverCourseIds.Contains(c.Id));
 
 
@@ -1383,7 +1386,10 @@ namespace SIS.Controllers
 
             if (student.Programme?.IsSemesterBased == true)
             {
-                courseQuery = courseQuery.Where(c => c.PeriodTakenId == student.CurrentYearPeriod.AcademicPeriod.Id);
+                var currentPeriodId = student.CurrentYearPeriod.AcademicPeriod.Id;
+                courseQuery = courseQuery.Where(c =>
+                    c.PeriodTakenId == currentPeriodId ||
+                    c.PeriodTaken.AcademicType == AcademicType.Annual);
             }
 
             var courses = await courseQuery

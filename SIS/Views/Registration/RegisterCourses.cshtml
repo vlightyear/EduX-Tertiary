@@ -1,6 +1,8 @@
 ﻿@model IEnumerable<SIS.Models.Registration.CourseRegistrationViewModel>
 @{
     ViewData["Title"] = "Register Courses";
+    string periodLabel = (ViewBag.CurrentPeriodLabel as string) ?? "";
+    bool hasPeriods = !string.IsNullOrEmpty(periodLabel) && periodLabel != "—";
 }
 
 @section Styles {
@@ -22,6 +24,12 @@
 
         body, .cr-wrap * {
             font-family: 'DM Sans',sans-serif;
+        }
+
+        /* Restore Material Icons font overridden by the wildcard above */
+        .material-icons {
+            font-family: 'Material Icons' !important;
+            font-feature-settings: 'liga';
         }
 
         /* ── Animations ────────────────────── */
@@ -888,9 +896,9 @@
                 <h1 class="cr-hero-title">
                     @(ViewBag.RegistrationStatus == SIS.Enums.Status.Registered ? "Registered Courses" : "Register Courses")
                 </h1>
-                @if (ViewBag.IsSemesterBased)
+                @if (hasPeriods)
                 {
-                    <p class="cr-hero-sub">Semester @ViewBag.Semester</p>
+                    <p class="cr-hero-sub">@periodLabel</p>
                 }
             </div>
 
@@ -910,12 +918,12 @@
                 }
                 else if (ViewBag.RegistrationStatus == SIS.Enums.Status.Pending)
                 {
-                    <span class="status-pill pill-pending"><i class="material-icons">hourglass_empty</i> Pending@(ViewBag.IsSemesterBased ? $" · Sem {ViewBag.Semester}" : "")</span>
+                    <span class="status-pill pill-pending"><i class="material-icons">hourglass_empty</i> Pending@(hasPeriods ? $" · {periodLabel}" : "")</span>
                     <a asp-controller="Payments" asp-action="StudentFinance" class="btn-hero-pay"><i class="material-icons">payment</i> Pay Now</a>
                 }
                 else if (ViewBag.RegistrationStatus == SIS.Enums.Status.Registered)
                 {
-                    <span class="status-pill pill-registered"><i class="material-icons">check_circle</i> Registered@(ViewBag.IsSemesterBased ? $" · Sem {ViewBag.Semester}" : "")</span>
+                    <span class="status-pill pill-registered"><i class="material-icons">check_circle</i> Registered@(hasPeriods ? $" · {periodLabel}" : "")</span>
                     <button onclick="generateClassPass()" class="btn-hero-classpass"><i class="material-icons">school</i> Class Pass</button>
                     <a asp-controller="Payments" asp-action="StudentFinance" class="btn-hero-pay"><i class="material-icons">payment</i> Pay</a>
                     <div id="examDocketSection" class="hidden">
@@ -947,14 +955,14 @@
         }
         else if (ViewBag.RegistrationStatus == SIS.Enums.Status.Pending)
         {
-            <span class="status-pill pill-pending" style="justify-content:center;"><i class="material-icons">hourglass_empty</i> Registration Pending@(ViewBag.IsSemesterBased ? $" (Sem {ViewBag.Semester})" : "")</span>
+            <span class="status-pill pill-pending" style="justify-content:center;"><i class="material-icons">hourglass_empty</i> Registration Pending@(hasPeriods ? $" ({periodLabel})" : "")</span>
             <a asp-controller="Payments" asp-action="StudentFinance" style="display:flex;align-items:center;justify-content:center;gap:.35rem;background:var(--navy);color:#fff;border-radius:.65rem;padding:.6rem;font-size:.82rem;font-weight:700;text-decoration:none;">
                 <i class="material-icons" style="font-size:.85rem;">payment</i> Pay Now
             </a>
         }
         else if (ViewBag.RegistrationStatus == SIS.Enums.Status.Registered)
         {
-            <span class="status-pill pill-registered" style="justify-content:center;"><i class="material-icons">check_circle</i> Registration Complete@(ViewBag.IsSemesterBased ? $" (Sem {ViewBag.Semester})" : "")</span>
+            <span class="status-pill pill-registered" style="justify-content:center;"><i class="material-icons">check_circle</i> Registration Complete@(hasPeriods ? $" ({periodLabel})" : "")</span>
             <div style="display:flex;gap:.5rem;">
                 <button onclick="generateClassPass()" class="btn-hero-classpass" style="flex:1;justify-content:center;background:#f0fdf4;color:var(--green);border-color:var(--green);">
                     <i class="material-icons">school</i> Class Pass
@@ -980,7 +988,7 @@
 
     <!-- ── Info callouts (float over hero) ── -->
     @if ((ViewBag.TotalRequiredCourses > 0 && ViewBag.RegistrationStatus != SIS.Enums.Status.Registered) ||
-        (ViewBag.IsSemesterBased && ViewBag.RegistrationStatus != SIS.Enums.Status.Registered))
+        (hasPeriods && ViewBag.RegistrationStatus != SIS.Enums.Status.Registered))
     {
         <div class="cr-strip">
             @if (ViewBag.TotalRequiredCourses > 0 && ViewBag.RegistrationStatus != SIS.Enums.Status.Registered)
@@ -989,13 +997,12 @@
                     <i class="material-icons">info</i>
                     <div class="callout-text">
                         <strong>Course Requirements — </strong>
-                        @if (ViewBag.IsSemesterBased)
+                        @if (hasPeriods)
                         {
-                            <text>Your programme requires <strong>@ViewBag.TotalRequiredCourses</strong> courses for Semester @ViewBag.Semester.</text>
+                            <text>Your programme requires <strong>@ViewBag.TotalRequiredCourses</strong> courses for @periodLabel.</text>
                         }
                         else
                         {
-
                             <text>Your programme requires <strong>@ViewBag.TotalRequiredCourses</strong> courses this year.</text>
                         }
                         @if (Model.Any(c => c.IsCarryover))
@@ -1007,13 +1014,13 @@
                     </div>
                 </div>
             }
-            @if (ViewBag.IsSemesterBased && ViewBag.RegistrationStatus != SIS.Enums.Status.Registered)
+            @if (hasPeriods && ViewBag.RegistrationStatus != SIS.Enums.Status.Registered)
             {
                 <div class="callout callout-purple">
                     <i class="material-icons">calendar_today</i>
                     <div class="callout-text">
-                        <strong>Semester-Based Registration — </strong>
-                        You are registering for <strong>Semester @ViewBag.Semester</strong> courses only. You will need to register again when the next semester opens.
+                        <strong>Period-Based Registration — </strong>
+                        You are registering for <strong>@periodLabel</strong> courses only. You will need to register again when the next period opens.
                     </div>
                 </div>
             }
@@ -1035,7 +1042,7 @@
                 <div class="callout callout-amber" style="margin-top:.5rem;">
                     <i class="material-icons">warning</i>
                     <p class="callout-text">
-                        No courses available for registration at this time@(ViewBag.IsSemesterBased ? $" for Semester {ViewBag.Semester}" : "").
+                        No courses available for registration at this time@(hasPeriods ? $" for {periodLabel}" : "").
                     </p>
                 </div>
             </div>
@@ -1055,9 +1062,9 @@
                                     <i class="material-icons" style="color:#d97706;">refresh</i>
                                 </div>
                                 <span class="section-title">Carryover Courses</span>
-                                @if (ViewBag.IsSemesterBased)
+                                @if (hasPeriods)
                                 {
-                                    <span class="section-sub">(Semester @ViewBag.Semester)</span>
+                                    <span class="section-sub">(@periodLabel)</span>
                                 }
                             </div>
                             <span style="font-size:.68rem;font-weight:700;padding:.2rem .55rem;border-radius:2rem;background:#fffbeb;color:#d97706;border:1px solid #fde68a;">Required</span>
@@ -1100,9 +1107,9 @@
                                 <i class="material-icons" style="color:var(--navy);">star</i>
                             </div>
                             <span class="section-title">Mandatory Courses</span>
-                            @if (ViewBag.IsSemesterBased)
+                            @if (hasPeriods)
                             {
-                                <span class="section-sub">(Semester @ViewBag.Semester)</span>
+                                <span class="section-sub">(@periodLabel)</span>
                             }
                         </div>
                     </div>
@@ -1129,7 +1136,7 @@
                         }
                         else
                         {
-                            <div class="empty-state"><p>No mandatory courses for this @(ViewBag.IsSemesterBased ? "semester" : "year").</p></div>
+                            <div class="empty-state"><p>No mandatory courses for this @(hasPeriods ? "period" : "year").</p></div>
                         }
                     </div>
                 </div>
@@ -1142,9 +1149,9 @@
                                 <i class="material-icons" style="color:var(--green);">library_books</i>
                             </div>
                             <span class="section-title">Elective Courses</span>
-                            @if (ViewBag.IsSemesterBased)
+                            @if (hasPeriods)
                             {
-                                <span class="section-sub">(Semester @ViewBag.Semester)</span>
+                                <span class="section-sub">(@periodLabel)</span>
                             }
                         </div>
                         @if (ViewBag.RegistrationStatus != SIS.Enums.Status.Pending &&
@@ -1183,7 +1190,7 @@
                         }
                         else
                         {
-                            <div class="empty-state"><p>No elective courses available for this @(ViewBag.IsSemesterBased ? "semester" : "year").</p></div>
+                            <div class="empty-state"><p>No elective courses available for this @(hasPeriods ? "period" : "year").</p></div>
                         }
                     </div>
                 </div>
@@ -1365,16 +1372,16 @@
             const totalRequiredCourses = @ViewBag.TotalRequiredCourses;
             const carryoverCount = carryoverCourses.length;
             const totalSelected  = selectedElectives.length + mandatoryCourses.length + carryoverCount;
-            const isSemesterBased = @(ViewBag.IsSemesterBased ? "true" : "false");
-            const currentSemester = @ViewBag.Semester;
+            const hasPeriods = @(hasPeriods ? "true" : "false");
+            const currentPeriodLabel = '@Html.Raw(periodLabel)';
 
             if (selectedElectives.length < minimumElectives) {
-                const pt = isSemesterBased ? `for Semester ${currentSemester}` : 'for this year';
+                const pt = hasPeriods ? `for ${currentPeriodLabel}` : 'for this year';
                 showCustomAlert('warning','Selection Required',`Please select at least ${minimumElectives} elective course${minimumElectives!==1?'s':''} ${pt}.`);
                 return;
             }
             if (totalRequiredCourses > 0 && totalSelected > totalRequiredCourses) {
-                const pt = isSemesterBased ? `for Semester ${currentSemester}` : 'for this year';
+                const pt = hasPeriods ? `for ${currentPeriodLabel}` : 'for this year';
                 showCustomAlert('warning','Too Many Courses',`You can only select a maximum of ${totalRequiredCourses} courses ${pt}. You have selected ${totalSelected}.`);
                 return;
             }
@@ -1480,10 +1487,10 @@
         doc.setTextColor(255,255,255); doc.setFontSize(9); doc.setFont('helvetica','bold');
         doc.text('SIS',15,13,{align:'center'});
 
-        const isSemesterBased = @(ViewBag.IsSemesterBased ? "true" : "false");
-        const currentSemester = @ViewBag.Semester;
+        const hasPeriods = @(hasPeriods ? "true" : "false");
+        const currentPeriodLabel = '@Html.Raw(periodLabel)';
         doc.setTextColor(255,255,255); doc.setFontSize(16); doc.setFont('helvetica','bold');
-        doc.text(isSemesterBased?`CLASS PASS - SEMESTER ${currentSemester}`:'CLASS PASS', width/2, 14, {align:'center'});
+        doc.text(hasPeriods?`CLASS PASS - ${currentPeriodLabel.toUpperCase()}`:'CLASS PASS', width/2, 14, {align:'center'});
         doc.setFontSize(9); doc.setTextColor(203,213,225);
         const yr=new Date().getFullYear(); doc.text(`${yr}/${yr+1}`,width-15,14,{align:'right'});
 
@@ -1509,7 +1516,7 @@
         const coursesY = studentY+40;
         doc.setFillColor(248,250,252); doc.rect(15,coursesY,width-30,10,'FD');
         doc.setTextColor(31,41,55); doc.setFontSize(11); doc.setFont('helvetica','bold');
-        doc.text(isSemesterBased?`REGISTERED COURSES - SEMESTER ${currentSemester}`:'REGISTERED COURSES',20,coursesY+7);
+        doc.text(hasPeriods?`REGISTERED COURSES - ${currentPeriodLabel.toUpperCase()}`:'REGISTERED COURSES',20,coursesY+7);
 
         const getCourseData=(selector,type)=>Array.from(document.querySelectorAll(selector)).map(cb=>{
             const d=cb.closest('.course-card,[class*="course-card"],div');
@@ -1561,7 +1568,7 @@
         doc.text('This document is digitally generated and valid without signature',20,footerY+12);
 
         const codes=allCourses.map(c=>c.code);
-        const semInfo=isSemesterBased?`|SEM:${currentSemester}`:'';
+        const semInfo=hasPeriods?`|PERIOD:${currentPeriodLabel}`:'';
         const qrData=`SIS_PASS|COURSES:${codes.join(',')}${semInfo}|DATE:${now.getTime()}`;
         doc.setFillColor(255,255,255); doc.setDrawColor(203,213,225);
         doc.roundedRect(width-35,footerY+5,25,25,1,1,'FD');
@@ -1569,7 +1576,7 @@
         doc.setFontSize(6); doc.text('Verify',width-22.5,footerY+31,{align:'center'});
 
         const tf=new Date().toISOString().split('T')[0];
-        doc.save(isSemesterBased?`ClassPass_Sem${currentSemester}_${tf}.pdf`:`ClassPass_${tf}.pdf`);
+        doc.save(hasPeriods?`ClassPass_${currentPeriodLabel.replace(/[^a-z0-9]/gi,'_')}_${tf}.pdf`:`ClassPass_${tf}.pdf`);
     }
 
     function checkExamDocketsOnLoad() {

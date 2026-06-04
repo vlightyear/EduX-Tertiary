@@ -23,7 +23,8 @@ namespace SIS.Models.Admin
         [ForeignKey("AcademicYearId")]
         public AcademicYear AcademicYear { get; set; }  // New navigation property
 
-        public int YearPeriodId { get; set; }
+        /// <summary>Null for Annual programmes; set to AcademicYearPeriod.Id for Semester/Term programmes.</summary>
+        public int? YearPeriodId { get; set; }
         public DateTime RegistrationDate { get; set; }
 
         [Column(TypeName = "nvarchar(max)")]

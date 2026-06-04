@@ -106,9 +106,9 @@ namespace SIS.Services.Transcripts
 
                 // Group results by academic year and semester
                 var groupedResults = allResults
-                    .GroupBy(r => new { r.AcademicYearId, r.Semester })
+                    .GroupBy(r => new { r.AcademicYearId, r.YearPeriodId })
                     .OrderBy(g => g.Key.AcademicYearId)
-                    .ThenBy(g => g.Key.Semester)
+                    .ThenBy(g => g.Key.YearPeriodId)
                     .ToList();
 
                 var document = new PdfDocument();
@@ -153,7 +153,7 @@ namespace SIS.Services.Transcripts
                     }
 
                     // Draw semester section
-                    yPosition = DrawSemesterInfo(graphics, student, academicYear, group.Key.Semester, yPosition);
+                    yPosition = DrawSemesterInfo(graphics, student, academicYear, group.Key.YearPeriodId ?? 0, yPosition);
                     yPosition = DrawResultsTable(graphics, semesterResults, yPosition, currentPage);
 
                     var comment = GetSemesterComment(semesterResults);
@@ -214,7 +214,7 @@ namespace SIS.Services.Transcripts
                 .Include(r => r.Course)
                 .Where(r => r.StudentId == studentId &&
                            r.AcademicYearId == academicYearId &&
-                           r.Semester == semester &&
+                           r.YearPeriodId == semester &&
                            r.Status == SIS.Enums.Status.Published)
                 .OrderBy(r => r.Course.CourseCode)
                 .ToListAsync();
@@ -227,7 +227,7 @@ namespace SIS.Services.Transcripts
                 .Where(r => r.StudentId == studentId &&
                            r.Status == SIS.Enums.Status.Published)
                 .OrderBy(r => r.AcademicYearId)
-                .ThenBy(r => r.Semester)
+                .ThenBy(r => r.YearPeriodId)
                 .ThenBy(r => r.Course.CourseCode)
                 .ToListAsync();
         }

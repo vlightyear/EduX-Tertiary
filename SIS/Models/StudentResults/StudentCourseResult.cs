@@ -28,11 +28,14 @@ namespace SIS.Models.StudentResults
         public int AcademicYearId { get; set; }
 
         /// <summary>
-        /// Semester in which this course was taken (1 or 2)
+        /// FK to the AcademicYearPeriod in which this course result was recorded.
+        /// Null = result applies to the full academic year (Annual programmes).
         /// </summary>
-        [Required]
-        [Range(1, 2)]
-        public int Semester { get; set; }
+        [Display(Name = "Academic Period")]
+        public int? YearPeriodId { get; set; }
+
+        [ForeignKey(nameof(YearPeriodId))]
+        public virtual AcademicYearPeriod? YearPeriod { get; set; }
 
         /// <summary>
         /// Weighted total score before normalization

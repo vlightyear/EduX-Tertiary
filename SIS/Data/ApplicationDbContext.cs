@@ -1128,7 +1128,7 @@ namespace SIS.Data
                 entity.HasIndex(e => e.IsPassed)
                     .HasDatabaseName("IX_StudentCourseResults_IsPassed");
 
-                entity.HasIndex(e => new { e.StudentId, e.CourseId, e.AcademicYearId, e.Semester, e.AttemptNumber })
+                entity.HasIndex(e => new { e.StudentId, e.CourseId, e.AcademicYearId, e.YearPeriodId, e.AttemptNumber })
                     .IsUnique()
                     .HasDatabaseName("UX_StudentCourseResults_Unique");
 
@@ -1282,8 +1282,8 @@ namespace SIS.Data
                     .OnDelete(DeleteBehavior.Restrict);
 
                 // Performance indexes
-                entity.HasIndex(ra => new { ra.StudentId, ra.CourseId, ra.AcademicYearId, ra.Semester })
-                    .HasDatabaseName("IX_ResultAppeals_Student_Course_Year_Semester");
+                entity.HasIndex(ra => new { ra.StudentId, ra.CourseId, ra.AcademicYearId, ra.YearPeriodId })
+                    .HasDatabaseName("IX_ResultAppeals_Student_Course_Year_Period");
 
                 entity.HasIndex(ra => ra.Status)
                     .HasDatabaseName("IX_ResultAppeals_Status");

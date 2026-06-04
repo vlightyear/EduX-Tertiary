@@ -35,7 +35,7 @@
         public int PendingAssessments { get; set; }
         public int TotalAssessments { get; set; }  // New property
         public int CompletedAssessments { get; set; }  // New property
-        public int Semester { get; set; }
+        public int? Semester { get; set; }
         public double GradedPercentage { get; set; }
     }
 

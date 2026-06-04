@@ -1053,38 +1053,34 @@ namespace SIS.Controllers
                     {
                         string yearKey = $"Year{i}";
 
-                        if (model.IsSemesterBased)
+                        if (model.AcademicType != AcademicType.Annual)
                         {
-                            // Handle semester-based requirements
-                            string semester1Field = $"Semester1_Year{i}";
-                            string semester2Field = $"Semester2_Year{i}";
+                            // Period-based (Semester = 2 periods, Term = 3 periods)
+                            int periodCount = model.AcademicType.PeriodCount();
+                            int[] periodValues = new int[periodCount];
 
-                            int semester1 = 0, semester2 = 0;
-
-                            if (Request.Form.ContainsKey(semester1Field) &&
-                                int.TryParse(Request.Form[semester1Field], out int sem1Value))
+                            for (int p = 1; p <= periodCount; p++)
                             {
-                                semester1 = sem1Value;
+                                string fieldName = $"Period{p}_Year{i}";
+                                if (Request.Form.ContainsKey(fieldName) &&
+                                    int.TryParse(Request.Form[fieldName], out int pVal))
+                                {
+                                    periodValues[p - 1] = pVal;
+                                }
                             }
 
-                            if (Request.Form.ContainsKey(semester2Field) &&
-                                int.TryParse(Request.Form[semester2Field], out int sem2Value))
-                            {
-                                semester2 = sem2Value;
-                            }
-
-                            int totalRequired = semester1 + semester2;
-
+                            int totalRequired = periodValues.Sum();
                             yearlyRequirements.Add(yearKey, new
                             {
                                 TotalRequired = totalRequired,
-                                Semester1 = semester1,
-                                Semester2 = semester2
+                                Period1 = periodValues.Length > 0 ? (int?)periodValues[0] : null,
+                                Period2 = periodValues.Length > 1 ? (int?)periodValues[1] : null,
+                                Period3 = periodValues.Length > 2 ? (int?)periodValues[2] : null
                             });
                         }
                         else
                         {
-                            // Handle yearly requirements (existing logic)
+                            // Annual — single total per year
                             string fieldName = $"YearlyRequirements_Year{i}";
                             int totalRequired = 0;
 
@@ -1164,13 +1160,18 @@ namespace SIS.Controllers
 
                         yearlyReqs[year.Key] = requirement.TotalRequired;
 
-                        // Check if semester data exists
-                        if (requirement.Semester1.HasValue && requirement.Semester2.HasValue)
+                        // Resolve period values with backward-compat fallback
+                        var p1 = requirement.Period1 ?? requirement.Semester1;
+                        var p2 = requirement.Period2 ?? requirement.Semester2;
+                        var p3 = requirement.Period3;
+
+                        if (p1.HasValue || p2.HasValue || p3.HasValue)
                         {
                             semesterReqs[year.Key] = new
                             {
-                                Semester1 = requirement.Semester1.Value,
-                                Semester2 = requirement.Semester2.Value,
+                                Period1 = p1 ?? 0,
+                                Period2 = p2 ?? 0,
+                                Period3 = p3 ?? 0,
                                 Total = requirement.TotalRequired
                             };
                         }
@@ -1195,6 +1196,10 @@ namespace SIS.Controllers
         private class YearRequirement
         {
             public int TotalRequired { get; set; }
+            public int? Period1 { get; set; }
+            public int? Period2 { get; set; }
+            public int? Period3 { get; set; }
+            // Legacy names — kept for reading existing stored data
             public int? Semester1 { get; set; }
             public int? Semester2 { get; set; }
         }
@@ -1246,38 +1251,34 @@ namespace SIS.Controllers
                 {
                     string yearKey = $"Year{i}";
 
-                    if (programme.IsSemesterBased)
+                    if (programme.AcademicType != AcademicType.Annual)
                     {
-                        // Handle semester-based requirements
-                        string semester1Field = $"Semester1_Year{i}";
-                        string semester2Field = $"Semester2_Year{i}";
+                        // Period-based (Semester = 2 periods, Term = 3 periods)
+                        int periodCount = programme.AcademicType.PeriodCount();
+                        int[] periodValues = new int[periodCount];
 
-                        int semester1 = 0, semester2 = 0;
-
-                        if (Request.Form.ContainsKey(semester1Field) &&
-                            int.TryParse(Request.Form[semester1Field], out int sem1Value))
+                        for (int p = 1; p <= periodCount; p++)
                         {
-                            semester1 = sem1Value;
+                            string fieldName = $"Period{p}_Year{i}";
+                            if (Request.Form.ContainsKey(fieldName) &&
+                                int.TryParse(Request.Form[fieldName], out int pVal))
+                            {
+                                periodValues[p - 1] = pVal;
+                            }
                         }
 
-                        if (Request.Form.ContainsKey(semester2Field) &&
-                            int.TryParse(Request.Form[semester2Field], out int sem2Value))
-                        {
-                            semester2 = sem2Value;
-                        }
-
-                        int totalRequired = semester1 + semester2;
-
+                        int totalRequired = periodValues.Sum();
                         yearlyRequirements.Add(yearKey, new
                         {
                             TotalRequired = totalRequired,
-                            Semester1 = semester1,
-                            Semester2 = semester2
+                            Period1 = periodValues.Length > 0 ? (int?)periodValues[0] : null,
+                            Period2 = periodValues.Length > 1 ? (int?)periodValues[1] : null,
+                            Period3 = periodValues.Length > 2 ? (int?)periodValues[2] : null
                         });
                     }
                     else
                     {
-                        // Handle yearly requirements
+                        // Annual — single total per year
                         string fieldName = $"YearlyRequirements_Year{i}";
                         int totalRequired = 0;
 
@@ -3432,8 +3433,11 @@ public async Task<IActionResult> GetFeeConfigurationsData([FromBody] FeeConfigFi
                 fc.FeeTypeId,
                 FeeTypeName = fc.FeeType.Name,
                 fc.AcademicYearId,
-                AcademicYear = fc.AcademicYear != null ? fc.AcademicYear.YearValue + "/" + (fc.AcademicYear.SemesterId != null ? fc.AcademicYear.SemesterId.ToString() : "") : "N/A",
+                AcademicYear = fc.AcademicYear != null ? fc.AcademicYear.YearValue : "N/A",
                 fc.YearPeriodId,
+                YearPeriodLabel = fc.YearPeriod != null
+                    ? fc.YearPeriod.AcademicYear.YearValue + " – " + fc.YearPeriod.AcademicPeriod.PeriodName
+                    : null,
                 fc.SchoolId,
                 SchoolName = fc.School != null ? fc.School.Name : "All Schools",
                 fc.ProgrammeId,
@@ -3469,6 +3473,7 @@ public async Task<IActionResult> GetFeeConfigurationsData([FromBody] FeeConfigFi
                 fc.AcademicYearId,
                 fc.AcademicYear,
                 fc.YearPeriodId,
+                fc.YearPeriodLabel,
                 fc.SchoolId,
                 fc.SchoolName,
                 fc.ProgrammeId,
@@ -3891,13 +3896,9 @@ private async Task PrepareViewBagData()
     try
     {
         var academicYears = await _context.AcademicYears
-            .Where(a => a.IsActive == true || a.IsActive == null)
+            .Where(a => a.IsActive)
             .OrderByDescending(a => a.YearValue)
-            .Select(a => new
-            {
-                Id = a.YearId,
-                Name = a.YearValue + "/" + (a.SemesterId != null ? a.SemesterId.ToString() : "")
-            })
+            .Select(a => new { Id = a.YearId, Name = a.YearValue })
             .ToListAsync();
 
         ViewBag.FeeTypes = new SelectList(
@@ -3909,6 +3910,18 @@ private async Task PrepareViewBagData()
             "Id", "Name");
 
         ViewBag.AcademicYears = new SelectList(academicYears, "Id", "Name");
+
+        ViewBag.YearPeriods = new SelectList(
+            await _context.AcademicYearPeriods
+                .Where(yp => yp.AcademicYear.IsActive || yp.AcademicYear.StartDate >= DateTime.Now.AddYears(-2))
+                .OrderByDescending(yp => yp.AcademicYear.StartDate)
+                .ThenBy(yp => yp.AcademicPeriod.PeriodNumber)
+                .Select(yp => new {
+                    yp.Id,
+                    Label = yp.AcademicYear.YearValue + " – " + yp.AcademicPeriod.PeriodName
+                })
+                .ToListAsync(),
+            "Id", "Label");
 
         ViewBag.Programmes = new SelectList(
             await _context.Programmes
@@ -3938,14 +3951,6 @@ private async Task PrepareViewBagData()
                 .Select(pl => new { pl.Id, pl.Name })
                 .ToListAsync(),
             "Id", "Name");
-
-        ViewBag.Semesters = new SelectList(
-            new List<object> {
-                new { Value = "", Text = "Yearly (Both Semesters)" },
-                new { Value = 1, Text = "Semester 1" },
-                new { Value = 2, Text = "Semester 2" }
-            },
-            "Value", "Text");
     }
     catch (Exception ex)
     {
@@ -3953,11 +3958,11 @@ private async Task PrepareViewBagData()
         Console.WriteLine($"Stack trace: {ex.StackTrace}");
         ViewBag.FeeTypes = new SelectList(new List<object>(), "Id", "Name");
         ViewBag.AcademicYears = new SelectList(new List<object>(), "Id", "Name");
+        ViewBag.YearPeriods = new SelectList(new List<object>(), "Id", "Label");
         ViewBag.Programmes = new SelectList(new List<object>(), "Id", "Name");
         ViewBag.Schools = new SelectList(new List<object>(), "Id", "Name");
         ViewBag.ModesOfStudy = new SelectList(new List<object>(), "Id", "Name");
         ViewBag.ProgramLevels = new SelectList(new List<object>(), "Id", "Name");
-        ViewBag.Semesters = new SelectList(new List<object>(), "Value", "Text");
     }
 }
 

@@ -935,7 +935,7 @@ namespace SIS.Controllers
                             s.StudentId == result.StudentId &&
                             s.CourseId == result.CourseId &&
                             s.AcademicYearId == result.AcademicYearId &&
-                            s.YearPeriodId == result.Semester &&
+                            s.YearPeriodId == result.YearPeriodId &&
                             s.IsActive)
                         .ToListAsync();
                 }
@@ -975,7 +975,7 @@ namespace SIS.Controllers
                             var existingResults = courseResults
                                 .Where(r => r.CourseId == cg.Key.CourseId &&
                                            r.AcademicYearId == academicYear.YearId &&
-                                           r.Semester == cg.Key.YearPeriodId)
+                                           r.YearPeriodId == cg.Key.YearPeriodId)
                                 .ToList();
 
                             var totalAssessed = 0;
@@ -1292,9 +1292,10 @@ namespace SIS.Controllers
                 {
                     try
                     {
-                        // Use academic year and semester from the registration context passed from frontend
+                        // Use academic year and period from the registration context passed from frontend
                         int academicYearId = student.AcademicYearId;
-                        int semester = student.Semester;
+                        int? semester = student.Semester;  // null = Annual (no specific period)
+                        int semesterForService = semester ?? 0; // services still use int; 0 = no period
 
                         // Validate student exists (basic check)
                         var studentExists = await _context.Students.AsNoTracking()
@@ -1317,7 +1318,7 @@ namespace SIS.Controllers
                                     student.CourseId,
                                     scoreData.Key,
                                     academicYearId,
-                                    semester);
+                                    semesterForService);
 
                                 if (exists)
                                 {
@@ -1349,7 +1350,7 @@ namespace SIS.Controllers
                                         student.CourseId,
                                         academicYearId,
                                         scoreData.Key,
-                                        semester,
+                                        semesterForService,
                                         scoreData.Value.Score,
                                         user.Id,
                                         0,
@@ -1383,7 +1384,7 @@ namespace SIS.Controllers
                                 student.StudentId,
                                 student.CourseId,
                                 academicYearId,
-                                semester,
+                                semesterForService,
                                 user.Id);
                         }
                         catch (Exception ex)
@@ -1526,7 +1527,7 @@ namespace SIS.Controllers
                                     .CountAsync(r =>
                                         r.CourseId == courseId &&
                                         r.AcademicYearId == yearId &&
-                                        r.Semester == semester &&
+                                        r.YearPeriodId == semester &&
                                         r.Status == Status.Published);
 
                                 publishedCount += count;
@@ -1602,22 +1603,27 @@ namespace SIS.Controllers
         private void UpdateStudentProgression(Student student, AcademicYear nextAcademicYear,
             string progressionAction, bool isOnProbation)
         {
-            if (student.Programme.IsSemesterBased)
+            if (student.Programme.AcademicType != AcademicType.Annual)
             {
-                if (student.CurrentYearPeriodId == 1)
+                var currentPeriodNumber = student.CurrentYearPeriod?.AcademicPeriod?.PeriodNumber ?? 1;
+                var periodCount = student.Programme.AcademicType.PeriodCount();
+                if (currentPeriodNumber < periodCount)
                 {
-                    student.CurrentYearPeriodId = 2;
+                    // Advance to next period in the same year; CurrentYearPeriodId must be
+                    // resolved to the next AcademicYearPeriod.Id by the caller or a separate lookup.
+                    // For now: null it out so the registrar can re-assign the correct period.
+                    student.CurrentYearPeriodId = null;
                 }
                 else
                 {
                     student.StudentCurrentYear += 1;
-                    student.CurrentYearPeriodId = 1;
+                    student.CurrentYearPeriodId = null; // Registrar assigns new period on re-enrolment
                 }
             }
             else
             {
                 student.StudentCurrentYear += 1;
-                student.CurrentYearPeriodId = 1;
+                student.CurrentYearPeriodId = null;
             }
 
             student.AcademicYearId = nextAcademicYear.YearId;
@@ -1702,7 +1708,7 @@ namespace SIS.Controllers
                         StudentId = student.Id,
                         CourseId = failedResult.CourseId,
                         OriginalAcademicYearId = failedResult.AcademicYearId,
-                        OriginalSemester = failedResult.Semester,
+                        OriginalSemester = failedResult.YearPeriodId,
                         Reason = "Failed",
                         IsActive = true,
                         CarryoverDate = DateTime.Now,

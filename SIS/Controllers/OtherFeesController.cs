@@ -82,7 +82,7 @@ namespace SIS.Controllers
                 query = query.Where(o => o.AcademicYearId == request.AcademicYearId.Value);
 
             if (request.Semester.HasValue)
-                query = query.Where(o => o.Semester == request.Semester.Value);
+                query = query.Where(o => o.YearPeriodId == request.Semester.Value);
 
             if (request.SchoolId.HasValue)
                 query = query.Where(o => o.SchoolId == request.SchoolId.Value);
@@ -122,7 +122,7 @@ namespace SIS.Controllers
                     o.Id,
                     o.FeeName,
                     o.Amount,
-                    o.Semester,
+                    Semester = o.YearPeriodId,
                     AcademicYear = o.AcademicYear != null ? o.AcademicYear.YearValue : "All Years",
                     SchoolName = o.School != null ? o.School.Name : "All Schools",
                     ProgrammeName = o.Programme != null ? o.Programme.Name : "All Programmes",
@@ -207,7 +207,7 @@ namespace SIS.Controllers
 
                 existingFee.FeeName = model.FeeName;
                 existingFee.Amount = model.Amount;
-                existingFee.Semester = model.Semester;
+                existingFee.YearPeriodId = model.YearPeriodId;
                 existingFee.AcademicYearId = model.AcademicYearId;
                 existingFee.SchoolId = model.SchoolId;
                 existingFee.ProgrammeId = model.ProgrammeId;
@@ -258,8 +258,8 @@ namespace SIS.Controllers
             var totalFees = await _context.OtherFees.Where(o => o.IsActive).CountAsync();
             var foreignFees = await _context.OtherFees.Where(o => o.IsActive && o.AppliesOnlyToForeignStudents).CountAsync();
             var standardFees = await _context.OtherFees.Where(o => o.IsActive && !o.AppliesOnlyToForeignStudents).CountAsync();
-            var semester1Fees = await _context.OtherFees.Where(o => o.IsActive && o.Semester == 1).CountAsync();
-            var semester2Fees = await _context.OtherFees.Where(o => o.IsActive && o.Semester == 2).CountAsync();
+            var semester1Fees = await _context.OtherFees.Where(o => o.IsActive && o.YearPeriodId == 1).CountAsync();
+            var semester2Fees = await _context.OtherFees.Where(o => o.IsActive && o.YearPeriodId == 2).CountAsync();
 
             var chartData = new
             {

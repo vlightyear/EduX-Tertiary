@@ -53,6 +53,12 @@ namespace SIS.Models.Admin
         // Indicates if the programme is semester-based
         public bool IsSemesterBased { get; set; } = false;
 
+        /// <summary>
+        /// Academic period structure for this programme.
+        /// Determines how courses are split across periods within each year.
+        /// </summary>
+        public AcademicType AcademicType { get; set; } = AcademicType.Semester;
+
         public string YearlyRequirements { get; set; } = "{}";  // Default empty JSON object
 
         

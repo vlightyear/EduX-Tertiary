@@ -20,8 +20,11 @@ namespace SIS.Models.Fees
 
         public bool AppliesOnlyToForeignStudents { get; set; }
 
-        [Range(1, 2, ErrorMessage = "Semester must be either 1 or 2")]
-        public int? Semester { get; set; }
+        [Display(Name = "Academic Period")]
+        public int? YearPeriodId { get; set; }
+
+        [ForeignKey(nameof(YearPeriodId))]
+        public virtual AcademicYearPeriod? YearPeriod { get; set; }
 
         [StringLength(20)]
         public string? CreditNCode { get; set; }

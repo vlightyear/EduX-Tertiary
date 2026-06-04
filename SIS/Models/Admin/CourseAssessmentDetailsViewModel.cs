@@ -23,7 +23,7 @@
     {
         public string GroupId { get; set; }
         public int AcademicYearId { get; set; }
-        public int Semester { get; set; }
+        public int? Semester { get; set; }
         public string AcademicYear { get; set; }
         public string ModeOfStudy { get; set; }
         public List<StudentAssessment> StudentAssessments { get; set; } = new List<StudentAssessment>();
@@ -81,7 +81,7 @@
         public int StudentId { get; set; }
         public int CourseId { get; set; }
         public int AcademicYearId { get; set; }  // NEW
-        public int Semester { get; set; }         // NEW
+        public int? Semester { get; set; }         // NEW
         public Dictionary<int, AssessmentScoreData> AssessmentScores { get; set; }
     }
 

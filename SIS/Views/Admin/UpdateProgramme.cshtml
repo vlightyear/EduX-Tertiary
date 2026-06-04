@@ -196,14 +196,22 @@
                                     </div>
 
 
-                                    <div class="flex items-center p-3 bg-blue-50 rounded-lg border border-blue-100">
-                                        <input asp-for="IsSemesterBased" type="checkbox" id="IsSemesterBased"
-                                               class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
-                                        <label asp-for="IsSemesterBased" class="ml-3 text-sm text-gray-700 font-medium">
-                                            Semester Based Programme
-                                        </label>
+                                    <!-- Academic Period Type -->
+                                    <div class="p-3 bg-blue-50 rounded-lg border border-blue-100">
+                                        <p class="text-sm font-medium text-gray-700 mb-2">Academic Period Type *</p>
+                                        <div class="flex gap-4">
+                                            @foreach (var type in Enum.GetValues<SIS.Models.Registration.AcademicType>())
+                                            {
+                                                <label class="flex items-center gap-1.5 cursor-pointer text-sm text-gray-700">
+                                                    <input type="radio" name="AcademicType" value="@((int)type)"
+                                                           class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                                                           @(type == Model.AcademicType ? "checked" : "") />
+                                                    @type
+                                                </label>
+                                            }
+                                        </div>
                                     </div>
-                                    <span asp-validation-for="IsSemesterBased" class="text-sm text-red-600"></span>
+                                    <input type="hidden" id="IsSemesterBased" name="IsSemesterBased" value="@Model.IsSemesterBased.ToString().ToLower()" />
                                 </div>
                             </div>
 
@@ -246,211 +254,141 @@
         document.addEventListener('DOMContentLoaded', function() {
             const durationInput = document.getElementById('DurationYears');
             const requirementsContainer = document.getElementById('yearlyRequirementsContainer');
-            const semesterCheckbox = document.getElementById('IsSemesterBased');
             const requirementsTitle = document.getElementById('requirementsTitle');
+            const isSemesterHidden = document.getElementById('IsSemesterBased');
 
-            // Get existing data from server
-            const existingYearlyRequirements = @Html.Raw(Json.Serialize(ViewBag.YearlyRequirements ?? new Dictionary<string, int>()));
+            const existingYearlyRequirements  = @Html.Raw(Json.Serialize(ViewBag.YearlyRequirements  ?? new Dictionary<string, int>()));
             const existingSemesterRequirements = @Html.Raw(Json.Serialize(ViewBag.SemesterRequirements ?? new Dictionary<string, object>()));
 
-            console.log('Existing Yearly Requirements:', existingYearlyRequirements);
-            console.log('Existing Semester Requirements:', existingSemesterRequirements);
-            console.log('Is Semester Based:', semesterCheckbox.checked);
-            console.log('Duration Years:', durationInput.value);
+            // 0=Annual, 1=Semester, 2=Term
+            function getAcademicType() {
+                const checked = document.querySelector('input[name="AcademicType"]:checked');
+                return checked ? parseInt(checked.value) : 1;
+            }
 
-            // Initial setup - populate fields with existing data
+            function syncIsSemesterBased() {
+                isSemesterHidden.value = getAcademicType() === 1 ? 'true' : 'false';
+            }
+
+            syncIsSemesterBased();
             updateYearlyRequirements(durationInput.value || 0, true);
 
-            // Listen for changes to duration
-            durationInput.addEventListener('change', function() {
-                updateYearlyRequirements(this.value, false);
+            document.querySelectorAll('input[name="AcademicType"]').forEach(r => {
+                r.addEventListener('change', function() {
+                    syncIsSemesterBased();
+                    updateRequirementsTitle();
+                    updateYearlyRequirements(durationInput.value || 0, false);
+                });
             });
 
-            durationInput.addEventListener('input', function() {
-                updateYearlyRequirements(this.value, false);
-            });
-
-            // Listen for changes to semester checkbox
-            semesterCheckbox.addEventListener('change', function() {
-                updateRequirementsTitle();
-                updateYearlyRequirements(durationInput.value || 0, false);
-            });
+            durationInput.addEventListener('change', function() { updateYearlyRequirements(this.value, false); });
+            durationInput.addEventListener('input',  function() { updateYearlyRequirements(this.value, false); });
 
             function updateRequirementsTitle() {
-                if (semesterCheckbox.checked) {
-                    requirementsTitle.textContent = 'Semester Course Requirements';
-                } else {
-                    requirementsTitle.textContent = 'Yearly Course Requirements';
+                const t = getAcademicType();
+                requirementsTitle.textContent = t === 0 ? 'Yearly Course Requirements'
+                                              : t === 2 ? 'Term Course Requirements'
+                                              : 'Semester Course Requirements';
+            }
+
+            function periodInputsHtml(year, count, labels) {
+                const cols = count + 1;
+                let html = `<div class="grid grid-cols-${cols} gap-4">`;
+                for (let p = 1; p <= count; p++) {
+                    html += `
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">${labels[p-1]}</label>
+                            <input type="number" name="Period${p}_Year${year}" id="Period${p}_Year${year}"
+                                   class="period-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                                   placeholder="0" min="0" data-year="${year}" data-period="${p}" />
+                        </div>`;
                 }
+                html += `
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Total Courses</label>
+                            <input type="number" id="Total_Year${year}"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100"
+                                   placeholder="0" readonly />
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2 flex items-center">
+                        <i class="material-icons text-xs mr-1">info</i>
+                        Total is calculated automatically
+                    </p>`;
+                return html;
             }
 
             function updateYearlyRequirements(years, isInitialLoad = false) {
-                // Clear existing fields
                 requirementsContainer.innerHTML = '';
-
                 if (years <= 0) return;
 
-                const isSemesterBased = semesterCheckbox.checked;
+                const type = getAcademicType();
 
-                // Create fields for each year
                 for (let i = 1; i <= years; i++) {
                     const yearDiv = document.createElement('div');
                     yearDiv.className = 'bg-gray-50 p-4 rounded-lg border border-gray-200';
                     const yearKey = `Year${i}`;
 
-                    if (isSemesterBased) {
-                        // Get existing semester data - fix property name casing
-                        let semester1Value = 0;
-                        let semester2Value = 0;
-                        let totalValue = 0;
-
-                        if (isInitialLoad && existingSemesterRequirements[yearKey]) {
-                            const existingSemester = existingSemesterRequirements[yearKey];
-                            // Use lowercase property names as they come from server
-                            semester1Value = existingSemester.semester1 || existingSemester.Semester1 || 0;
-                            semester2Value = existingSemester.semester2 || existingSemester.Semester2 || 0;
-                            totalValue = existingSemester.total || existingSemester.Total || 0;
-                        }
-
-                        console.log(`Year ${i} - Semester 1: ${semester1Value}, Semester 2: ${semester2Value}, Total: ${totalValue}`);
-
-                        // Use simple labels instead of floating labels to avoid overlap
-                        yearDiv.innerHTML = `
-                            <h4 class="font-semibold text-secondary-800 mb-3 flex items-center">
-                                <i class="material-icons text-purple-600 mr-2 text-sm">school</i>
-                                Year ${i}
-                            </h4>
-                            <div class="grid grid-cols-3 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Semester 1</label>
-                                    <input
-                                        type="number"
-                                        name="Semester1_Year${i}"
-                                        id="Semester1_Year${i}"
-                                        class="semester-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
-                                        placeholder="0"
-                                        min="0"
-                                        data-year="${i}"
-                                        data-semester="1"
-                                    />
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Semester 2</label>
-                                    <input
-                                        type="number"
-                                        name="Semester2_Year${i}"
-                                        id="Semester2_Year${i}"
-                                        class="semester-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
-                                        placeholder="0"
-                                        min="0"
-                                        data-year="${i}"
-                                        data-semester="2"
-                                    />
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Total Courses</label>
-                                    <input
-                                        type="number"
-                                        id="Total_Year${i}"
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100"
-                                        placeholder="0"
-                                        readonly
-                                    />
-                                </div>
-                            </div>
-                            <p class="text-xs text-gray-500 mt-2 flex items-center">
-                                <i class="material-icons text-xs mr-1">info</i>
-                                Total courses will be calculated automatically
-                            </p>
-                        `;
-                    } else {
-                        // Get existing yearly data
-                        let existingValue = 0;
-
-                        if (isInitialLoad && existingYearlyRequirements[yearKey]) {
-                            existingValue = existingYearlyRequirements[yearKey];
-                        }
-
-                        console.log(`Year ${i} - Yearly Value: ${existingValue}`);
-
-                        // Use simple labels instead of floating labels
+                    if (type === 0) {
+                        // Annual
+                        const existingValue = isInitialLoad && existingYearlyRequirements[yearKey]
+                            ? existingYearlyRequirements[yearKey] : 0;
                         yearDiv.innerHTML = `
                             <div class="flex items-center space-x-4">
                                 <div class="w-1/3">
                                     <h4 class="font-semibold text-secondary-800 flex items-center">
-                                        <i class="material-icons text-purple-600 mr-2 text-sm">school</i>
-                                        Year ${i}
+                                        <i class="material-icons text-purple-600 mr-2 text-sm">school</i>Year ${i}
                                     </h4>
                                 </div>
                                 <div class="w-2/3">
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Total Required Courses</label>
-                                    <input
-                                        type="number"
-                                        name="YearlyRequirements_Year${i}"
-                                        id="YearlyRequirements_Year${i}"
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
-                                        placeholder="0"
-                                        min="0"
-                                    />
-                                    <p class="text-xs text-gray-500 mt-1">Enter the total number of courses required for this year</p>
+                                    <input type="number" name="YearlyRequirements_Year${i}" id="YearlyRequirements_Year${i}"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                                           value="${existingValue}" placeholder="0" min="0" />
+                                    <p class="text-xs text-gray-500 mt-1">Total courses required for this year</p>
                                 </div>
-                            </div>
-                        `;
+                            </div>`;
+                    } else {
+                        const isTerm = type === 2;
+                        const labels = isTerm ? ['Term 1', 'Term 2', 'Term 3'] : ['Semester 1', 'Semester 2'];
+                        const count  = isTerm ? 3 : 2;
+                        yearDiv.innerHTML = `
+                            <h4 class="font-semibold text-secondary-800 mb-3 flex items-center">
+                                <i class="material-icons text-purple-600 mr-2 text-sm">school</i>Year ${i}
+                            </h4>
+                            ${periodInputsHtml(i, count, labels)}`;
                     }
 
                     requirementsContainer.appendChild(yearDiv);
 
-                    // Set values after DOM elements are created
-                    if (isSemesterBased) {
-                        const sem1Input = document.getElementById(`Semester1_Year${i}`);
-                        const sem2Input = document.getElementById(`Semester2_Year${i}`);
-                        const totalInput = document.getElementById(`Total_Year${i}`);
-
-                        if (sem1Input && isInitialLoad && existingSemesterRequirements[yearKey]) {
-                            const existingSemester = existingSemesterRequirements[yearKey];
-                            // Use lowercase property names
-                            sem1Input.value = existingSemester.semester1 || existingSemester.Semester1 || 0;
-                            sem2Input.value = existingSemester.semester2 || existingSemester.Semester2 || 0;
-                            totalInput.value = existingSemester.total || existingSemester.Total || 0;
-
-                            console.log(`Setting values - Year ${i}: Sem1=${sem1Input.value}, Sem2=${sem2Input.value}, Total=${totalInput.value}`);
+                    // Restore existing values for semester/term
+                    if (type !== 0 && isInitialLoad && existingSemesterRequirements[yearKey]) {
+                        const existing = existingSemesterRequirements[yearKey];
+                        const count = type === 2 ? 3 : 2;
+                        for (let p = 1; p <= count; p++) {
+                            const el = document.getElementById(`Period${p}_Year${i}`);
+                            if (el) el.value = existing[`period${p}`] || existing[`Period${p}`]
+                                             || existing[`semester${p}`] || existing[`Semester${p}`] || 0;
                         }
-                    } else {
-                        const yearlyInput = document.getElementById(`YearlyRequirements_Year${i}`);
-                        if (yearlyInput && isInitialLoad && existingYearlyRequirements[yearKey]) {
-                            yearlyInput.value = existingYearlyRequirements[yearKey];
-                            console.log(`Setting yearly value - Year ${i}: ${yearlyInput.value}`);
-                        }
+                        const totalEl = document.getElementById(`Total_Year${i}`);
+                        if (totalEl) totalEl.value = existing.total || existing.Total || 0;
                     }
                 }
 
-                // Add event listeners for semester calculations
-                if (isSemesterBased) {
-                    const semesterInputs = document.querySelectorAll('.semester-input');
-                    semesterInputs.forEach(input => {
-                        input.addEventListener('input', calculateTotal);
-                        input.addEventListener('blur', calculateTotal);
-                    });
-                }
+                document.querySelectorAll('.period-input').forEach(input => {
+                    input.addEventListener('input', recalcTotal);
+                });
             }
 
-            function calculateTotal(event) {
+            function recalcTotal(event) {
                 const year = event.target.dataset.year;
-                const semester1Input = document.getElementById(`Semester1_Year${year}`);
-                const semester2Input = document.getElementById(`Semester2_Year${year}`);
-                const totalInput = document.getElementById(`Total_Year${year}`);
-
-                if (semester1Input && semester2Input && totalInput) {
-                    const semester1 = parseInt(semester1Input.value) || 0;
-                    const semester2 = parseInt(semester2Input.value) || 0;
-                    const total = semester1 + semester2;
-
-                    totalInput.value = total;
-                }
+                const inputs = requirementsContainer.querySelectorAll(`.period-input[data-year="${year}"]`);
+                const total  = Array.from(inputs).reduce((sum, el) => sum + (parseInt(el.value) || 0), 0);
+                const totalEl = document.getElementById(`Total_Year${year}`);
+                if (totalEl) totalEl.value = total;
             }
 
-
-            // NEW: Handle Non-Quota Programme checkbox logic
+            // Handle Non-Quota Programme checkbox logic
             const isNonQuotaCheckbox = document.getElementById('IsNonQuota');
             const associatedNQContainer = document.getElementById('associatedNQContainer');
 

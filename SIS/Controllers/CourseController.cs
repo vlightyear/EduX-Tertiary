@@ -76,7 +76,7 @@ namespace SIS.Controllers
                             CourseName = c.CourseName,
                             CourseDescription = c.CourseDescription,
                             IsMandatory = c.IsMandatory,
-                            Semester = scr.YearPeriodId
+                            YearPeriodId = scr.YearPeriodId
                         })
                     .ToListAsync();
 

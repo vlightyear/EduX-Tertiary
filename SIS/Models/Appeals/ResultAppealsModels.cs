@@ -36,9 +36,11 @@ namespace SIS.Models.Appeals
         [ForeignKey("AcademicYearId")]
         public AcademicYear? AcademicYear { get; set; }
 
-        [Required(ErrorMessage = "Semester is required.")]
-        [Range(1, 2, ErrorMessage = "Semester must be 1 or 2.")]
-        public int Semester { get; set; }
+        [Display(Name = "Academic Period")]
+        public int? YearPeriodId { get; set; }
+
+        [ForeignKey(nameof(YearPeriodId))]
+        public virtual AcademicYearPeriod? YearPeriod { get; set; }
 
         // Appeal Details
         [Required(ErrorMessage = "Appeal type is required.")]

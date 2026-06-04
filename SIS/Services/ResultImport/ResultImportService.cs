@@ -3349,7 +3349,7 @@ namespace SIS.Services.ResultImport
                     .CountAsync(r =>
                         r.CourseId == courseId &&
                         r.AcademicYearId == academicYearId &&
-                        r.Semester == period &&
+                        r.YearPeriodId == period &&
                         r.Status == Enums.Status.Published,
                         cancellationToken);
 
