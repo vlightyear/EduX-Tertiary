@@ -73,7 +73,7 @@ namespace SIS.Controllers
                         "FullName", "Email", "StudentId_Number", "NrcOrPassportNumber",
                         "DateOfBirth (YYYY-MM-DD)", "Gender", "Phone", "Nationality",
                         "SchoolId", "ProgrammeId", "ProgrammeLevelId", "ModeOfStudyId",
-                        "AcademicYearId", "StudentCurrentYear", "CurrentSemester",
+                        "YearPeriodId", "StudentCurrentYear",
                         "AddressLine1", "City", "State", "Country",
                         "NextOfKinName", "NextOfKinRelation", "NextOfKinPhone",
                         "DepartmentId (Optional - for hierarchy validation)"
@@ -164,7 +164,7 @@ namespace SIS.Controllers
                     "FullName", "Email", "StudentId_Number", "NrcOrPassportNumber",
                     "DateOfBirth (YYYY-MM-DD)", "Gender", "Phone", "Nationality",
                     "SchoolId", "ProgrammeId", "ProgrammeLevelId", "ModeOfStudyId",
-                    "AcademicYearId", "StudentCurrentYear", "CurrentSemester",
+                    "YearPeriodId", "StudentCurrentYear",
                     "AddressLine1", "City", "State", "Country",
                     "NextOfKinName", "NextOfKinRelation", "NextOfKinPhone",
                     "DepartmentId (Optional - for hierarchy validation)"

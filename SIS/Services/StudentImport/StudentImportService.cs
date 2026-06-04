@@ -432,9 +432,9 @@ namespace SIS.Services.StudentImport
                                 ProgrammeLevelId = studentData.ProgrammeLevelId,
                                 SchoolId = studentData.SchoolId,
                                 ModeOfStudyId = studentData.ModeOfStudyId,
-                                AcademicYearId = studentData.AcademicYearId,
+                                AcademicYearId = studentData.AcademicYearId,     // derived from YearPeriodId during validation
                                 StudentCurrentYear = studentData.StudentCurrentYear,
-                                CurrentYearPeriodId = studentData.CurrentSemester,
+                                CurrentYearPeriodId = studentData.YearPeriodId,  // FK to AcademicYearPeriod
 
                                 // Status fields
                                 StudentStatus = Status.Admitted,
@@ -566,7 +566,11 @@ namespace SIS.Services.StudentImport
                 var validProgrammeIds = await _context.Programmes.Select(p => p.Id).ToListAsync(cancellationToken);
                 var validProgrammeLevelIds = await _context.ProgramLevels.Where(pl => pl.IsActive).Select(pl => pl.Id).ToListAsync(cancellationToken);
                 var validModeOfStudyIds = await _context.ModesOfStudy.Select(m => m.ModeId).ToListAsync(cancellationToken);
-                var validAcademicYearIds = await _context.AcademicYears.Select(ay => ay.YearId).ToListAsync(cancellationToken);
+
+                // Maps AcademicYearPeriod.Id → AcademicYear.YearId for validation and derivation
+                var yearPeriodToYearMap = await _context.AcademicYearPeriods
+                    .Select(yp => new { yp.Id, yp.AcademicYearId })
+                    .ToDictionaryAsync(yp => yp.Id, yp => yp.AcademicYearId, cancellationToken);
 
                 // Get hierarchical relationships for validation
                 var schoolProgrammeMap = await _context.Programmes
@@ -585,7 +589,7 @@ namespace SIS.Services.StudentImport
                     {
                         var validation = ValidateStudent(student, existingEmails, existingStudentIds,
                             validSchoolIds, validProgrammeIds, validProgrammeLevelIds,
-                            validModeOfStudyIds, validAcademicYearIds, schoolProgrammeMap);
+                            validModeOfStudyIds, yearPeriodToYearMap, schoolProgrammeMap);
 
                         results.Add(validation);
                     }
@@ -614,7 +618,7 @@ namespace SIS.Services.StudentImport
             List<string> existingEmails, List<string> existingStudentIds,
             List<int> validSchoolIds, List<int> validProgrammeIds,
             List<int> validProgrammeLevelIds, List<int> validModeOfStudyIds,
-            List<int> validAcademicYearIds, Dictionary<int, int> schoolProgrammeMap)
+            Dictionary<int, int> yearPeriodToYearMap, Dictionary<int, int> schoolProgrammeMap)
         {
             var validation = new StudentValidationResult
             {
@@ -690,17 +694,16 @@ namespace SIS.Services.StudentImport
             else if (!validModeOfStudyIds.Contains(student.ModeOfStudyId))
                 validation.Errors.Add("Invalid Mode of Study ID");
 
-            if (student.AcademicYearId <= 0)
-                validation.Errors.Add("Academic Year ID is required");
-            else if (!validAcademicYearIds.Contains(student.AcademicYearId))
-                validation.Errors.Add("Invalid Academic Year ID");
+            if (student.YearPeriodId <= 0)
+                validation.Errors.Add("Year Period ID is required");
+            else if (!yearPeriodToYearMap.ContainsKey(student.YearPeriodId))
+                validation.Errors.Add($"Invalid Year Period ID ({student.YearPeriodId}) — check the Year Periods reference sheet");
+            else
+                student.AcademicYearId = yearPeriodToYearMap[student.YearPeriodId]; // derive from period
 
             // Numeric field validations
             if (student.StudentCurrentYear < 1 || student.StudentCurrentYear > 7)
                 validation.Errors.Add("Student Current Year must be between 1 and 7");
-
-            if (student.CurrentSemester < 1 || student.CurrentSemester > 2)
-                validation.Errors.Add("Current Semester must be 1 or 2");
 
             // Optional field warnings
             if (string.IsNullOrWhiteSpace(student.Phone))
@@ -723,14 +726,14 @@ namespace SIS.Services.StudentImport
                 using var workbook = new XLWorkbook();
                 var worksheet = workbook.Worksheets.Add("Student Import Template");
 
-                // Define headers based on hierarchical structure
+                // Define headers — YearPeriodId references AcademicYearPeriod.Id (see Year Periods sheet)
                 var headers = new[]
                 {
                     "FullName", "Email", "StudentId_Number", "NrcOrPassportNumber",
                     "DateOfBirth (YYYY-MM-DD)", "Gender", "Phone", "MaritalStatus",
                     "Nationality", "Religion", "IsForeigner", "SchoolId", "DepartmentId",
-                    "ProgrammeId", "ProgrammeLevelId", "ModeOfStudyId", "AcademicYearId",
-                    "StudentCurrentYear", "CurrentSemester", "AddressLine1", "City",
+                    "ProgrammeId", "ProgrammeLevelId", "ModeOfStudyId", "YearPeriodId",
+                    "StudentCurrentYear", "AddressLine1", "City",
                     "State", "Country", "NextOfKinName", "NextOfKinRelation", "NextOfKinPhone"
                 };
 
@@ -750,8 +753,8 @@ namespace SIS.Services.StudentImport
                     "John Doe", "john.doe@example.com", "2024000001", "123456/12/1",
                     "2000-01-15", "M", "+260971234567", "Single",
                     "Zambian", "Christian", "0", "1", "1",
-                    "1", "1", "1", "1",
-                    "1", "1", "123 Main Street", "Lusaka",
+                    "1", "1", "1", "1",  // YearPeriodId: use ID from Year Periods sheet
+                    "1", "123 Main Street", "Lusaka",
                     "Lusaka", "Zambia", "Jane Doe", "Mother", "+260971234568"
                 };
 
@@ -871,8 +874,7 @@ namespace SIS.Services.StudentImport
             {
                 "FullName", "Email", "StudentId_Number", "NrcOrPassportNumber",
                 "DateOfBirth (YYYY-MM-DD)", "Gender", "SchoolId", "ProgrammeId",
-                "ProgrammeLevelId", "ModeOfStudyId", "AcademicYearId",
-                "StudentCurrentYear", "CurrentSemester"
+                "ProgrammeLevelId", "ModeOfStudyId", "YearPeriodId", "StudentCurrentYear"
             };
 
             var missingHeaders = requiredHeaders.Where(rh => !headers.ContainsKey(rh)).ToList();
@@ -935,9 +937,9 @@ namespace SIS.Services.StudentImport
             student.ProgrammeId = ParseInt(GetCellValue(row, headers, "ProgrammeId"));
             student.ProgrammeLevelId = ParseInt(GetCellValue(row, headers, "ProgrammeLevelId"));
             student.ModeOfStudyId = ParseInt(GetCellValue(row, headers, "ModeOfStudyId"));
-            student.AcademicYearId = ParseInt(GetCellValue(row, headers, "AcademicYearId"));
+            student.YearPeriodId = ParseInt(GetCellValue(row, headers, "YearPeriodId"));
             student.StudentCurrentYear = ParseInt(GetCellValue(row, headers, "StudentCurrentYear"));
-            student.CurrentSemester = ParseInt(GetCellValue(row, headers, "CurrentSemester"));
+            // AcademicYearId is derived from YearPeriodId during validation — not read from Excel
 
             // Parse optional address fields
             student.AddressLine1 = GetCellValue(row, headers, "AddressLine1");
@@ -1130,23 +1132,32 @@ namespace SIS.Services.StudentImport
                     modesSheet.Cell(i + 2, 2).Value = modes[i].ModeName;
                 }
 
-                // Add Academic Years reference sheet
-                var yearsSheet = workbook.Worksheets.Add("Academic Years");
-                yearsSheet.Cell(1, 1).Value = "AcademicYearId";
-                yearsSheet.Cell(1, 2).Value = "YearValue";
-                yearsSheet.Cell(1, 3).Value = "StartDate";
+                // Add Year Periods reference sheet (use YearPeriodId in the main template)
+                var periodsSheet = workbook.Worksheets.Add("Year Periods");
+                periodsSheet.Cell(1, 1).Value = "YearPeriodId";
+                periodsSheet.Cell(1, 2).Value = "Label";
+                periodsSheet.Cell(1, 3).Value = "AcademicYear";
+                periodsSheet.Cell(1, 4).Value = "IsActive";
 
-                var academicYears = await _context.AcademicYears
-                    .Where(ay => ay.IsActive || ay.StartDate >= DateTime.Now.AddYears(-2))
-                    .Select(ay => new { ay.YearId, ay.YearValue, ay.StartDate })
-                    .OrderByDescending(ay => ay.StartDate)
+                var yearPeriods = await _context.AcademicYearPeriods
+                    .Where(yp => yp.AcademicYear.IsActive || yp.AcademicYear.StartDate >= DateTime.Now.AddYears(-2))
+                    .OrderByDescending(yp => yp.AcademicYear.StartDate)
+                    .ThenBy(yp => yp.AcademicPeriod.PeriodNumber)
+                    .Select(yp => new
+                    {
+                        yp.Id,
+                        Label = yp.AcademicYear.YearValue + " – " + yp.AcademicPeriod.PeriodName,
+                        yp.AcademicYear.YearValue,
+                        yp.IsActive
+                    })
                     .ToListAsync(cancellationToken);
 
-                for (int i = 0; i < academicYears.Count; i++)
+                for (int i = 0; i < yearPeriods.Count; i++)
                 {
-                    yearsSheet.Cell(i + 2, 1).Value = academicYears[i].YearId;
-                    yearsSheet.Cell(i + 2, 2).Value = academicYears[i].YearValue;
-                    yearsSheet.Cell(i + 2, 3).Value = academicYears[i].StartDate.ToString("yyyy-MM-dd");
+                    periodsSheet.Cell(i + 2, 1).Value = yearPeriods[i].Id;
+                    periodsSheet.Cell(i + 2, 2).Value = yearPeriods[i].Label;
+                    periodsSheet.Cell(i + 2, 3).Value = yearPeriods[i].YearValue;
+                    periodsSheet.Cell(i + 2, 4).Value = yearPeriods[i].IsActive ? "Yes" : "No";
                 }
 
                 // Auto-fit all reference sheets
@@ -1228,9 +1239,14 @@ namespace SIS.Services.StudentImport
         public int ProgrammeId { get; set; }
         public int ProgrammeLevelId { get; set; }
         public int ModeOfStudyId { get; set; }
+
+        /// <summary>ID of the AcademicYearPeriod (e.g. "2024/2025 – Semester 1"). Populated from Excel.</summary>
+        public int YearPeriodId { get; set; }
+
+        /// <summary>Derived from YearPeriodId during validation. Set automatically — not read from Excel.</summary>
         public int AcademicYearId { get; set; }
+
         public int StudentCurrentYear { get; set; }
-        public int CurrentSemester { get; set; }
 
         // Address Information (Optional)
         public string AddressLine1 { get; set; }
