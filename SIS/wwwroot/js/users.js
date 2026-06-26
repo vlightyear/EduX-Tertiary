@@ -156,11 +156,6 @@
         toggleGroup(`${prefix}DistrictGroup`, showDistrict);
         toggleGroup(`${prefix}SchoolGroup`, showSchool);
 
-        setRequired(`${prefix}NationId`, showNation);
-        setRequired(`${prefix}ProvinceId`, showProvince);
-        setRequired(`${prefix}DistrictId`, showDistrict);
-        setRequired(`${prefix}SchoolId`, showSchool);
-
         if (!showProvince) clearSelect(`${prefix}ProvinceId`, 'Select Province');
         if (!showDistrict) clearSelect(`${prefix}DistrictId`, 'Select District');
 

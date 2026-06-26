@@ -346,33 +346,21 @@ namespace SIS.Controllers
                 switch (scope)
                 {
                     case UserScopeType.National:
-                        if (!nationId.HasValue)
-                            return Json(new { success = false, message = "Please select a nation for PS or SA." });
-
                         provinceId = null;
                         districtId = null;
                         schoolId = null;
                         break;
 
                     case UserScopeType.Provincial:
-                        if (!nationId.HasValue || !provinceId.HasValue)
-                            return Json(new { success = false, message = "Please select a nation and province for PEO." });
-
                         districtId = null;
                         schoolId = null;
                         break;
 
                     case UserScopeType.District:
-                        if (!nationId.HasValue || !provinceId.HasValue || !districtId.HasValue)
-                            return Json(new { success = false, message = "Please select a nation, province, and district for DEBS." });
-
                         schoolId = null;
                         break;
 
                     case UserScopeType.School:
-                        if (!schoolId.HasValue)
-                            return Json(new { success = false, message = "Please select a school for this role." });
-
                         nationId = null;
                         provinceId = null;
                         districtId = null;
@@ -473,9 +461,6 @@ namespace SIS.Controllers
                 switch (scope)
                 {
                     case UserScopeType.National:
-                        if (!model.NationId.HasValue)
-                            return Json(new { success = false, message = "Please select a nation for PS or SA." });
-
                         user.NationId = model.NationId;
                         user.ProvinceId = null;
                         user.DistrictId = null;
@@ -483,9 +468,6 @@ namespace SIS.Controllers
                         break;
 
                     case UserScopeType.Provincial:
-                        if (!model.NationId.HasValue || !model.ProvinceId.HasValue)
-                            return Json(new { success = false, message = "Please select a nation and province for PEO." });
-
                         user.NationId = model.NationId;
                         user.ProvinceId = model.ProvinceId;
                         user.DistrictId = null;
@@ -493,9 +475,6 @@ namespace SIS.Controllers
                         break;
 
                     case UserScopeType.District:
-                        if (!model.NationId.HasValue || !model.ProvinceId.HasValue || !model.DistrictId.HasValue)
-                            return Json(new { success = false, message = "Please select a nation, province, and district for DEBS." });
-
                         user.NationId = model.NationId;
                         user.ProvinceId = model.ProvinceId;
                         user.DistrictId = model.DistrictId;
@@ -503,9 +482,6 @@ namespace SIS.Controllers
                         break;
 
                     case UserScopeType.School:
-                        if (!model.SchoolId.HasValue)
-                            return Json(new { success = false, message = "Please select a school for this role." });
-
                         user.NationId = null;
                         user.ProvinceId = null;
                         user.DistrictId = null;
