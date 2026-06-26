@@ -12,6 +12,7 @@ using SIS.Models.Reports;
 using SIS.Models.StudentApplication;
 using SIS.Models.StudyPermits;
 using SIS.Models.ViewModels;
+using SIS.Services;
 using SIS.Services.PDF;
 using SIS.Services.Progression;
 using SIS.Services.StudentApplication;
@@ -19,8 +20,10 @@ using System.ComponentModel.DataAnnotations;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using ZXing;
 using ZXing.Common;
 using static System.Runtime.InteropServices.JavaScript.JSType;
@@ -37,6 +40,7 @@ namespace SIS.Controllers
         private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly IStudentProgressionService _progressionService;
         private readonly IApplicantService _applicantService;
+        private readonly IInstitutionConfigService _institutionConfig;
 
         public StudentLookupController(
             ApplicationDbContext context,
@@ -45,7 +49,8 @@ namespace SIS.Controllers
             IPdfInvoiceService pdfService,
             IWebHostEnvironment webHostEnvironment,
             IStudentProgressionService progressionService,
-            IApplicantService applicantService)
+            IApplicantService applicantService,
+            IInstitutionConfigService institutionConfig)
         {
             _context = context;
             _userManager = userManager;
@@ -54,6 +59,7 @@ namespace SIS.Controllers
             _webHostEnvironment = webHostEnvironment;
             _progressionService = progressionService;
             _applicantService = applicantService;
+            _institutionConfig = institutionConfig;
         }
 
         public async Task<IActionResult> Index()
@@ -2018,6 +2024,52 @@ namespace SIS.Controllers
             }
         }
 
+        private IdCardDisplaySettings GetIdCardDisplaySettings()
+        {
+            var institution = _institutionConfig.GetCurrentInstitution();
+            var idCard = institution.IdCard;
+
+            var institutionName = !string.IsNullOrWhiteSpace(idCard?.InstitutionName)
+                ? idCard.InstitutionName
+                : institution.Name;
+
+            var fallbackContactDetails = string.Join("\n", new[]
+            {
+                institution.ContactInfo?.Phone,
+                institution.EmailSettings?.SenderEmail
+            }.Where(value => !string.IsNullOrWhiteSpace(value)));
+
+            var contactDetails = !string.IsNullOrWhiteSpace(idCard?.ContactDetails)
+                ? idCard.ContactDetails
+                : fallbackContactDetails;
+
+            return new IdCardDisplaySettings
+            {
+                InstitutionName = institutionName ?? "Institution",
+                InstitutionNameHtml = WebUtility.HtmlEncode(institutionName ?? "Institution"),
+                ContactDetails = contactDetails ?? string.Empty,
+                ContactDetailsHtml = ToHtmlLines(contactDetails),
+                PrimaryColor = NormalizeHexColor(idCard?.PrimaryColor, institution.BrandColors?.Primary ?? "#1991cf"),
+                HeaderTextColor = NormalizeHexColor(idCard?.HeaderTextColor, "#ffffff"),
+                LogoPath = WebUtility.HtmlEncode(institution.LogoPath ?? "/images/institution-logo.png")
+            };
+        }
+
+        private static string ToHtmlLines(string value)
+        {
+            return string.Join("<br />", (value ?? string.Empty)
+                .Replace("\r\n", "\n")
+                .Split('\n', StringSplitOptions.RemoveEmptyEntries)
+                .Select(line => WebUtility.HtmlEncode(line.Trim())));
+        }
+
+        private static string NormalizeHexColor(string value, string fallback)
+        {
+            return Regex.IsMatch(value ?? string.Empty, "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$")
+                ? value
+                : fallback;
+        }
+
         [HttpGet("StudentLookup/GetStudentIDCard/{studentId:int}")]
         public async Task<IActionResult> GetStudentIDCard(int studentId)
         {
@@ -2075,6 +2127,7 @@ namespace SIS.Controllers
                     }
                 }
 
+                var idCardSettings = GetIdCardDisplaySettings();
 
                 string htmlTemplate = @"
                                         <!DOCTYPE html>
@@ -2131,8 +2184,8 @@ namespace SIS.Controllers
                                                     }
                                                     
                                                     .university {
-                                                        background-color: #1991cf !important;
-                                                        color: #fff !important;
+                                                        background-color: {PrimaryColor} !important;
+                                                        color: {HeaderTextColor} !important;
                                                         -webkit-print-color-adjust: exact !important;
                                                         print-color-adjust: exact !important;
                                                     }
@@ -2166,9 +2219,9 @@ namespace SIS.Controllers
                                                         padding: 2pt;
                                                         text-align: center;
                                                         font-weight: bold;
-                                                        color: #fff;
+                                                        color: {HeaderTextColor};
                                                         font-family: arial;
-                                                        background-color: #1991cf !important;
+                                                        background-color: {PrimaryColor} !important;
                                                     "">
                                                         {CardType}
                                                     </div>
@@ -2183,7 +2236,7 @@ namespace SIS.Controllers
                                                             padding: 2pt;
                                                             padding-bottom: 0px;
                                                         "">
-                                                            EDEN UNIVERSITY
+                                                            {InstitutionName}
                                                         </span>
                                                     </div>
 
@@ -2205,7 +2258,7 @@ namespace SIS.Controllers
                                                             font-family: arial;
                                                             padding-top: 15px;
                                                         "">
-                                                            <img width=""92"" src=""/images/institution-logo.png"" />
+                                                            <img width=""92"" src=""{LogoPath}"" />
                                                         </div>
 
                                                         <div class=""name"" style=""
@@ -2326,8 +2379,7 @@ namespace SIS.Controllers
                                                         padding-bottom: 0px;
                                                     "">
                                                         THIS CARD IS PROPERTY OF<br />
-                                                        EDEN UNIVERSITY <br />IF FOUND PLEASE CONTACT: <br />+260-211843535 or
-                                                        registrar@edenuniversity.education
+                                                        {InstitutionName}<br />IF FOUND PLEASE CONTACT:<br />{ContactDetails}
                                                     </div>
                                                     <br />
                                                     <img src=""/StudentLookup/Barcode/{BarcodeId}"" />
@@ -2340,20 +2392,29 @@ namespace SIS.Controllers
 
                 string filledHtml = htmlTemplate
                                                 .Replace("{CardType}", "STUDENT ID")
+                                                .Replace("{InstitutionName}", idCardSettings.InstitutionNameHtml.ToUpper())
+                                                .Replace("{ContactDetails}", idCardSettings.ContactDetailsHtml)
+                                                .Replace("{PrimaryColor}", idCardSettings.PrimaryColor)
+                                                .Replace("{HeaderTextColor}", idCardSettings.HeaderTextColor)
+                                                .Replace("{LogoPath}", idCardSettings.LogoPath)
                                                 .Replace("{ProfileImage}", $"<div style='background-color:#ffffff; height:157px; display:flex; align-items:center; justify-content:center;'><img src='/uploads/student-photos/{student.StudentId_Number}.png' style='max-width:100%; max-height:100%; object-fit:contain;' /></div>")
                                                 .Replace("{NamePadding}", "10px")
-                                                .Replace("{FirstName}", firstName.ToUpper())
-                                                .Replace("{MiddleInitial}", middleInitial.ToUpper())
-                                                .Replace("{Surname}", lastName.ToUpper())
+                                                .Replace("{FirstName}", WebUtility.HtmlEncode(firstName.ToUpper()))
+                                                .Replace("{MiddleInitial}", WebUtility.HtmlEncode(middleInitial.ToUpper()))
+                                                .Replace("{Surname}", WebUtility.HtmlEncode(lastName.ToUpper()))
                                                 .Replace("{SurnameFontSize}", "18pt")
-                                                .Replace("{StudentId}", student.StudentId_Number.ToString())
+                                                .Replace("{StudentId}", WebUtility.HtmlEncode(student.StudentId_Number.ToString()))
                                                 .Replace("{ExpiryDate}", date)
-                                                .Replace("{NrcNumber}", student.NrcOrPassportNumber)
-                                                .Replace("{Program}", student.Programme.Name)
-                                                .Replace("{BarcodeId}", student.StudentId_Number.ToString())
-                                                .Replace("{BarcodeText}", student.StudentId_Number.ToString());
+                                                .Replace("{NrcNumber}", WebUtility.HtmlEncode(student.NrcOrPassportNumber))
+                                                .Replace("{Program}", WebUtility.HtmlEncode(student.Programme.Name))
+                                                .Replace("{BarcodeId}", WebUtility.HtmlEncode(student.StudentId_Number.ToString()))
+                                                .Replace("{BarcodeText}", WebUtility.HtmlEncode(student.StudentId_Number.ToString()));
 
                 ViewBag.filledHtml = filledHtml;
+                ViewBag.IdCardInstitutionName = idCardSettings.InstitutionName;
+                ViewBag.IdCardContactDetails = idCardSettings.ContactDetails;
+                ViewBag.IdCardPrimaryColor = idCardSettings.PrimaryColor;
+                ViewBag.IdCardHeaderTextColor = idCardSettings.HeaderTextColor;
 
                 return PartialView("_StudentIDCard", photoViewModel);
             }
@@ -2749,6 +2810,8 @@ namespace SIS.Controllers
                                                         && s.ProgrammeId == Int32.Parse(programme) && s.IdCardPrintedDate == null)
                                                         .ToListAsync();
 
+                var idCardSettings = GetIdCardDisplaySettings();
+
                 string cardTemplate = @"
                                         <div class=""preview-container"">
                                             <!-- FRONT OF CARD -->
@@ -2766,9 +2829,9 @@ namespace SIS.Controllers
                                                     padding: 2pt;
                                                     text-align: center;
                                                     font-weight: bold;
-                                                    color: #fff;
+                                                    color: {HeaderTextColor};
                                                     font-family: arial;
-                                                    background-color: #1991cf !important;
+                                                    background-color: {PrimaryColor} !important;
                                                 "">
                                                     STUDENT ID
                                                 </div>
@@ -2783,7 +2846,7 @@ namespace SIS.Controllers
                                                         padding: 2pt;
                                                         padding-bottom: 0px;
                                                     "">
-                                                        EDEN UNIVERSITY
+                                                        {InstitutionName}
                                                     </span>
                                                 </div>
 
@@ -2807,7 +2870,7 @@ namespace SIS.Controllers
                                                         font-family: arial;
                                                         padding-top: 15px;
                                                     "">
-                                                        <img width=""92"" src=""/images/institution-logo.png"" />
+                                                        <img width=""92"" src=""{LogoPath}"" />
                                                     </div>
 
                                                     <div class=""name"" style=""
@@ -2929,8 +2992,7 @@ namespace SIS.Controllers
                                                     padding-bottom: 0px;
                                                 "">
                                                     THIS CARD IS PROPERTY OF<br />
-                                                    EDEN UNIVERSITY <br />IF FOUND PLEASE CONTACT: <br />+260-211843535 or
-                                                    registrar@edenuniversity.education
+                                                    {InstitutionName}<br />IF FOUND PLEASE CONTACT:<br />{ContactDetails}
                                                 </div>
                                                 <br />
                                                 <img src=""/StudentLookup/Barcode/{StudentId}"" />
@@ -2964,13 +3026,18 @@ namespace SIS.Controllers
 
 
                     string filledCard = cardTemplate
-                                                .Replace("{FirstName}", firstName.ToUpper())
-                                                .Replace("{MiddleInitial}", middleInitial.ToUpper())
-                                                .Replace("{Surname}", lastName.ToUpper())
-                                                .Replace("{StudentId}", student.StudentId_Number.ToString())
+                                                .Replace("{InstitutionName}", idCardSettings.InstitutionNameHtml.ToUpper())
+                                                .Replace("{ContactDetails}", idCardSettings.ContactDetailsHtml)
+                                                .Replace("{PrimaryColor}", idCardSettings.PrimaryColor)
+                                                .Replace("{HeaderTextColor}", idCardSettings.HeaderTextColor)
+                                                .Replace("{LogoPath}", idCardSettings.LogoPath)
+                                                .Replace("{FirstName}", WebUtility.HtmlEncode(firstName.ToUpper()))
+                                                .Replace("{MiddleInitial}", WebUtility.HtmlEncode(middleInitial.ToUpper()))
+                                                .Replace("{Surname}", WebUtility.HtmlEncode(lastName.ToUpper()))
+                                                .Replace("{StudentId}", WebUtility.HtmlEncode(student.StudentId_Number.ToString()))
                                                 .Replace("{ExpiryDate}", date)
-                                                .Replace("{NrcNumber}", student.NrcOrPassportNumber)
-                                                .Replace("{Program}", student.Programme.Name);
+                                                .Replace("{NrcNumber}", WebUtility.HtmlEncode(student.NrcOrPassportNumber))
+                                                .Replace("{Program}", WebUtility.HtmlEncode(student.Programme.Name));
 
                     cardsHtml.Append(filledCard);
                 }
@@ -3030,8 +3097,8 @@ namespace SIS.Controllers
                                             }}
                                             
                                             .university {{
-                                                background-color: #1991cf !important;
-                                                color: #fff !important;
+                                                background-color: {idCardSettings.PrimaryColor} !important;
+                                                color: {idCardSettings.HeaderTextColor} !important;
                                                 -webkit-print-color-adjust: exact !important;
                                                 print-color-adjust: exact !important;
                                             }}
@@ -3718,5 +3785,16 @@ namespace SIS.Controllers
         public string StudentNumber { get; set; }
 
         public DateTime? PrintDate { get; set; }
+    }
+
+    public class IdCardDisplaySettings
+    {
+        public string InstitutionName { get; set; } = string.Empty;
+        public string InstitutionNameHtml { get; set; } = string.Empty;
+        public string ContactDetails { get; set; } = string.Empty;
+        public string ContactDetailsHtml { get; set; } = string.Empty;
+        public string PrimaryColor { get; set; } = "#1991cf";
+        public string HeaderTextColor { get; set; } = "#ffffff";
+        public string LogoPath { get; set; } = "/images/institution-logo.png";
     }
 }

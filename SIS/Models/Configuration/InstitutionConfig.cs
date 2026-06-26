@@ -9,6 +9,7 @@
         public EmailSettings EmailSettings { get; set; }
         public ContactInfo ContactInfo { get; set; }
         public BrandColors BrandColors { get; set; }
+        public IdCardSettings IdCard { get; set; }
     }
 
     public class ContactInfo
@@ -23,6 +24,14 @@
         public string Primary { get; set; }
         public string Secondary { get; set; }
         public string Accent { get; set; }
+    }
+
+    public class IdCardSettings
+    {
+        public string InstitutionName { get; set; }
+        public string ContactDetails { get; set; }
+        public string PrimaryColor { get; set; }
+        public string HeaderTextColor { get; set; }
     }
 
     public class EmailSettings
