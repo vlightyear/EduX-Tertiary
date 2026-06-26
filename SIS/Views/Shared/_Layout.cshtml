@@ -755,9 +755,125 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
         const currentPath = window.location.pathname;
+
+        // ── Shared alerts and confirmations ─────────────────
+        (function () {
+            const nativeAlert = window.alert.bind(window);
+            const nativeConfirm = window.confirm.bind(window);
+
+            function showToastAlert(message, type = 'info') {
+                const text = String(message ?? '');
+
+                if (window.Swal) {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: type,
+                        title: text,
+                        showConfirmButton: false,
+                        timer: type === 'error' ? 5000 : 3500,
+                        timerProgressBar: true
+                    });
+                    return;
+                }
+
+                nativeAlert(text);
+            }
+
+            window.showAppToast = showToastAlert;
+            window.alert = function (message) {
+                showToastAlert(message, 'info');
+            };
+
+            window.confirm = function (message) {
+                if (window.__appConfirmApproved === true) {
+                    return true;
+                }
+
+                return nativeConfirm(String(message ?? 'Are you sure?'));
+            };
+
+            window.showAppConfirm = function (message, options = {}) {
+                if (!window.Swal) {
+                    return Promise.resolve(nativeConfirm(String(message ?? 'Are you sure?')));
+                }
+
+                return Swal.fire({
+                    title: options.title || 'Confirm action',
+                    text: String(message ?? 'Are you sure?'),
+                    icon: options.icon || 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d43a3a',
+                    cancelButtonColor: '#64748b',
+                    confirmButtonText: options.confirmButtonText || 'Yes',
+                    cancelButtonText: options.cancelButtonText || 'Cancel'
+                }).then(result => result.isConfirmed);
+            };
+
+            document.addEventListener('click', function (event) {
+                const target = event.target.closest('a, button, input[type="submit"]');
+                if (!target || target.dataset.appConfirmBypass === 'true') return;
+
+                const confirmText = target.getAttribute('data-confirm');
+                const inlineHandler = target.getAttribute('onclick') || '';
+                const inlineMatch = inlineHandler.match(/confirm\((['"`])([\s\S]*?)\1\)/);
+                const message = confirmText || (inlineMatch ? inlineMatch[2] : null);
+                if (!message) return;
+
+                event.preventDefault();
+                event.stopImmediatePropagation();
+
+                window.showAppConfirm(message).then(confirmed => {
+                    if (!confirmed) return;
+
+                    target.dataset.appConfirmBypass = 'true';
+                    window.__appConfirmApproved = true;
+                    if (target.tagName === 'A' && target.href) {
+                        window.location.href = target.href;
+                    } else {
+                        target.click();
+                    }
+                    setTimeout(() => {
+                        delete target.dataset.appConfirmBypass;
+                        window.__appConfirmApproved = false;
+                    }, 0);
+                });
+            }, true);
+
+            document.addEventListener('submit', function (event) {
+                const form = event.target;
+                if (!form || form.dataset.appConfirmBypass === 'true') return;
+
+                const confirmText = form.getAttribute('data-confirm');
+                const inlineHandler = form.getAttribute('onsubmit') || '';
+                const inlineMatch = inlineHandler.match(/confirm\((['"`])([\s\S]*?)\1\)/);
+                const message = confirmText || (inlineMatch ? inlineMatch[2] : null);
+                if (!message) return;
+
+                event.preventDefault();
+                event.stopImmediatePropagation();
+
+                window.showAppConfirm(message).then(confirmed => {
+                    if (!confirmed) return;
+
+                    form.dataset.appConfirmBypass = 'true';
+                    window.__appConfirmApproved = true;
+                    if (form.requestSubmit) {
+                        form.requestSubmit();
+                    } else {
+                        form.submit();
+                    }
+                    setTimeout(() => {
+                        delete form.dataset.appConfirmBypass;
+                        window.__appConfirmApproved = false;
+                    }, 0);
+                });
+            }, true);
+        })();
 
         // ── Horizontal nav group toggle ──────────────────────
         let activeHnGroup = null;

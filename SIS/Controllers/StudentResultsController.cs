@@ -145,7 +145,10 @@ namespace SIS.Controllers
                 if (!allStudentResults.Any())
                 {
                     _logger.LogInformation($"No results found for student {student.Id}");
-                    return View(viewModel);
+                    ViewBag.StudentId = actualStudentId;
+                    return studentId != null
+                        ? PartialView("~/Views/StudentResults/Results.cshtml", viewModel)
+                        : View(viewModel);
                 }
 
                 // **Batch fetch academic years**

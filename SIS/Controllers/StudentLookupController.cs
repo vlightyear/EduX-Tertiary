@@ -14,6 +14,7 @@ using SIS.Models.StudyPermits;
 using SIS.Models.ViewModels;
 using SIS.Services.PDF;
 using SIS.Services.Progression;
+using SIS.Services.StudentApplication;
 using System.ComponentModel.DataAnnotations;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -35,6 +36,7 @@ namespace SIS.Controllers
         private readonly IPdfInvoiceService _pdfService;
         private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly IStudentProgressionService _progressionService;
+        private readonly IApplicantService _applicantService;
 
         public StudentLookupController(
             ApplicationDbContext context,
@@ -42,7 +44,8 @@ namespace SIS.Controllers
             ILogger<StudentLookupController> logger,
             IPdfInvoiceService pdfService,
             IWebHostEnvironment webHostEnvironment,
-            IStudentProgressionService progressionService)
+            IStudentProgressionService progressionService,
+            IApplicantService applicantService)
         {
             _context = context;
             _userManager = userManager;
@@ -50,6 +53,7 @@ namespace SIS.Controllers
             _pdfService = pdfService;
             _webHostEnvironment = webHostEnvironment;
             _progressionService = progressionService;
+            _applicantService = applicantService;
         }
 
         public async Task<IActionResult> Index()
@@ -479,7 +483,8 @@ namespace SIS.Controllers
                 if (!allStudentResults.Any())
                 {
                     _logger.LogInformation($"No results found for student {student.Id}");
-                    return View(viewModel);
+                    ViewBag.StudentId = studentId;
+                    return PartialView("~/Views/StudentResults/Results.cshtml", viewModel);
                 }
 
                 // **Batch fetch academic years**
@@ -3468,10 +3473,78 @@ namespace SIS.Controllers
             {
                 var form = Request.Form;
 
-                // Validate Student Number
-                var studentNumber = form["StudentId_Number"].ToString();
+                bool TryReadRequiredInt(string fieldName, string displayName, out int value)
+                {
+                    var rawValue = form[fieldName].ToString();
+                    if (int.TryParse(rawValue, out value))
+                    {
+                        return true;
+                    }
+
+                    return false;
+                }
+
+                if (!TryReadRequiredInt("AcademicYearId", "Academic Year", out var academicYearId))
+                {
+                    return Json(new { success = false, message = "Please select an Academic Year." });
+                }
+
+                if (!TryReadRequiredInt("SchoolId", "School", out var schoolId))
+                {
+                    return Json(new { success = false, message = "Please select a School." });
+                }
+
+                if (!TryReadRequiredInt("ProgrammeId", "Programme", out var programmeId))
+                {
+                    return Json(new { success = false, message = "Please select a Programme." });
+                }
+
+                if (!TryReadRequiredInt("ProgrammeLevelId", "Programme Level", out var programmeLevelId))
+                {
+                    return Json(new { success = false, message = "Please select a Programme Level." });
+                }
+
+                if (!TryReadRequiredInt("ModeOfStudyId", "Mode of Study", out var modeOfStudyId))
+                {
+                    return Json(new { success = false, message = "Please select a Mode of Study." });
+                }
+
+                if (!TryReadRequiredInt("StudentCurrentYear", "Current Year", out var studentCurrentYear))
+                {
+                    return Json(new { success = false, message = "Please select the student's Current Year." });
+                }
+
+                int? currentYearPeriodId = null;
+                if (TryReadRequiredInt("CurrentYearPeriodId", "Current Period", out var postedYearPeriodId))
+                {
+                    currentYearPeriodId = postedYearPeriodId;
+                }
+                else if (TryReadRequiredInt("CurrentSemester", "Current Semester", out var currentSemester))
+                {
+                    currentYearPeriodId = await _context.AcademicYearPeriods
+                        .Include(yp => yp.AcademicPeriod)
+                        .Where(yp => yp.AcademicYearId == academicYearId && yp.AcademicPeriod.PeriodNumber == currentSemester)
+                        .Select(yp => (int?)yp.Id)
+                        .FirstOrDefaultAsync();
+
+                    if (!currentYearPeriodId.HasValue)
+                    {
+                        return Json(new { success = false, message = "No academic period is configured for the selected Academic Year and Semester." });
+                    }
+                }
+                else
+                {
+                    return Json(new { success = false, message = "Please select a Current Semester." });
+                }
+
+                var studentNumber = form["StudentId_Number"].ToString().Trim();
                 var email = form["Email"].ToString();
                 var nrcOrPassport = form["NrcOrPassportNumber"].ToString();
+
+                if (string.IsNullOrWhiteSpace(studentNumber))
+                {
+                    studentNumber = await _applicantService.GenerateStudentIdAsync(academicYearId);
+                }
 
                 // Check if student number already exists
                 var existingStudentNumber = await _context.Students
@@ -3503,7 +3576,7 @@ namespace SIS.Controllers
                     // Personal Information
                     FullName = form["FullName"].ToString(),
                     Email = form["Email"].ToString(),
-                    StudentId_Number = form["StudentId_Number"].ToString(),
+                    StudentId_Number = studentNumber,
                     NrcOrPassportNumber = form["NrcOrPassportNumber"].ToString(),
                     DateOfBirth = DateTime.Parse(form["DateOfBirth"].ToString()),
                     Gender = form["Gender"].ToString(),
@@ -3517,13 +3590,13 @@ namespace SIS.Controllers
                         : form["Nationality"].ToString() != "Zambian",
 
                     // Academic Information
-                    SchoolId = int.Parse(form["SchoolId"].ToString()),
-                    ProgrammeId = int.Parse(form["ProgrammeId"].ToString()),
-                    ProgrammeLevelId = int.Parse(form["ProgrammeLevelId"].ToString()),
-                    ModeOfStudyId = int.Parse(form["ModeOfStudyId"].ToString()),
-                    AcademicYearId = int.Parse(form["AcademicYearId"].ToString()),
-                    StudentCurrentYear = int.Parse(form["StudentCurrentYear"].ToString()),
-                    CurrentYearPeriodId = int.Parse(form["CurrentYearPeriodId"].ToString()),
+                    SchoolId = schoolId,
+                    ProgrammeId = programmeId,
+                    ProgrammeLevelId = programmeLevelId,
+                    ModeOfStudyId = modeOfStudyId,
+                    AcademicYearId = academicYearId,
+                    StudentCurrentYear = studentCurrentYear,
+                    CurrentYearPeriodId = currentYearPeriodId,
 
                     // Status Fields
                     ApplicationReferenceNumber = "MANUAL-" + DateTime.Now.Ticks,
@@ -3609,7 +3682,9 @@ namespace SIS.Controllers
                 return Json(new {
                     success = true,
                     message = $"Student {student.FullName} added successfully. Default login password: {defaultPassword}",
-                    studentId = student.Id
+                    studentId = student.Id,
+                    studentNumber,
+                    defaultPassword
                 });
             }
             catch (Exception ex)

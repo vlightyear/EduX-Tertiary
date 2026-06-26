@@ -1278,8 +1278,8 @@
                                 <input type="email" name="Email" required class="modal-input" />
                             </div>
                             <div class="modal-field">
-                                <label>Student ID Number *</label>
-                                <input type="text" name="StudentId_Number" required class="modal-input" />
+                                <label>Student ID Number</label>
+                                <input type="text" name="StudentId_Number" class="modal-input" placeholder="Leave blank to auto-generate" />
                             </div>
                             <div class="modal-field">
                                 <label>NRC / Passport Number *</label>
@@ -1689,7 +1689,7 @@
                     loadDropdownData();
                 } else {
                     console.error('Add Student Modal element not found!');
-                    alert('Error: Modal element not found in the DOM');
+                    showToast('Error: Modal element not found in the DOM', 'error');
                 }
             }
 
@@ -1849,10 +1849,8 @@
                             addStudentForm.reset();
 
                             const studentName = formData.get('FullName');
-                            const studentNumber = formData.get('StudentId_Number');
-
-                            const passwordMatch = result.message.match(/Default login password: (.+)/);
-                            const password = passwordMatch ? passwordMatch[1] : '';
+                            const studentNumber = result.studentNumber || formData.get('StudentId_Number');
+                            const password = result.defaultPassword || '';
 
                             if (!password) {
                                 showToast(result.message, 'success');
@@ -2174,7 +2172,7 @@
             function showStudentCreatedModal(studentName, studentNumber, password) {
                 const modal = document.getElementById('studentCreatedModal');
                 if (!modal) {
-                    alert(`Student created!\n\nName: ${studentName}\nNumber: ${studentNumber}\nPassword: ${password}`);
+                    showToast(`Student created. Number: ${studentNumber}`, 'success');
                     return;
                 }
 
@@ -2336,11 +2334,11 @@
                             iframe.contentWindow.print();
                         }
                     } else {
-                        alert('Failed to prepare ID card for printing: ' + (result.message || 'Unknown error.'));
+                        showToast('Failed to prepare ID card for printing: ' + (result.message || 'Unknown error.'), 'error');
                     }
                 } catch (error) {
                     console.error('Error during reprint request:', error);
-                    alert('An error occurred while preparing the ID card.');
+                    showToast('An error occurred while preparing the ID card.', 'error');
                 }
             };
 
@@ -2369,7 +2367,7 @@
                             $('#ExpiryDate').val(data.expiryDate.split('T')[0]);
                             $('#IssuingAuthority').val(data.issuingAuthority);
                         }
-                    }).fail(() => alert('Failed to load permit data.'));
+                    }).fail(() => showToast('Failed to load permit data.', 'error'));
                 }
 
                 openModal();
@@ -2394,7 +2392,7 @@
                         if (typeof loadStudentTab === 'function') loadStudentTab('profile');
                     },
                     error: function() {
-                        alert('Error saving study permit.');
+                        showToast('Error saving study permit.', 'error');
                     }
                 });
             });
