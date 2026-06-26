@@ -901,12 +901,12 @@
                             <div><p class="student-cell-lbl">Student ID</p><p class="student-cell-val">@ViewBag.Student.StudentId_Number</p></div>
                             <div><p class="student-cell-lbl">Name</p><p class="student-cell-val">@ViewBag.Student.FullName</p></div>
                             <div><p class="student-cell-lbl">Programme</p><p class="student-cell-val">@ViewBag.Student.Programme?.Name</p></div>
-                            <div><p class="student-cell-lbl">Year / Semester</p><p class="student-cell-val">Year @(ViewBag.Student.StudentCurrentYear ?? 1) / Sem @(ViewBag.Student.CurrentSemester ?? 1)</p></div>
+                            <div><p class="student-cell-lbl">Year / Period</p><p class="student-cell-val">Year @(ViewBag.Student.StudentCurrentYear ?? 1) / @ViewBag.CurrentPeriodLabel</p></div>
                         </div>
                     </div>
                 }
 
-                <!-- Academic Year + Semester -->
+                <!-- Academic Year + Period -->
                 <div class="form-section">
                     <p class="form-section-title"><i class="material-icons">calendar_today</i> Academic Period</p>
                     <div class="field-grid-2">
@@ -925,11 +925,17 @@
                             </select>
                         </div>
                         <div>
-                            <label class="field-label" for="semester">Semester *</label>
-                            <select required name="Semester" id="semester" onchange="loadCourses()" class="field-select">
+                            <label class="field-label" for="yearPeriodId">Academic Period *</label>
+                            <select required name="YearPeriodId" id="yearPeriodId" onchange="loadCourses()" class="field-select">
                                 <option value="">Select…</option>
-                                <option value="1">Semester 1</option>
-                                <option value="2">Semester 2</option>
+                                @if (ViewBag.YearPeriods != null)
+                                {
+                                    foreach (var item in ViewBag.YearPeriods)
+                                    {
+                                        var sel = (bool)item.Selected ? "selected" : null;
+                                        <option value="@item.Value" selected="@sel">@item.Text</option>
+                                    }
+                                }
                             </select>
                         </div>
                     </div>
@@ -944,7 +950,7 @@
                     <div id="coursesContainer" class="courses-box">
                         <div class="empty-state" style="padding:1.5rem;">
                             <i class="material-icons" style="font-size:1.8rem;">school</i>
-                            <p style="font-size:.75rem;margin-top:.25rem;">Select year &amp; semester first</p>
+                            <p style="font-size:.75rem;margin-top:.25rem;">Select year &amp; academic period first</p>
                         </div>
                     </div>
                     <input type="hidden" id="courseId" name="CourseId" required />
@@ -1116,7 +1122,7 @@
                                     <td>
                                         <div class="course-name">${a.courseCode}</div>
                                         <div class="course-sub">${a.courseName}</div>
-                                        <div class="course-sub">${a.academicYear} · Sem ${a.semester}</div>
+                                        <div class="course-sub">${a.academicYear} · ${a.periodLabel || `Period ${a.yearPeriodId || ''}`}</div>
                                     </td>
                                     <td>
                                         <span class="tbl-pill ${getAppealTypeClass(a.appealType)}">${formatAppealType(a.appealType)}</span>
@@ -1152,7 +1158,7 @@
             document.getElementById('coursesContainer').innerHTML = `
                 <div class="empty-state" style="padding:1.5rem;">
                     <i class="material-icons" style="font-size:1.8rem;">school</i>
-                    <p style="font-size:.75rem;margin-top:.25rem;">Select year &amp; semester first</p>
+                    <p style="font-size:.75rem;margin-top:.25rem;">Select year &amp; academic period first</p>
                 </div>`;
             document.getElementById('appealModal').classList.add('show');
         }
@@ -1162,12 +1168,12 @@
         /* ── Load courses ── */
         async function loadCourses() {
             const yr  = document.getElementById('academicYearId').value;
-            const sem = document.getElementById('semester').value;
+            const sem = document.getElementById('yearPeriodId').value;
             if (!yr || !sem) return;
             document.getElementById('coursesLoadingIndicator').classList.remove('hidden');
             document.getElementById('coursesContainer').innerHTML = '';
             try {
-                const r = await fetch(`/ResultAppeal/GetMyCourses?academicYearId=${yr}&semester=${sem}`);
+                const r = await fetch(`/ResultAppeal/GetMyCourses?academicYearId=${yr}&period=${sem}`);
                 const res = await r.json();
                 if (res.success) { studentCourses = res.data; displayCourses(res.data); }
                 else showToast(res.message, 'error');
@@ -1233,7 +1239,7 @@
                             <p class="info-block-title"><i class="material-icons">school</i> Course Information</p>
                             <div class="info-block-grid">
                                 <div><p class="info-cell-lbl">Course</p><p class="info-cell-val">${a.courseCode} — ${a.courseName}</p></div>
-                                <div><p class="info-cell-lbl">Academic Period</p><p class="info-cell-val">${a.academicYear} · Semester ${a.semester}</p></div>
+                                <div><p class="info-cell-lbl">Academic Period</p><p class="info-cell-val">${a.academicYear} · ${a.periodLabel || `Period ${a.yearPeriodId || ''}`}</p></div>
                             </div>
                         </div>
 

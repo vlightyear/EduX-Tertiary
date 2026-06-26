@@ -705,7 +705,7 @@ namespace SIS.Controllers
                 sb.Append("<td colspan='2'></td>");
             }
 
-            sb.Append($"<td>Semester:</td><td><strong>{(filters.AcademicPeriod.HasValue ? $"Semester {filters.AcademicPeriod}" : "All Semesters")}</strong></td>");
+            sb.Append($"<td>Academic Period:</td><td><strong>{(filters.AcademicPeriod.HasValue ? $"Period {filters.AcademicPeriod}" : "All Academic Periods")}</strong></td>");
             sb.Append("</tr><tr>");
 
             if (filters.ReportLevel == "Department" || filters.ReportLevel == "Programme")
@@ -1017,8 +1017,8 @@ namespace SIS.Controllers
             ws.Cell(row, 4).Style.Font.Bold = true;
 
             row++;
-            ws.Cell(row, 1).Value = "Semester:";
-            ws.Cell(row, 2).Value = filters.AcademicPeriod.HasValue ? $"Semester {filters.AcademicPeriod}" : "All Semesters";
+            ws.Cell(row, 1).Value = "Academic Period:";
+            ws.Cell(row, 2).Value = filters.AcademicPeriod.HasValue ? $"Period {filters.AcademicPeriod}" : "All Academic Periods";
             ws.Cell(row, 1).Style.Font.Bold = true;
             ws.Cell(row, 4).Value = "Year of Study:";
             ws.Cell(row, 5).Value = filters.YearOfStudy.HasValue ? $"Year {filters.YearOfStudy}" : "All Years";

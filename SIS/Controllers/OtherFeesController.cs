@@ -63,6 +63,18 @@ namespace SIS.Controllers
                     Text = p.Name
                 }).ToListAsync();
 
+            ViewBag.YearPeriods = await _context.AcademicYearPeriods
+                .Include(yp => yp.AcademicYear)
+                .Include(yp => yp.AcademicPeriod)
+                .OrderByDescending(yp => yp.AcademicYear.YearValue)
+                .ThenBy(yp => yp.AcademicPeriod.PeriodNumber)
+                .Select(yp => new SelectListItem
+                {
+                    Value = yp.Id.ToString(),
+                    Text = yp.AcademicYear.YearValue + " - " + yp.AcademicPeriod.PeriodName
+                })
+                .ToListAsync();
+
             return View("~/Views/Admin/OtherFees.cshtml");
         }
 
@@ -75,14 +87,18 @@ namespace SIS.Controllers
                 .Include(o => o.Programme)
                 .Include(o => o.ModeOfStudy)
                 .Include(o => o.ProgramLevel)
+                .Include(o => o.YearPeriod)
+                    .ThenInclude(yp => yp.AcademicYear)
+                .Include(o => o.YearPeriod)
+                    .ThenInclude(yp => yp.AcademicPeriod)
                 .Where(o => o.IsActive)
                 .AsQueryable();
 
             if (request.AcademicYearId.HasValue)
                 query = query.Where(o => o.AcademicYearId == request.AcademicYearId.Value);
 
-            if (request.Semester.HasValue)
-                query = query.Where(o => o.YearPeriodId == request.Semester.Value);
+            if (request.YearPeriodId.HasValue)
+                query = query.Where(o => o.YearPeriodId == request.YearPeriodId.Value);
 
             if (request.SchoolId.HasValue)
                 query = query.Where(o => o.SchoolId == request.SchoolId.Value);
@@ -122,7 +138,10 @@ namespace SIS.Controllers
                     o.Id,
                     o.FeeName,
                     o.Amount,
-                    Semester = o.YearPeriodId,
+                    YearPeriodId = o.YearPeriodId,
+                    PeriodLabel = o.YearPeriod != null
+                        ? o.YearPeriod.AcademicYear.YearValue + " - " + o.YearPeriod.AcademicPeriod.PeriodName
+                        : "All Periods",
                     AcademicYear = o.AcademicYear != null ? o.AcademicYear.YearValue : "All Years",
                     SchoolName = o.School != null ? o.School.Name : "All Schools",
                     ProgrammeName = o.Programme != null ? o.Programme.Name : "All Programmes",
@@ -145,7 +164,8 @@ namespace SIS.Controllers
                 f.Id,
                 f.FeeName,
                 f.Amount,
-                f.Semester,
+                f.YearPeriodId,
+                f.PeriodLabel,
                 f.AcademicYear,
                 f.SchoolName,
                 f.ProgrammeName,
@@ -258,13 +278,12 @@ namespace SIS.Controllers
             var totalFees = await _context.OtherFees.Where(o => o.IsActive).CountAsync();
             var foreignFees = await _context.OtherFees.Where(o => o.IsActive && o.AppliesOnlyToForeignStudents).CountAsync();
             var standardFees = await _context.OtherFees.Where(o => o.IsActive && !o.AppliesOnlyToForeignStudents).CountAsync();
-            var semester1Fees = await _context.OtherFees.Where(o => o.IsActive && o.YearPeriodId == 1).CountAsync();
-            var semester2Fees = await _context.OtherFees.Where(o => o.IsActive && o.YearPeriodId == 2).CountAsync();
+            var periodSpecificFees = await _context.OtherFees.Where(o => o.IsActive && o.YearPeriodId != null).CountAsync();
 
             var chartData = new
             {
-                labels = new[] { "Foreign Student Fees", "Standard Fees", "Semester 1", "Semester 2" },
-                series = new[] { foreignFees, standardFees, semester1Fees, semester2Fees }
+                labels = new[] { "Foreign Student Fees", "Standard Fees", "Period-Specific Fees" },
+                series = new[] { foreignFees, standardFees, periodSpecificFees }
             };
 
             return Json(new
@@ -272,8 +291,7 @@ namespace SIS.Controllers
                 totalFees,
                 foreignFees,
                 standardFees,
-                semester1Fees,
-                semester2Fees,
+                periodSpecificFees,
                 chartData
             });
         }
@@ -326,7 +344,7 @@ namespace SIS.Controllers
         public string? SortColumn { get; set; }
         public string? SortDirection { get; set; }
         public int? AcademicYearId { get; set; }
-        public int? Semester { get; set; }
+        public int? YearPeriodId { get; set; }
         public int? SchoolId { get; set; }
         public int? ProgrammeId { get; set; }
         public int? ModeOfStudyId { get; set; }

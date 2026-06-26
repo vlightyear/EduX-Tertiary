@@ -46,6 +46,9 @@ namespace SIS.Models.Compliance
         [Column("semesterofstudy")]
         public int CurrentYearPeriodId { get; set; }
 
+        [NotMapped]
+        public string CurrentPeriodLabel { get; set; } = string.Empty;
+
         [Column("Delivery")]
         public string Delivery { get; set; }
 

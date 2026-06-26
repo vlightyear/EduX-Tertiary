@@ -83,6 +83,7 @@ namespace SIS.Controllers
                 {
                     Courses = courses,
                     AcademicYears = academicYears,
+                    YearPeriods = await GetYearPeriodOptionsAsync(),
                     MaxFileSize = 10 * 1024 * 1024, // 10MB
                     SupportedFormats = new[] { ".xlsx" }
                 };
@@ -147,6 +148,7 @@ namespace SIS.Controllers
                 {
                     Courses = [],
                     AcademicYears = academicYears,
+                    YearPeriods = await GetYearPeriodOptionsAsync(),
                     MaxFileSize = 10 * 1024 * 1024, // 10MB
                     SupportedFormats = new[] { ".xlsx" }
                 };
@@ -184,6 +186,7 @@ namespace SIS.Controllers
                 {
                     Courses = [],
                     AcademicYears = academicYears,
+                    YearPeriods = await GetYearPeriodOptionsAsync(),
                     MaxFileSize = 10 * 1024 * 1024, // 10MB
                     SupportedFormats = new[] { ".xlsx" }
                 };
@@ -196,6 +199,16 @@ namespace SIS.Controllers
                 TempData["Error"] = "An error occurred while loading the page.";
                 return RedirectToAction("Index", "Home");
             }
+        }
+
+        private async Task<List<AcademicYearPeriod>> GetYearPeriodOptionsAsync()
+        {
+            return await _context.AcademicYearPeriods
+                .Include(yp => yp.AcademicYear)
+                .Include(yp => yp.AcademicPeriod)
+                .OrderByDescending(yp => yp.AcademicYear.YearValue)
+                .ThenBy(yp => yp.AcademicPeriod.PeriodNumber)
+                .ToListAsync();
         }
 
         // GET: ResultImport/ValidateCourse
@@ -1331,6 +1344,7 @@ namespace SIS.Controllers
     {
         public List<CourseImportInfo> Courses { get; set; } = new List<CourseImportInfo>();
         public List<AcademicYear> AcademicYears { get; set; } = new List<AcademicYear>();
+        public List<AcademicYearPeriod> YearPeriods { get; set; } = new List<AcademicYearPeriod>();
         public long MaxFileSize { get; set; }
         public string[] SupportedFormats { get; set; }
     }

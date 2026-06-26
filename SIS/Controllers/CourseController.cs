@@ -66,17 +66,20 @@ namespace SIS.Controllers
                 var courses = await _context.StudentCourseRegistrations
                     .Where(r => r.StudentId == student.Id &&
                                r.AcademicYearId == student.AcademicYearId)
-                    .Join(_context.Courses,
-                        scr => scr.CourseId,
-                        c => c.Id,
-                        (scr, c) => new StudentCoursesViewModel
+                    .Select(scr => new StudentCoursesViewModel
                         {
-                            Id = c.Id,
-                            CourseCode = c.CourseCode,
-                            CourseName = c.CourseName,
-                            CourseDescription = c.CourseDescription,
-                            IsMandatory = c.IsMandatory,
-                            YearPeriodId = scr.YearPeriodId
+                            Id = scr.Course.Id,
+                            CourseCode = scr.Course.CourseCode,
+                            CourseName = scr.Course.CourseName,
+                            CourseDescription = scr.Course.CourseDescription,
+                            IsMandatory = scr.Course.IsMandatory,
+                            YearPeriodId = scr.YearPeriodId,
+                            YearPeriodLabel = scr.YearPeriodId.HasValue
+                                ? _context.AcademicYearPeriods
+                                    .Where(yp => yp.Id == scr.YearPeriodId.Value)
+                                    .Select(yp => yp.AcademicYear.YearValue + " - " + yp.AcademicPeriod.PeriodName)
+                                    .FirstOrDefault() ?? "Academic Period"
+                                : "Annual"
                         })
                     .ToListAsync();
 

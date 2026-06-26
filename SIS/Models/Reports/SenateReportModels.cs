@@ -34,6 +34,7 @@ namespace SIS.Models.Reports
         public List<Department> Departments { get; set; } = new List<Department>();
         public List<Programme> Programmes { get; set; } = new List<Programme>();
         public List<ModeOfStudy> ModesOfStudy { get; set; } = new List<ModeOfStudy>();
+        public List<AcademicPeriod> AcademicPeriods { get; set; } = new List<AcademicPeriod>();
     }
 
     public class EntityProgressionSummary

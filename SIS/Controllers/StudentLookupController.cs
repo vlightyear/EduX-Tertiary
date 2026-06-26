@@ -87,6 +87,18 @@ namespace SIS.Controllers
                     User = user
                 };
 
+                ViewBag.YearPeriods = await _context.AcademicYearPeriods
+                    .Include(yp => yp.AcademicYear)
+                    .Include(yp => yp.AcademicPeriod)
+                    .OrderByDescending(yp => yp.AcademicYear.YearValue)
+                    .ThenBy(yp => yp.AcademicPeriod.PeriodNumber)
+                    .Select(yp => new
+                    {
+                        yp.Id,
+                        Label = yp.AcademicYear.YearValue + " - " + yp.AcademicPeriod.PeriodName
+                    })
+                    .ToListAsync();
+
                 return View(viewModel);
             }
             catch (Exception ex)
@@ -3608,7 +3620,7 @@ namespace SIS.Controllers
                 {
                     currentYearPeriodId = postedYearPeriodId;
                 }
-                else if (TryReadRequiredInt("CurrentSemester", "Current Semester", out var currentSemester))
+                else if (TryReadRequiredInt("CurrentSemester", "Current Academic Period", out var currentSemester))
                 {
                     currentYearPeriodId = await _context.AcademicYearPeriods
                         .Include(yp => yp.AcademicPeriod)
@@ -3618,12 +3630,12 @@ namespace SIS.Controllers
 
                     if (!currentYearPeriodId.HasValue)
                     {
-                        return Json(new { success = false, message = "No academic period is configured for the selected Academic Year and Semester." });
+                        return Json(new { success = false, message = "No academic period is configured for the selected Academic Year and period." });
                     }
                 }
                 else
                 {
-                    return Json(new { success = false, message = "Please select a Current Semester." });
+                    return Json(new { success = false, message = "Please select a Current Academic Period." });
                 }
 
                 var studentNumber = form["StudentId_Number"].ToString().Trim();

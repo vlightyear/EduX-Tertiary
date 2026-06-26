@@ -62,7 +62,12 @@
         $("#school").text(applicant.School?.Name || "N/A");
         $("#programme").text(applicant.Programme?.Name || "N/A");
         $("#modeOfStudy").text(applicant.ModeOfStudy?.ModeName || "N/A");
-        $("#academicYear").text(`${applicant.AcademicYear?.YearValue || "N/A"}/${applicant.AcademicYear?.SemesterId || "N/A"}`);
+        const academicYear = applicant.AcademicYear?.YearValue || "N/A";
+        const academicPeriod = applicant.CurrentYearPeriod?.AcademicPeriod?.PeriodName
+            || applicant.CurrentYearPeriod?.PeriodName
+            || applicant.CurrentPeriodLabel
+            || "N/A";
+        $("#academicYear").text(`${academicYear} / ${academicPeriod}`);
         $("#level").text(applicant.ProgrammeLevel?.Name || "N/A");
 
         // Show or hide Subject Grades section based on education level

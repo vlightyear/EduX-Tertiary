@@ -106,7 +106,7 @@ namespace SIS.Models.ViewModels
         [Range(1, 7)]
         public int CurrentYear { get; set; }
 
-        [Range(1, 2)]
+        [Range(1, int.MaxValue)]
         public int CurrentPeriodId { get; set; }
 
         public string ChangeReason { get; set; }

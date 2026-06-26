@@ -216,13 +216,15 @@
                     </select>
                 </div>
 
-                <!-- Semester Filter -->
+                <!-- Academic Period Filter -->
                 <div>
-                    <label for="semesterFilter" class="block text-sm font-medium text-slate-700 mb-1">Semester</label>
+                    <label for="semesterFilter" class="block text-sm font-medium text-slate-700 mb-1">Academic Period</label>
                     <select id="semesterFilter" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
-                        <option value="">All Semesters</option>
-                        <option value="1">Semester 1</option>
-                        <option value="2">Semester 2</option>
+                        <option value="">All Periods</option>
+                        @foreach (var period in Model.AcademicPeriods)
+                        {
+                            <option value="@period.Id">@period.PeriodName</option>
+                        }
                     </select>
                 </div>
             </div>
@@ -1362,7 +1364,7 @@
             return;
         }
 
-       if (!pageData.currentFilters || !pageData.currentFilters.academicYearId || !pageData.currentFilters.semester) {
+       if (!pageData.currentFilters || !pageData.currentFilters.academicYearId || !pageData.currentFilters.academicPeriod) {
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
@@ -1395,7 +1397,7 @@
 
         try {
             const response = await fetch(
-                `/SenateReportWithAuth/GetProgrammeGradingOverview?programmeId=${currentGradingOverviewData.programmeId}&academicYearId=${pageData.currentFilters.academicYearId}&semester=${pageData.currentFilters.semester}&yearOfStudy=${pageData.currentFilters.yearOfStudy || 0}`
+                `/SenateReportWithAuth/GetProgrammeGradingOverview?programmeId=${currentGradingOverviewData.programmeId}&academicYearId=${pageData.currentFilters.academicYearId}&semester=${pageData.currentFilters.academicPeriod}&yearOfStudy=${pageData.currentFilters.yearOfStudy || 0}`
             );
 
             const result = await response.json();
@@ -1691,7 +1693,7 @@
             programmeId: entityId,
             programmeName: entity.entityName,
             academicYearId: viewModel.appliedFilters.academicYearId,
-            semester: viewModel.appliedFilters.semester
+            semester: viewModel.appliedFilters.academicPeriod
         };
 
         // Reset state
@@ -2422,7 +2424,7 @@
                 programmeId: elements.programmeFilter.value || null,
                 modeOfStudyId: elements.modeOfStudyFilter.value || null,
                 yearOfStudy: elements.yearOfStudyFilter.value || null,
-                semester: elements.semesterFilter.value || null,
+                academicPeriod: elements.semesterFilter.value || null,
                 period: 'Current'
             };
         }

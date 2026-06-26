@@ -253,6 +253,7 @@ namespace SIS.Controllers
                 string downloadUrl = string.Empty;
                 if(students != null && students.Any())
                 {
+                    await PopulateCurrentPeriodLabels(students);
                     byte[] pdfBytes = GeneratePdf(students, DocketType);
 
                     // Save temporarily to disk or memory cache
@@ -321,13 +322,15 @@ namespace SIS.Controllers
             {
                 var student = await _context.StudentDockets
                     .FirstOrDefaultAsync(s => s.StudentIdNumber == studentNumber);
-                student.DocketType = docketType;
 
                 if (student == null)
                 {
                     ViewBag.Message = "No record found for the provided student number.";
                     return View("VerifyQrNotFound");
                 }
+
+                await PopulateCurrentPeriodLabels(new List<StudentData> { student });
+                student.DocketType = docketType;
 
                 return View("VerifyQr", student);
             }
@@ -336,6 +339,32 @@ namespace SIS.Controllers
                 _logger.LogError(ex, "Error verifying QR for student {studentNumber}", studentNumber);
                 ViewBag.Message = "An error occurred while verifying this QR code.";
                 return View("VerifyQrError");
+            }
+        }
+
+        private async Task PopulateCurrentPeriodLabels(List<StudentData> students)
+        {
+            var periodIds = students
+                .Select(s => s.CurrentYearPeriodId)
+                .Where(id => id > 0)
+                .Distinct()
+                .ToList();
+
+            if (!periodIds.Any()) return;
+
+            var labels = await _context.AcademicYearPeriods
+                .Include(yp => yp.AcademicYear)
+                .Include(yp => yp.AcademicPeriod)
+                .Where(yp => periodIds.Contains(yp.Id))
+                .ToDictionaryAsync(
+                    yp => yp.Id,
+                    yp => yp.AcademicYear.YearValue + " - " + yp.AcademicPeriod.PeriodName);
+
+            foreach (var student in students)
+            {
+                student.CurrentPeriodLabel = labels.TryGetValue(student.CurrentYearPeriodId, out var label)
+                    ? label
+                    : student.CurrentYearPeriodId.ToString();
             }
         }
 
@@ -403,7 +432,7 @@ namespace SIS.Controllers
                     float currentY = 0;
 
                     // Create a text element with the text and font
-                    var element = new PdfTextElement($"Eden University\n{docket} DOCKET\n{DateTime.Today.Year} - SEMESTER {student.CurrentYearPeriodId}");
+                    var element = new PdfTextElement($"Eden University\n{docket} DOCKET\n{student.CurrentPeriodLabel}");
                     element.Font = new PdfStandardFont(PdfFontFamily.TimesRoman, 12, PdfFontStyle.Bold);
                     //element.Brush = new PdfSolidBrush(new PdfColor(89, 89, 93));
                     element.Brush = PdfBrushes.Black;
@@ -545,7 +574,7 @@ namespace SIS.Controllers
 
                     // Registration message
                     string regString = "Student is Registered under: ";
-                    string registrationMsg = $"{student.Programme} Y-{student.StudentCurrentYear}-S-{student.CurrentYearPeriodId}";
+                    string registrationMsg = $"{student.Programme} Year {student.StudentCurrentYear} - {student.CurrentPeriodLabel}";
                     string regString3 = $"Candidate has been {status} authorized to write {docket} in the following courses:\n";
 
                     PdfTextElement regElement = new PdfTextElement(regString, bodyFont);

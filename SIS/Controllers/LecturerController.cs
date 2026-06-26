@@ -67,10 +67,12 @@ namespace SIS.Controllers
 
             var activeYearPeriod = mostRecentAcademicYear != null
                 ? await _context.AcademicYearPeriods
+                    .Include(yp => yp.AcademicPeriod)
                     .Where(yp => yp.AcademicYearId == mostRecentAcademicYear.YearId && yp.IsActive)
                     .FirstOrDefaultAsync()
                 : null;
             int? currentYearPeriodId = activeYearPeriod?.Id;
+            var currentPeriodLabel = activeYearPeriod?.AcademicPeriod?.PeriodName ?? "Current Period";
 
             // Count pending assessments from StudentCourseResults (unpublished results)
             var pendingAssessments = 0;
@@ -198,7 +200,7 @@ namespace SIS.Controllers
                                 highestScores = highestScores,
                                 lowestScores = lowestScores,
                                 courseName = course.CourseName,
-                                semester = $"Semester {currentYearPeriodId}",
+                                semester = currentPeriodLabel,
                                 academicYear = mostRecentAcademicYear?.YearValue ?? "N/A"
                             };
                         }
@@ -303,7 +305,7 @@ namespace SIS.Controllers
             ViewBag.TotalStudents = totalStudents;
             ViewBag.PendingAssessments = pendingAssessments;
             ViewBag.GradingProgress = gradingProgress;
-            ViewBag.CurrentSemester = currentYearPeriodId;
+            ViewBag.CurrentPeriod = currentPeriodLabel;
             ViewBag.CurrentAcademicYear = mostRecentAcademicYear?.YearValue;
 
             ViewBag.GradeTrends = JsonConvert.SerializeObject(gradeTrends);

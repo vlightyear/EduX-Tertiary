@@ -34,6 +34,8 @@ namespace SIS.Controllers
             var student = await _context.Students
                 .Include(s => s.Programme)
                 .Include(s => s.AcademicYear)
+                .Include(s => s.CurrentYearPeriod)
+                    .ThenInclude(yp => yp.AcademicPeriod)
                 .FirstOrDefaultAsync(s => s.Email == user.Email || s.Username == user.UserName);
 
             if (student == null)
@@ -65,6 +67,8 @@ namespace SIS.Controllers
                 var appeals = await _context.ResultAppeals
                     .Include(a => a.Course)
                     .Include(a => a.AcademicYear)
+                    .Include(a => a.YearPeriod)
+                        .ThenInclude(yp => yp.AcademicPeriod)
                     .Where(a => a.StudentId == student.Id && a.DeletedAt == null)
                     .OrderByDescending(a => a.SubmissionDate)
                     .Select(a => new
@@ -75,6 +79,9 @@ namespace SIS.Controllers
                         CourseName = a.Course != null ? a.Course.CourseName : "N/A",
                         AcademicYear = a.AcademicYear != null ? a.AcademicYear.YearValue : "N/A",
                         a.YearPeriodId,
+                        PeriodLabel = a.YearPeriod != null && a.YearPeriod.AcademicPeriod != null
+                            ? a.YearPeriod.AcademicPeriod.PeriodName
+                            : null,
                         a.AppealType,
                         a.Reason,
                         a.Status,
@@ -433,6 +440,8 @@ namespace SIS.Controllers
                         .ThenInclude(s => s.Programme)
                     .Include(a => a.Course)
                     .Include(a => a.AcademicYear)
+                    .Include(a => a.YearPeriod)
+                        .ThenInclude(yp => yp.AcademicPeriod)
                     .Where(a => a.Id == id && a.DeletedAt == null)
                     .Select(a => new
                     {
@@ -448,6 +457,9 @@ namespace SIS.Controllers
                         a.AcademicYearId,
                         AcademicYear = a.AcademicYear != null ? a.AcademicYear.YearValue : "N/A",
                         a.YearPeriodId,
+                        PeriodLabel = a.YearPeriod != null && a.YearPeriod.AcademicPeriod != null
+                            ? a.YearPeriod.AcademicPeriod.PeriodName
+                            : null,
                         a.AppealType,
                         a.Reason,
                         a.SupportingDocuments,
@@ -916,6 +928,8 @@ namespace SIS.Controllers
         {
             var student = await _context.Students
                 .Include(s => s.AcademicYear)
+                .Include(s => s.CurrentYearPeriod)
+                    .ThenInclude(yp => yp.AcademicPeriod)
                 .FirstOrDefaultAsync(s => s.Id == studentId);
 
             ViewBag.AcademicYears = await _context.AcademicYears
@@ -928,6 +942,22 @@ namespace SIS.Controllers
                     Selected = student != null && ay.YearId == student.AcademicYearId
                 })
                 .ToListAsync();
+
+            ViewBag.YearPeriods = await _context.AcademicYearPeriods
+                .Include(yp => yp.AcademicYear)
+                .Include(yp => yp.AcademicPeriod)
+                .Where(yp => yp.IsActive && yp.AcademicYear != null && yp.AcademicPeriod != null)
+                .OrderByDescending(yp => yp.AcademicYear.YearValue)
+                .ThenBy(yp => yp.AcademicPeriod.PeriodNumber)
+                .Select(yp => new SelectListItem
+                {
+                    Value = yp.Id.ToString(),
+                    Text = yp.AcademicYear.YearValue + " - " + yp.AcademicPeriod.PeriodName,
+                    Selected = student != null && yp.Id == student.CurrentYearPeriodId
+                })
+                .ToListAsync();
+
+            ViewBag.CurrentPeriodLabel = student?.CurrentYearPeriod?.AcademicPeriod?.PeriodName ?? "N/A";
 
             ViewBag.AppealTypes = GetAppealTypes();
             ViewBag.RemarkFee = REMARK_FEE;

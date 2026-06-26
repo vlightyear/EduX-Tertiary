@@ -1075,7 +1075,12 @@ namespace SIS.Services.Reports
             {
                 AcademicYears = await _context.AcademicYears.AsNoTracking().Where(ay => ay.IsActive).OrderByDescending(ay => ay.YearValue).ToListAsync(),
                 Schools = await _context.Schools.AsNoTracking().OrderBy(s => s.Name).ToListAsync(),
-                ModesOfStudy = await _context.ModesOfStudy.AsNoTracking().OrderBy(m => m.ModeName).ToListAsync()
+                ModesOfStudy = await _context.ModesOfStudy.AsNoTracking().OrderBy(m => m.ModeName).ToListAsync(),
+                AcademicPeriods = await _context.AcademicPeriods.AsNoTracking()
+                    .Where(p => p.IsActive)
+                    .OrderBy(p => p.AcademicType)
+                    .ThenBy(p => p.PeriodNumber)
+                    .ToListAsync()
             };
         }
 

@@ -510,6 +510,18 @@ namespace SIS.Controllers.DataEntry
                     Text = s.ToString()
                 })
                 .ToList();
+
+            ViewBag.YearPeriods = await _context.AcademicYearPeriods
+                .Include(yp => yp.AcademicYear)
+                .Include(yp => yp.AcademicPeriod)
+                .OrderByDescending(yp => yp.AcademicYear.YearValue)
+                .ThenBy(yp => yp.AcademicPeriod.PeriodNumber)
+                .Select(yp => new SelectListItem
+                {
+                    Value = yp.Id.ToString(),
+                    Text = yp.AcademicYear.YearValue + " - " + yp.AcademicPeriod.PeriodName
+                })
+                .ToListAsync();
         }
 
         private async Task<string> GenerateInvoiceReferenceInternal()

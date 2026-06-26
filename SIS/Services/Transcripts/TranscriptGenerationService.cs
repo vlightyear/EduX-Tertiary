@@ -304,7 +304,7 @@ namespace SIS.Services.Transcripts
             double lineHeight = 15;
 
             // Year of study text
-            string yearOfStudyText = $"{GetOrdinal(student.StudentCurrentYear ?? 1)} YEAR/SEMESTER {semester}";
+            string yearOfStudyText = $"{GetOrdinal(student.StudentCurrentYear ?? 1)} YEAR/PERIOD {semester}";
 
             // Single column layout - plain text, no box
             graphics.DrawString("NAME", labelFont, new XSolidBrush(PrimaryColor), labelX, yPosition);

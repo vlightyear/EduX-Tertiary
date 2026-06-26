@@ -981,6 +981,33 @@ namespace SIS.Controllers
         }
 
         [HttpGet]
+        public async Task<IActionResult> GetYearPeriods()
+        {
+            try
+            {
+                var periods = await _context.AcademicYearPeriods
+                    .Include(yp => yp.AcademicYear)
+                    .Include(yp => yp.AcademicPeriod)
+                    .OrderByDescending(yp => yp.AcademicYear.YearValue)
+                    .ThenBy(yp => yp.AcademicPeriod.PeriodNumber)
+                    .Select(yp => new FilterOption
+                    {
+                        Id = yp.Id,
+                        Name = yp.AcademicYear.YearValue + " - " + yp.AcademicPeriod.PeriodName,
+                        Value = yp.Id.ToString()
+                    })
+                    .ToListAsync();
+
+                return Json(new { success = true, data = periods });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting academic year periods");
+                return Json(new { success = false, message = "Error loading academic periods" });
+            }
+        }
+
+        [HttpGet]
         public async Task<IActionResult> GetStudentAvailableCourses(int studentId)
         {
             try
