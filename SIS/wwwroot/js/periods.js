@@ -1,4 +1,4 @@
-﻿document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', function () {
     // Initialize variables and elements
     const searchInput = document.getElementById('searchInput');
     const filterStatus = document.getElementById('filterStatus');
@@ -325,7 +325,7 @@
             updatePeriodModal.classList.remove('hidden');
         } catch (error) {
             console.error('Error fetching period details:', error);
-            alert('Error loading period details. Please try again.');
+            window.showAppToast('Error loading period details. Please try again.');
         } finally {
             document.getElementById('loadingIndicator').style.display = 'none';
         }

@@ -1,4 +1,4 @@
-﻿document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', function () {
     // Initialize DataTable
     const dataTable = new simpleDatatables.DataTable("#schoolsTable", {
         perPage: 10,
@@ -273,7 +273,7 @@
 
             console.error('Error loading school:', error);
 
-            alert('Failed to load school data.');
+            window.showAppToast('Failed to load school data.');
         }
     };
 

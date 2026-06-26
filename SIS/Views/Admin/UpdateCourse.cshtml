@@ -1,4 +1,4 @@
-﻿@model SIS.Models.Admin.Course
+@model SIS.Models.Admin.Course
 @{
     ViewData["Title"] = "Update Course";
 }
@@ -25,7 +25,7 @@
                     <div asp-validation-summary="ModelOnly" class="text-red-500 mb-4"></div>
                     <input type="hidden" asp-for="Id" />
 
-                    <!-- ── Row 1: Basic Info + Academic Details ──────────────────────── -->
+                    <!-- -- Row 1: Basic Info + Academic Details ------------------------ -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
                         <!-- Basic Information -->
@@ -85,7 +85,7 @@
                                     <span asp-validation-for="YearTaken" class="text-sm text-red-600"></span>
                                 </div>
 
-                                <!-- Period Taken — driven by AcademicPeriods table.
+                                <!-- Period Taken � driven by AcademicPeriods table.
                                      The controller calls BuildAcademicPeriodSelectList(course.PeriodTakenId)
                                      so the correct option is pre-selected and periods are grouped by type. -->
                                 <div>
@@ -94,7 +94,7 @@
                                             asp-items="ViewBag.AcademicPeriods"
                                             id="periodTakenSelect"
                                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
-                                        <option value="">— select a period —</option>
+                                        <option value="">� select a period �</option>
                                     </select>
                                     <p class="text-xs text-gray-500 mt-1">
                                         <i class="material-icons text-xs align-middle">info</i>
@@ -106,7 +106,7 @@
                         </div>
                     </div>
 
-                    <!-- ── Row 2: Course Settings + Assessments ──────────────────────── -->
+                    <!-- -- Row 2: Course Settings + Assessments ------------------------ -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                         <!-- Settings -->
@@ -130,7 +130,7 @@
                             </div>
                         </div>
 
-                        <!-- Assessments — pre-selects existing course assessments -->
+                        <!-- Assessments � pre-selects existing course assessments -->
                         <div class="bg-white rounded-lg border border-gray-200 p-6">
                             <h2 class="text-lg font-semibold text-primary-800 flex items-center mb-4">
                                 <i class="material-icons mr-2">assignment</i>Assessments
@@ -204,7 +204,7 @@
                         </div>
                     </div>
 
-                    <!-- ── Timetabling Details ────────────────────────────────────────── -->
+                    <!-- -- Timetabling Details ------------------------------------------ -->
                     <div class="bg-white rounded-lg border border-gray-200 p-6">
                         <h2 class="text-lg font-semibold text-primary-800 flex items-center mb-4">
                             <i class="material-icons mr-2">schedule</i>Timetabling Details
@@ -264,10 +264,10 @@
                         </div>
                     </div>
 
-                    <!-- ── Lecturers + Prerequisites ──────────────────────────────────── -->
+                    <!-- -- Lecturers + Prerequisites ------------------------------------ -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                        <!-- Lecturers — pre-selects existing course lecturers -->
+                        <!-- Lecturers � pre-selects existing course lecturers -->
                         <div class="bg-white rounded-lg border border-gray-200 p-6">
                             <h2 class="text-lg font-semibold text-primary-800 flex items-center mb-4">
                                 <i class="material-icons mr-2">person</i>Course Lecturers
@@ -349,7 +349,7 @@
                             </div>
                         </div>
 
-                        <!-- Prerequisites — pre-selects courses stored in PrerequisiteCourseIds JSON -->
+                        <!-- Prerequisites � pre-selects courses stored in PrerequisiteCourseIds JSON -->
                         <div class="bg-white rounded-lg border border-gray-200 p-6">
                             <h2 class="text-lg font-semibold text-primary-800 flex items-center mb-4">
                                 <i class="material-icons mr-2">list</i>Prerequisites
@@ -452,10 +452,10 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
 
-        // ── Dynamic row management ────────────────────────────────────────────────
+        // -- Dynamic row management ------------------------------------------------
         // Shared helper for add/remove/select-all across all three row groups.
         // The "template" for new rows is always cloned from the first existing row,
-        // with its selects reset to blank — so new rows inherit the full option list.
+        // with its selects reset to blank � so new rows inherit the full option list.
         function setupRowManager(containerId, checkAllId, addBtnId, removeBtnId, rowClass, checkClass) {
             var container = document.getElementById(containerId);
             var checkAll  = document.getElementById(checkAllId);
@@ -479,11 +479,11 @@
                 removeBtn.addEventListener('click', function () {
                     var checked = container.querySelectorAll('.' + checkClass + ':checked');
                     if (!checked.length) {
-                        alert('Please select at least one row to remove.');
+                        window.showAppToast('Please select at least one row to remove.');
                         return;
                     }
                     if (container.querySelectorAll('.' + rowClass).length <= 1) {
-                        alert('You must keep at least one row.');
+                        window.showAppToast('You must keep at least one row.');
                         return;
                     }
                     checked.forEach(function (cb) { cb.closest('.' + rowClass).remove(); });
@@ -503,7 +503,7 @@
         setupRowManager('assessment-rows',   'assessment-check',   'add-assessment-btn',   'remove-assessment-btn',   'assessment-row',   'assessment-data-check');
         setupRowManager('prerequisite-rows', 'prerequisite-check', 'add-prerequisite-btn', 'remove-prerequisite-btn', 'prerequisite-row', 'prerequisite-data-check');
 
-        // ── Client-side submit guard ──────────────────────────────────────────────
+        // -- Client-side submit guard ----------------------------------------------
         var form = document.querySelector('form');
         if (form) {
             form.addEventListener('submit', function (e) {
@@ -532,14 +532,14 @@
                 var lecturerSelects = Array.from(this.querySelectorAll('select[name="LecturerIds"]'));
                 if (!lecturerSelects.some(function (s) { return s.value !== ''; })) {
                     valid = false;
-                    alert('Please select at least one lecturer for this course.');
+                    window.showAppToast('Please select at least one lecturer for this course.');
                 }
 
                 // Period required
                 var periodSelect = document.getElementById('periodTakenSelect');
                 if (!periodSelect || !periodSelect.value) {
                     valid = false;
-                    alert('Please select the period in which this course is taught.');
+                    window.showAppToast('Please select the period in which this course is taught.');
                 }
 
                 if (!valid) { e.preventDefault(); }

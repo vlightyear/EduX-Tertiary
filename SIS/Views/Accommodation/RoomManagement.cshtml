@@ -2843,7 +2843,11 @@
             if (!r) { showNotification('Resource not found','error'); return; }
             const otherIds = currentHostelRooms.filter(x => x.id !== currentRoomId).map(x => x.id);
             if (!otherIds.length) { showNotification('No other rooms to apply to','error'); return; }
-            if (!confirm(`Add "${r.name}" (Qty: ${r.quantity}) to all ${otherIds.length} other rooms?`)) return;
+            if (!await window.showAppConfirm(`Add "${r.name}" (Qty: ${r.quantity}) to all ${otherIds.length} other rooms?`, {
+                title: 'Apply Resource',
+                icon: 'question',
+                confirmButtonText: 'Apply'
+            })) return;
             const apply = await fetch('/Room/ApplyResourcesToRooms', { method:'POST', headers:{'Content-Type':'application/json','RequestVerificationToken':getAntiForgeryToken()}, body: JSON.stringify({ RoomIds: otherIds, Resources: [{ ResourceTypeId: r.resourceTypeId, Quantity: r.quantity, Status: r.status === 'Active' ? 1 : r.status === 'Inactive' ? 0 : 2 }] }) });
             if (apply.ok) { const result = await apply.json(); showNotification(`"${r.name}" added to ${result.roomsAffected} rooms!`,'success'); await loadRooms(currentHostelId); }
             else { showNotification(await apply.text() || 'Error applying resource','error'); }

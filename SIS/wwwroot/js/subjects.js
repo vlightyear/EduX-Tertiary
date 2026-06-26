@@ -1,4 +1,4 @@
-﻿document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', function () {
     // Modal elements
     const createSubjectModal = document.getElementById('createSubjectModal');
     const updateSubjectModal = document.getElementById('updateSubjectModal');
@@ -99,14 +99,14 @@
             // Validate single subject form
             if (!document.getElementById('subjectName').value ||
                 !document.getElementById('subjectCode').value) {
-                alert('Please fill in all required fields.');
+                window.showAppToast('Please fill in all required fields.');
                 return;
             }
         } else {
             // Validate file upload
             const fileInput = document.getElementById('fileUpload');
             if (!fileInput.files.length) {
-                alert('Please select a file to upload.');
+                window.showAppToast('Please select a file to upload.');
                 return;
             }
 
@@ -114,7 +114,7 @@
             const fileExt = fileName.split('.').pop().toLowerCase();
 
             if (!['csv', 'xlsx', 'xls'].includes(fileExt)) {
-                alert('Please upload a valid CSV or Excel file.');
+                window.showAppToast('Please upload a valid CSV or Excel file.');
                 return;
             }
         }

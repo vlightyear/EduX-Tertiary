@@ -1,4 +1,4 @@
-﻿document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', function () {
     // Initialize variables and elements
     const updateRoomModal = document.getElementById('updateRoomModal');
     const deleteRoomModal = document.getElementById('deleteRoomModal');
@@ -118,12 +118,16 @@
 
     // Handle bed space status toggle
     document.querySelectorAll('.bed-status-toggle').forEach(toggle => {
-        toggle.addEventListener('click', function () {
+        toggle.addEventListener('click', async function () {
             const bedId = this.getAttribute('data-bed-id');
             const currentStatus = this.getAttribute('data-current-status');
             // Show confirmation or directly perform action depending on requirements
             if (currentStatus === 'Occupied') {
-                if (confirm('This bed is currently occupied. Are you sure you want to change its status?')) {
+                if (await window.showAppConfirm('This bed is currently occupied. Are you sure you want to change its status?', {
+                    title: 'Change Bed Status',
+                    icon: 'warning',
+                    confirmButtonText: 'Change'
+                })) {
                     updateBedStatus(bedId);
                 }
             } else {
@@ -143,7 +147,7 @@
         //    if (data.success) {
         //      window.location.reload();
         //    } else {
-        //      alert('Failed to update bed status: ' + data.message);
+        //      window.showAppToast('Failed to update bed status: ' + data.message);
         //    }
         //  });
     }
@@ -208,7 +212,7 @@
             updateRoomModal.classList.remove('hidden');
         } catch (error) {
             console.error('Error fetching room data:', error);
-            alert(`Error loading room data: ${error.message}. Please try again.`);
+            window.showAppToast(`Error loading room data: ${error.message}. Please try again.`);
         } finally {
             // Hide loading indicator if it exists
             const loadingIndicator = document.getElementById('loadingIndicator');
@@ -266,7 +270,7 @@
             deleteRoomModal.classList.remove('hidden');
         } catch (error) {
             console.error('Error fetching room data:', error);
-            alert(`Error loading room data: ${error.message}. Please try again.`);
+            window.showAppToast(`Error loading room data: ${error.message}. Please try again.`);
         } finally {
             // Hide loading indicator if it exists
             const loadingIndicator = document.getElementById('loadingIndicator');

@@ -1,0 +1,296 @@
+@model IEnumerable<SIS.Models.Registration.AcademicPeriod>
+@using SIS.Models.Registration
+@using System.Text.Encodings.Web
+
+@{
+    ViewData["Title"] = "Academic Periods";
+    var periods = Model?.ToList() ?? new List<AcademicPeriod>();
+    var activeCount = periods.Count(p => p.IsActive);
+    var inactiveCount = periods.Count - activeCount;
+    var linkedCount = periods.Count(p => p.YearPeriods?.Any() == true);
+}
+
+<div class="min-h-[90vh] bg-slate-50 p-4">
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
+        <div>
+            <h1 class="text-2xl font-bold text-secondary-800 flex items-center">
+                <i class="material-icons mr-2 text-primary-600">event_repeat</i>
+                Academic Periods
+            </h1>
+            <p class="text-sm text-slate-500 mt-1">Manage reusable period templates used by academic years, courses, fees, and progression rules.</p>
+        </div>
+        <button type="button"
+                onclick="openCreateModal()"
+                class="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-900 transition-colors">
+            <i class="material-icons mr-2 text-sm">add</i>
+            Add Period
+        </button>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+        <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
+            <p class="text-xs uppercase tracking-wide text-slate-500">Total Periods</p>
+            <p class="text-2xl font-bold text-slate-800 mt-1">@periods.Count</p>
+        </div>
+        <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
+            <p class="text-xs uppercase tracking-wide text-slate-500">Active</p>
+            <p class="text-2xl font-bold text-green-700 mt-1">@activeCount</p>
+        </div>
+        <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
+            <p class="text-xs uppercase tracking-wide text-slate-500">Inactive</p>
+            <p class="text-2xl font-bold text-red-700 mt-1">@inactiveCount</p>
+        </div>
+        <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
+            <p class="text-xs uppercase tracking-wide text-slate-500">Linked To Years</p>
+            <p class="text-2xl font-bold text-primary-700 mt-1">@linkedCount</p>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="p-4 border-b border-slate-100">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">Search</label>
+                    <input type="text" id="periodSearch" placeholder="Search period name..."
+                           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">Academic Type</label>
+                    <select id="typeFilter" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                        <option value="">All Types</option>
+                        @foreach (var type in Enum.GetValues<AcademicType>())
+                        {
+                            <option value="@type">@type</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">Status</label>
+                    <select id="statusFilter" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                        <option value="">All Statuses</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-secondary-600">
+                <thead>
+                    <tr class="bg-slate-50 text-left border-b border-slate-200">
+                        <th class="px-4 py-3 font-semibold">#</th>
+                        <th class="px-4 py-3 font-semibold">Period Name</th>
+                        <th class="px-4 py-3 font-semibold">Academic Type</th>
+                        <th class="px-4 py-3 font-semibold">Order</th>
+                        <th class="px-4 py-3 font-semibold">Status</th>
+                        <th class="px-4 py-3 font-semibold">Usage</th>
+                        <th class="px-4 py-3 font-semibold text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="periodTableBody">
+                    @if (periods.Any())
+                    {
+                        var index = 1;
+                        foreach (var period in periods)
+                        {
+                            var usageCount = period.YearPeriods?.Count ?? 0;
+                            var typeClass = period.AcademicType switch
+                            {
+                                AcademicType.Annual => "bg-green-100 text-green-800",
+                                AcademicType.Term => "bg-purple-100 text-purple-800",
+                                _ => "bg-blue-100 text-blue-800"
+                            };
+
+                            <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors period-row"
+                                data-name="@period.PeriodName.ToLower()"
+                                data-type="@period.AcademicType"
+                                data-status="@(period.IsActive ? "active" : "inactive")">
+                                <td class="px-4 py-3 text-slate-500">@index</td>
+                                <td class="px-4 py-3">
+                                    <div class="font-semibold text-slate-800">@period.PeriodName</div>
+                                    <div class="text-xs text-slate-400">Template ID: @period.Id</div>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium @typeClass">
+                                        @period.AcademicType
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 text-slate-700 font-semibold">
+                                        @period.PeriodNumber
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3">
+                                    @if (period.IsActive)
+                                    {
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            <i class="material-icons text-sm mr-1">check_circle</i>Active
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                            <i class="material-icons text-sm mr-1">cancel</i>Inactive
+                                        </span>
+                                    }
+                                </td>
+                                <td class="px-4 py-3">
+                                    <span class="text-slate-700">@usageCount academic year link@(usageCount == 1 ? "" : "s")</span>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <div class="flex justify-end gap-2">
+                                        <button type="button"
+                                                class="p-2 rounded-lg text-primary-700 hover:bg-primary-50"
+                                                title="Edit period"
+                                                onclick="openEditModal(@period.Id, '@JavaScriptEncoder.Default.Encode(period.PeriodName)', @period.PeriodNumber, '@period.AcademicType', @period.IsActive.ToString().ToLower())">
+                                            <i class="material-icons text-lg">edit</i>
+                                        </button>
+                                        <form asp-action="DeleteAcademicPeriod" asp-controller="Admin" method="post"
+                                              data-confirm="Delete @period.PeriodName? This cannot be undone."
+                                              class="inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@period.Id" />
+                                            <button type="submit"
+                                                    class="p-2 rounded-lg text-red-700 hover:bg-red-50"
+                                                    title="Delete period">
+                                                <i class="material-icons text-lg">delete</i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            index++;
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7" class="px-4 py-12 text-center text-slate-500">
+                                <i class="material-icons text-4xl text-slate-300 mb-2">event_busy</i>
+                                <p>No academic periods have been configured.</p>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="periodModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-lg">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+            <h2 id="periodModalTitle" class="text-lg font-semibold text-slate-800">Add Academic Period</h2>
+            <button type="button" onclick="closePeriodModal()" class="text-slate-400 hover:text-slate-600">
+                <i class="material-icons">close</i>
+            </button>
+        </div>
+
+        <form id="periodForm" asp-controller="Admin" asp-action="CreateAcademicPeriod" method="post" class="p-6 space-y-4">
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="periodId" name="Id" value="0" />
+
+            <div>
+                <label for="periodName" class="block text-sm font-medium text-slate-700 mb-1">Period Name</label>
+                <input type="text" id="periodName" name="PeriodName" maxlength="50" required
+                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500"
+                       placeholder="e.g. Semester 1, Term 2, Year" />
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="academicType" class="block text-sm font-medium text-slate-700 mb-1">Academic Type</label>
+                    <select id="academicType" name="AcademicType" required
+                            class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                        @foreach (var type in Enum.GetValues<AcademicType>())
+                        {
+                            <option value="@type">@type</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label for="periodNumber" class="block text-sm font-medium text-slate-700 mb-1">Period Number</label>
+                    <input type="number" id="periodNumber" name="PeriodNumber" min="1" max="10" required
+                           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" />
+                </div>
+            </div>
+
+            <label class="flex items-center gap-2 text-sm text-slate-700">
+                <input type="checkbox" id="isActive" name="IsActive" value="true"
+                       class="rounded border-slate-300 text-primary-600 focus:ring-primary-500" checked />
+                Active
+            </label>
+            <input type="hidden" name="IsActive" value="false" />
+
+            <div class="flex justify-end gap-3 pt-2">
+                <button type="button" onclick="closePeriodModal()"
+                        class="px-4 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50">
+                    Cancel
+                </button>
+                <button type="submit"
+                        class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-900">
+                    Save Period
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const success = '@TempData["Success"]';
+            const error = '@TempData["Error"]';
+
+            if (success) window.showAppToast(success, 'success');
+            if (error) window.showAppToast(error, 'error');
+
+            ['periodSearch', 'typeFilter', 'statusFilter'].forEach(id => {
+                document.getElementById(id)?.addEventListener('input', filterPeriods);
+                document.getElementById(id)?.addEventListener('change', filterPeriods);
+            });
+        });
+
+        function openCreateModal() {
+            const form = document.getElementById('periodForm');
+            form.action = '@Url.Action("CreateAcademicPeriod", "Admin")';
+            document.getElementById('periodModalTitle').textContent = 'Add Academic Period';
+            document.getElementById('periodId').value = '0';
+            document.getElementById('periodName').value = '';
+            document.getElementById('periodNumber').value = '1';
+            document.getElementById('academicType').value = 'Semester';
+            document.getElementById('isActive').checked = true;
+            document.getElementById('periodModal').classList.remove('hidden');
+        }
+
+        function openEditModal(id, name, number, type, isActive) {
+            const form = document.getElementById('periodForm');
+            form.action = '@Url.Action("UpdateAcademicPeriod", "Admin")';
+            document.getElementById('periodModalTitle').textContent = 'Edit Academic Period';
+            document.getElementById('periodId').value = id;
+            document.getElementById('periodName').value = name;
+            document.getElementById('periodNumber').value = number;
+            document.getElementById('academicType').value = type;
+            document.getElementById('isActive').checked = isActive;
+            document.getElementById('periodModal').classList.remove('hidden');
+        }
+
+        function closePeriodModal() {
+            document.getElementById('periodModal').classList.add('hidden');
+        }
+
+        function filterPeriods() {
+            const search = (document.getElementById('periodSearch').value || '').toLowerCase();
+            const type = document.getElementById('typeFilter').value;
+            const status = document.getElementById('statusFilter').value;
+
+            document.querySelectorAll('.period-row').forEach(row => {
+                const matchesSearch = !search || row.dataset.name.includes(search);
+                const matchesType = !type || row.dataset.type === type;
+                const matchesStatus = !status || row.dataset.status === status;
+                row.style.display = matchesSearch && matchesType && matchesStatus ? '' : 'none';
+            });
+        }
+    </script>
+}

@@ -350,7 +350,11 @@
         // ✅ NEW: Confirm submission if photo has issues
         const passportPhotoValidation = document.getElementById('passport-photo-validation');
         if (passportPhotoValidation && passportPhotoValidation.textContent.includes('Photo Quality Issues')) {
-            if (!confirm('Your passport photo has quality issues. Your application may be delayed for review. Do you want to proceed anyway?')) {
+            if (!await window.showAppConfirm('Your passport photo has quality issues. Your application may be delayed for review. Do you want to proceed anyway?', {
+                title: 'Photo Quality Issues',
+                icon: 'warning',
+                confirmButtonText: 'Proceed'
+            })) {
                 return;
             }
         }

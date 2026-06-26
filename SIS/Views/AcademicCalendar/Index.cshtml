@@ -1509,14 +1509,18 @@
                 message += '?';
             }
             
-            // Confirm before updating
-            if (!confirm(message)) {
-                info.revert();
-                return;
-            }
-            
-            // Update event dates on the server
-            moveEvent(eventId, event.start, event.end, event.allDay);
+            window.showAppConfirm(message, {
+                title: 'Move Event',
+                icon: 'question',
+                confirmButtonText: 'Move'
+            }).then(confirmed => {
+                if (!confirmed) {
+                    info.revert();
+                    return;
+                }
+
+                moveEvent(eventId, event.start, event.end, event.allDay);
+            });
         }
         
         // Handle event resize
@@ -1539,14 +1543,18 @@
                 return;
             }
             
-            // Confirm the resize
-            if (!confirm('Resize this event?')) {
-                info.revert();
-                return;
-            }
-            
-            // Update event dates on the server
-            moveEvent(eventId, event.start, event.end, event.allDay);
+            window.showAppConfirm('Resize this event?', {
+                title: 'Resize Event',
+                icon: 'question',
+                confirmButtonText: 'Resize'
+            }).then(confirmed => {
+                if (!confirmed) {
+                    info.revert();
+                    return;
+                }
+
+                moveEvent(eventId, event.start, event.end, event.allDay);
+            });
         }
         
         // Move event on the server with improved data handling
@@ -2006,44 +2014,7 @@
 
         // Show toast notification with improved styling
         function showToast(message, type = 'success') {
-            const toast = document.getElementById('toastNotification');
-            const toastMessage = document.getElementById('toastMessage');
-            const toastIcon = document.getElementById('toastIcon');
-
-            // Set message
-            toastMessage.textContent = message;
-
-            // Set colors and icon based on type
-            if (type === 'error') {
-                toast.className = 'fixed bottom-4 right-4 max-w-xs shadow-xl rounded-lg z-50 error transform transition-transform duration-300 ease-in-out scale-100';
-                toastIcon.textContent = 'error';
-                toastIcon.className = 'material-icons text-red-600 mr-3';
-            } else if (type === 'info') {
-                toast.className = 'fixed bottom-4 right-4 max-w-xs shadow-xl rounded-lg z-50 info transform transition-transform duration-300 ease-in-out scale-100';
-                toastIcon.textContent = 'info';
-                toastIcon.className = 'material-icons text-blue-600 mr-3';
-            } else {
-                toast.className = 'fixed bottom-4 right-4 max-w-xs shadow-xl rounded-lg z-50 success transform transition-transform duration-300 ease-in-out scale-100';
-                toastIcon.textContent = 'check_circle';
-                toastIcon.className = 'material-icons text-green-600 mr-3';
-            }
-
-            // Show toast
-            toast.classList.remove('hidden');
-
-            // Animate in
-            setTimeout(() => {
-                toast.classList.add('transform', 'scale-105');
-                setTimeout(() => {
-                    toast.classList.remove('scale-105');
-                    toast.classList.add('scale-100');
-                }, 100);
-            }, 10);
-
-            // Hide after 5 seconds
-            setTimeout(() => {
-                hideToast();
-            }, 5000);
+            window.showAppToast(message, type);
         }
 
         // Hide toast with animation

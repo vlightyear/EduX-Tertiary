@@ -1,4 +1,4 @@
-﻿document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', function () {
     // Modal elements
     const createDepartmentModal = document.getElementById('createDepartmentModal');
     const updateDepartmentModal = document.getElementById('updateDepartmentModal');
@@ -55,7 +55,7 @@
             const response = await fetch(`/Admin/GetDepartment/${id}`);
             if (!response.ok) {
                 console.error('Error:', response.statusText);
-                alert('Error fetching department details');
+                window.showAppToast('Error fetching department details');
                 return;
             }
             const department = await response.json();
@@ -70,7 +70,7 @@
             showModal(updateDepartmentModal);
         } catch (error) {
             console.error('Error:', error);
-            alert('Error fetching department details');
+            window.showAppToast('Error fetching department details');
         }
     };
 

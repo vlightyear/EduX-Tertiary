@@ -1,4 +1,4 @@
-﻿document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', function () {
     // Modal elements
     const createGradeConfigModal = document.getElementById('createGradeConfigModal');
     const updateGradeConfigModal = document.getElementById('updateGradeConfigModal');
@@ -67,7 +67,7 @@
             showModal(updateGradeConfigModal);
         } catch (error) {
             console.error('Error:', error);
-            alert('Error fetching grade configuration details');
+            window.showAppToast('Error fetching grade configuration details');
         }
     };
 
@@ -85,7 +85,7 @@
             const maxScore = parseFloat(document.getElementById('maxScore').value);
 
             if (minScore >= maxScore) {
-                alert('Minimum score must be less than maximum score');
+                window.showAppToast('Minimum score must be less than maximum score');
                 return;
             }
 
@@ -101,7 +101,7 @@
             const maxScore = parseFloat(document.getElementById('updateMaxScore').value);
 
             if (minScore >= maxScore) {
-                alert('Minimum score must be less than maximum score');
+                window.showAppToast('Minimum score must be less than maximum score');
                 return;
             }
 

@@ -1301,7 +1301,11 @@
 
         /* ── Cancel appeal ── */
         async function cancelAppeal(id) {
-            if (!confirm('Are you sure you want to cancel this appeal?')) return;
+            if (!await window.showAppConfirm('Are you sure you want to cancel this appeal?', {
+                title: 'Cancel Appeal',
+                icon: 'warning',
+                confirmButtonText: 'Cancel Appeal'
+            })) return;
             showLoading(true);
             try {
                 const fd = new FormData();
@@ -1332,19 +1336,8 @@
             document.getElementById('loadingIndicator').style.display = v ? 'flex' : 'none';
         }
 
-        let _toastTimer;
         function showToast(msg, type = 'success') {
-            let t = document.getElementById('globalToast');
-            if (!t) {
-                t = document.createElement('div');
-                t.id = 'globalToast';
-                document.body.appendChild(t);
-            }
-            t.className = `toast toast-${type}`;
-            t.innerHTML = `<i class="material-icons">${type === 'success' ? 'check_circle' : 'error'}</i><span>${msg}</span>`;
-            requestAnimationFrame(() => t.classList.add('show'));
-            clearTimeout(_toastTimer);
-            _toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
+            window.showAppToast(msg, type);
         }
 
         document.addEventListener('keydown', e => {

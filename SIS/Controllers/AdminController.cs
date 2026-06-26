@@ -4897,6 +4897,145 @@ private (bool IsValid, string ErrorMessage) ValidateFeeConfiguration(FeeConfigur
         }
 
 
+        // GET: Admin/AcademicPeriods
+        [Authorize(Roles = "Admin, Registrar")]
+        public async Task<IActionResult> AcademicPeriods()
+        {
+            var periods = await _context.AcademicPeriods
+                .Include(p => p.YearPeriods)
+                .OrderBy(p => p.AcademicType)
+                .ThenBy(p => p.PeriodNumber)
+                .ThenBy(p => p.PeriodName)
+                .ToListAsync();
+
+            return View(periods);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin, Registrar")]
+        public async Task<IActionResult> CreateAcademicPeriod(AcademicPeriod model)
+        {
+            if (!ModelState.IsValid)
+            {
+                TempData["Error"] = "Please complete all required academic period fields.";
+                return RedirectToAction(nameof(AcademicPeriods));
+            }
+
+            var name = model.PeriodName.Trim();
+            var exists = await _context.AcademicPeriods.AnyAsync(p =>
+                p.AcademicType == model.AcademicType &&
+                p.PeriodName.ToLower() == name.ToLower());
+
+            if (exists)
+            {
+                TempData["Error"] = $"{name} already exists for {model.AcademicType}.";
+                return RedirectToAction(nameof(AcademicPeriods));
+            }
+
+            var numberExists = await _context.AcademicPeriods.AnyAsync(p =>
+                p.AcademicType == model.AcademicType &&
+                p.PeriodNumber == model.PeriodNumber);
+
+            if (numberExists)
+            {
+                TempData["Error"] = $"Period number {model.PeriodNumber} is already used for {model.AcademicType}.";
+                return RedirectToAction(nameof(AcademicPeriods));
+            }
+
+            model.PeriodName = name;
+            _context.AcademicPeriods.Add(model);
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = $"{model.PeriodName} created successfully.";
+            return RedirectToAction(nameof(AcademicPeriods));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin, Registrar")]
+        public async Task<IActionResult> UpdateAcademicPeriod(AcademicPeriod model)
+        {
+            if (!ModelState.IsValid)
+            {
+                TempData["Error"] = "Please complete all required academic period fields.";
+                return RedirectToAction(nameof(AcademicPeriods));
+            }
+
+            var period = await _context.AcademicPeriods.FindAsync(model.Id);
+            if (period == null)
+            {
+                TempData["Error"] = "Academic period not found.";
+                return RedirectToAction(nameof(AcademicPeriods));
+            }
+
+            var name = model.PeriodName.Trim();
+            var duplicateName = await _context.AcademicPeriods.AnyAsync(p =>
+                p.Id != model.Id &&
+                p.AcademicType == model.AcademicType &&
+                p.PeriodName.ToLower() == name.ToLower());
+
+            if (duplicateName)
+            {
+                TempData["Error"] = $"{name} already exists for {model.AcademicType}.";
+                return RedirectToAction(nameof(AcademicPeriods));
+            }
+
+            var duplicateNumber = await _context.AcademicPeriods.AnyAsync(p =>
+                p.Id != model.Id &&
+                p.AcademicType == model.AcademicType &&
+                p.PeriodNumber == model.PeriodNumber);
+
+            if (duplicateNumber)
+            {
+                TempData["Error"] = $"Period number {model.PeriodNumber} is already used for {model.AcademicType}.";
+                return RedirectToAction(nameof(AcademicPeriods));
+            }
+
+            period.PeriodName = name;
+            period.PeriodNumber = model.PeriodNumber;
+            period.AcademicType = model.AcademicType;
+            period.IsActive = model.IsActive;
+
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = $"{period.PeriodName} updated successfully.";
+            return RedirectToAction(nameof(AcademicPeriods));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin, Registrar")]
+        public async Task<IActionResult> DeleteAcademicPeriod(int id)
+        {
+            var period = await _context.AcademicPeriods
+                .Include(p => p.YearPeriods)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (period == null)
+            {
+                TempData["Error"] = "Academic period not found.";
+                return RedirectToAction(nameof(AcademicPeriods));
+            }
+
+            var isLinked = period.YearPeriods.Any()
+                || await _context.Courses.AnyAsync(c => c.PeriodTakenId == id)
+                || await _context.BedSpaces.AnyAsync(b => b.AcademicPeriodId == id)
+                || await _context.ProgressionRules.AnyAsync(r => r.AcademicPeriodId == id);
+
+            if (isLinked)
+            {
+                TempData["Error"] = $"{period.PeriodName} is already in use. Deactivate it instead of deleting it.";
+                return RedirectToAction(nameof(AcademicPeriods));
+            }
+
+            _context.AcademicPeriods.Remove(period);
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = $"{period.PeriodName} deleted successfully.";
+            return RedirectToAction(nameof(AcademicPeriods));
+        }
+
         // GET: Admin/AcademicYears
         [Authorize(Roles = "Admin, Registrar")]
         public async Task<IActionResult> AcademicYear()

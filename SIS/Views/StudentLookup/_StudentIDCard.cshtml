@@ -1,4 +1,4 @@
-﻿@model SIS.Models.ViewModels.StudentPhotoViewModel
+@model SIS.Models.ViewModels.StudentPhotoViewModel
 
 @{
     var photoUrl = Model.HasExistingPhoto
@@ -163,7 +163,7 @@
 
 <script>
     (function() {
-        console.log('🎬 ID tab script STARTED executing...');
+        console.log('?? ID tab script STARTED executing...');
         console.log('Current timestamp:', new Date().toISOString());
         console.log('Document readyState:', document.readyState);
 
@@ -183,13 +183,13 @@
                 streams: {},
                 capturedImages: {}
             };
-            console.log('✅ Created window.studentPhotoState');
+            console.log('? Created window.studentPhotoState');
         }
 
         // Add a test click listener first
         console.log('Adding test click listener to document...');
         document.addEventListener('click', function(e) {
-            console.log('🖱️ DOCUMENT CLICKED!', e.target);
+            console.log('??? DOCUMENT CLICKED!', e.target);
             console.log('Target tagName:', e.target.tagName);
             console.log('Target classes:', e.target.className);
             console.log('Target data-action:', e.target.dataset?.action);
@@ -209,7 +209,7 @@
             const action = button.dataset.action;
             const studentId = button.dataset.studentId;
 
-            console.log('🎯 Button clicked:', action, 'for student:', studentId);
+            console.log('?? Button clicked:', action, 'for student:', studentId);
 
             if (!studentId) {
                 console.error('No studentId found on button');
@@ -237,7 +237,7 @@
 
         // Handler functions
         async function handleStartCamera(studentId) {
-            console.log('🎥 Starting camera for student:', studentId);
+            console.log('?? Starting camera for student:', studentId);
 
             const video = document.getElementById(`cameraVideo_${studentId}`);
             const errorDiv = document.getElementById(`cameraError_${studentId}`);
@@ -249,19 +249,19 @@
             const cameraControls = document.getElementById(`cameraControls_${studentId}`);
 
             if (!video) {
-                console.error('❌ Video element not found');
-                alert('Error: Video element not found');
+                console.error('? Video element not found');
+                window.showAppToast('Error: Video element not found');
                 return;
             }
 
             if (!navigator.mediaDevices?.getUserMedia) {
-                console.error('❌ Camera API not supported');
-                alert('Camera API is not supported in your browser');
+                console.error('? Camera API not supported');
+                window.showAppToast('Camera API is not supported in your browser');
                 return;
             }
 
             try {
-                console.log('📷 Requesting camera permissions...');
+                console.log('?? Requesting camera permissions...');
 
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: {
@@ -272,15 +272,15 @@
                     audio: false
                 });
 
-                console.log('✅ Camera access granted!');
+                console.log('? Camera access granted!');
 
                 window.studentPhotoState.streams[studentId] = stream;
                 video.srcObject = stream;
 
                 video.onloadedmetadata = () => {
-                    console.log('📹 Video metadata loaded');
+                    console.log('?? Video metadata loaded');
                     video.play().then(() => {
-                        console.log('▶️ Video playing');
+                        console.log('?? Video playing');
 
                         startBtn.style.display = 'none';
                         if (cameraControls) cameraControls.style.display = 'flex';
@@ -288,13 +288,13 @@
 
                         showToast('Camera started successfully', 'success');
                     }).catch(err => {
-                        console.error('❌ Error playing video:', err);
-                        alert('Error playing video: ' + err.message);
+                        console.error('? Error playing video:', err);
+                        window.showAppToast('Error playing video: ' + err.message);
                     });
                 };
 
             } catch (error) {
-                console.error('❌ Camera error:', error.name, error.message);
+                console.error('? Camera error:', error.name, error.message);
 
                 errorDiv.classList.remove('hidden');
                 video.classList.add('hidden');
@@ -315,7 +315,7 @@
         }
 
         function handleStopCamera(studentId) {
-            console.log('⏹️ Stopping camera for student:', studentId);
+            console.log('?? Stopping camera for student:', studentId);
 
             const stream = window.studentPhotoState.streams[studentId];
             const video = document.getElementById(`cameraVideo_${studentId}`);
@@ -337,7 +337,7 @@
         }
 
         function handleCapturePhoto(studentId) {
-            console.log('📸 Capturing photo for student:', studentId);
+            console.log('?? Capturing photo for student:', studentId);
 
             const video = document.getElementById(`cameraVideo_${studentId}`);
             const canvas = document.getElementById(`photoCanvas_${studentId}`);
@@ -345,7 +345,7 @@
             const captureBtn = document.getElementById(`capturePhotoBtn_${studentId}`);
 
             if (!window.studentPhotoState.streams[studentId]) {
-                alert('Please start the camera first');
+                window.showAppToast('Please start the camera first');
                 return;
             }
 
@@ -358,7 +358,7 @@
             console.log('Video dimensions:', videoWidth, 'x', videoHeight);
 
             if (videoWidth === 0 || videoHeight === 0) {
-                alert('Camera not ready. Please wait.');
+                window.showAppToast('Camera not ready. Please wait.');
                 return;
             }
 
@@ -394,11 +394,11 @@
         }
 
         async function handleSavePhoto(studentId, studentNumber) {
-            console.log('💾 Saving photo for student:', studentId);
+            console.log('?? Saving photo for student:', studentId);
 
             const imageData = window.studentPhotoState.capturedImages[studentId];
             if (!imageData) {
-                alert('Please capture a photo first');
+                window.showAppToast('Please capture a photo first');
                 return;
             }
 
@@ -445,11 +445,11 @@
                         }
                     }, 1500);
                 } else {
-                    alert('Failed to save: ' + (result.message || 'Unknown error'));
+                    window.showAppToast('Failed to save: ' + (result.message || 'Unknown error'));
                 }
             } catch (error) {
-                console.error('❌ Save error:', error);
-                alert('Error saving photo: ' + error.message);
+                console.error('? Save error:', error);
+                window.showAppToast('Error saving photo: ' + error.message);
             } finally {
                 saveBtn.disabled = false;
                 saveBtn.innerHTML = originalContent;
@@ -457,7 +457,11 @@
         }
 
         async function handleDeletePhoto(studentId) {
-            if (!confirm('Are you sure you want to delete this photo?')) return;
+            if (!await window.showAppConfirm('Are you sure you want to delete this photo?', {
+                title: 'Delete Photo',
+                icon: 'warning',
+                confirmButtonText: 'Delete'
+            })) return;
 
             try {
                 const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
@@ -481,31 +485,27 @@
                         }
                     }, 1500);
                 } else {
-                    alert('Failed to delete: ' + (result.message || 'Unknown error'));
+                    window.showAppToast('Failed to delete: ' + (result.message || 'Unknown error'));
                 }
             } catch (error) {
-                console.error('❌ Delete error:', error);
-                alert('Error deleting photo: ' + error.message);
+                console.error('? Delete error:', error);
+                window.showAppToast('Error deleting photo: ' + error.message);
             }
         }
 
         function showToast(message, type) {
-            if (typeof window.showToast === 'function') {
-                window.showToast(message, type);
-            } else {
-                console.log(`[${type}] ${message}`);
-            }
+            window.showAppToast(message, type || 'info');
         }
 
-        console.log('✅ Photo tab script loaded with event delegation');
+        console.log('? Photo tab script loaded with event delegation');
 
         // Try to manually attach to button as backup
         setTimeout(() => {
             const startBtn = document.querySelector('[data-action="start-camera"]');
             if (startBtn) {
-                console.log('🎯 Found start button, adding direct onclick...');
+                console.log('?? Found start button, adding direct onclick...');
                 startBtn.onclick = function(e) {
-                    console.log('🚀 DIRECT ONCLICK FIRED!');
+                    console.log('?? DIRECT ONCLICK FIRED!');
                     e.preventDefault();
                     e.stopPropagation();
                     const studentId = this.dataset.studentId;
@@ -513,7 +513,7 @@
                     handleStartCamera(studentId);
                 };
             } else {
-                console.error('❌ Could not find start camera button');
+                console.error('? Could not find start camera button');
             }
         }, 200);
     })();

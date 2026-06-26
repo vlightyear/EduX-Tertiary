@@ -1,4 +1,4 @@
-﻿document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', function () {
     // Initialize variables and elements
     const searchInput = document.getElementById('searchInput');
     const filterUsage = document.getElementById('filterUsage');
@@ -239,7 +239,7 @@
             updateResourceTypeModal.classList.remove('hidden');
         } catch (error) {
             console.error('Error fetching resource type details:', error);
-            alert('Error loading resource type details. Please try again.');
+            window.showAppToast('Error loading resource type details. Please try again.');
         } finally {
             document.getElementById('loadingIndicator').style.display = 'none';
         }
@@ -282,7 +282,7 @@
         for (let i = 0; i < rows.length; i++) {
             const existingName = rows[i].children[1].textContent.trim();
             if (existingName.toLowerCase() === name.toLowerCase()) {
-                alert(`Resource type "${name}" already exists.`);
+                window.showAppToast(`Resource type "${name}" already exists.`);
                 return;
             }
         }

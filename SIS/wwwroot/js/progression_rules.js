@@ -1,4 +1,4 @@
-﻿document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', function () {
     // Modal elements
     const createProgressionRuleModal = document.getElementById('createProgressionRuleModal');
     const updateProgressionRuleModal = document.getElementById('updateProgressionRuleModal');
@@ -119,7 +119,7 @@
             showModal(updateProgressionRuleModal);
         } catch (error) {
             console.error('Error fetching progression rule:', error);
-            alert('Error loading rule data. Please try again.');
+            window.showAppToast('Error loading rule data. Please try again.');
         }
     };
 

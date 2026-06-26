@@ -1,4 +1,4 @@
-﻿@model CreateTemplateRequest
+@model CreateTemplateRequest
 
 @{
     ViewData["Title"] = "Create Workflow Template";
@@ -312,14 +312,20 @@
         }
 
         function removeStage(button) {
-            if (confirm('Are you sure you want to remove this stage?')) {
+            window.showAppConfirm('Are you sure you want to remove this stage?', {
+                title: 'Remove Stage',
+                icon: 'warning',
+                confirmButtonText: 'Remove'
+            }).then(confirmed => {
+                if (!confirmed) return;
+
                 button.closest('.stage-item').remove();
                 reorderStages();
 
                 if (document.querySelectorAll('.stage-item').length === 0) {
                     document.getElementById('noStagesMessage').style.display = 'block';
                 }
-            }
+            });
         }
 
         function reorderStages() {
@@ -348,7 +354,7 @@
         function previewTemplate() {
             const stages = document.querySelectorAll('.stage-item');
             if (stages.length === 0) {
-                alert('Please add at least one stage before previewing.');
+                window.showAppToast('Please add at least one stage before previewing.');
                 return;
             }
 
@@ -362,16 +368,22 @@
                 preview += `Stage ${index + 1}: ${stageName}\n`;
             });
 
-            alert(preview);
+            window.showAppToast(preview);
         }
 
         function resetForm() {
-            if (confirm('Are you sure you want to reset the form? All data will be lost.')) {
+            window.showAppConfirm('Are you sure you want to reset the form? All data will be lost.', {
+                title: 'Reset Form',
+                icon: 'warning',
+                confirmButtonText: 'Reset'
+            }).then(confirmed => {
+                if (!confirmed) return;
+
                 document.getElementById('templateForm').reset();
                 document.getElementById('stagesContainer').innerHTML = '';
                 document.getElementById('noStagesMessage').style.display = 'block';
                 stageCount = 0;
-            }
+            });
         }
 
         // Form validation
@@ -380,7 +392,7 @@
 
             if (stages.length === 0) {
                 e.preventDefault();
-                alert('Please add at least one workflow stage.');
+                window.showAppToast('Please add at least one workflow stage.');
                 return false;
             }
 
@@ -393,7 +405,7 @@
 
                 if (!propertyPath && !role && !userId) {
                     isValid = false;
-                    alert(`Stage ${index + 1} must have at least one approver resolution method (Property Path, Role, or User ID).`);
+                    window.showAppToast(`Stage ${index + 1} must have at least one approver resolution method (Property Path, Role, or User ID).`);
                 }
             });
 

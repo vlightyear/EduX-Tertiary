@@ -1,4 +1,4 @@
-﻿document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', function () {
     // Room search and filtering
     const roomSearchInput = document.getElementById('roomSearchInput');
     const roomTypeFilter = document.getElementById('roomTypeFilter');
@@ -434,7 +434,7 @@
             document.getElementById('updateRoomModal').classList.remove('hidden');
         } catch (error) {
             console.error('Error fetching room data:', error);
-            alert(`Error loading room data: ${error.message}. Please try again.`);
+            window.showAppToast(`Error loading room data: ${error.message}. Please try again.`);
         } finally {
             // Hide loading indicator if it exists
             const loadingIndicator = document.getElementById('loadingIndicator');
@@ -491,7 +491,7 @@
             document.getElementById('deleteRoomModal').classList.remove('hidden');
         } catch (error) {
             console.error('Error fetching room data:', error);
-            alert('Error loading room data. Please try again.');
+            window.showAppToast('Error loading room data. Please try again.');
         } finally {
             document.getElementById('loadingIndicator').style.display = 'none';
         }

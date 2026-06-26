@@ -1,4 +1,4 @@
-﻿document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', function () {
     // Initialize variables and elements
     const searchInput = document.getElementById('searchInput');
     const filterCampus = document.getElementById('filterCampus');
@@ -368,7 +368,7 @@
             })
             .catch(error => {
                 console.error('Error fetching hostel data:', error);
-                alert('Error loading hostel data. Please try again.');
+                window.showAppToast('Error loading hostel data. Please try again.');
             })
             .finally(() => {
                 document.getElementById('loadingIndicator').style.display = 'none';

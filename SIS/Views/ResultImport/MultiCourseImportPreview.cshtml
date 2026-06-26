@@ -1,4 +1,4 @@
-﻿@model SIS.Models.Results.MultiCourseResultImportPreviewResult
+@model SIS.Models.Results.MultiCourseResultImportPreviewResult
 
 @{
     ViewData["Title"] = "Preview Import Results";
@@ -276,7 +276,7 @@
         console.log('Preview Key loaded:', '@ViewBag.PreviewKey');
 
         // Validate preview key before submission
-        document.getElementById('processImportForm')?.addEventListener('submit', function(e) {
+        document.getElementById('processImportForm')?.addEventListener('submit', async function(e) {
             const previewKeyInput = document.querySelector('input[name="previewKey"]');
             const previewKey = previewKeyInput?.value;
 
@@ -284,7 +284,7 @@
 
             if (!previewKey || previewKey === '') {
                 e.preventDefault();
-                alert('ERROR: Preview key is missing. Please refresh the page and try again.');
+                window.showAppToast('ERROR: Preview key is missing. Please refresh the page and try again.');
                 return false;
             }
 
@@ -302,7 +302,11 @@
 
             message += '\n\nThis action cannot be undone. Continue?';
 
-            if (confirm(message)) {
+            if (await window.showAppConfirm(message, {
+                title: 'Import Results',
+                icon: 'warning',
+                confirmButtonText: 'Import'
+            })) {
                 const btn = document.getElementById('btnProcessImport');
                 btn.innerHTML = '<i class="material-icons animate-spin mr-2">sync</i> Processing Import...';
                 btn.disabled = true;

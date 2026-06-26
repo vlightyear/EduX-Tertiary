@@ -394,7 +394,11 @@
         }
 
         async function toggleService(enable) {
-            if (!confirm(`Are you sure you want to ${enable ? 'enable' : 'disable'} the background service? Application restart will be required.`)) {
+            if (!await window.showAppConfirm(`Are you sure you want to ${enable ? 'enable' : 'disable'} the background service? Application restart will be required.`, {
+                title: `${enable ? 'Enable' : 'Disable'} Background Service`,
+                icon: 'warning',
+                confirmButtonText: enable ? 'Enable' : 'Disable'
+            })) {
                 document.getElementById('serviceToggle').checked = !enable;
                 return;
             }
@@ -412,18 +416,22 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert(result.message);
+                    window.showAppToast(result.message);
                     if (result.requiresRestart) {
-                        if (confirm('Settings saved. Would you like to refresh the page?')) {
+                        if (await window.showAppConfirm('Settings saved. Would you like to refresh the page?', {
+                            title: 'Refresh Page',
+                            icon: 'question',
+                            confirmButtonText: 'Refresh'
+                        })) {
                             location.reload();
                         }
                     }
                 } else {
-                    alert('Error: ' + result.message);
+                    window.showAppToast('Error: ' + result.message);
                     document.getElementById('serviceToggle').checked = !enable;
                 }
             } catch (error) {
-                alert('Error: ' + error.message);
+                window.showAppToast('Error: ' + error.message);
                 document.getElementById('serviceToggle').checked = !enable;
             } finally {
                 hideLoading();
@@ -438,22 +446,22 @@
             const defaultGLAccount = document.getElementById('defaultGLAccount').value.trim();
 
             if (batchSize < 10 || batchSize > 100) {
-                alert('Batch size must be between 10 and 100');
+                window.showAppToast('Batch size must be between 10 and 100');
                 return;
             }
 
             if (!baseUrl) {
-                alert('Base URL is required');
+                window.showAppToast('Base URL is required');
                 return;
             }
 
             if (!paymentGLAccount) {
-                alert('Payment GL Account is required');
+                window.showAppToast('Payment GL Account is required');
                 return;
             }
 
             if (!defaultGLAccount) {
-                alert('Default GL Account is required');
+                window.showAppToast('Default GL Account is required');
                 return;
             }
 
@@ -472,7 +480,7 @@
                 const toggleResult = await toggleResponse.json();
                 
                 if (!toggleResult.success) {
-                    alert('Error updating service status: ' + toggleResult.message);
+                    window.showAppToast('Error updating service status: ' + toggleResult.message);
                     hideLoading();
                     return;
                 }
@@ -498,13 +506,13 @@
                 
                 if (result.success) {
                     closeSettings();
-                    alert(result.message);
+                    window.showAppToast(result.message);
                     location.reload();
                 } else {
-                    alert('Error: ' + result.message);
+                    window.showAppToast('Error: ' + result.message);
                 }
             } catch (error) {
-                alert('Error: ' + error.message);
+                window.showAppToast('Error: ' + error.message);
             } finally {
                 hideLoading();
             }

@@ -1,4 +1,4 @@
-ï»¿@model List<PendingApprovalDto>
+@model List<PendingApprovalDto>
 
 @{
     ViewData["Title"] = "Pending Approvals";
@@ -611,7 +611,7 @@
         function submitApprove() {
             const checkbox = document.getElementById('approveConfirm');
             if (!checkbox.checked) {
-                alert('Please confirm that you have reviewed the submission before approving.');
+                window.showAppToast('Please confirm that you have reviewed the submission before approving.');
                 return;
             }
             document.getElementById('approveForm').submit();
@@ -637,21 +637,21 @@
             const comments = form.querySelector('[name="comments"]').value;
 
             if (comments.length < 20) {
-                alert('Please provide a detailed reason for rejection (at least 20 characters)');
+                window.showAppToast('Please provide a detailed reason for rejection (at least 20 characters)');
                 return;
             }
 
-            if (confirm('Are you sure you want to reject this submission? This action cannot be undone.')) {
-                form.submit();
-            }
+            window.showAppConfirm('Are you sure you want to reject this submission? This action cannot be undone.', { title: 'Reject Submission', icon: 'warning', confirmButtonText: 'Reject' }).then(confirmed => {
+                if (confirmed) form.submit();
+            });
         }
 
         function addRejectionReason(reason) {
             const textarea = document.getElementById('rejectComments');
             if (textarea.value) {
-                textarea.value += '\nâ€¢ ' + reason;
+                textarea.value += '\n• ' + reason;
             } else {
-                textarea.value = 'â€¢ ' + reason;
+                textarea.value = '• ' + reason;
             }
             updateCharCount();
         }
@@ -697,7 +697,7 @@
             const comments = form.querySelector('[name="comments"]').value;
 
             if (comments.length < 10) {
-                alert('Please provide detailed information about required changes (at least 10 characters)');
+                window.showAppToast('Please provide detailed information about required changes (at least 10 characters)');
                 return;
             }
 
@@ -721,7 +721,7 @@
             if (form.checkValidity()) {
                 form.submit();
             } else {
-                alert('Please fill in all required fields');
+                window.showAppToast('Please fill in all required fields');
             }
         }
 
@@ -885,7 +885,7 @@
                 }
             } catch (error) {
                 console.error('Error loading grading overview:', error);
-                alert('Failed to load grading overview. Please try again.');
+                window.showAppToast('Failed to load grading overview. Please try again.');
                 hideGradingOverviewModal();
             } finally {
                 loadingDiv.classList.add('hidden');
@@ -975,13 +975,13 @@
 
         function exportGradingOverview() {
             if (!currentGradingOverviewData) {
-                alert('No data to export');
+                window.showAppToast('No data to export');
                 return;
             }
 
             const table = document.querySelector('#gradingOverviewContent table');
             if (!table) {
-                alert('No data to export');
+                window.showAppToast('No data to export');
                 return;
             }
 

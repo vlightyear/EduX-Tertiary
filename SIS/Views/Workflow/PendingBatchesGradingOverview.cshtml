@@ -1,4 +1,4 @@
-﻿@model List<WorkflowController.PendingProgrammeGradingOverviewDto>
+@model List<WorkflowController.PendingProgrammeGradingOverviewDto>
 
 @{
     ViewData["Title"] = "Pending Batches - Grading Overview";
@@ -310,7 +310,7 @@
                 }
             } catch (error) {
                 console.error('Error loading programme grading:', error);
-                alert('Failed to load grading data. Please try again.');
+                window.showAppToast('Failed to load grading data. Please try again.');
                 coursesList.classList.remove('hidden');
             } finally {
                 loadingDiv.classList.add('hidden');
@@ -404,7 +404,7 @@
         function exportProgrammeGrading(compositeId, programmeName, programmeCode, yearOfStudy, semester) {
             const data = loadedProgrammeData[compositeId];
             if (!data) {
-                alert('Please load the grading data first');
+                window.showAppToast('Please load the grading data first');
                 return;
             }
 
@@ -547,7 +547,7 @@
             const compositeIds = Object.keys(loadedProgrammeData);
 
             if (compositeIds.length === 0) {
-                alert('Please load at least one programme\'s grading data before exporting');
+                window.showAppToast('Please load at least one programme\'s grading data before exporting');
                 return;
             }
 
@@ -707,19 +707,7 @@
         }
 
         function showToast(message, type = 'success') {
-            const bgColor = type === 'success' ? 'bg-green-600' : 'bg-red-600';
-            const icon = type === 'success' ? 'check_circle' : 'error';
-
-            const toast = document.createElement('div');
-            toast.className = `fixed bottom-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center`;
-            toast.innerHTML = `<i class="material-icons text-sm mr-2">${icon}</i>${message}`;
-            document.body.appendChild(toast);
-
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transition = 'opacity 0.5s';
-                setTimeout(() => toast.remove(), 500);
-            }, 3000);
+            window.showAppToast(message, type);
         }
 
         function escapeHtml(text) {

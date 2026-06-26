@@ -1,4 +1,4 @@
-﻿document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', function () {
     // Modal elements
     const createAssessmentModal = document.getElementById('createAssessmentModal');
     const updateAssessmentModal = document.getElementById('updateAssessmentModal');
@@ -151,7 +151,7 @@
             showModal(updateAssessmentModal);
         } catch (error) {
             console.error('Detailed error:', error);
-            alert(`Error fetching assessment details: ${error.message}`);
+            window.showAppToast(`Error fetching assessment details: ${error.message}`);
         }
     }
 
