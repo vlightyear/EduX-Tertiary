@@ -17,9 +17,9 @@ namespace SIS.Models.ViewModels
         public List<FilterOption> AcademicYears { get; set; } = new List<FilterOption>();
         public List<FilterOption> RegistrationStatuses { get; set; } = new List<FilterOption>();
 
-        // Year and Semester options
+        // Year and academic period options
         public List<int> YearOptions { get; set; } = new List<int> { 1, 2, 3, 4, 5 };
-        public List<int> SemesterOptions { get; set; } = new List<int> { 1, 2 };
+        public List<FilterOption> PeriodOptions { get; set; } = new List<FilterOption>();
     }
 
     public class StudentListFiltersViewModel

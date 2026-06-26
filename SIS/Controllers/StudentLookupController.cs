@@ -1158,6 +1158,10 @@ namespace SIS.Controllers
                     .ThenInclude(p => p.Department)
                         .ThenInclude(d => d.School)
                 .Include(s => s.AcademicYear)
+                .Include(s => s.CurrentYearPeriod)
+                    .ThenInclude(yp => yp.AcademicYear)
+                .Include(s => s.CurrentYearPeriod)
+                    .ThenInclude(yp => yp.AcademicPeriod)
                 .Include(s => s.School)
                 .AsQueryable();
 
@@ -1330,6 +1334,7 @@ namespace SIS.Controllers
                     ModesOfStudy = filterOptions.ModesOfStudy,
                     ProgrammeLevels = filterOptions.ProgrammeLevels,
                     AcademicYears = filterOptions.AcademicYears,
+                    PeriodOptions = filterOptions.PeriodOptions,
                     RegistrationStatuses = GetRegistrationStatusOptions()
                 };
 
@@ -1384,7 +1389,9 @@ namespace SIS.Controllers
                         AcademicYear = s.AcademicYear.YearValue,
                         CurrentYear = s.StudentCurrentYear ?? 0,
                         CurrentPeriodId = s.CurrentYearPeriodId ?? 0,
-                        CurrentPeriodLabel = s.CurrentYearPeriodLabel ?? "N/A",
+                        CurrentPeriodLabel = s.CurrentYearPeriod != null
+                            ? s.CurrentYearPeriod.AcademicYear.YearValue + " - " + s.CurrentYearPeriod.AcademicPeriod.PeriodName
+                            : "N/A",
                         StudentStatus = s.StudentStatus.ToString(),
                         RegistrationStatus = s.RegistrationStatus.ToString(),
                         IsRegistered = s.IsRegistered,
@@ -1476,7 +1483,14 @@ namespace SIS.Controllers
 
             filterOptions.AcademicYears = await _context.AcademicYears
                 .OrderByDescending(ay => ay.YearValue)
-                .Select(ay => new FilterOption { Id = ay.YearId, Name = ay.YearValue, Value = ay.ModeId.ToString() })
+                .Select(ay => new FilterOption { Id = ay.YearId, Name = ay.YearValue, Value = ay.YearId.ToString() })
+                .ToListAsync();
+
+            filterOptions.PeriodOptions = await _context.AcademicPeriods
+                .Where(ap => ap.IsActive)
+                .OrderBy(ap => ap.AcademicType)
+                .ThenBy(ap => ap.PeriodNumber)
+                .Select(ap => new FilterOption { Id = ap.Id, Name = ap.PeriodName, Value = ap.Id.ToString() })
                 .ToListAsync();
 
             return filterOptions;
@@ -1520,7 +1534,8 @@ namespace SIS.Controllers
 
             if (filters.CurrentPeriod.HasValue)
             {
-                query = query.Where(s => s.CurrentYearPeriod.AcademicPeriod.Id == filters.CurrentPeriod.Value);
+                query = query.Where(s => s.CurrentYearPeriod != null &&
+                                         s.CurrentYearPeriod.AcademicPeriodId == filters.CurrentPeriod.Value);
             }
 
             if (filters.RegistrationStatus.HasValue)
@@ -1626,7 +1641,7 @@ namespace SIS.Controllers
             new ExportColumnOption { Key = "ProgrammeLevelName", DisplayName = "Programme Level", IsSelected = false },
             new ExportColumnOption { Key = "AcademicYear", DisplayName = "Academic Year", IsSelected = true },
             new ExportColumnOption { Key = "CurrentYear", DisplayName = "Year of Study", IsSelected = true },
-            new ExportColumnOption { Key = "CurrentSemester", DisplayName = "Semester", IsSelected = false },
+            new ExportColumnOption { Key = "CurrentSemester", DisplayName = "Academic Period", IsSelected = false },
             new ExportColumnOption { Key = "RegistrationStatus", DisplayName = "Registration Status", IsSelected = true },
             new ExportColumnOption { Key = "OutstandingFees", DisplayName = "Outstanding Fees", IsSelected = true },
             new ExportColumnOption { Key = "RegistrationDate", DisplayName = "Registration Date", IsSelected = false },
@@ -1687,7 +1702,9 @@ namespace SIS.Controllers
                         AcademicYear = s.AcademicYear.YearValue,
                         CurrentYear = s.StudentCurrentYear ?? 0,
                         CurrentPeriodId = s.CurrentYearPeriodId ?? 0,
-                        CurrentPeriodLabel = s.CurrentYearPeriodLabel ?? "N/A",
+                        CurrentPeriodLabel = s.CurrentYearPeriod != null
+                            ? s.CurrentYearPeriod.AcademicYear.YearValue + " - " + s.CurrentYearPeriod.AcademicPeriod.PeriodName
+                            : "N/A",
                         StudentStatus = s.StudentStatus.ToString(),
                         RegistrationStatus = s.RegistrationStatus.ToString(),
                         IsRegistered = s.IsRegistered,
@@ -1771,7 +1788,10 @@ namespace SIS.Controllers
                     summary["Year of Study"] = $"Year {filters.CurrentYear.Value}";
 
                 if (filters.CurrentPeriod.HasValue)
-                    summary["Period"] = $"Semester {filters.CurrentPeriod.Value}";
+                {
+                    var period = _context.AcademicPeriods.Find(filters.CurrentPeriod.Value);
+                    if (period != null) summary["Academic Period"] = period.PeriodName;
+                }
 
                 if (filters.RegistrationStatus.HasValue)
                     summary["Registration Status"] = filters.RegistrationStatus.Value.ToString();
@@ -1836,7 +1856,9 @@ namespace SIS.Controllers
                         AcademicYear = s.AcademicYear.YearValue,
                         CurrentYear = s.StudentCurrentYear ?? 0,
                         CurrentPeriodId = s.CurrentYearPeriodId ?? 0,
-                        CurrentPeriodLabel = s.CurrentYearPeriodLabel ?? "N/A",
+                        CurrentPeriodLabel = s.CurrentYearPeriod != null
+                            ? s.CurrentYearPeriod.AcademicYear.YearValue + " - " + s.CurrentYearPeriod.AcademicPeriod.PeriodName
+                            : "N/A",
                         StudentStatus = s.StudentStatus.ToString(),
                         RegistrationStatus = s.RegistrationStatus.ToString(),
                         IsRegistered = s.IsRegistered,
