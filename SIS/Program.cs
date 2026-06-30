@@ -41,6 +41,7 @@ using SIS.Services.StudentImport;
 using SIS.Services.Transcripts;
 using SIS.Services.Users;
 using SIS.Services.Zoom;
+using SIS.Services.Localization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -209,6 +210,10 @@ builder.Services.Configure<IdentityOptions>(options =>
 // Register HttpClient
 builder.Services.AddHttpClient();
 
+builder.Services.Configure<JsonLocalizationOptions>(
+    builder.Configuration.GetSection(JsonLocalizationOptions.SectionName));
+builder.Services.AddSingleton<IJsonStringLocalizer, JsonStringLocalizer>();
+
 builder.Services.AddControllersWithViews()
     .AddJsonOptions(options =>
     {
@@ -321,6 +326,8 @@ app.UseCors("AllowSpecificOrigin");
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
+app.UseMiddleware<JsonLocalizationMiddleware>();
 
 app.UseRouting();
 

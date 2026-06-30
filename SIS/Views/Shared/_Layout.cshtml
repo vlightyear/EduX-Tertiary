@@ -2,14 +2,20 @@
 
 @{
     var institution = InstitutionConfig.GetCurrentInstitution();
+    var supportedLanguages = T.GetSupportedLanguages();
+    var returnUrl = Context.Request.PathBase + Context.Request.Path + Context.Request.QueryString;
+    var jsAreYouSure = System.Text.Json.JsonSerializer.Serialize(T["Common.AreYouSure"]);
+    var jsConfirmAction = System.Text.Json.JsonSerializer.Serialize(T["Common.ConfirmAction"]);
+    var jsYes = System.Text.Json.JsonSerializer.Serialize(T["Common.Yes"]);
+    var jsCancel = System.Text.Json.JsonSerializer.Serialize(T["Common.Cancel"]);
 }
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="@T.CurrentCulture">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - EduTech</title>
+    <title>@ViewData["Title"] - @T["App.Name"]</title>
     <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -288,7 +294,7 @@
 
                 <button id="mobile-nav-btn"
                         class="lg:hidden p-2 rounded-lg hover:bg-slate-100 transition-colors"
-                        aria-label="Open navigation">
+                        aria-label="@T["Common.OpenNavigation"]">
                     <i class="material-icons text-slate-600">menu</i>
                 </button>
 
@@ -307,6 +313,21 @@
                 </div>
 
                 <div class="flex-1"></div>
+
+                <div class="relative hidden sm:block">
+                    <label class="sr-only" for="cultureSelector">@T["Common.Language"]</label>
+                    <select id="cultureSelector"
+                            class="text-xs border border-slate-200 rounded-lg bg-white px-2 py-1.5 text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary-200"
+                            onchange="if (this.value) window.location.href = this.value;">
+                        @foreach (var language in supportedLanguages)
+                        {
+                            var selected = language.Culture.Equals(T.CurrentCulture, StringComparison.OrdinalIgnoreCase);
+                            <option value="@Url.Action("Set", "Localization", new { culture = language.Culture, returnUrl })" selected="@selected">
+                                @language.DisplayName
+                            </option>
+                        }
+                    </select>
+                </div>
 
                 <div class="relative">
                     <button onclick="toggleProfileDropdown()"
@@ -340,7 +361,7 @@
                                                                 ?? User.Identity?.Name)
                             </div>
                             <div class="text-xs text-slate-500">
-                                @(User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value ?? "Member")
+                                @(User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value ?? T["Common.Member"])
                             </div>
                         </div>
                         @if (User.Identity?.IsAuthenticated == true)
@@ -348,12 +369,12 @@
                             <a asp-controller="Profile" asp-action="Index"
                                class="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg mx-1 transition-colors">
                                 <i class="material-icons text-red-400 text-lg">person</i>
-                                Profile
+                                @T["Common.Profile"]
                             </a>
                             <a asp-controller="Account" asp-action="Logout"
                                class="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg mx-1 transition-colors">
                                 <i class="material-icons text-red-400 text-lg">logout</i>
-                                Sign out
+                                @T["Common.SignOut"]
                             </a>
                         }
                     </div>
@@ -699,6 +720,20 @@
                         <i class="material-icons text-slate-500">close</i>
                     </button>
                 </div>
+                <div class="px-4 py-3 border-b border-slate-100">
+                    <label class="block text-xs font-semibold text-slate-500 mb-1" for="mobileCultureSelector">@T["Common.Language"]</label>
+                    <select id="mobileCultureSelector"
+                            class="w-full text-sm border border-slate-200 rounded-lg bg-white px-3 py-2 text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary-200"
+                            onchange="if (this.value) window.location.href = this.value;">
+                        @foreach (var language in supportedLanguages)
+                        {
+                            var selected = language.Culture.Equals(T.CurrentCulture, StringComparison.OrdinalIgnoreCase);
+                            <option value="@Url.Action("Set", "Localization", new { culture = language.Culture, returnUrl })" selected="@selected">
+                                @language.DisplayName
+                            </option>
+                        }
+                    </select>
+                </div>
                 <partial name="_Navigation" />
                 <div class="border-t border-slate-100 p-4 mt-2">
                     <div class="flex items-center gap-3 mb-3">
@@ -712,7 +747,7 @@
                                                                 ?? User.Identity?.Name?[0].ToString().ToUpper() ?? "U")
                             </div>
                             <div class="text-xs text-slate-400">
-                                @(User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value ?? "Member")
+                                @(User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value ?? T["Common.Member"])
                             </div>
                         </div>
                     </div>
@@ -723,7 +758,7 @@
                            style="background-color: #e85c5c;"
                            onmouseenter="this.style.backgroundColor='#c53030'"
                            onmouseleave="this.style.backgroundColor='#e85c5c'">
-                            <i class="material-icons text-sm">logout</i>Sign out
+                            <i class="material-icons text-sm">logout</i>@T["Common.SignOut"]
                         </a>
                     }
                 </div>
@@ -737,7 +772,7 @@
             </div>
             <footer class="bg-white border-t border-slate-200 px-6 py-3 mt-auto">
                 <div class="flex flex-col sm:flex-row justify-between items-center gap-1 text-xs text-slate-400">
-                    <span>&copy; @DateTime.Now.Year EduTech. All rights reserved.</span>
+                    <span>&copy; @DateTime.Now.Year @T["App.Name"]. @T["App.Copyright"]</span>
                     <span>Version 1.0.0</span>
                 </div>
             </footer>
@@ -796,23 +831,23 @@
                     return true;
                 }
 
-                return nativeConfirm(String(message ?? 'Are you sure?'));
+                return nativeConfirm(String(message ?? @Html.Raw(jsAreYouSure)));
             };
 
             window.showAppConfirm = function (message, options = {}) {
                 if (!window.Swal) {
-                    return Promise.resolve(nativeConfirm(String(message ?? 'Are you sure?')));
+                    return Promise.resolve(nativeConfirm(String(message ?? @Html.Raw(jsAreYouSure))));
                 }
 
                 return Swal.fire({
-                    title: options.title || 'Confirm action',
-                    text: String(message ?? 'Are you sure?'),
+                    title: options.title || @Html.Raw(jsConfirmAction),
+                    text: String(message ?? @Html.Raw(jsAreYouSure)),
                     icon: options.icon || 'question',
                     showCancelButton: true,
                     confirmButtonColor: '#d43a3a',
                     cancelButtonColor: '#64748b',
-                    confirmButtonText: options.confirmButtonText || 'Yes',
-                    cancelButtonText: options.cancelButtonText || 'Cancel'
+                    confirmButtonText: options.confirmButtonText || @Html.Raw(jsYes),
+                    cancelButtonText: options.cancelButtonText || @Html.Raw(jsCancel)
                 }).then(result => result.isConfirmed);
             };
 

@@ -2,17 +2,19 @@
 @inject SIS.Services.IInstitutionConfigService InstitutionConfig
 
 @{
-    ViewData["Title"] = "Login";
+    ViewData["Title"] = T["Login.Title"];
     Layout = null;
     var institution = InstitutionConfig.GetCurrentInstitution();
+    var supportedLanguages = T.GetSupportedLanguages();
+    var returnUrl = Context.Request.PathBase + Context.Request.Path + Context.Request.QueryString;
 }
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="@T.CurrentCulture">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Login - EduTech</title>
+    <title>@T["Login.Title"] - @T["App.Name"]</title>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -123,7 +125,7 @@
     <div id="loader" class="fixed inset-0 flex items-center justify-center bg-white z-50 transition-opacity duration-500">
         <div class="flex flex-col items-center gap-3">
             <div class="loader"></div>
-            <p class="text-sm text-slate-400 font-medium">Loading EduTech...</p>
+            <p class="text-sm text-slate-400 font-medium">@T["Common.Loading"]</p>
         </div>
     </div>
 
@@ -149,13 +151,13 @@
                 <h1 class="text-4xl font-bold text-white mb-2">
                     Edu<span style="color: #e85c5c;">Tech</span>
                 </h1>
-                <p class="text-slate-400 text-sm mb-10">Learn Smarter. Achieve Greater.</p>
+                <p class="text-slate-400 text-sm mb-10">@T["Login.Tagline"]</p>
 
                 <div class="space-y-3 text-left">
                     @foreach (var item in new[] {
-                                        ("verified_user",   "Secure Access",       "Role-based authentication for all users"),
-                                        ("bar_chart",       "Academic Analytics",  "Real-time insights into student performance"),
-                                        ("manage_accounts", "Unified Management",  "Courses, grades, and records in one place")
+                                        ("verified_user",   T["Login.FeatureSecureAccessTitle"], T["Login.FeatureSecureAccessDescription"]),
+                                        ("bar_chart",       T["Login.FeatureAnalyticsTitle"],     T["Login.FeatureAnalyticsDescription"]),
+                                        ("manage_accounts", T["Login.FeatureUnifiedTitle"],       T["Login.FeatureUnifiedDescription"])
                                         })
                     {
                         <div class="flex items-start gap-4 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4">
@@ -179,6 +181,20 @@
 
                 <!-- Institution Header -->
                 <div class="fade-up fade-up-1 flex flex-col items-center mb-8">
+                    <div class="self-end mb-3">
+                        <label class="sr-only" for="cultureSelector">@T["Common.Language"]</label>
+                        <select id="cultureSelector"
+                                class="text-xs border border-slate-200 rounded-lg bg-white px-2 py-1.5 text-slate-600 focus:outline-none"
+                                onchange="if (this.value) window.location.href = this.value;">
+                            @foreach (var language in supportedLanguages)
+                            {
+                                var selected = language.Culture.Equals(T.CurrentCulture, StringComparison.OrdinalIgnoreCase);
+                                <option value="@Url.Action("Set", "Localization", new { culture = language.Culture, returnUrl })" selected="@selected">
+                                    @language.DisplayName
+                                </option>
+                            }
+                        </select>
+                    </div>
                     <div class="w-16 h-16 rounded-xl flex items-center justify-center mb-4 shadow-lg"
                          style="background-color: #1e293b;">
                         <img src="@($"{institution.LogoPath}")"
@@ -188,7 +204,7 @@
                         <i class="material-icons text-white text-2xl hidden">account_balance</i>
                     </div>
                     <h2 class="text-lg font-bold text-gray-900 text-center leading-tight">@institution.Name</h2>
-                    <p class="text-sm text-gray-500 mt-1">Student Information System</p>
+                    <p class="text-sm text-gray-500 mt-1">@T["Login.SystemName"]</p>
                 </div>
 
                 <!-- Alert Message -->
@@ -235,7 +251,7 @@
                         <label for="emailInput"
                                class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6"
                                style="--tw-peer-focus-color: #e85c5c;">
-                            Email or Student ID
+                            @T["Login.EmailOrStudentId"]
                         </label>
                         <span asp-validation-for="EmailOrStudentId" class="mt-1 text-xs text-red-500"></span>
                     </div>
@@ -251,7 +267,7 @@
                                placeholder=" " />
                         <label for="passwordInput"
                                class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">
-                            Password
+                            @T["Login.Password"]
                         </label>
                         <button type="button" id="togglePassword"
                                 class="absolute right-0 top-2.5 text-gray-400 transition-colors"
@@ -267,13 +283,13 @@
                             <input asp-for="RememberMe"
                                    class="w-4 h-4 border-gray-300 rounded transition-colors"
                                    style="accent-color: #e85c5c;" />
-                            <span class="text-xs text-gray-600">Remember me</span>
+                            <span class="text-xs text-gray-600">@T["Login.RememberMe"]</span>
                         </label>
                         <a href="@Url.Action("Index", "ForgotPassword")"
                            class="text-xs font-medium transition-colors"
                            style="color: #e85c5c;"
                            onmouseenter="this.style.color='#c53030'" onmouseleave="this.style.color='#e85c5c'">
-                            Forgot password?
+                            @T["Login.ForgotPassword"]
                         </a>
                     </div>
 
@@ -284,17 +300,17 @@
                                 style="background-color: #e85c5c;"
                                 onmouseenter="this.style.backgroundColor='#c53030'"
                                 onmouseleave="this.style.backgroundColor='#e85c5c'">
-                            Sign In
+                            @T["Login.SignIn"]
                             <i class="material-icons text-sm">arrow_forward</i>
                         </button>
 
                         <p class="text-xs text-center text-gray-500">
-                            New student?
+                            @T["Login.NewStudent"]
                             <a asp-controller="Admin" asp-action="CandidateRegistration"
                                class="font-semibold transition-colors"
                                style="color: #e85c5c;"
                                onmouseenter="this.style.color='#c53030'" onmouseleave="this.style.color='#e85c5c'">
-                                Apply Now
+                                @T["Common.ApplyNow"]
                             </a>
                         </p>
                     </div>
@@ -302,7 +318,7 @@
 
                 <!-- Footer -->
                 <p class="fade-up fade-up-4 text-center text-xs text-gray-400 mt-10">
-                    &copy; @DateTime.Now.Year @institution.Name. All rights reserved.
+                    &copy; @DateTime.Now.Year @institution.Name. @T["App.Copyright"]
                 </p>
             </div>
         </div>
